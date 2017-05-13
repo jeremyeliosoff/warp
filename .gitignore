@@ -1,0 +1,17 @@
+genData.pyc
+utils.pyc
+warp.pyc
+warpUi.pyc
+
+bak:
+parms.bak
+warp.py.orig
+warpWrapper.py
+
+gimp:
+testCirclesAndP_v01.xcf
+testCirclesAndP.xcf
+testCircles.xcf
+
+img:
+single

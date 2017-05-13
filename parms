@@ -1,0 +1,12 @@
+jTestParm1fl
+type float
+val 3.5
+
+nLevels
+type int
+val 2
+
+jTestParm3str
+type str
+val yes
+
