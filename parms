@@ -1,14 +1,14 @@
 ofs
 type float
-val 0.927
+val 0.627
 
 nLevels
 type int
-val 5
+val 3
 
 animIter
 type int
-val 1927
+val 26627
 
 animIncr
 type int

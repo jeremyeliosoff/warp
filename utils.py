@@ -89,6 +89,7 @@ class parmDic:
     
 
 # FUNCTIONS
+# Colours, rgb + tex
 def rgbInt_to_hex(red, green, blue):
 	"""Return color as #rrggbb for the given color values."""
 	return '#%02x%02x%02x' % (red, green, blue)
@@ -105,6 +106,7 @@ def hex_to_rgb(value):
 def rgb_to_hex(r, g, b):
 	rr,gg,bb = rgb_dec_to_int(r, g, b)
 	return rgbInt_to_hex(rr, gg, bb)
+
 
 def isScalar(v):
     return isinstance(v, float) or isinstance(v, int)

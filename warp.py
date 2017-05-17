@@ -9,7 +9,7 @@ from tkColorChooser import askcolor
 parmPath = utils.projDir + "/parms"
 
 
-class showWin():
+class warpUi():
     def rebuildUI(self):
         print "reloading........"
         self.refreshParms()
@@ -32,7 +32,6 @@ class showWin():
     def btn_getColor(self, args):
         k,c = args
         print "ZZZZZZZZZZZ in btn_getColor-- k:", k, ", c:", c
-        #c = self.parmDic[k]
         c = self.parmDic(k)
         hx = utils.rgb_to_hex(c[0], c[1], c[2])
         print "c:", c
@@ -47,13 +46,11 @@ class showWin():
             postC = self.parmDic(k)
             print "postC", postC
             self.parmDic.parmDic[k]["uiElement"].configure(bg=color[1])
-            #self.parmDic[k] = list(clrDec)
-            #self.entDic[k].configure(bg=color[1])
-            #self.saveParmDic()
     
     def makeParmUi(self, startRow):
         row = startRow
-        for k,v in self.parmDic.parmLs: #TODO why k,v?? What's v used for
+        print "\n\n************** parmLs", self.parmDic.parmLs
+        for k,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
             thisParmDic = self.parmDic.parmDic[k]
             #print "-------------IN makeParmUi, k:", k, ", thisParmDic:", thisParmDic
             
@@ -131,7 +128,7 @@ class showWin():
 
 
     def refreshPictures(self): 
-        genData.saveLevelImg(self.parmDic, self.images)
+        genData.saveLevelImg(self)
 
         self.refreshImages()
 
@@ -214,7 +211,6 @@ class showWin():
         #self.images["orig"]["path"] = utils.imgTest + "/" + self.parmDic.parmDic["image"]["val"]
 
         self.frameMaster = Frame(self.root)
-        self.frameMaster.place(x=1000, y=1000)
 	self.frameMaster.grid()
 
         self.frameParm = Frame(self.frameMaster)
@@ -227,8 +223,6 @@ class showWin():
         row +=1
 
         # Make parm UI
-
-
         row = self.makeParmUi(row)
 
 	self.imgLabel = Label(self.frameParm, text="image")
@@ -287,4 +281,4 @@ class showWin():
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
 
-showWin()
+warpUi()

@@ -166,10 +166,8 @@ def heatMap(v, parmDic):
     cMid = parmDic("cMid")
     cLight = parmDic("cLight")
     if v < .5:
-        #return utils.mix((.2, .2, 1), (1, 0, 0), v/.5)
         return utils.mix(cDark, cMid, v/.5)
     else:
-        #return utils.mix((1, 0, 0), (0, 1, 0), (v-.5)/.5)
         return utils.mix(cMid, cLight, (v-.5)/.5)
 
 def vecToClr(v):
@@ -190,13 +188,21 @@ def jtGridToImg(grid, parmDic):
             v = 0
             vec = [0, 0, 0]
 
-            for k in grid[x][y].keys():
-                thisVal = float(k)/(nLevels-1)
+            thisDic = grid[x][y]
+            for k in thisDic.keys():
+                levWOfs = thisDic[k][0].level
+                thisVal = levWOfs/(nLevels)
+                #thisVal = float(k)/(nLevels-1)
                 hm = heatMap(thisVal, parmDic)
                 vec = utils.vAdd(vec, hm)
                 if not k in usedLevels:
                     usedLevels.append(k)
-                #print "<<<<<<<<<<<<<<<< k", k, ", thisVal", thisVal, "hm", hm, ", vec", vec
+                dicc = grid[x][y]
+                jts = dicc[k]
+                levs = [i.level for i in jts]
+                if thisVal > 1:
+                    print "<<<<<<<<<<<<<<<< k", k, ", thisVal", thisVal, "hm", hm, ", vec", vec, "levs", levs
+
             
             #print ">>>>>>>>>>>> v", v
             #ret.set_at((x, y), (v, v, v, 255))
@@ -207,9 +213,9 @@ def jtGridToImg(grid, parmDic):
 
 
 
-def initJtGrid(img, parmDic, images):
-    ofs = parmDic("ofs")
-    nLevels = parmDic("nLevels")
+def initJtGrid(img, warpUi):
+    ofs = warpUi.parmDic("ofs")
+    nLevels = warpUi.parmDic("nLevels")
     res = img.get_size()
     nJoints = 0
     jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
@@ -231,7 +237,8 @@ def initJtGrid(img, parmDic, images):
                     nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
 
             for lev in range(nLevels):
-                levThresh = int((float(lev + ofs)/nLevels)*255)
+                levWOfs = float(lev + ofs)
+                levThresh = int((levWOfs/nLevels)*255)
                 levThreshs[lev] = levThresh
                 isHigher = []
                 tot = 0
@@ -246,16 +253,16 @@ def initJtGrid(img, parmDic, images):
                     cons = neighboursToConns[tuple(isHigher)]
                     texClr = img.get_at((x,y))
                     if len(cons) > 1:
-                        jtGrid[x][y][lev] =  [joint((x,y), lev, texClr, cons[0], nJoints, nbrs),
-                                               joint((x,y), lev, texClr, cons[1], nJoints + 1, nbrs),]
+                        jtGrid[x][y][lev] =  [joint((x,y), levWOfs, texClr, cons[0], nJoints, nbrs),
+                                               joint((x,y), levWOfs, texClr, cons[1], nJoints + 1, nbrs),]
                         nJoints += 2
                     else:
-                        jtGrid[x][y][lev] = [joint((x,y), lev, texClr, cons[0], nJoints, nbrs)]
+                        jtGrid[x][y][lev] = [joint((x,y), levWOfs, texClr, cons[0], nJoints, nbrs)]
                         nJoints += 1
 
     
-    pygame.image.save(jtGridToImg(jtGrid, parmDic), images["jtGrid"]["path"])
-    pygame.image.save(levelImg, images["levels"]["path"])
+    pygame.image.save(jtGridToImg(jtGrid, warpUi.parmDic), warpUi.images["jtGrid"]["path"])
+    pygame.image.save(levelImg, warpUi.images["levels"]["path"])
     with open("out", 'w') as f:
         f.write(str(jtGrid))
 
@@ -271,9 +278,9 @@ def initJtGrid(img, parmDic, images):
     #print jtGrid
     return jtGrid
     
-def growCurves(parmDic, images, jtGrid):
-    nLevels = parmDic("nLevels")
-    animIter = parmDic("animIter")
+def growCurves(warpUi, jtGrid):
+    nLevels = warpUi.parmDic("nLevels")
+    animIter = warpUi.parmDic("animIter")
     nCurves = 0
     nSurfs = 0
     totJoints = 0
@@ -333,16 +340,14 @@ def growCurves(parmDic, images, jtGrid):
                     break
 
     drawCurveImg = gridToImgV(drawCurveGrid)
-    pygame.image.save(drawCurveImg, images["curves"]["path"])
+    pygame.image.save(drawCurveImg, warpUi.images["curves"]["path"])
 
 
-def saveLevelImg(parmDic, images):
-    nLevels = parmDic("nLevels")
-    ofs = parmDic("ofs")
-
-    print "yessir"
-    img = pygame.image.load(images["orig"]["path"])
+def saveLevelImg(warpUi):
+    nLevels = warpUi.parmDic("nLevels")
+    ofs = warpUi.parmDic("ofs")
+    img = pygame.image.load(warpUi.images["orig"]["path"])
     border(img)
 
-    jtGrid = initJtGrid(img, parmDic, images)  #TODO just use parmDic
-    growCurves(parmDic, images, jtGrid)
+    jtGrid = initJtGrid(img, warpUi)  #TODO just use parmDic
+    growCurves(warpUi, jtGrid)
