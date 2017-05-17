@@ -7,13 +7,7 @@ dataDir = projDir + "/data"
 framesDir = dataDir + "/frames"
 
 imgDir = projDir + "/img"
-imgPath = imgDir + "/single/testAndP.jpg"
-#imgPath = imgDir + "/img/single/glow.jpg"
-imgPathOut = imgDir + "/single/levelImg.jpg"
-imgPathCurves = imgDir + "/single/curves.jpg"
-imgTmp = imgDir + "/tmp"
 imgTest = imgDir + "/test"
-imgJtGrid = imgTmp + "/jtGrid.jpg"
 imgPlay = imgDir + "/controls/play.jpg"
 imgPause = imgDir + "/controls/pause.jpg"
 
@@ -21,7 +15,7 @@ imagePaths = {
     "orig":imgDir + "/single/glow.jpg",
     "levels":imgDir + "/single/levelImg.jpg",
     "curves":imgDir + "/single/curves.jpg",
-    "jtGrid":imgTmp + "/jtGrid.jpg",
+    "jtGrid":imgDir + "/tmp/jtGrid.jpg",
     "play":imgDir + "/controls/play.jpg",
     "pause":imgDir + "/controls/pause.jpg",
     "anim":imgDir + "/controls/pause.jpg",
@@ -68,9 +62,7 @@ class parmDic:
     def parmLsToDic(self):
         self.parmDic = {}
         for k,v in self.parmLs:
-            print "k", k
-            print "v", v
-            print
+            print "loading parm " + k + ", dic:", v
             self.parmDic[k] = v
 
 
@@ -86,6 +78,8 @@ class parmDic:
             return int(strVal)
         elif typ == "float":
             return float(strVal)
+        elif typ == "clr":
+            return tuple([float(i) for i in strVal.split(",")])
         else:
             return strVal
 
@@ -95,6 +89,23 @@ class parmDic:
     
 
 # FUNCTIONS
+def rgbInt_to_hex(red, green, blue):
+	"""Return color as #rrggbb for the given color values."""
+	return '#%02x%02x%02x' % (red, green, blue)
+def rgb_dec_to_int(r, g, b):
+	return int(r*255), int(g*255), int(b*255)
+
+def rgb_int_to_dec(r, g, b):
+	return float(r)/255, float(g)/255, float(b)/255
+
+def hex_to_rgb(value):
+	r,g,b = hex_to_rgbInt(value)
+	return rgb_dec_to_int(r,g,b)
+
+def rgb_to_hex(r, g, b):
+	rr,gg,bb = rgb_dec_to_int(r, g, b)
+	return rgbInt_to_hex(rr, gg, bb)
+
 def isScalar(v):
     return isinstance(v, float) or isinstance(v, int)
 
@@ -169,13 +180,3 @@ def vAdd(a, b):
         ret.append(a[i] + b[i])
     return ret
 
-def getParmVal(parmDic, parm):
-    thisParmDic = parmDic.parmDic[parm]
-    strVal = thisParmDic["val"]
-    typ = thisParmDic["type"]
-    if typ == "int":
-        return int(strVal)
-    elif typ == "float":
-        return float(strVal)
-    else:
-        return strVal

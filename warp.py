@@ -19,21 +19,43 @@ class showWin():
         print "parmDic", self.parmDic
         for k,v in self.parmDic.parmDic.items():
             thisDic = self.parmDic.parmDic[k]
-            print "\nIN refreshParms: k", k, "thisDic", thisDic
+            #print "\nIN refreshParms: k", k, "thisDic", thisDic
             # Below is just so parmCallback doesn't make errors before all the
             # ui is built - a bit unsatisfying.
-            if "uiElement" in thisDic.keys():
+            if "uiElement" in thisDic.keys() and not thisDic["type"] == "clr":
                 thisDic["val"] = thisDic["uiElement"].get()
         self.saveParmDic()
 
     def parmCallback(self, sv):
         self.refreshParms()
+
+    def btn_getColor(self, args):
+        k,c = args
+        print "ZZZZZZZZZZZ in btn_getColor-- k:", k, ", c:", c
+        #c = self.parmDic[k]
+        c = self.parmDic(k)
+        hx = utils.rgb_to_hex(c[0], c[1], c[2])
+        print "c:", c
+        print "hx:", hx
+        color = askcolor(color=hx) 
+        print "color", color
+        if color:
+            clrInt = color[0]
+            clrDec = utils.rgb_int_to_dec(clrInt[0], clrInt[1], clrInt[2])
+            print "clrDec", clrDec
+            self.setVal(k, clrDec)
+            postC = self.parmDic(k)
+            print "postC", postC
+            self.parmDic.parmDic[k]["uiElement"].configure(bg=color[1])
+            #self.parmDic[k] = list(clrDec)
+            #self.entDic[k].configure(bg=color[1])
+            #self.saveParmDic()
     
     def makeParmUi(self, startRow):
         row = startRow
-        for k,v in self.parmDic.parmLs:
+        for k,v in self.parmDic.parmLs: #TODO why k,v?? What's v used for
             thisParmDic = self.parmDic.parmDic[k]
-            print "-------------IN makeParmUi, k:", k, ", thisParmDic:", thisParmDic
+            #print "-------------IN makeParmUi, k:", k, ", thisParmDic:", thisParmDic
             
             if "hidden" in thisParmDic.keys() and thisParmDic["hidden"] == "True":
                 print "HIDDEN, skipping..."
@@ -42,16 +64,23 @@ class showWin():
             lab.grid(row=row, column=0)
 
 
-            ent = Entry(self.frameParm)
+            if thisParmDic["type"] == "clr":
+                clrTuple = self.parmDic(k)
+                print "XXXXXXXXXXX clrTuple", clrTuple
+                hx = utils.rgb_to_hex(clrTuple[0],clrTuple[1],clrTuple[2]) #TODO: I think you can directly use floats somehow.
+                ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(k,clrTuple): self.btn_getColor(args))
+            else:
+                ent = Entry(self.frameParm)
             ent.grid(row=row, column=1)
             thisParmDic["uiElement"] = ent
             print "-------- ent:", ent
 
-            sv = StringVar()
-            sv.trace("w", lambda name, index, mode, sv=sv: self.parmCallback(sv))
+            if not thisParmDic["type"] == "clr":
+                sv = StringVar()
+                sv.trace("w", lambda name, index, mode, sv=sv: self.parmCallback(sv))
 
-            thisParmDic["uiElement"].configure(textvariable=sv)
-            thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
+                thisParmDic["uiElement"].configure(textvariable=sv)
+                thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
             row += 1
         self.frameParm.grid(row=0, column=0, sticky=N)
@@ -102,7 +131,7 @@ class showWin():
 
 
     def refreshPictures(self): 
-        genData.saveLevelImg(self.parmDic, self.imgPath)
+        genData.saveLevelImg(self.parmDic, self.images)
 
         self.refreshImages()
 
@@ -146,9 +175,8 @@ class showWin():
 
     def getImg(self, selection):
         print " selection",  selection
-        self.imgPath = utils.imgTest + "/" + selection #TODO kill self.imgPath
         self.parmDic.parmDic["image"]["val"] = selection
-        self.images["orig"]["path"] = self.imgPath
+        self.images["orig"]["path"] = utils.imgTest + "/" + selection
         self.refreshParms()
         print "\n\n------- self.images", self.images
 	self.refreshPictures()
@@ -156,10 +184,15 @@ class showWin():
     def setVal(self, parmStr, val):
         if "uiElement" in self.parmDic.parmDic[parmStr]:
             uiElement = self.parmDic.parmDic[parmStr]["uiElement"]
-            uiElement.delete(0, END)
-            uiElement.insert(0, str(val))
-        else:
-            self.parmDic.parmDic[parmStr]["val"] = str(val)
+            if not self.parmDic.parmDic[parmStr]["type"] == "clr":
+                uiElement.delete(0, END)
+                uiElement.insert(0, str(val))
+        valStr = str(val)
+        print "valStr pre", valStr
+        if type(val) in [type(()), type([])]:
+            valStr = valStr[1:-1].replace(' ','')
+        print "valStr pos", valStr
+        self.parmDic.parmDic[parmStr]["val"] = valStr
         self.refreshParms()
 
     def __init__(self):
@@ -173,12 +206,12 @@ class showWin():
         sourceImages.sort()
 
         self.root.bind('<Escape>', lambda e: self.root.destroy())
-        self.imgPath = utils.imgTest + "/" +self.parmDic.parmDic["image"]["val"]
         self.pImgPlay = ImageTk.PhotoImage(Image.open(utils.imgPlay))
         self.pImgPause = ImageTk.PhotoImage(Image.open(utils.imgPause))
 
         self.images = {}
         self.loadImages()
+        #self.images["orig"]["path"] = utils.imgTest + "/" + self.parmDic.parmDic["image"]["val"]
 
         self.frameMaster = Frame(self.root)
         self.frameMaster.place(x=1000, y=1000)
