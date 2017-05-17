@@ -1,12 +1,26 @@
-jTestParm1fl
+ofs
 type float
-val 3.5
+val 0.927
 
 nLevels
 type int
-val 2
+val 5
 
-jTestParm3str
+animIter
+type int
+val 1927
+
+animIncr
+type int
+val 100
+
+anim
+hidden True
+type int
+val 0
+
+image
+hidden True
 type str
-val yes
+val _testAndP.jpg
 

@@ -1,27 +1,12 @@
 #!/usr/bin/python
 import os, genData, utils
 from Tkinter import *
+import Tkinter
 import PIL
 from PIL import ImageTk, Image
 from tkColorChooser import askcolor              
 
-GprojPath = "/home/jeremy/dev/warp/"
-GimgPath = GprojPath + "img/single/testAndP.jpg"
-GparmPath = GprojPath + "parms"
-
-def jTest():
-    print "yes"
-    print "__name__", __name__
-
-
-if __name__ == "__main__":
-    print "in main"
-
-print "free statement in warp.py"
-
-
-#GimgPath = "/home/jeremy/dev/mnc/snapshots/005/img.gif"
-
+parmPath = utils.projDir + "/parms"
 
 
 class showWin():
@@ -31,35 +16,42 @@ class showWin():
         utils.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
         
     def refreshParms(self):
-        for k,v in self.parmDic.items():
-            thisDic = self.parmDic[k]
-            thisDic["val"] = thisDic["uiElement"].get()
+        print "parmDic", self.parmDic
+        for k,v in self.parmDic.parmDic.items():
+            thisDic = self.parmDic.parmDic[k]
+            print "\nIN refreshParms: k", k, "thisDic", thisDic
+            # Below is just so parmCallback doesn't make errors before all the
+            # ui is built - a bit unsatisfying.
+            if "uiElement" in thisDic.keys():
+                thisDic["val"] = thisDic["uiElement"].get()
         self.saveParmDic()
 
-
-    def parmLsToDic(self, ls):
-        parmDic = {}
-        for k,v in ls:
-            print "k", k
-            print "v", v
-            print
-            parmDic[k] = v
-
-        return parmDic
-
+    def parmCallback(self, sv):
+        self.refreshParms()
+    
     def makeParmUi(self, startRow):
         row = startRow
-        for k,v in self.parmLs:
-            thisParmDic = self.parmDic[k]
-            print "in makeParmUi, thisParmDic:", thisParmDic
+        for k,v in self.parmDic.parmLs:
+            thisParmDic = self.parmDic.parmDic[k]
+            print "-------------IN makeParmUi, k:", k, ", thisParmDic:", thisParmDic
             
+            if "hidden" in thisParmDic.keys() and thisParmDic["hidden"] == "True":
+                print "HIDDEN, skipping..."
+                continue
             lab = Label(self.frameParm, text=k)
             lab.grid(row=row, column=0)
 
+
             ent = Entry(self.frameParm)
-            ent.insert(0, str(thisParmDic["val"]))
             ent.grid(row=row, column=1)
             thisParmDic["uiElement"] = ent
+            print "-------- ent:", ent
+
+            sv = StringVar()
+            sv.trace("w", lambda name, index, mode, sv=sv: self.parmCallback(sv))
+
+            thisParmDic["uiElement"].configure(textvariable=sv)
+            thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
             row += 1
         self.frameParm.grid(row=0, column=0, sticky=N)
@@ -75,8 +67,6 @@ class showWin():
         hs = self.root.winfo_screenheight() # height of the screen
 
         # calculate x and y coordinates for the Tk root window
-        #x = (ws/2) - (w/2)
-        #y = (hs/2) - (h/2)
         x = ws - (w/2)
         y = hs - (h/2)
 
@@ -84,37 +74,68 @@ class showWin():
         # and where it is placed
         self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
-    def getParmVal(self, parm):
-        thisParmDic = self.parmDic[parm]
-        strVal = thisParmDic["val"]
-        typ = thisParmDic["type"]
-        if typ == "int":
-            return int(strVal)
-        elif typ == "float":
-            return float(strVal)
+
+    def loadImages(self):
+        for k,thisImgPath in utils.imagePaths.items():
+            pImg = ImageTk.PhotoImage(Image.open(thisImgPath))
+            if k in self.images.keys():
+                self.images[k]["pImg"] = pImg
+                self.images[k]["path"] = thisImgPath
+            else:
+                self.images[k]= {"pImg":pImg, "path":thisImgPath}
+
+
+    def refreshImages(self):
+        for k,thisDic in self.images.items():
+            pImg = ImageTk.PhotoImage(Image.open(thisDic["path"]))
+            if k in self.images.keys():
+                self.images[k]["pImg"] = pImg
+            else:
+                self.images[k]= {"pImg":pImg}
+
+
+    def makeImgButton(self, name, frameParent):
+        pImg = self.images[name]["pImg"]
+	thisButton = Button(frameParent, image=pImg, command=lambda:self.imgButCmd())
+	self.images[name]["button"] = thisButton
+        return thisButton
+
+
+    def refreshPictures(self): 
+        genData.saveLevelImg(self.parmDic, self.imgPath)
+
+        self.refreshImages()
+
+        for butName,butDic in self.images.items():
+            print "butName", butName, "butDic:", butDic
+            if "button" in butDic.keys():
+                butDic["button"].configure(image=butDic["pImg"])
+
+        if self.parmDic("anim") == 1:
+            self.images["anim"]["button"].configure(image=self.pImgPause)
         else:
-            return strVal
-        
+            self.images["anim"]["button"].configure(image=self.pImgPlay)
 
 
     def imgButCmd(self):
         reload(genData)
         self.refreshParms()
-        imgPath, imgPathOut = genData.saveLevelImg(self.getParmVal("nLevels"))
-        self.photo = ImageTk.PhotoImage(Image.open(imgPath))
-        self.photo2 = ImageTk.PhotoImage(Image.open(imgPathOut))
-	self.imgBut.configure(image=self.photo)
-	self.imgBut2.configure(image=self.photo2)
+        self.refreshPictures()
+
+    def animButCmd(self):
+        self.setVal("anim", 1 if self.parmDic("anim") == 0 else 0)
+        self.refreshParms()
+        self.refreshPictures()
+
 
     def saveParmDic(self):
-        print "\n\n\n"
         print "\n\n\n INSIDE saveParmDic"
-        with open(GparmPath, 'w') as f:
-            for k in self.parmLs:
+        with open(parmPath, 'w') as f:
+            for k in self.parmDic.parmLs:
                 parm = k[0]
                 f.write(parm + "\n")
-                thisDic = self.parmDic[parm]
-                print "thisDic", thisDic
+                thisDic = self.parmDic.parmDic[parm]
+                print "k", k, "thisDic", thisDic
                 keys = thisDic.keys()
                 keys.sort()
                 for attr in keys:
@@ -123,58 +144,41 @@ class showWin():
                 f.write("\n")
 
 
+    def getImg(self, selection):
+        print " selection",  selection
+        self.imgPath = utils.imgTest + "/" + selection #TODO kill self.imgPath
+        self.parmDic.parmDic["image"]["val"] = selection
+        self.images["orig"]["path"] = self.imgPath
+        self.refreshParms()
+        print "\n\n------- self.images", self.images
+	self.refreshPictures()
 
-    def loadParmLs(self):
-        print "\n\n\n"
-        print "\n\n\n INSIDE loadParmLs"
-        parmLs = []
-        thisParmDic = {}
-        thisParmName = ""
-        nextIsParm = True
-        with open(GparmPath) as f:
-            for line in f.readlines():
-                stripped = line.strip()
-                if stripped == "":
-                    nextIsParm = True
-                else:
-                    if nextIsParm:
-                        if not thisParmName == "":
-                            parmLs.append([thisParmName, thisParmDic])
-                        thisParmName = stripped
-                        thisParmDic = {}
-                    else:
-                        k,v = stripped.split()
-                        thisParmDic[k] = v
-                        
-                    nextIsParm = False
-                #print "-----------"
-                print "line:", line
-                #print "stripped:", stripped
-                #print "nextIsParm:", nextIsParm
-
-        parmLs.append([thisParmName, thisParmDic])
-        print "\n\n\n"
-        print parmLs
-        return parmLs
-
-
-
-
-
+    def setVal(self, parmStr, val):
+        if "uiElement" in self.parmDic.parmDic[parmStr]:
+            uiElement = self.parmDic.parmDic[parmStr]["uiElement"]
+            uiElement.delete(0, END)
+            uiElement.insert(0, str(val))
+        else:
+            self.parmDic.parmDic[parmStr]["val"] = str(val)
+        self.refreshParms()
 
     def __init__(self):
-        self.parmLs = self.loadParmLs()[:]
-        print "================== parmLs", self.parmLs
-        self.parmDic = self.parmLsToDic(self.parmLs)
-        print "================== parmDic", self.parmDic
+        self.parmDic = utils.parmDic(parmPath)
+        print "\n\n\n********** parmDic2"
+        print self.parmDic
         self.root = Tk()
         self.positionWindow()
 
+        sourceImages = os.listdir(utils.imgTest)
+        sourceImages.sort()
 
         self.root.bind('<Escape>', lambda e: self.root.destroy())
-        self.photo = ImageTk.PhotoImage(Image.open(GimgPath))
-        self.photo2 = ImageTk.PhotoImage(Image.open(genData.imgPathOut))
-        #self.photo2 = PhotoImage(file=GimgPath)
+        self.imgPath = utils.imgTest + "/" +self.parmDic.parmDic["image"]["val"]
+        self.pImgPlay = ImageTk.PhotoImage(Image.open(utils.imgPlay))
+        self.pImgPause = ImageTk.PhotoImage(Image.open(utils.imgPause))
+
+        self.images = {}
+        self.loadImages()
 
         self.frameMaster = Frame(self.root)
         self.frameMaster.place(x=1000, y=1000)
@@ -183,25 +187,71 @@ class showWin():
         self.frameParm = Frame(self.frameMaster)
         #self.frameParm.pack(fill=BOTH)
         row = 0
+
+        # Recreate UI button
 	self.but_rebuildUi = Button(self.frameParm, text="Recreate UI", command=lambda:self.rebuildUI())
 	self.but_rebuildUi.grid(row=row, column=0)
         row +=1
 
-        #self.parmLs = self.loadParmLs()
-        print "vvvvvv self.parmDic", self.parmDic
+        # Make parm UI
+
+
         row = self.makeParmUi(row)
 
+	self.imgLabel = Label(self.frameParm, text="image")
+        self.imgLabel.grid(row=row)
+
+        vv = StringVar(self.frameParm)
+        vv.set(self.parmDic.parmDic["image"]["val"])
+        self.imgChooser = OptionMenu(self.frameParm, vv, *sourceImages, command=self.getImg)
+        self.imgChooser.grid(row=row, column=1)
+        row += 1
+
+        # Anim button
+        thisButton = self.makeImgButton("anim", self.frameParm)
+	thisButton.configure(command=lambda:self.animButCmd())
+        if self.parmDic("anim") == 1:
+            thisButton.configure(image=self.pImgPause)
+        else:
+            thisButton.configure(image=self.pImgPlay)
+        thisButton.grid(row=row)
+
+        # Make picture (button) UI
         self.frameImg = Frame(self.frameMaster)
         self.frameImg.grid(row=0, column=1)
         row = 0
-	self.imgBut = Button(self.frameImg, image=self.photo, command=lambda:self.imgButCmd())
-        self.imgBut.grid(row=row)
+        thisButton = self.makeImgButton("orig", self.frameImg)
+        thisButton.grid(row=row)
+
+
+        thisButton = self.makeImgButton("levels", self.frameImg)
+        thisButton.grid(row=row, column=1)
+        row +=1
+
+        thisButton = self.makeImgButton("jtGrid", self.frameImg)
+        thisButton.grid(row=row)
+
+        thisButton = self.makeImgButton("curves", self.frameImg)
+        thisButton.grid(row=row, column=1)
         row +=1
 
 
-	self.imgBut2 = Button(self.frameImg, image=self.photo2, command=lambda:self.imgButCmd())
-        self.imgBut2.grid(row=row)
-	#frameParm = Frame(self.frameControls)
-        mainloop() 
+        self.getImg(self.parmDic("image")) # Update main image to reflect current selection.
+        #mainloop() 
+        count = 0
+        while True:
+            count += 1
+            anim = self.parmDic("anim")
+            if anim == 1:
+                val = self.parmDic("animIter")
+                self.setVal("animIter", val + self.parmDic("animIncr"))
+
+                # For ofs anim.
+                k = 1000
+                self.setVal("ofs", (self.parmDic("animIter") % k)/float(k))
+
+                self.refreshPictures()
+            Tk.update_idletasks(self.root)
+            Tk.update(self.root)
 
 showWin()
