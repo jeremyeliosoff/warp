@@ -1,6 +1,6 @@
 ofs
 type float
-val 0.627
+val 0.527
 
 nLevels
 type int
@@ -8,7 +8,7 @@ val 3
 
 animIter
 type int
-val 26627
+val 35527
 
 animIncr
 type int
@@ -34,5 +34,5 @@ val 0.9137254901960784,0.9137254901960784,0.7372549019607844
 image
 hidden True
 type str
-val _glow.jpg
+val _testAndP.jpg
 

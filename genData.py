@@ -178,8 +178,8 @@ def vecToClr(v):
     return tuple(ret)
 
 
-def jtGridToImg(grid, parmDic):
-    nLevels = parmDic("nLevels")
+def jtGridToImg(grid, warpUi):
+    nLevels = warpUi.parmDic("nLevels")
     res = (len(grid), len(grid[0]))
     ret = pygame.Surface(res)
     usedLevels = []
@@ -189,11 +189,13 @@ def jtGridToImg(grid, parmDic):
             vec = [0, 0, 0]
 
             thisDic = grid[x][y]
+            hasJoints = False
             for k in thisDic.keys():
+                hasJoints = True
                 levWOfs = thisDic[k][0].level
                 thisVal = levWOfs/(nLevels)
                 #thisVal = float(k)/(nLevels-1)
-                hm = heatMap(thisVal, parmDic)
+                hm = heatMap(thisVal, warpUi.parmDic)
                 vec = utils.vAdd(vec, hm)
                 if not k in usedLevels:
                     usedLevels.append(k)
@@ -207,6 +209,8 @@ def jtGridToImg(grid, parmDic):
             #print ">>>>>>>>>>>> v", v
             #ret.set_at((x, y), (v, v, v, 255))
             #print "-----vec", vec
+            if hasJoints:
+                warpUi.gridOut[x][y] = vec
             ret.set_at((x, y), vecToClr(vec))
     print "usedLevels", usedLevels
     return ret
@@ -219,6 +223,7 @@ def initJtGrid(img, warpUi):
     res = img.get_size()
     nJoints = 0
     jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
+    gridOut = [[(0, 0, 0) for y in range(res[1]-1)] for x in range(res[0]-1)] 
     levelImg = pygame.Surface(res)
     levThreshs = {}
     usedLevelsInit = []
@@ -227,8 +232,11 @@ def initJtGrid(img, warpUi):
             # get current level
             intens = float(avgLs(img.get_at((x,y))[:-1]))/255
             thisLev = math.ceil(nLevels*(-ofs/nLevels + intens))
-            v = int(255*float(thisLev+ofs)/nLevels)
+            vFlt = float(thisLev+ofs)/nLevels
+            v = int(255*vFlt)
             v = utils.clamp(v, 0, 255)
+            hm = heatMap(vFlt, warpUi.parmDic)
+            gridOut[x][y] = utils.vMult(hm, .5)
             levelImg.set_at((x, y), (v, v, v, 255))
             # get neighbours.
             nbrs = []
@@ -261,7 +269,10 @@ def initJtGrid(img, warpUi):
                         nJoints += 1
 
     
-    pygame.image.save(jtGridToImg(jtGrid, warpUi.parmDic), warpUi.images["jtGrid"]["path"])
+    #warpUi.gridJt = jtGrid[:]
+    warpUi.gridOut = gridOut[:]
+    pygame.image.save(jtGridToImg(jtGrid, warpUi), warpUi.images["jtGrid"]["path"])
+    pygame.image.save(gridToImgV(warpUi.gridOut),  warpUi.images["out"]["path"])
     pygame.image.save(levelImg, warpUi.images["levels"]["path"])
     with open("out", 'w') as f:
         f.write(str(jtGrid))

@@ -12,10 +12,11 @@ imgPlay = imgDir + "/controls/play.jpg"
 imgPause = imgDir + "/controls/pause.jpg"
 
 imagePaths = {
-    "orig":imgDir + "/single/glow.jpg",
-    "levels":imgDir + "/single/levelImg.jpg",
-    "curves":imgDir + "/single/curves.jpg",
-    "jtGrid":imgDir + "/tmp/jtGrid.jpg",
+    "orig":imgDir + "/ui/glow.jpg",
+    "levels":imgDir + "/ui/levelImg.jpg",
+    "curves":imgDir + "/ui/curves.jpg",
+    "jtGrid":imgDir + "/ui/jtGrid.jpg",
+    "out":imgDir + "/ui/out.jpg",
     "play":imgDir + "/controls/play.jpg",
     "pause":imgDir + "/controls/pause.jpg",
     "anim":imgDir + "/controls/pause.jpg",

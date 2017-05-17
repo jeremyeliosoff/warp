@@ -198,6 +198,9 @@ class warpUi():
         print self.parmDic
         self.root = Tk()
         self.positionWindow()
+        self.gridJt = None
+        self.gridLevels = None
+        self.gridOut = None
 
         sourceImages = os.listdir(utils.imgTest)
         sourceImages.sort()
@@ -258,7 +261,7 @@ class warpUi():
         thisButton = self.makeImgButton("jtGrid", self.frameImg)
         thisButton.grid(row=row)
 
-        thisButton = self.makeImgButton("curves", self.frameImg)
+        thisButton = self.makeImgButton("out", self.frameImg)
         thisButton.grid(row=row, column=1)
         row +=1
 
