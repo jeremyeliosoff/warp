@@ -63,14 +63,13 @@ class warpUi():
 
             if thisParmDic["type"] == "clr":
                 clrTuple = self.parmDic(k)
-                print "XXXXXXXXXXX clrTuple", clrTuple
                 hx = utils.rgb_to_hex(clrTuple[0],clrTuple[1],clrTuple[2]) #TODO: I think you can directly use floats somehow.
                 ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(k,clrTuple): self.btn_getColor(args))
             else:
                 ent = Entry(self.frameParm)
             ent.grid(row=row, column=1)
             thisParmDic["uiElement"] = ent
-            print "-------- ent:", ent
+            #print "-------- ent:", ent
 
             if not thisParmDic["type"] == "clr":
                 sv = StringVar()
@@ -111,7 +110,7 @@ class warpUi():
                 self.images[k]= {"pImg":pImg, "path":thisImgPath}
 
 
-    def refreshImages(self):
+    def refreshPhotoImages(self):
         for k,thisDic in self.images.items():
             pImg = ImageTk.PhotoImage(Image.open(thisDic["path"]))
             if k in self.images.keys():
@@ -129,8 +128,7 @@ class warpUi():
 
     def refreshPictures(self): 
         genData.saveLevelImg(self)
-
-        self.refreshImages()
+        self.refreshPhotoImages()
 
         for butName,butDic in self.images.items():
             print "butName", butName, "butDic:", butDic
@@ -146,7 +144,7 @@ class warpUi():
     def imgButCmd(self):
         reload(genData)
         self.refreshParms()
-        self.refreshPictures()
+        self.updateCurImg()
 
     def animButCmd(self):
         self.setVal("anim", 1 if self.parmDic("anim") == 0 else 0)
@@ -161,7 +159,7 @@ class warpUi():
                 parm = k[0]
                 f.write(parm + "\n")
                 thisDic = self.parmDic.parmDic[parm]
-                print "k", k, "thisDic", thisDic
+                #print "k", k, "thisDic", thisDic
                 keys = thisDic.keys()
                 keys.sort()
                 for attr in keys:
@@ -169,14 +167,43 @@ class warpUi():
                         f.write(attr + " " + str(thisDic[attr]) + "\n")
                 f.write("\n")
 
+    def updateCurImg(self):
+        thisImg = self.curImgTitle
+        if thisImg[-1] == "/": # Sequence!
+            fr = self.parmDic("fr")
+            seqImages = os.listdir(utils.seqDir + "/" + thisImg)
+            mx = -100
+            mn = 10000000
+            for img in seqImages:
+                print "--------img", img
+                imgSplit = img.split(".")
+                thisFr = int(imgSplit[-2])
+                if thisFr < mn:
+                    mn = thisFr
+                if thisFr > mx:
+                    mx = thisFr
 
-    def getImg(self, selection):
-        print " selection",  selection
-        self.parmDic.parmDic["image"]["val"] = selection
-        self.images["orig"]["path"] = utils.imgTest + "/" + selection
+            fr = utils.clamp(fr, mn, mx)
+            self.setVal("fr", fr)
+
+            print "\n\nYYYYY--------imgSplit:", imgSplit
+            thisImg = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
+            print "\n\nXXXXXXX--------thisImg", thisImg, ", imgSplit:", imgSplit
+            self.images["orig"]["path"] = utils.seqDir + "/" + self.curImgTitle + "/" + thisImg
+        else:
+            self.images["orig"]["path"] = utils.imgTest + "/" + thisImg
+
+        self.parmDic.parmDic["image"]["val"] = self.curImgTitle
         self.refreshParms()
         print "\n\n------- self.images", self.images
 	self.refreshPictures()
+
+
+    def getImg(self, selection):
+        print " selection",  selection
+        thisImg = selection
+        self.curImgTitle = selection
+        self.updateCurImg()
 
     def setVal(self, parmStr, val):
         if "uiElement" in self.parmDic.parmDic[parmStr]:
@@ -201,9 +228,16 @@ class warpUi():
         self.gridJt = None
         self.gridLevels = None
         self.gridOut = None
+        self.curImgTitle = self.parmDic("image")
 
         sourceImages = os.listdir(utils.imgTest)
         sourceImages.sort()
+
+        sourceSequences = os.listdir(utils.seqDir)
+        sourceSequences.sort()
+
+        sourceSequences = [ i + "/" for i in sourceSequences] 
+        sourceImages = sourceImages + sourceSequences
 
         self.root.bind('<Escape>', lambda e: self.root.destroy())
         self.pImgPlay = ImageTk.PhotoImage(Image.open(utils.imgPlay))
@@ -211,7 +245,6 @@ class warpUi():
 
         self.images = {}
         self.loadImages()
-        #self.images["orig"]["path"] = utils.imgTest + "/" + self.parmDic.parmDic["image"]["val"]
 
         self.frameMaster = Frame(self.root)
 	self.frameMaster.grid()
@@ -269,18 +302,30 @@ class warpUi():
         self.getImg(self.parmDic("image")) # Update main image to reflect current selection.
         #mainloop() 
         count = 0
+        recFr = 0
+        debugFile = "/tmp/frOfs"
+        os.system("echo ---- > " + debugFile)
         while True:
             count += 1
             anim = self.parmDic("anim")
             if anim == 1:
-                val = self.parmDic("animIter")
-                self.setVal("animIter", val + self.parmDic("animIncr"))
+                fr = self.parmDic("fr")
+                frPerCycle = self.parmDic("frPerCycle")
+                nLevels = self.parmDic("nLevels")
+                fr += 1
+                self.setVal("fr", fr)
 
                 # For ofs anim.
-                k = 1000
-                self.setVal("ofs", (self.parmDic("animIter") % k)/float(k))
+                ofs = fr/float(frPerCycle) % 1
+                self.setVal("ofs", ofs)
+                if recFr < frPerCycle:
+                    outPath = self.images["out"]["path"]
+                    destPath = outPath.replace("jpg","%02d.jpg" % recFr)
+                    os.system("cp " + outPath + " " + destPath)
+                    os.system("echo fr" + str(fr) + "- ofs" + str(ofs) + ">>" + debugFile)
+                    recFr += 1
 
-                self.refreshPictures()
+                self.updateCurImg()
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
 

@@ -6,6 +6,8 @@ projDir = "/home/jeremy/dev/warp"
 dataDir = projDir + "/data"
 framesDir = dataDir + "/frames"
 
+seqDir = projDir + "/seq"
+
 imgDir = projDir + "/img"
 imgTest = imgDir + "/test"
 imgPlay = imgDir + "/controls/play.jpg"
@@ -52,7 +54,7 @@ class parmDic:
                         
                     nextIsParm = False
                 #print "-----------"
-                print "line:", line
+                #print "line:", line
                 #print "stripped:", stripped
                 #print "nextIsParm:", nextIsParm
 

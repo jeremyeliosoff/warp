@@ -242,6 +242,7 @@ def jtGridToImg(grid, warpUi):
 def initJtGrid(img, warpUi):
     ofs = warpUi.parmDic("ofs")
     nLevels = warpUi.parmDic("nLevels")
+    kSurf = warpUi.parmDic("kSurf")
     res = img.get_size()
     nJoints = 0
     jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
@@ -258,7 +259,7 @@ def initJtGrid(img, warpUi):
             v = int(255*vFlt)
             v = utils.clamp(v, 0, 255)
             hm = heatMap(vFlt, warpUi.parmDic)
-            gridOut[x][y] = utils.vMult(hm, .5)
+            gridOut[x][y] = utils.vMult(hm, kSurf)
             levelImg.set_at((x, y), (v, v, v, 255))
             # get neighbours.
             nbrs = []
@@ -318,7 +319,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
     # The pickles written AND READ (only surfGrid is in genData):
     # /surfGrid, /surfDics, /surfCurToPrevSidDic, /surfSidToTid"
     nLevels = warpUi.parmDic("nLevels")
-    animIter = warpUi.parmDic("animIter")
+    #jointMax = warpUi.parmDic("jointMax")
     nCurves = 0
     nSurfs = 0
     totJoints = 0
@@ -383,7 +384,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
                             for jtt in jtGrid[xx][yy][lev]:
                                 if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
                                     thisJt = jtt
-                            #contCondition = totJoints < animIter
+                            #contCondition = totJoints < jointMax
                         curves[lev] = curves[lev][:] + [jt.cv]
 
 #                        if not contCondition:

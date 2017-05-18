@@ -1,23 +1,27 @@
 ofs
 type float
-val 0.527
+val 0.8
 
 nLevels
 type int
-val 2
+val 3
 
-animIter
+fr
 type int
-val 35527
+val 1
 
-animIncr
+frPerCycle
 type int
-val 100
+val 10
 
 anim
 hidden True
 type int
 val 0
+
+kSurf
+type float
+val .6
 
 cDark
 type clr
@@ -25,14 +29,14 @@ val 0.2,0.39215686274509803,0.5019607843137255
 
 cMid
 type clr
-val 0.7843137254901961,0.34901960784313724,0.2
+val 0.6901960784313725,0.16862745098039217,0.2
 
 cLight
 type clr
-val 1.0,0.9215686274509803,0.6
+val 0.9411764705882353,0.7372549019607844,0.3764705882352941
 
 image
 hidden True
 type str
-val hotdog_50pct_vig.0300.jpg
+val testCircles/
 
