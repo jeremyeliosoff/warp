@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pygame, math, utils
+import pygame, math, utils, pickle
 
 GlevGamma = 1
 
@@ -109,6 +109,21 @@ class joint:
 		self.jid = jid
 		self.nbrs = nbrs
 
+class surf:
+	inSurf = None
+	outSurfs = []
+	sid = None
+	tid = None
+
+	def __init__(self, inSurf, sid):
+		self.inSurf = inSurf
+		self.sid = sid
+		self.tid = sid
+
+
+
+# FUNCTIONS
+
 def border(img, v=(0, 0, 0, 255)):
     res = img.get_size()
     for x in range(res[0]):
@@ -125,6 +140,13 @@ def avgLs(l):
     for i in l:
         tot += i
     return float(tot)/len(l)
+
+def vX255(v):
+    ret = [f*255 for f in v]
+    if type(v) == type(()):
+        ret = tuple(ret)
+    return ret
+
 
 def makeLevelGrid(img, nLevels):
     res = img.get_size()
@@ -285,23 +307,60 @@ def initJtGrid(img, warpUi):
     print "levThreshs", levThreshs
     print "usedLevelsInit", usedLevelsInit
     print "==============="
-    #print "jtGrid"
-    #print jtGrid
     return jtGrid
     
-def growCurves(warpUi, jtGrid):
+def growCurves(warpUi, jtGrid, inSurfGridPrev):
+    # Old growCurves() return values that are seemingly not needed:
+    # inCurvesGrid, surfDics
+    # Maybe just for debugging:
+    # curves, allCurves, inOutImg, inSurfImgs, 
+
+    # The pickles written AND READ (only surfGrid is in genData):
+    # /surfGrid, /surfDics, /surfCurToPrevSidDic, /surfSidToTid"
     nLevels = warpUi.parmDic("nLevels")
     animIter = warpUi.parmDic("animIter")
     nCurves = 0
     nSurfs = 0
     totJoints = 0
     res = (len(jtGrid), len(jtGrid[0]))
+
+
+    # outSurfs delimit holes; inSurfs do not.
+    curToPrevSidDic = [{}] * nLevels
+    surfs = [[]] * nLevels
+    outSurfs = [[]] * nLevels
+    inSurfs = [[]] * nLevels
     inSurfNow = [False] * nLevels
     curves = [[]] * nLevels
+
+    inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
+
     contCondition = True
+    imgJtInOut = pygame.Surface(res)
+    #imgSurfInOut = pygame.Surface(res)
+    imgInSurfNow = [pygame.Surface(res) for i in range(nLevels)]
+    imgSurfInOuts = [pygame.Surface(res) for i in range(nLevels)]
     for y in range(res[1]):
         for x in range(res[0]):
+            #lev = 1
+            #if lev == 1:
+            for lev in range(nLevels):
+                if inSurfNow[lev]:
+                    index = inSurfs[lev][-1].cid
+                    #print ">>>>>>>>>>>>>>>>> index", index
+                    imgInSurfNow[lev].set_at((x, y), vX255(clrs[index%len(clrs)]))
+                    #imgInSurfNow[lev].set_at((x, y), vX255(clrs[0]))
+                    
+                if len(inSurfs[lev]) > 0:
+                    imgSurfInOuts[lev].set_at((x, y), vX255(clrs[0]))
+                if len(outSurfs[lev]) > 0:
+                    imgSurfInOuts[lev].set_at((x, y), vX255(clrs[1]))
             for lev,jts in jtGrid[x][y].items():
+                #index = 1
+                #if inSurfNow[1]:
+                #    index = 0
+                #print ">>>>>>>>>>>>>>>>> index", index
+                #imgSurfInOut.set_at((x, y), vX255(clrs[index%len(clrs)]))
                 for jt in jts:
                     if jt.cv == None:
                         #print "\t growing curve " + str(nCurves) + "..."
@@ -325,17 +384,115 @@ def growCurves(warpUi, jtGrid):
                                 if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
                                     thisJt = jtt
                             #contCondition = totJoints < animIter
-
                         curves[lev] = curves[lev][:] + [jt.cv]
-                        if not contCondition:
-                            break
-                    if not contCondition:
-                        break
-                if not contCondition:
-                    break
-            if not contCondition:
-                break
 
+#                        if not contCondition:
+#                            break
+#                    if not contCondition:
+#                        break
+#                if not contCondition:
+#                    break
+#            if not contCondition:
+#                break
+                    # Register when entering or leaving a curve.  By convention, only look at y = -1 direction.
+                    if jt.cons[0][1] == -1 or jt.cons[1][1] == -1:
+                        if jt.cons[0][1] == -1:
+                            imgJtInOut.set_at((x, y), (255, 0, 0))
+                        else:
+                            imgJtInOut.set_at((x, y), (0, 255, 0))
+                        imgJtInOut.set_at((x, y), vX255(clrs[jt.cv.cid%len(clrs)]))
+
+                        inSurfNow[lev] = not inSurfNow[lev]
+                        # It APPEARS that inSurf[] and outSurf[] keep track of which
+                        # hole and non-hole curves you are in now (at x,y), respectively.
+                        # TODO: why is this an array rather than int?  Shouldn't
+                        # it only be possible to have >= 1 outSurf and inSurf per lev?
+                        if inSurfNow[lev]:
+                            #Case 1: closing outSurf
+                            if len(outSurfs[lev]) > 0 and outSurfs[lev][-1] == jt.cv:
+                                outSurfs[lev].pop()
+                            #Case 2: this is a new inSurf
+                            else:
+                                if jt.cv.surf == None:
+                                    thisSurf = surf(jt.cv, nSurfs)
+                                    surfs[lev] = surfs[lev][:] + [thisSurf]
+                                    jt.cv.surf = thisSurf
+
+                                    thisSurfDic = {"inSurf": jt.cv, "sid": nSurfs, "outSurfs": []}
+                                    jt.cv.surfDic = thisSurfDic
+                                    nSurfs += 1
+                                if not jt.cv in inSurfs[lev]:
+                                    inSurfs[lev] = inSurfs[lev][:] + [jt.cv]
+                        else:
+                            #Case 3: closing inSurf
+                            if len(inSurfs[lev]) > 0 and inSurfs[lev][-1] == jt.cv:
+                                inSurfs[lev] = inSurfs[lev][:-1]
+                            #Case 3: this is a new outSurf
+                            else:
+                                #if not jt.cv in inSurfs[lev][-1].surf.outSurfs:
+                                if not jt.cv in inSurfs[lev][-1].surfDic["outSurfs"]:
+                                    inSurfs[lev][-1].surf.outSurfs = inSurfs[lev][-1].surf.outSurfs[:] + [jt.cv]
+                                    inSurfs[lev][-1].surfDic["outSurfs"] = inSurfs[lev][-1].surfDic["outSurfs"][:] + [jt.cv]
+                                outSurfs[lev] = outSurfs[lev][:] + [jt.cv]
+
+                        #print "^^^^^^^^^^^^^^^ lev", lev, " outSurfs[lev]", outSurfs[lev], "inSurfs[lev]", inSurfs[lev], "inSurfNow[lev]", inSurfNow[lev]
+#
+#
+#
+            for lev in range(nLevels):
+                #print "inSurfNow[" + str(lev) + "]", inSurfNow[lev]
+                if inSurfNow[lev]:
+                    #print "---------------------- eeeeeeeeeee"
+                    currentSid = inSurfs[lev][-1].surf.sid
+                    inSurfGrid[lev][x][y] = currentSid
+                    if not inSurfGridPrev == None: # NOTE:  this is apparently NOT the same as "if inSurfGridPrev:"
+                        inSurfPrev = inSurfGridPrev[lev][x][y]
+                        if inSurfPrev == None:
+                            print "-->A" # NEVER SEEMS TO HAPPEN!!!  That's cuz it's only if cur != prev
+                            # There are NO surfs at this level at this cell in the previous frame.
+                            if not currentSid in curToPrevSidDic[lev].keys():
+                                print "-->B" # NEVER SEEMS TO HAPPEN!!!
+                                # Looks like some acrobatics here to get around reference/referred issues...
+                                # TODO: At least TRY to make it less fugly.
+                                # Anyway, the idea is, if there's nothing in the prev frame here and you
+                                # haven't recorded anything in curToPrevSidDic, record an empty list.
+                                # TODO: Do you really need above conditional?  Just repeately re-set it?
+                                newLs = curToPrevSidDic[:]
+                                newDic = newLs[lev].copy()
+                                newDic[currentSid] = []
+                                newLs[lev] = newDic.copy()
+                                curToPrevSidDic = newLs[:]
+                        else:
+                            #print "-->C"
+                            # There ARE surfs in this cell in the previous frame.
+                            if currentSid in curToPrevSidDic[lev].keys():
+                                #print "-->D"
+                                # There is already a list for currentSid in curToPrevSidDic,
+                                # append inSurfPrev to that list.
+
+                                if not inSurfPrev in curToPrevSidDic[lev][currentSid]:
+                                    print "-->E" # NEVER SEEMS TO HAPPEN!!!
+                                    #curToPrevSidDic[lev][currentSid].append(inSurfPrev)
+                                    #curToPrevSidDic[lev][currentSid] = curToPrevSidDic[lev][currentSid][:] + [inSurfPrev]
+                                    newLs = curToPrevSidDic[:]
+                                    newDic = newLs[lev].copy()
+                                    newDic[currentSid] = newDic[currentSid][:] + [inSurfPrev]
+                                    newLs[lev] = newDic.copy()
+                                    curToPrevSidDic = newLs[:]
+                            else:
+                                print "-->F"
+                                # There's no list for currentSid, make a new one with just inSurfPrev
+                                newLs = curToPrevSidDic[:]
+                                newDic = newLs[lev].copy()
+                                newDic[currentSid] = [inSurfPrev]
+                                newLs[lev] = newDic.copy()
+                                curToPrevSidDic = newLs[:]
+                                #curToPrevSidDic[lev][currentSid] = [inSurfPrev]
+
+
+    
+
+    # Draw the curve joint to joint - I think this is basically just for debug.
     drawCurveGrid = [[[0, 0, 0] for y in range(res[1])] for x in range(res[0])] 
     curveId = 0
     for lev in range(nLevels):
@@ -352,6 +509,11 @@ def growCurves(warpUi, jtGrid):
 
     drawCurveImg = gridToImgV(drawCurveGrid)
     pygame.image.save(drawCurveImg, warpUi.images["curves"]["path"])
+    pygame.image.save(imgJtInOut, "/tmp/imgJtInOut.jpg")
+    for i in range(nLevels):
+        pygame.image.save(imgSurfInOuts[i], "/tmp/imgSurfInOut%02d.jpg" % i)
+        pygame.image.save(imgInSurfNow[i], "/tmp/imgInSurfNow%02d.jpg" % i)
+    return inSurfGrid
 
 
 def saveLevelImg(warpUi):
@@ -360,5 +522,11 @@ def saveLevelImg(warpUi):
     img = pygame.image.load(warpUi.images["orig"]["path"])
     border(img)
 
-    jtGrid = initJtGrid(img, warpUi)  #TODO just use parmDic
-    growCurves(warpUi, jtGrid)
+    jtGrid = initJtGrid(img, warpUi)
+    inSurfGrid = growCurves(warpUi, jtGrid, None)
+
+    # TEMP TEST!!
+    #tempPath = utils.imgDir + "/ui/glow.jpg"
+    #img2 = pygame.image.load(tempPath)
+    #jtGrid2 = initJtGrid(img2, warpUi)
+    #growCurves(warpUi, jtGrid2, inSurfGrid)
