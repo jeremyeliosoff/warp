@@ -92,6 +92,12 @@ class parmDic:
     
 
 # FUNCTIONS
+
+# os
+def mkDirSafe(path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
 # Colours, rgb + tex
 def rgbInt_to_hex(red, green, blue):
 	"""Return color as #rrggbb for the given color values."""

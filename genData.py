@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pygame, math, utils, pickle
+import pygame, math, utils, pickle, os
 
 GlevGamma = 1
 
@@ -523,8 +523,34 @@ def saveLevelImg(warpUi):
     img = pygame.image.load(warpUi.images["orig"]["path"])
     border(img)
 
+    # Make required dirs.
+    thisDataDir = utils.dataDir + "/" + warpUi.parmDic("image")
+    utils.mkDirSafe(thisDataDir)
+
+    framesDir = thisDataDir + "/frames"
+    utils.mkDirSafe(framesDir)
+
+    fr = warpUi.parmDic("fr")
+    frameDir = framesDir + ("/%05d" % fr)
+    utils.mkDirSafe(frameDir)
+
+    # Load prev inSurfGrid.
+    inSurfGridPrev = None
+    frameDirPrev = framesDir + ("/%05d" % (fr-1))
+    if os.path.exists(frameDirPrev):
+        inSurfGridPrevFile = open(frameDirPrev + "/surfGrid", 'r')
+        inSurfGridPrev = pickle.load(inSurfGridPrevFile)
+        inSurfGridPrevFile.close()
+    
+
+
     jtGrid = initJtGrid(img, warpUi)
-    inSurfGrid = growCurves(warpUi, jtGrid, None)
+    inSurfGrid = growCurves(warpUi, jtGrid, inSurfGridPrev)
+
+    # Save inSurfGrid
+    inSurfGridFile = open(frameDir + "/surfGrid", 'w')
+    pickle.dump(inSurfGrid, inSurfGridFile)
+    inSurfGridFile.close()
 
     # TEMP TEST!!
     #tempPath = utils.imgDir + "/ui/glow.jpg"

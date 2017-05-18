@@ -1,6 +1,6 @@
 ofs
 type float
-val 0.8
+val 0.9
 
 nLevels
 type int
@@ -8,7 +8,7 @@ val 3
 
 fr
 type int
-val 1
+val 9
 
 frPerCycle
 type int
