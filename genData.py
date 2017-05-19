@@ -5,15 +5,25 @@ GlevGamma = 1
 
 outImgs = []
 
-clrs = [
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1],
-        [1, 1, 0],
-        [0, 1, 1],
-        [1, 0, 1],
-        [1, 1, 1],
-        ]
+black = (0, 0, 0)
+grey = (.5, .5, .5)
+white = (1, 1, 1)
+red =	(1, 0, 0)
+green = (0, 1, 0)
+blue =	(0, 0, 1)
+yellow =(1, 1, 0)
+cyan = (0, 1, 1)
+magenta =(1, 0, 1)
+
+rYellow =(1, .5, 0)
+gYellow =(.5, 1, 0)
+gCyan = (0, 1, .5)
+bCyan = (0, .5, 1)
+rMagenta =(1, 0, .5)
+bMagenta =(.5, 0, 1)
+
+
+clrs = [red, green, blue, yellow, cyan, magenta, white, rYellow, gYellow, gCyan, bCyan, rMagenta, bMagenta, grey]
 
 neighboursToConns = {
 	(0, 0,\
@@ -143,6 +153,12 @@ def avgLs(l):
 
 def vX255(v):
     ret = [f*255 for f in v]
+    if type(v) == type(()):
+        ret = tuple(ret)
+    return ret
+
+def vBy255(v):
+    ret = [float(f)/255 for f in v]
     if type(v) == type(()):
         ret = tuple(ret)
     return ret
@@ -339,8 +355,15 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
     contCondition = True
     imgJtInOut = pygame.Surface(res)
     #imgSurfInOut = pygame.Surface(res)
-    imgInSurfNow = [pygame.Surface(res) for i in range(nLevels)]
-    imgSurfInOuts = [pygame.Surface(res) for i in range(nLevels)]
+    debugImgs = ["inSurfNow", "surfInOuts", "inPrev"]
+    debugImgDic = {}
+    for dbi in debugImgs:
+        debugImgDic[dbi] = [pygame.Surface(res) for i in range(nLevels)]
+
+
+    #imgInSurfNow = [pygame.Surface(res) for i in range(nLevels)]
+    #imgSurfInOuts = [pygame.Surface(res) for i in range(nLevels)]
+    allIndeces = []
     for y in range(res[1]):
         for x in range(res[0]):
             #lev = 1
@@ -348,14 +371,20 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
             for lev in range(nLevels):
                 if inSurfNow[lev]:
                     index = inSurfs[lev][-1].cid
+                    if not index in allIndeces:
+                        allIndeces.append(index)
                     #print ">>>>>>>>>>>>>>>>> index", index
-                    imgInSurfNow[lev].set_at((x, y), vX255(clrs[index%len(clrs)]))
-                    #imgInSurfNow[lev].set_at((x, y), vX255(clrs[0]))
+                    debugImgDic["inSurfNow"][lev].set_at((x, y), vX255(clrs[index%len(clrs)]))
                     
+                val = (0, 0, 0)
                 if len(inSurfs[lev]) > 0:
-                    imgSurfInOuts[lev].set_at((x, y), vX255(clrs[0]))
+                    val = vX255(utils.vMult(red, len(inSurfs[lev])))
                 if len(outSurfs[lev]) > 0:
-                    imgSurfInOuts[lev].set_at((x, y), vX255(clrs[1]))
+                    val = utils.vAdd(val, vX255(utils.vMult(green, len(outSurfs[lev]))))
+                if not val == (0, 0, 0):
+                    val = utils.vMult(val, .5)
+                    debugImgDic["surfInOuts"][lev].set_at((x,y), val)
+
             for lev,jts in jtGrid[x][y].items():
                 #index = 1
                 #if inSurfNow[1]:
@@ -440,18 +469,26 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
 #
 #
 #
+            # -- END OF for lev,jts in jtGrid[x][y].items():
+
             for lev in range(nLevels):
                 #print "inSurfNow[" + str(lev) + "]", inSurfNow[lev]
+                inPrevClr = grey
                 if inSurfNow[lev]:
                     #print "---------------------- eeeeeeeeeee"
+                    inPrevClr = green
                     currentSid = inSurfs[lev][-1].surf.sid
                     inSurfGrid[lev][x][y] = currentSid
                     if not inSurfGridPrev == None: # NOTE:  this is apparently NOT the same as "if inSurfGridPrev:"
+                        # There is a surfGrid file for the previous frame.
                         inSurfPrev = inSurfGridPrev[lev][x][y]
                         if inSurfPrev == None:
                             print "-->A" # NEVER SEEMS TO HAPPEN!!!  That's cuz it's only if cur != prev
                             # There are NO surfs at this level at this cell in the previous frame.
+                            inPrevClr = red
                             if not currentSid in curToPrevSidDic[lev].keys():
+                                inPrevClr = blue
+
                                 print "-->B" # NEVER SEEMS TO HAPPEN!!!
                                 # Looks like some acrobatics here to get around reference/referred issues...
                                 # TODO: At least TRY to make it less fugly.
@@ -487,11 +524,13 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
                                 newDic = newLs[lev].copy()
                                 newDic[currentSid] = [inSurfPrev]
                                 newLs[lev] = newDic.copy()
-                                curToPrevSidDic = newLs[:]
-                                #curToPrevSidDic[lev][currentSid] = [inSurfPrev]
 
+                debugImgDic["inPrev"][lev].set_at((x,y), vX255(inPrevClr))
+            # -- END OF for lev in range(nLevels):
+            #debugImgDic["inPrev"][lev].set_at((x,y), green)
 
     
+    print "\n\nallIndeces:", allIndeces
 
     # Draw the curve joint to joint - I think this is basically just for debug.
     drawCurveGrid = [[[0, 0, 0] for y in range(res[1])] for x in range(res[0])] 
@@ -508,12 +547,22 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
                 if jt == None:
                     break
 
+
     drawCurveImg = gridToImgV(drawCurveGrid)
     pygame.image.save(drawCurveImg, warpUi.images["curves"]["path"])
     pygame.image.save(imgJtInOut, "/tmp/imgJtInOut.jpg")
-    for i in range(nLevels):
-        pygame.image.save(imgSurfInOuts[i], "/tmp/imgSurfInOut%02d.jpg" % i)
-        pygame.image.save(imgInSurfNow[i], "/tmp/imgInSurfNow%02d.jpg" % i)
+    fr = warpUi.parmDic("fr")
+    for debugInfo,imgs in debugImgDic.items():
+        for lev in range(nLevels):
+            # Debug images are organized like so (ALL CAPS or numbers means placeholder):
+            # ../dev/warp/data/SEQNAME/v00/debugImg/DATAINFO/lev00/fr.00000.jpg
+            levStr = "lev%02d" % lev
+            levDir = warpUi.seqDataDir + "/debugImg/" + debugInfo + "/" + levStr # TODO: v00
+            utils.mkDirSafe(levDir)
+            imgPath = levDir + ("/" + debugInfo + "." + levStr + ".%05d.jpg" % fr) # TODO: v00
+            pygame.image.save(imgs[lev], imgPath)
+            #pygame.image.save(imgSurfInOuts[i], "/tmp/imgSurfInOut%02d.jpg" % i)
+            #pygame.image.save(imgInSurfNow[i], "/tmp/imgInSurfNow%02d.jpg" % i)
     return inSurfGrid
 
 
@@ -524,19 +573,17 @@ def saveLevelImg(warpUi):
     border(img)
 
     # Make required dirs.
-    thisDataDir = utils.dataDir + "/" + warpUi.parmDic("image")
-    utils.mkDirSafe(thisDataDir)
+    #framesDir = utils.dataDir + "/" + warpUi.parmDic("image") + "/frames"
 
-    framesDir = thisDataDir + "/frames"
-    utils.mkDirSafe(framesDir)
-
-    fr = warpUi.parmDic("fr")
-    frameDir = framesDir + ("/%05d" % fr)
-    utils.mkDirSafe(frameDir)
+    #fr = warpUi.parmDic("fr")
+    #frameDir = framesDir + ("/%05d" % fr)
+    #utils.mkDirSafe(frameDir)
+    frameDir = warpUi.makeFramesDataDir()
 
     # Load prev inSurfGrid.
     inSurfGridPrev = None
-    frameDirPrev = framesDir + ("/%05d" % (fr-1))
+    fr = warpUi.parmDic("fr")
+    frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
     if os.path.exists(frameDirPrev):
         inSurfGridPrevFile = open(frameDirPrev + "/surfGrid", 'r')
         inSurfGridPrev = pickle.load(inSurfGridPrevFile)

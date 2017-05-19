@@ -1,18 +1,18 @@
-ofs
-type float
-val 0.9
-
-nLevels
-type int
-val 3
-
 fr
 type int
-val 9
+val 13
 
 frPerCycle
 type int
 val 10
+
+ofs
+type float
+val 0.4
+
+nLevels
+type int
+val 3
 
 anim
 hidden True

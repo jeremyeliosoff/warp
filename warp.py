@@ -191,7 +191,7 @@ class warpUi():
             print "\n\nXXXXXXX--------thisImg", thisImg, ", imgSplit:", imgSplit
             self.images["orig"]["path"] = utils.seqDir + "/" + self.curImgTitle + "/" + thisImg
         else:
-            self.images["orig"]["path"] = utils.imgTest + "/" + thisImg
+            self.images["orig"]["path"] = utils.imgIn + "/" + thisImg
 
         self.parmDic.parmDic["image"]["val"] = self.curImgTitle
         self.refreshParms()
@@ -204,6 +204,7 @@ class warpUi():
         thisImg = selection
         self.curImgTitle = selection
         self.updateCurImg()
+        self.updateDataDirs()
 
     def setVal(self, parmStr, val):
         if "uiElement" in self.parmDic.parmDic[parmStr]:
@@ -219,10 +220,21 @@ class warpUi():
         self.parmDic.parmDic[parmStr]["val"] = valStr
         self.refreshParms()
 
+    def makeFramesDataDir(self):
+        fr = self.parmDic("fr")
+        frameDir = self.framesDataDir + ("/%05d" % fr)
+        utils.mkDirSafe(frameDir)
+        return frameDir
+
+    def updateDataDirs(self):
+        self.seqDataDir = utils.dataDir + "/" + self.parmDic("image")
+        self.framesDataDir = self.seqDataDir + "/frames"
+
     def __init__(self):
         self.parmDic = utils.parmDic(parmPath)
         print "\n\n\n********** parmDic2"
         print self.parmDic
+        self.updateDataDirs()
         self.root = Tk()
         self.positionWindow()
         self.gridJt = None
@@ -230,7 +242,7 @@ class warpUi():
         self.gridOut = None
         self.curImgTitle = self.parmDic("image")
 
-        sourceImages = os.listdir(utils.imgTest)
+        sourceImages = os.listdir(utils.imgIn)
         sourceImages.sort()
 
         sourceSequences = os.listdir(utils.seqDir)

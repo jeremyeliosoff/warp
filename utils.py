@@ -9,7 +9,7 @@ framesDir = dataDir + "/frames"
 seqDir = projDir + "/seq"
 
 imgDir = projDir + "/img"
-imgTest = imgDir + "/test"
+imgIn = imgDir + "/input"
 imgPlay = imgDir + "/controls/play.jpg"
 imgPause = imgDir + "/controls/pause.jpg"
 
