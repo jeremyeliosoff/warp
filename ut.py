@@ -14,10 +14,10 @@ imgPlay = imgDir + "/controls/play.jpg"
 imgPause = imgDir + "/controls/pause.jpg"
 
 imagePaths = {
-    "orig":imgDir + "/ui/glow.jpg",
+    "source":imgDir + "/ui/glow.jpg",
     "levels":imgDir + "/ui/levelImg.jpg",
     "curves":imgDir + "/ui/curves.jpg",
-    "jtGrid":imgDir + "/ui/jtGrid.jpg",
+    "dbImg1":imgDir + "/ui/jtGrid.jpg",
     "out":imgDir + "/ui/out.jpg",
     "play":imgDir + "/controls/play.jpg",
     "pause":imgDir + "/controls/pause.jpg",
@@ -99,22 +99,18 @@ def mkDirSafe(path):
         os.makedirs(path)
 
 # Colours, rgb + tex
-def rgbInt_to_hex(red, green, blue):
+def rgbInt_to_hex(c):
 	"""Return color as #rrggbb for the given color values."""
-	return '#%02x%02x%02x' % (red, green, blue)
-def rgb_dec_to_int(r, g, b):
-	return int(r*255), int(g*255), int(b*255)
+	return '#%02x%02x%02x' % tuple(c)
+def rgb_dec_to_int(c):
+	return [int(r*255) for r in c]
 
-def rgb_int_to_dec(r, g, b):
-	return float(r)/255, float(g)/255, float(b)/255
+def rgb_int_to_dec(c):
+	return [float(r)/255 for r in c]
 
-def hex_to_rgb(value):
-	r,g,b = hex_to_rgbInt(value)
-	return rgb_dec_to_int(r,g,b)
-
-def rgb_to_hex(r, g, b):
-	rr,gg,bb = rgb_dec_to_int(r, g, b)
-	return rgbInt_to_hex(rr, gg, bb)
+def rgb_to_hex(c):
+	cc = rgb_dec_to_int(c)
+	return rgbInt_to_hex(cc)
 
 
 def isScalar(v):

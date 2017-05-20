@@ -1,6 +1,6 @@
 fr
 type int
-val 13
+val 5
 
 frPerCycle
 type int
@@ -8,7 +8,7 @@ val 10
 
 ofs
 type float
-val 0.4
+val 0.5
 
 nLevels
 type int
@@ -39,4 +39,9 @@ image
 hidden True
 type str
 val testCircles/
+
+dbImg1
+hidden True
+type str
+val surfInOuts
 
