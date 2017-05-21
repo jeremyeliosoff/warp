@@ -84,7 +84,7 @@ class warpUi():
         
 
     def positionWindow(self):
-        w = 800 # width for the Tk root
+        w = 1300 # width for the Tk root
         h = 650 # height for the Tk root
 
         # get screen width and height
@@ -92,18 +92,35 @@ class warpUi():
         hs = self.root.winfo_screenheight() # height of the screen
 
         # calculate x and y coordinates for the Tk root window
-        x = ws - (w/2)
-        y = hs - (h/2)
+        x = ws/4
+        y = hs/4
+        #x = ws - (w/2)
+        #y = hs - (h/2)
 
         # set the dimensions of the screen 
         # and where it is placed
         self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
 
+    def loadImagesBak(self):
+        print "ya"
+        
+    def getDbImgParmNames(self):
+        dbImgNames = []
+        root = "dbImg"
+        for k in self.parmDic.parmDic.keys():
+            if k[:len(root)] == root:
+                dbImgNames.append(k)
+        print "\n\n XXXXXX dbImgNames:", dbImgNames
+        dbImgNames.sort()
+        return dbImgNames
+
+
     def loadImages(self):
         # TODO: I expect at least looking up thisImgPath from ut
         # is wrong -- I think they all get overwritten.
         for k,thisImgPath in ut.imagePaths.items():
+            print "IN loadImages: loading", thisImgPath
             pImg = ImageTk.PhotoImage(Image.open(thisImgPath))
             if k in self.images.keys():
                 self.images[k]["pImg"] = pImg
@@ -111,9 +128,23 @@ class warpUi():
             else:
                 self.images[k]= {"pImg":pImg, "path":thisImgPath}
 
+        #dbImgNames = []
+        #root = "dbImg"
+        #for k in self.parmDic.parmDic.keys():
+        #    if k[:len(root)] == root:
+        #        dbImgNames.append(k)
+        lev = 1
+        for k in self.getDbImgParmNames():
+            path = self.getDebugDirAndImg(self.parmDic(k), lev)[1]
+            pImg = ImageTk.PhotoImage(Image.open(path))
+            self.images[k]= {"pImg":pImg, "path":path}
+
+        print
+
 
     def refreshPhotoImages(self):
         for k,thisDic in self.images.items():
+            print "IN refreshPhotoImages: loading", thisDic["path"]
             pImg = ImageTk.PhotoImage(Image.open(thisDic["path"]))
             if k in self.images.keys():
                 self.images[k]["pImg"] = pImg
@@ -128,12 +159,11 @@ class warpUi():
         return thisButton
 
 
-    def refreshPictures(self): 
-        genData.genData(self)
+    def refreshButtonImages(self): 
         self.refreshPhotoImages()
 
         for butName,butDic in self.images.items():
-            print "butName", butName, "butDic:", butDic
+            #print "butName", butName, "butDic:", butDic
             if "button" in butDic.keys():
                 butDic["button"].configure(image=butDic["pImg"])
 
@@ -152,7 +182,7 @@ class warpUi():
     def animButCmd(self):
         self.setVal("anim", 1 if self.parmDic("anim") == 0 else 0)
         self.refreshParms()
-        self.refreshPictures()
+        self.refreshButtonImages()
 
 
     def saveParmDic(self):
@@ -172,12 +202,14 @@ class warpUi():
 
     def updateDebugImg(self):
         print " -- IN updateDebugImg"
-        lev=0
-        dbImgPath = self.getDebugDirAndImg(self.dbImg1, lev)[1]
-        self.images["dbImg1"]["path"] = dbImgPath
-        self.setVal("dbImg1", self.dbImg1)
-        print "dbImgPath", dbImgPath
-	self.refreshPictures()
+        lev=1
+        for i in range(2):
+            img = [self.dbImg1, self.dbImg2][i]
+            dbImgPath = self.getDebugDirAndImg(img, lev)[1]
+            self.images["dbImg" + str(i+1)]["path"] = dbImgPath
+            self.setVal("dbImg" + str(i+1), img)
+            print "dbImgPath", dbImgPath
+	self.refreshButtonImages()
 
 
     def updateCurImg(self):
@@ -211,22 +243,57 @@ class warpUi():
         self.setVal("image", self.curImgTitle)
         self.refreshParms()
         print "\n\n------- self.images", self.images
-	self.refreshPictures()
+        genData.genData(self)
+	self.refreshButtonImages()
 
 
-    def getImgDebug(self, selection):
-        self.getImg(selection, debug=True)
+    def getImgDebug1(self, selection):
+        if not selection == "----":
+            self.getImg(selection, debugNum=1)
 
-    def getImg(self, selection, debug=False):
-        print "\n\n --getImg: selection:",  selection, ", debug:", debug
+    def getImgDebug2(self, selection):
+        if not selection == "----":
+            self.getImg(selection, debugNum=2)
+
+    def refreshDebugMenus(self): # TODO: Adapt this to be used in intial menu creation.
+        # Debug images.
+        sourceImages = os.listdir(self.seqDataDir + "/debugImg")
+        if sourceImages == []:
+            sourceImages = ["----"]
+        sourceImages.sort()
+
+        i = 0
+        for dbImgName in self.getDbImgParmNames():
+            opMenu = self.dbMenus[dbImgName]["menu"]
+            print "XXXXXXXX------ dir(opMenu['menu'])"
+            for dd in dir(opMenu["menu"]):
+                print dd
+            #opMenu.option_clear()
+            #opMenu["menu"].delete(1, 'end')
+            opMenu["menu"].entryconfig(1, label="wow")
+            print "YYYYYYYYYYYYYYYYYYYY dbImgName", dbImgName, "opMenu", opMenu
+            #for img in sourceImages:
+            #    opMenu['menu'].add_command(label=img, command=Tkinter._setit(self.dbMenus[dbImgName]["var"], img))
+            #opMenu.configure(command=self.getImgDebugFunctions[i])
+            print "ZZZZZZZZZZZZZZZZZZZZ dbImgName", dbImgName, "opMenu", opMenu
+
+
+
+    def getImg(self, selection, debugNum=None):
+        print "\n\n --getImg: selection:",  selection, ", debugNum:", debugNum
         thisImg = selection
-        if debug:
+        if debugNum==1:
             self.dbImg1 = selection
+            self.updateDebugImg()
+        elif debugNum==2:
+            self.dbImg2 = selection
             self.updateDebugImg()
         else:
             self.curImgTitle = selection
             self.updateCurImg()
-        self.updateDataDirs()
+            self.refreshDebugMenus()
+        self.updateDataDirs()  # TODO: this should be part of updateCurImg
+        #self.refreshButtonImages()
 
     def setVal(self, parmStr, val):
         if "uiElement" in self.parmDic.parmDic[parmStr]:
@@ -261,6 +328,7 @@ class warpUi():
 
 
     def __init__(self):
+        self.getImgDebugFunctions = [self.getImgDebug1, self.getImgDebug2]
         self.parmDic = ut.parmDic(parmPath)
         print "\n\n\n********** parmDic2"
         print self.parmDic
@@ -271,7 +339,9 @@ class warpUi():
         self.gridLevels = None
         self.gridOut = None
         self.curImgTitle = self.parmDic("image")
+        # TODO put dbs into array
         self.dbImg1 = self.parmDic("dbImg1")
+        self.dbImg2 = self.parmDic("dbImg2")
 
         sourceImages = os.listdir(ut.imgIn)
         sourceImages.sort()
@@ -339,27 +409,36 @@ class warpUi():
         thisButton.grid(row=row+1, column=1)
         row +=2
 
-        thisButton = self.makeImgButton("dbImg1", self.frameImg)
-        thisButton.grid(row=row)
-        
+
         # Debug images.
         sourceImages = os.listdir(self.seqDataDir + "/debugImg")
+        if sourceImages == []:
+            sourceImages = ["----"]
+
         sourceImages.sort()
 
-        vv = StringVar(self.frameParm)
-        vv.set(self.parmDic.parmDic["dbImg1"]["val"])
-        self.imgChooser = OptionMenu(self.frameImg, vv, *sourceImages, command=self.getImgDebug)
-        self.imgChooser.grid(row=row+1)
+        self.dbMenus = {}
+        i = 0
+        for dbImgName in self.getDbImgParmNames():
+            print "\\\\\\\\\\\\ i", i, "dbImgName", dbImgName
+            thisButton = self.makeImgButton(dbImgName, self.frameImg)
+            thisButton.grid(row=row,column=i)
+            
+            vv = StringVar(self.frameParm)
+            vv.set(self.parmDic.parmDic[dbImgName]["val"])
+            imgChooser = OptionMenu(self.frameImg, vv, *sourceImages, command=self.getImgDebugFunctions[i])
+            imgChooser.grid(row=row+1,column=i)
+            self.dbMenus[dbImgName] = {"menu":imgChooser, "var":vv}
+            i += 1
 
 
-        thisButton = self.makeImgButton("levels", self.frameImg)
-        thisButton.grid(row=row, column=1)
-        row +=1
+        #thisButton = self.makeImgButton("levels", self.frameImg)
+        #thisButton.grid(row=row, column=1)
+        #row +=1
 
         # Update menu-dependent images to reflect current selection.
         self.getImg(self.parmDic("image")) 
-        #self.getImgDebug(self.parmDic("dbImg1"))
-        self.updateDebugImg()
+        #self.updateDebugImg()
         #mainloop() 
         count = 0
         recFr = 0

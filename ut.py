@@ -15,9 +15,6 @@ imgPause = imgDir + "/controls/pause.jpg"
 
 imagePaths = {
     "source":imgDir + "/ui/glow.jpg",
-    "levels":imgDir + "/ui/levelImg.jpg",
-    "curves":imgDir + "/ui/curves.jpg",
-    "dbImg1":imgDir + "/ui/jtGrid.jpg",
     "out":imgDir + "/ui/out.jpg",
     "play":imgDir + "/controls/play.jpg",
     "pause":imgDir + "/controls/pause.jpg",

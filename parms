@@ -1,6 +1,6 @@
 fr
 type int
-val 5
+val 1909
 
 frPerCycle
 type int
@@ -8,7 +8,7 @@ val 10
 
 ofs
 type float
-val 0.5
+val 0.8
 
 nLevels
 type int
@@ -29,19 +29,24 @@ val 0.2,0.39215686274509803,0.5019607843137255
 
 cMid
 type clr
-val 0.6901960784313725,0.16862745098039217,0.2
+val 0.6901960784313725,0.16862745098039217,0.4549019607843137
 
 cLight
 type clr
-val 0.9411764705882353,0.7372549019607844,0.3764705882352941
+val 0.9725490196078431,0.9333333333333333,0.3764705882352941
 
 image
 hidden True
 type str
-val testCircles/
+val mowJog/
 
 dbImg1
 hidden True
 type str
-val surfInOuts
+val inPrev
+
+dbImg2
+hidden True
+type str
+val inPrev
 
