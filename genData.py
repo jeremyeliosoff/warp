@@ -310,10 +310,8 @@ def initJtGrid(img, warpUi):
     
     #warpUi.gridJt = jtGrid[:]
     warpUi.gridOut = gridOut[:]
+    print ">>>>>>>>>>>>>> saving", warpUi.images["out"]["path"]
     pygame.image.save(gridToImgV(warpUi.gridOut),  warpUi.images["out"]["path"])
-    #pygame.image.save(levelImg, warpUi.images["levels"]["path"])
-    with open("out", 'w') as f:
-        f.write(str(jtGrid))
 
 
     print "==============="
@@ -549,8 +547,11 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
             # ../dev/warp/data/SEQNAME/v00/debugImg/DATAINFO/lev00/fr.00000.jpg
             levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, lev)
             ut.mkDirSafe(levDir)
+            print "============== warpUi.seqDataDir:", warpUi.seqDataDir, " -- saving", imgPath
             pygame.image.save(imgs[lev], imgPath)
     return inSurfGrid
+
+    #-- END OF growCurves(warpUi, jtGrid, inSurfGridPrev):
 
 
 def genData(warpUi):

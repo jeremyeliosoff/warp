@@ -13,12 +13,13 @@ imgIn = imgDir + "/input"
 imgPlay = imgDir + "/controls/play.jpg"
 imgPause = imgDir + "/controls/pause.jpg"
 
-imagePaths = {
+# TODO Why is there anim and play
+staticImgPaths = {
     "source":imgDir + "/ui/glow.jpg",
     "out":imgDir + "/ui/out.jpg",
+    "anim":imgDir + "/controls/pause.jpg",
     "play":imgDir + "/controls/play.jpg",
     "pause":imgDir + "/controls/pause.jpg",
-    "anim":imgDir + "/controls/pause.jpg",
 }
 
 # CLASSES

@@ -8,11 +8,11 @@ val 10
 
 ofs
 type float
-val 0.8
+val 0.0
 
 nLevels
 type int
-val 3
+val 7
 
 anim
 hidden True
@@ -38,7 +38,7 @@ val 0.9725490196078431,0.9333333333333333,0.3764705882352941
 image
 hidden True
 type str
-val mowJog/
+val _glow.jpg
 
 dbImg1
 hidden True
@@ -48,5 +48,5 @@ val inPrev
 dbImg2
 hidden True
 type str
-val inPrev
+val inSurfNow
 

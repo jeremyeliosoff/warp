@@ -119,7 +119,7 @@ class warpUi():
     def loadImages(self):
         # TODO: I expect at least looking up thisImgPath from ut
         # is wrong -- I think they all get overwritten.
-        for k,thisImgPath in ut.imagePaths.items():
+        for k,thisImgPath in ut.staticImgPaths.items():
             print "IN loadImages: loading", thisImgPath
             pImg = ImageTk.PhotoImage(Image.open(thisImgPath))
             if k in self.images.keys():
@@ -128,11 +128,6 @@ class warpUi():
             else:
                 self.images[k]= {"pImg":pImg, "path":thisImgPath}
 
-        #dbImgNames = []
-        #root = "dbImg"
-        #for k in self.parmDic.parmDic.keys():
-        #    if k[:len(root)] == root:
-        #        dbImgNames.append(k)
         lev = 1
         for k in self.getDbImgParmNames():
             path = self.getDebugDirAndImg(self.parmDic(k), lev)[1]
@@ -143,6 +138,8 @@ class warpUi():
 
 
     def refreshPhotoImages(self):
+        # TODO you shouldn't have to reload ALL images eg. play, pause - maybe
+        # keep those images "on hand" as PhotoImages that you switch between
         for k,thisDic in self.images.items():
             print "IN refreshPhotoImages: loading", thisDic["path"]
             pImg = ImageTk.PhotoImage(Image.open(thisDic["path"]))
@@ -213,10 +210,11 @@ class warpUi():
 
 
     def updateCurImg(self):
-        thisImg = self.curImgTitle
-        if thisImg[-1] == "/": # Sequence!
+        self.updateDataDirs()
+        imageTitle = self.parmDic("image")
+        if imageTitle[-1] == "/": # Sequence!
             fr = self.parmDic("fr")
-            seqImages = os.listdir(ut.seqDir + "/" + thisImg)
+            seqImages = os.listdir(ut.seqDir + "/" + imageTitle)
             mx = -100
             mn = 10000000
             for img in seqImages:
@@ -232,18 +230,19 @@ class warpUi():
             self.setVal("fr", fr)
 
             print "\n\nYYYYY--------imgSplit:", imgSplit
-            thisImg = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
-            print "\n\nXXXXXXX--------thisImg", thisImg, ", imgSplit:", imgSplit
-            self.images["source"]["path"] = ut.seqDir + "/" + self.curImgTitle + "/" + thisImg
+            imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
+            print "\n\nXXXXXXX--------imgWithFrame", imgWithFrame, ", imgSplit:", imgSplit
+            self.images["source"]["path"] = ut.seqDir + "/" + imageTitle + "/" + imgWithFrame
         else:
-            self.images["source"]["path"] = ut.imgIn + "/" + thisImg
+            self.images["source"]["path"] = ut.imgIn + "/" + imageTitle
 
-        # TODO: Use setVal; do we really need self.curImgTitle
-        #self.parmDic.parmDic["image"]["val"] = self.curImgTitle
-        self.setVal("image", self.curImgTitle)
         self.refreshParms()
         print "\n\n------- self.images", self.images
+
+        ######## THIS IS WHERE DATA GETS GENERATED ########
         genData.genData(self)
+        ###################################################
+
 	self.refreshButtonImages()
 
 
@@ -254,29 +253,6 @@ class warpUi():
     def getImgDebug2(self, selection):
         if not selection == "----":
             self.getImg(selection, debugNum=2)
-
-    def refreshDebugMenus(self): # TODO: Adapt this to be used in intial menu creation.
-        # Debug images.
-        sourceImages = os.listdir(self.seqDataDir + "/debugImg")
-        if sourceImages == []:
-            sourceImages = ["----"]
-        sourceImages.sort()
-
-        i = 0
-        for dbImgName in self.getDbImgParmNames():
-            opMenu = self.dbMenus[dbImgName]["menu"]
-            print "XXXXXXXX------ dir(opMenu['menu'])"
-            for dd in dir(opMenu["menu"]):
-                print dd
-            #opMenu.option_clear()
-            #opMenu["menu"].delete(1, 'end')
-            opMenu["menu"].entryconfig(1, label="wow")
-            print "YYYYYYYYYYYYYYYYYYYY dbImgName", dbImgName, "opMenu", opMenu
-            #for img in sourceImages:
-            #    opMenu['menu'].add_command(label=img, command=Tkinter._setit(self.dbMenus[dbImgName]["var"], img))
-            #opMenu.configure(command=self.getImgDebugFunctions[i])
-            print "ZZZZZZZZZZZZZZZZZZZZ dbImgName", dbImgName, "opMenu", opMenu
-
 
 
     def getImg(self, selection, debugNum=None):
@@ -289,9 +265,10 @@ class warpUi():
             self.dbImg2 = selection
             self.updateDebugImg()
         else:
-            self.curImgTitle = selection
+            print "################ setting selection:", selection
+            self.setVal("image", selection)
             self.updateCurImg()
-            self.refreshDebugMenus()
+            self.updateDebugImg()
         self.updateDataDirs()  # TODO: this should be part of updateCurImg
         #self.refreshButtonImages()
 
@@ -317,6 +294,7 @@ class warpUi():
 
     def updateDataDirs(self):
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
+        print "++++++++++++++ self.seqDataDir:", self.seqDataDir
         self.framesDataDir = self.seqDataDir + "/frames"
 
     def getDebugDirAndImg(self, debugInfo, lev):
@@ -338,7 +316,6 @@ class warpUi():
         self.gridJt = None
         self.gridLevels = None
         self.gridOut = None
-        self.curImgTitle = self.parmDic("image")
         # TODO put dbs into array
         self.dbImg1 = self.parmDic("dbImg1")
         self.dbImg2 = self.parmDic("dbImg2")
@@ -430,11 +407,6 @@ class warpUi():
             imgChooser.grid(row=row+1,column=i)
             self.dbMenus[dbImgName] = {"menu":imgChooser, "var":vv}
             i += 1
-
-
-        #thisButton = self.makeImgButton("levels", self.frameImg)
-        #thisButton.grid(row=row, column=1)
-        #row +=1
 
         # Update menu-dependent images to reflect current selection.
         self.getImg(self.parmDic("image")) 
