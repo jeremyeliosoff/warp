@@ -1,6 +1,6 @@
 fr
 type int
-val 6
+val 465
 
 frPerCycle
 type int
@@ -8,7 +8,7 @@ val 10
 
 ofs
 type float
-val 0.6
+val 0.5
 
 nLevels
 type int
@@ -17,19 +17,19 @@ val 7
 anim
 hidden True
 type int
-val 0
+val 1
 
 kSurf
 type float
-val .6
+val 1
 
 cDark
 type clr
-val 0.2,0.39215686274509803,0.5019607843137255
+val 0.00392156862745098,0.14901960784313725,0.27450980392156865
 
 cMid
 type clr
-val 0.6901960784313725,0.16862745098039217,0.4549019607843137
+val 0.5058823529411764,0.09803921568627451,0.3058823529411765
 
 cLight
 type clr
@@ -38,15 +38,25 @@ val 0.9725490196078431,0.9333333333333333,0.3764705882352941
 image
 hidden True
 type str
-val testCircles
+val grl04_renLev_GOODtillMidEnd
 
 dbImg1
 hidden True
 type str
-val inPrev
+val surfsAndHoles
+
+lev_dbImg1
+hidden True
+type str
+val ALL
 
 dbImg2
 hidden True
 type str
 val inSurfNow
+
+lev_dbImg2
+hidden True
+type str
+val ALL
 

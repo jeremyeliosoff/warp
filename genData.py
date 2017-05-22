@@ -1,10 +1,6 @@
 #!/usr/bin/python
 import pygame, math, ut, pickle, os
 
-GlevGamma = 1
-
-outImgs = []
-
 black = (0, 0, 0)
 grey = (.3, .3, .3)
 white = (1, 1, 1)
@@ -22,8 +18,15 @@ bCyan = (0, .5, 1)
 rMagenta =(1, 0, .5)
 bMagenta =(.5, 0, 1)
 
+lRed =	(1, .5, .5)
+lGreen = (.5, 1, .5)
+lBlue =	(.5, .5, 1)
+lYellow =(1, 1, .5)
+lCyan = (.5, 1, 1)
+lMagenta =(1, .5, 1)
 
-clrs = [red, green, blue, yellow, cyan, magenta, white, rYellow, gYellow, gCyan, bCyan, rMagenta, bMagenta, grey]
+
+clrs = [red, green, blue, yellow, cyan, magenta, white, rYellow, gYellow, gCyan, bCyan, rMagenta, bMagenta, grey, lRed, lGreen, lBlue, lYellow, lCyan, lMagenta]
 
 neighboursToConns = {
 	(0, 0,\
@@ -170,7 +173,6 @@ def makeLevelGrid(img, nLevels):
     for x in range(res[0]):
     	for y in range(res[1]):
             clr = img.get_at((x,y))
-            #print "clr", clr
             intens = avgLs(clr[:-1])/255.0
             levelGrid[x][y] = int(intens * (nLevels+1))/(nLevels) #256 not 255 to cuz white pixels waffled bw 254-255
             #print "lev", levelGrid[x][y]
@@ -216,42 +218,6 @@ def vecToClr(v):
     return tuple(ret)
 
 
-def jtGridToImg(grid, warpUi):
-    nLevels = warpUi.parmDic("nLevels")
-    res = (len(grid), len(grid[0]))
-    ret = pygame.Surface(res)
-    usedLevels = []
-    for x in range(res[0]):
-        for y in range(res[1]):
-            v = 0
-            vec = [0, 0, 0]
-
-            thisDic = grid[x][y]
-            hasJoints = False
-            for k in thisDic.keys():
-                hasJoints = True
-                levWOfs = thisDic[k][0].level
-                thisVal = levWOfs/(nLevels)
-                #thisVal = float(k)/(nLevels-1)
-                hm = heatMap(thisVal, warpUi.parmDic)
-                vec = ut.vAdd(vec, hm)
-                if not k in usedLevels:
-                    usedLevels.append(k)
-                dicc = grid[x][y]
-                jts = dicc[k]
-                levs = [i.level for i in jts]
-                if thisVal > 1:
-                    print "<<<<<<<<<<<<<<<< k", k, ", thisVal", thisVal, "hm", hm, ", vec", vec, "levs", levs
-
-            
-            #print ">>>>>>>>>>>> v", v
-            #ret.set_at((x, y), (v, v, v, 255))
-            #print "-----vec", vec
-            if hasJoints:
-                warpUi.gridOut[x][y] = vec
-            ret.set_at((x, y), vecToClr(vec))
-    print "usedLevels", usedLevels
-    return ret
 
 
 
@@ -314,6 +280,7 @@ def initJtGrid(img, warpUi):
     renPath = warpUi.images["ren"]["path"]
     renSeqDir = "/".join(renPath.split("/")[:-1])
     ut.mkDirSafe(renSeqDir)
+    print "||||||||||| saving", renPath
     pygame.image.save(gridToImgV(warpUi.gridOut),  renPath)
 
 
@@ -355,28 +322,27 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
 
     contCondition = True
     imgJtInOut = pygame.Surface(res)
-    #imgSurfInOut = pygame.Surface(res)
     dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev"]
     dbImgDic = {}
     for dbi in dbImgs:
-        dbImgDic[dbi] = [pygame.Surface(res) for i in range(nLevels)][:]
+        # The last cell - that is, [nLevels] - is reserved for "all"
+        dbImgDic[dbi] = [pygame.Surface(res) for i in range(nLevels+1)][:]
 
 
-    #imgInSurfNow = [pygame.Surface(res) for i in range(nLevels)]
-    #imgSurfInOuts = [pygame.Surface(res) for i in range(nLevels)]
     allIndeces = []
     for y in range(res[1]):
         for x in range(res[0]):
             #print "x,y", x, y
-            #lev = 1
-            #if lev == 1:
             for lev in range(nLevels):
+                levMult = (lev+1.0)/nLevels
                 if inSurfNow[lev]:
                     index = inSurfs[lev][-1].cid
                     if not index in allIndeces:
                         allIndeces.append(index)
                     #print ">>>>>>>>>>>>>>>>> index", index
-                    dbImgDic["inSurfNow"][lev].set_at((x, y), vX255(clrs[index%len(clrs)]))
+                    inSurfNowVal = vX255(clrs[index%len(clrs)])
+                    dbImgDic["inSurfNow"][lev].set_at((x, y), inSurfNowVal)
+                    dbImgDic["inSurfNow"][nLevels].set_at((x, y), ut.vMult(inSurfNowVal, levMult))
                     
                 val = (0, 0, 0)
                 if len(inSurfs[lev]) > 0:
@@ -388,6 +354,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
                     val = ut.clamp(val, 0, 255)
                     #print "xxxxxx val", val
                     dbImgDic["surfsAndHoles"][lev].set_at((x,y), val)
+                    dbImgDic["surfsAndHoles"][nLevels].set_at((x,y), ut.vMult(val, levMult))
 
             for lev,jts in jtGrid[x][y].items():
                 for jt in jts:
@@ -471,8 +438,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
             # -- END OF for lev,jts in jtGrid[x][y].items():
 
             for lev in range(nLevels):
+                levMult = (lev+1.0)/nLevels
                 #print "inSurfNow[" + str(lev) + "]", inSurfNow[lev]
-                inPrevClr = grey
+                inPrevClr = grey if lev == 0 else None
                 if inSurfNow[lev]:
                     #print "---------------------- eeeeeeeeeee"
                     inPrevClr = green
@@ -520,7 +488,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
                                 newDic[currentSid] = [inSurfPrev]
                                 newLs[lev] = newDic.copy()
 
-                dbImgDic["inPrev"][lev].set_at((x,y), vX255(inPrevClr))
+                if inPrevClr:
+                    dbImgDic["inPrev"][lev].set_at((x,y), vX255(inPrevClr))
+                    dbImgDic["inPrev"][nLevels].set_at((x,y), ut.vMult(vX255(inPrevClr), levMult))
             # -- END OF for lev in range(nLevels):
             #dbImgDic["inPrev"][lev].set_at((x,y), green)
 
@@ -547,12 +517,14 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
     #pygame.image.save(drawCurveImg, warpUi.images["curves"]["path"])
     fr = warpUi.parmDic("fr")
     for debugInfo,imgs in dbImgDic.items():
-        for lev in range(nLevels):
+        for lev in range(nLevels+1):
             # Debug images are organized like so (ALL CAPS or numbers means placeholder):
             # ../dev/warp/data/SEQNAME/v00/debugImg/DATAINFO/lev00/fr.00000.jpg
-            levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, lev)
+            levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+            levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, levStr)
             ut.mkDirSafe(levDir)
             #print "============== warpUi.seqDataDir:", warpUi.seqDataDir, " -- saving", imgPath
+            print "|||||||||||-- saving debug img", imgPath
             pygame.image.save(imgs[lev], imgPath)
     return inSurfGrid
 
@@ -560,17 +532,16 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
 
 
 def genData(warpUi):
+    print "\n\n\n"
+    print "#####################"
+    print "### DOING genData ###"
+    print "#####################"
     nLevels = warpUi.parmDic("nLevels")
     ofs = warpUi.parmDic("ofs")
     img = pygame.image.load(warpUi.images["source"]["path"])
     border(img)
 
     # Make required dirs.
-    #framesDir = ut.dataDir + "/" + warpUi.parmDic("image") + "/frames"
-
-    #fr = warpUi.parmDic("fr")
-    #frameDir = framesDir + ("/%05d" % fr)
-    #ut.mkDirSafe(frameDir)
     frameDir = warpUi.makeFramesDataDir()
 
     # Load prev inSurfGrid.

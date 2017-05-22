@@ -126,9 +126,10 @@ class warpUi():
             else:
                 self.images[k]= {"path":thisImgPath}
 
-        lev = 1
         for k in self.getDbImgParmNames():
+            lev = self.parmDic("lev_" + k)
             path = self.getDebugDirAndImg(self.parmDic(k), lev)[1]
+            print "BBBBBBb k:", k, ", path", path
             self.images[k]= {"path":path}
 
         imgPath = self.getSourceImgPath()
@@ -144,6 +145,9 @@ class warpUi():
             else:
                 # this is a dud/placeholder image.
                 self.images[img]["pImg"] = ImageTk.PhotoImage(Image.open(self.images["play"]["path"]))
+        print "\n\nVVVVVVVVVVv self.images:"
+        for k,v in self.images.items():
+            print k, v
 
 
 
@@ -211,9 +215,10 @@ class warpUi():
 
     def updateDebugImg(self):
         print " -- IN updateDebugImg"
-        lev=1
+        #self.updateDataDirs()  # TODO: should this be part of updateCurImg?
         for i in range(2):
-            img = [self.dbImg1, self.dbImg2][i]
+            img = self.parmDic("dbImg" + str(i+1))
+            lev = self.parmDic("lev_dbImg" + str(i+1))
             dbImgPath = self.getDebugDirAndImg(img, lev)[1]
             self.images["dbImg" + str(i+1)]["path"] = dbImgPath
             self.setVal("dbImg" + str(i+1), img)
@@ -228,6 +233,8 @@ class warpUi():
         mx = -100
         mn = 10000000
         for img in seqImages:
+            if img == "bak" or not "." in img:
+                continue
             print "--------img", img
             imgSplit = img.split(".")
             thisFr = int(imgSplit[-2])
@@ -257,6 +264,7 @@ class warpUi():
 	self.refreshButtonImages()
 
 
+    # This is a horrendous mess - must be a cleaner way to get debug num + lev num
     def getImgDebug1(self, selection):
         if not selection == "----":
             self.getImg(selection, debugNum=1)
@@ -265,23 +273,33 @@ class warpUi():
         if not selection == "----":
             self.getImg(selection, debugNum=2)
 
+    def getLevDebug1(self, selection):
+        if not selection == "----":
+            self.getImg(selection, debugNumLev=1)
 
-    def getImg(self, selection, debugNum=None):
+    def getLevDebug2(self, selection):
+        if not selection == "----":
+            self.getImg(selection, debugNumLev=2)
+
+
+
+    def getImg(self, selection, debugNum=None, debugNumLev=None):
         print "\n\n --getImg: selection:",  selection, ", debugNum:", debugNum
         thisImg = selection
-        if debugNum==1:
-            self.dbImg1 = selection
+        if debugNum:
+            self.setVal("dbImg" + str(debugNum), selection)
+            self.updateDataDirs()
             self.updateDebugImg()
-        elif debugNum==2:
-            self.dbImg2 = selection
+        elif debugNumLev:
+            self.setVal("lev_dbImg" + str(debugNumLev), selection)
+            self.updateDataDirs()
             self.updateDebugImg()
         else:
             print "################ setting selection:", selection
             self.setVal("image", selection)
+            self.updateDataDirs()
             self.updateCurImg()
             self.updateDebugImg()
-        self.updateDataDirs()  # TODO: this should be part of updateCurImg
-        #self.refreshButtonImages()
 
     def setVal(self, parmStr, val):
         if "uiElement" in self.parmDic.parmDic[parmStr]:
@@ -309,15 +327,18 @@ class warpUi():
         self.framesDataDir = self.seqDataDir + "/frames"
 
     def getDebugDirAndImg(self, debugInfo, lev):
-        levStr = "lev%02d" % lev
         fr = self.parmDic("fr")
-        levDir = self.seqDataDir + "/debugImg/" + debugInfo + "/" + levStr # TODO: v00
-        imgPath = levDir + ("/" + debugInfo + "." + levStr + ".%05d.jpg" % fr) # TODO: v00
+        levDir = self.seqDataDir + "/debugImg/" + debugInfo + "/" + lev # TODO: v00
+        print ",,,,,,,,,,,,,,,, levDir", levDir
+        imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
         return levDir,imgPath
 
 
     def __init__(self):
-        self.getImgDebugFunctions = [self.getImgDebug1, self.getImgDebug2]
+        self.getImgDebugFunctions = {
+                "name":[self.getImgDebug1, self.getImgDebug2],
+                "lev":[self.getLevDebug1, self.getLevDebug2]
+        }
         self.parmDic = ut.parmDic(parmPath)
         print "\n\n\n********** parmDic2"
         print self.parmDic
@@ -328,9 +349,6 @@ class warpUi():
         self.gridJt = None
         self.gridLevels = None
         self.gridOut = None
-        # TODO put dbs into array
-        self.dbImg1 = self.parmDic("dbImg1")
-        self.dbImg2 = self.parmDic("dbImg2")
 
         sourceImages = os.listdir(ut.imgIn)
         sourceImages.sort()
@@ -373,7 +391,6 @@ class warpUi():
         thisButton = self.makeImgButton("anim", self.frameParm)
 	thisButton.configure(command=lambda:self.animButCmd())
 
-	#thisButton = Button(self.frameParm, command=lambda:self.animButCmd())
         if self.parmDic("anim") == 1:
             thisButton.configure(image=self.pImgPause)
         else:
@@ -406,18 +423,32 @@ class warpUi():
         sourceImages.sort()
 
         self.dbMenus = {}
-        i = 0
+        col = 0
         for dbImgName in self.getDbImgParmNames():
-            print "\\\\\\\\\\\\ i", i, "dbImgName", dbImgName
-            thisButton = self.makeImgButton(dbImgName, self.frameImg)
-            thisButton.grid(row=row,column=i)
+            print "\\\\\\\\\\\\ col", col, "dbImgName", dbImgName
+            frameDbParm = Frame(self.frameImg)
+            thisButton = self.makeImgButton(dbImgName, frameDbParm)
+            thisButton.grid()
             
-            vv = StringVar(self.frameParm)
-            vv.set(self.parmDic.parmDic[dbImgName]["val"])
-            imgChooser = OptionMenu(self.frameImg, vv, *sourceImages, command=self.getImgDebugFunctions[i])
-            imgChooser.grid(row=row+1,column=i)
-            self.dbMenus[dbImgName] = {"menu":imgChooser, "var":vv}
-            i += 1
+            frameDbMenus = Frame(frameDbParm)
+            frameDbMenus.grid(row=1)
+            varName = StringVar(self.frameParm)
+            # TODO: Replace with parmDic(dbImgName) -- look for other instances that need similar replacement.
+            varName.set(self.parmDic.parmDic[dbImgName]["val"])
+            imgChooser = OptionMenu(frameDbMenus, varName, *sourceImages, command=self.getImgDebugFunctions["name"][col])
+            imgChooser.grid()
+
+            varLev = StringVar(self.frameParm)
+            varLev.set(self.parmDic("lev_" + dbImgName))
+            levs = ["lev%02d" % i for i in range(self.parmDic("nLevels"))] + ["ALL"]
+            levChooser = OptionMenu(frameDbMenus, varLev, *levs, command=self.getImgDebugFunctions["lev"][col])
+            levChooser.grid(row=0,column=1)
+
+            # TODO: varName and varLev are not yet used.
+            self.dbMenus[dbImgName] = {"menu":imgChooser, "varName":vv, "varLev":varLev}
+            frameDbParm.grid(row=row,column=col)
+            col += 1
+
 
         # Update menu-dependent images to reflect current selection.
         self.getImg(self.parmDic("image")) 
