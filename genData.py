@@ -310,8 +310,11 @@ def initJtGrid(img, warpUi):
     
     #warpUi.gridJt = jtGrid[:]
     warpUi.gridOut = gridOut[:]
-    print ">>>>>>>>>>>>>> saving", warpUi.images["out"]["path"]
-    pygame.image.save(gridToImgV(warpUi.gridOut),  warpUi.images["out"]["path"])
+    print ">>>>>>>>>>>>>> saving", warpUi.images["ren"]["path"]
+    renPath = warpUi.images["ren"]["path"]
+    renSeqDir = "/".join(renPath.split("/")[:-1])
+    ut.mkDirSafe(renSeqDir)
+    pygame.image.save(gridToImgV(warpUi.gridOut),  renPath)
 
 
     print "==============="
@@ -382,6 +385,8 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
                     val = ut.vAdd(val, vX255(ut.vMult(green, len(inHoles[lev]))))
                 if not val == (0, 0, 0):
                     val = ut.vMult(val, .5)
+                    val = ut.clamp(val, 0, 255)
+                    #print "xxxxxx val", val
                     dbImgDic["surfsAndHoles"][lev].set_at((x,y), val)
 
             for lev,jts in jtGrid[x][y].items():
@@ -547,7 +552,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
             # ../dev/warp/data/SEQNAME/v00/debugImg/DATAINFO/lev00/fr.00000.jpg
             levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, lev)
             ut.mkDirSafe(levDir)
-            print "============== warpUi.seqDataDir:", warpUi.seqDataDir, " -- saving", imgPath
+            #print "============== warpUi.seqDataDir:", warpUi.seqDataDir, " -- saving", imgPath
             pygame.image.save(imgs[lev], imgPath)
     return inSurfGrid
 

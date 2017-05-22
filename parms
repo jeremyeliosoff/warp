@@ -1,6 +1,6 @@
 fr
 type int
-val 1909
+val 6
 
 frPerCycle
 type int
@@ -8,7 +8,7 @@ val 10
 
 ofs
 type float
-val 0.0
+val 0.6
 
 nLevels
 type int
@@ -38,7 +38,7 @@ val 0.9725490196078431,0.9333333333333333,0.3764705882352941
 image
 hidden True
 type str
-val _glow.jpg
+val testCircles
 
 dbImg1
 hidden True

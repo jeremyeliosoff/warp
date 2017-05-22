@@ -121,20 +121,31 @@ class warpUi():
         # is wrong -- I think they all get overwritten.
         for k,thisImgPath in ut.staticImgPaths.items():
             print "IN loadImages: loading", thisImgPath
-            pImg = ImageTk.PhotoImage(Image.open(thisImgPath))
             if k in self.images.keys():
-                self.images[k]["pImg"] = pImg
                 self.images[k]["path"] = thisImgPath
             else:
-                self.images[k]= {"pImg":pImg, "path":thisImgPath}
+                self.images[k]= {"path":thisImgPath}
 
         lev = 1
         for k in self.getDbImgParmNames():
             path = self.getDebugDirAndImg(self.parmDic(k), lev)[1]
-            pImg = ImageTk.PhotoImage(Image.open(path))
-            self.images[k]= {"pImg":pImg, "path":path}
+            self.images[k]= {"path":path}
 
-        print
+        imgPath = self.getSourceImgPath()
+        self.images["source"] = {"path":imgPath}
+        self.images["ren"] = {"path":imgPath.replace("/seq/","/ren/")}
+
+        self.images["anim"] = {"path":self.images["play"]["path"]}
+
+        for img in self.images.keys():
+            path = self.images[img]["path"]
+            if os.path.exists(path):
+                self.images[img]["pImg"] = ImageTk.PhotoImage(Image.open(path))
+            else:
+                # this is a dud/placeholder image.
+                self.images[img]["pImg"] = ImageTk.PhotoImage(Image.open(self.images["play"]["path"]))
+
+
 
 
     def refreshPhotoImages(self):
@@ -150,6 +161,7 @@ class warpUi():
 
 
     def makeImgButton(self, name, frameParent):
+        print "name: ", name
         pImg = self.images[name]["pImg"]
 	thisButton = Button(frameParent, image=pImg, command=lambda:self.imgButCmd())
 	self.images[name]["button"] = thisButton
@@ -208,36 +220,35 @@ class warpUi():
             print "dbImgPath", dbImgPath
 	self.refreshButtonImages()
 
+    def getSourceImgPath(self):
+        imageTitle = self.parmDic("image")
+        fr = self.parmDic("fr")
+        seqImages = os.listdir(ut.seqDir + "/" + imageTitle)
+        seqImages.sort()
+        mx = -100
+        mn = 10000000
+        for img in seqImages:
+            print "--------img", img
+            imgSplit = img.split(".")
+            thisFr = int(imgSplit[-2])
+            if thisFr < mn:
+                mn = thisFr
+            if thisFr > mx:
+                mx = thisFr
+
+        fr = ut.clamp(fr, mn, mx)
+        self.setVal("fr", fr)
+
+        imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
+        return ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
 
     def updateCurImg(self):
-        self.updateDataDirs()
-        imageTitle = self.parmDic("image")
-        if imageTitle[-1] == "/": # Sequence!
-            fr = self.parmDic("fr")
-            seqImages = os.listdir(ut.seqDir + "/" + imageTitle)
-            mx = -100
-            mn = 10000000
-            for img in seqImages:
-                print "--------img", img
-                imgSplit = img.split(".")
-                thisFr = int(imgSplit[-2])
-                if thisFr < mn:
-                    mn = thisFr
-                if thisFr > mx:
-                    mx = thisFr
-
-            fr = ut.clamp(fr, mn, mx)
-            self.setVal("fr", fr)
-
-            print "\n\nYYYYY--------imgSplit:", imgSplit
-            imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
-            print "\n\nXXXXXXX--------imgWithFrame", imgWithFrame, ", imgSplit:", imgSplit
-            self.images["source"]["path"] = ut.seqDir + "/" + imageTitle + "/" + imgWithFrame
-        else:
-            self.images["source"]["path"] = ut.imgIn + "/" + imageTitle
-
+        imgPath = self.getSourceImgPath()
+        #self.images["source"]["path"] = ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
+        self.images["source"]["path"] = imgPath
+        self.images["ren"]["path"] = imgPath.replace("/seq/","/ren/")
         self.refreshParms()
-        print "\n\n------- self.images", self.images
+        #print "\n\n------- self.images", self.images
 
         ######## THIS IS WHERE DATA GETS GENERATED ########
         genData.genData(self)
@@ -312,6 +323,7 @@ class warpUi():
         print self.parmDic
         self.updateDataDirs()
         self.root = Tk()
+        self.root.wm_title("WARP")
         self.positionWindow()
         self.gridJt = None
         self.gridLevels = None
@@ -326,21 +338,18 @@ class warpUi():
         sourceSequences = os.listdir(ut.seqDir)
         sourceSequences.sort()
 
-        sourceSequences = [ i + "/" for i in sourceSequences] 
-        sourceImages = sourceSequences + sourceImages
-
         self.root.bind('<Escape>', lambda e: self.root.destroy())
-        self.pImgPlay = ImageTk.PhotoImage(Image.open(ut.imgPlay))
-        self.pImgPause = ImageTk.PhotoImage(Image.open(ut.imgPause))
 
         self.images = {}
         self.loadImages()
+
+        self.pImgPlay = ImageTk.PhotoImage(Image.open(self.images["play"]["path"]))
+        self.pImgPause = ImageTk.PhotoImage(Image.open(self.images["pause"]["path"]))
 
         self.frameMaster = Frame(self.root)
 	self.frameMaster.grid()
 
         self.frameParm = Frame(self.frameMaster)
-        #self.frameParm.pack(fill=BOTH)
         row = 0
 
         # Recreate UI button
@@ -356,13 +365,15 @@ class warpUi():
 
         vv = StringVar(self.frameParm)
         vv.set(self.parmDic.parmDic["image"]["val"])
-        self.imgChooser = OptionMenu(self.frameParm, vv, *sourceImages, command=self.getImg)
+        self.imgChooser = OptionMenu(self.frameParm, vv, *sourceSequences, command=self.getImg)
         self.imgChooser.grid(row=row, column=1)
         row += 1
 
         # Anim button
         thisButton = self.makeImgButton("anim", self.frameParm)
 	thisButton.configure(command=lambda:self.animButCmd())
+
+	#thisButton = Button(self.frameParm, command=lambda:self.animButCmd())
         if self.parmDic("anim") == 1:
             thisButton.configure(image=self.pImgPause)
         else:
@@ -380,9 +391,9 @@ class warpUi():
         thisButton.grid(row=row+1)
 
 
-        thisLabel = Label(self.frameImg, text="out")
+        thisLabel = Label(self.frameImg, text="ren")
         thisLabel.grid(row=row,column=1)
-        thisButton = self.makeImgButton("out", self.frameImg)
+        thisButton = self.makeImgButton("ren", self.frameImg)
         thisButton.grid(row=row+1, column=1)
         row +=2
 
@@ -410,8 +421,6 @@ class warpUi():
 
         # Update menu-dependent images to reflect current selection.
         self.getImg(self.parmDic("image")) 
-        #self.updateDebugImg()
-        #mainloop() 
         count = 0
         recFr = 0
         debugFile = "/tmp/frOfs"
@@ -430,9 +439,6 @@ class warpUi():
                 ofs = fr/float(frPerCycle) % 1
                 self.setVal("ofs", ofs)
                 if recFr < frPerCycle:
-                    outPath = self.images["out"]["path"]
-                    destPath = outPath.replace("jpg","%02d.jpg" % recFr)
-                    os.system("cp " + outPath + " " + destPath)
                     os.system("echo fr" + str(fr) + "- ofs" + str(ofs) + ">>" + debugFile)
                     recFr += 1
 

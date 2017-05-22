@@ -15,9 +15,6 @@ imgPause = imgDir + "/controls/pause.jpg"
 
 # TODO Why is there anim and play
 staticImgPaths = {
-    "source":imgDir + "/ui/glow.jpg",
-    "out":imgDir + "/ui/out.jpg",
-    "anim":imgDir + "/controls/pause.jpg",
     "play":imgDir + "/controls/play.jpg",
     "pause":imgDir + "/controls/pause.jpg",
 }
@@ -94,6 +91,7 @@ class parmDic:
 # os
 def mkDirSafe(path):
     if not os.path.isdir(path):
+        print "Making dir:", path
         os.makedirs(path)
 
 # Colours, rgb + tex
