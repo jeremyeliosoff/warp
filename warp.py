@@ -79,7 +79,6 @@ class warpUi():
                 thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
             row += 1
-        self.frameParm.grid(row=0, column=0, sticky=N)
         return row
         
 
@@ -119,12 +118,6 @@ class warpUi():
     def loadImages(self):
         # TODO: I expect at least looking up thisImgPath from ut
         # is wrong -- I think they all get overwritten.
-        for k,thisImgPath in ut.staticImgPaths.items():
-            print "IN loadImages: loading", thisImgPath
-            if k in self.images.keys():
-                self.images[k]["path"] = thisImgPath
-            else:
-                self.images[k]= {"path":thisImgPath}
 
         for k in self.getDbImgParmNames():
             lev = self.parmDic("lev_" + k)
@@ -132,19 +125,29 @@ class warpUi():
             print "BBBBBBb k:", k, ", path", path
             self.images[k]= {"path":path}
 
+
         imgPath = self.getSourceImgPath()
         self.images["source"] = {"path":imgPath}
         self.images["ren"] = {"path":imgPath.replace("/seq/","/ren/")}
 
-        self.images["anim"] = {"path":self.images["play"]["path"]}
+        self.images["anim"] = {"pImg":self.staticImages["play"]}
+        self.images["rec"] = {"pImg":self.staticImages["recOff"]}
+        #self.images["rew"] = {"path":self.images["rew"]["path"]}
+
+        print "images:"
+        for i,k in self.images.items():
+            print i, k
 
         for img in self.images.keys():
-            path = self.images[img]["path"]
-            if os.path.exists(path):
-                self.images[img]["pImg"] = ImageTk.PhotoImage(Image.open(path))
-            else:
-                # this is a dud/placeholder image.
-                self.images[img]["pImg"] = ImageTk.PhotoImage(Image.open(self.images["play"]["path"]))
+            if not img in (self.staticImageNames + self.varyingStaticImageNames):
+                path = self.images[img]["path"]
+                print "000000000 img:", img
+                print "Checking existence of", path
+                #if os.path.exists(path):
+                self.images[img]["pImg"] = self.safeLoad(path)
+                #else:
+                #    # this is a dud/placeholder image.
+                #    self.images[img]["pImg"] = self.safeLoad(self.staticImages["play"])
         print "\n\nVVVVVVVVVVv self.images:"
         for k,v in self.images.items():
             print k, v
@@ -156,12 +159,13 @@ class warpUi():
         # TODO you shouldn't have to reload ALL images eg. play, pause - maybe
         # keep those images "on hand" as PhotoImages that you switch between
         for k,thisDic in self.images.items():
-            print "IN refreshPhotoImages: loading", thisDic["path"]
-            pImg = ImageTk.PhotoImage(Image.open(thisDic["path"]))
-            if k in self.images.keys():
-                self.images[k]["pImg"] = pImg
-            else:
-                self.images[k]= {"pImg":pImg}
+            if not k in (self.staticImageNames + self.varyingStaticImageNames):
+                print "IN refreshPhotoImages: loading", thisDic["path"]
+                pImg = self.safeLoad(thisDic["path"])
+                if k in self.images.keys():
+                    self.images[k]["pImg"] = pImg
+                else:
+                    self.images[k]= {"pImg":pImg}
 
 
     def makeImgButton(self, name, frameParent):
@@ -181,9 +185,14 @@ class warpUi():
                 butDic["button"].configure(image=butDic["pImg"])
 
         if self.parmDic("anim") == 1:
-            self.images["anim"]["button"].configure(image=self.pImgPause)
+            self.images["anim"]["button"].configure(image=self.staticImages["pause"])
         else:
-            self.images["anim"]["button"].configure(image=self.pImgPlay)
+            self.images["anim"]["button"].configure(image=self.staticImages["play"])
+
+        if self.record:
+            self.images["rec"]["button"].configure(image=self.staticImages["recOn"])
+        else:
+            self.images["rec"]["button"].configure(image=self.staticImages["recOff"])
 
 
     def imgButCmd(self):
@@ -192,9 +201,20 @@ class warpUi():
         self.updateCurImg()
         self.updateDebugImg()
 
+    def setFrAndUpdate(self, fr):
+        self.setVal("fr", fr)
+        self.refreshParms()
+        self.updateDataDirs()
+        self.updateCurImg()
+        self.updateDebugImg()
+
     def animButCmd(self):
         self.setVal("anim", 1 if self.parmDic("anim") == 0 else 0)
         self.refreshParms()
+        self.refreshButtonImages()
+
+    def recButCmd(self):
+        self.record = False if self.record else True
         self.refreshButtonImages()
 
 
@@ -244,6 +264,8 @@ class warpUi():
                 mx = thisFr
 
         fr = ut.clamp(fr, mn, mx)
+        self.frStart = mn
+        self.frEnd = mx
         self.setVal("fr", fr)
 
         imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
@@ -258,7 +280,8 @@ class warpUi():
         #print "\n\n------- self.images", self.images
 
         ######## THIS IS WHERE DATA GETS GENERATED ########
-        genData.genData(self)
+        if self.record:
+            genData.genData(self)
         ###################################################
 
 	self.refreshButtonImages()
@@ -332,6 +355,12 @@ class warpUi():
         print ",,,,,,,,,,,,,,,, levDir", levDir
         imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
         return levDir,imgPath
+    def safeLoad(self, path):
+        if os.path.exists(path):
+            img = ImageTk.PhotoImage(Image.open(path))
+        else:
+            img = self.staticImages["pause"]
+        return img
 
 
     def __init__(self):
@@ -349,6 +378,9 @@ class warpUi():
         self.gridJt = None
         self.gridLevels = None
         self.gridOut = None
+        self.record = False
+        self.frEnd = -100
+        self.frStart = 10000000
 
         sourceImages = os.listdir(ut.imgIn)
         sourceImages.sort()
@@ -358,16 +390,26 @@ class warpUi():
 
         self.root.bind('<Escape>', lambda e: self.root.destroy())
 
+
+        # Load images.
+        self.staticImageNames = ["play", "pause", "rew", "stepBack", "stepFwd", "ffw", "recOn", "recOff"]
+        self.varyingStaticImageNames = ["anim", "rec"]
+        self.staticImages = {}
+        base = ut.imgDir + "/controls/"
+        for name in self.staticImageNames:
+            self.staticImages[name] = ImageTk.PhotoImage(Image.open(base + name + ".jpg"))
         self.images = {}
         self.loadImages()
 
-        self.pImgPlay = ImageTk.PhotoImage(Image.open(self.images["play"]["path"]))
-        self.pImgPause = ImageTk.PhotoImage(Image.open(self.images["pause"]["path"]))
 
         self.frameMaster = Frame(self.root)
 	self.frameMaster.grid()
 
-        self.frameParm = Frame(self.frameMaster)
+        self.frameParmAndControls = Frame(self.frameMaster)
+        self.frameParmAndControls.grid(row=0, column=0, sticky=N)
+
+        self.frameParm = Frame(self.frameParmAndControls)
+        self.frameParm.grid(row=0, column=0, sticky=N)
         row = 0
 
         # Recreate UI button
@@ -388,14 +430,88 @@ class warpUi():
         row += 1
 
         # Anim button
-        thisButton = self.makeImgButton("anim", self.frameParm)
-	thisButton.configure(command=lambda:self.animButCmd())
+        framePlaybackControls = Frame(self.frameParmAndControls)
+        framePlaybackControls.grid(row=1, sticky=S) # Not convinced sticky does anything here.
 
+
+        column = 0
+        #for name in ["rew", "ffw", "rec", "anim"]:
+        #    thisButton = self.makeImgButton("anim", framePlaybackControls)
+        #    thisButton.configure(command=lambda:self.animButCmd())
+
+        #    if name == "anim":
+        #        if self.parmDic("anim") == 1:
+        #            img = self.staticImages["pause"]
+        #        else:
+        #            img = self.staticImages["play"]
+        #    elif name == "rec":
+        #        rec = 1 # TODO make this work.
+        #        if rec == 1:
+        #            img = self.staticImages["recOn"]
+        #        else:
+        #            img = self.staticImages["recOff"]
+        #    else:
+        #        img = self.staticImages[name]
+
+        #    thisButton.configure(image=img)
+        #    thisButton.grid(row=0, column=column)
+        #    column += 1
+
+#    def makeImgButton(self, name, frameParent):
+#        print "name: ", name
+#        pImg = self.images[name]["pImg"]
+#	thisButton = Button(frameParent, image=pImg, command=lambda:self.imgButCmd())
+#	self.images[name]["button"] = thisButton
+#        return thisButton
+
+        # Rew
+	thisButton = Button(framePlaybackControls, image=self.staticImages["rew"],
+                    command=lambda:self.setFrAndUpdate(self.frStart))
+        thisButton.grid(row=0, column=column)
+        column += 1
+
+
+        # Step back
+	thisButton = Button(framePlaybackControls, image=self.staticImages["stepBack"],
+                    command=lambda:self.setFrAndUpdate(self.parmDic("fr") - 1))
+        thisButton.grid(row=0, column=column)
+        column += 1
+
+
+        # Play
         if self.parmDic("anim") == 1:
-            thisButton.configure(image=self.pImgPause)
+            img = self.staticImages["pause"]
         else:
-            thisButton.configure(image=self.pImgPlay)
-        thisButton.grid(row=row)
+            img = self.staticImages["play"]
+	thisButton = Button(framePlaybackControls, image=img, command=lambda:self.animButCmd())
+	self.images["anim"]["button"] = thisButton
+        thisButton.grid(row=0, column=column)
+        column += 1
+
+        # Step fwd
+	thisButton = Button(framePlaybackControls, image=self.staticImages["stepFwd"],
+                    command=lambda:self.setFrAndUpdate(self.parmDic("fr") + 1))
+        thisButton.grid(row=0, column=column)
+        column += 1
+
+
+        # Ffw
+	thisButton = Button(framePlaybackControls, image=self.staticImages["ffw"],
+                    command=lambda:self.setFrAndUpdate(self.frEnd))
+        thisButton.grid(row=0, column=column)
+        column += 1
+
+
+        # Rec
+        if self.record:
+            img = self.staticImages["recOn"]
+        else:
+            img = self.staticImages["recOff"]
+	thisButton = Button(framePlaybackControls, image=img, command=lambda:self.recButCmd())
+	self.images["rec"]["button"] = thisButton
+        thisButton.grid(row=0, column=column)
+        column += 1
+
 
         # Make picture (button) UI
         self.frameImg = Frame(self.frameMaster)
@@ -453,28 +569,23 @@ class warpUi():
         # Update menu-dependent images to reflect current selection.
         self.getImg(self.parmDic("image")) 
         count = 0
-        recFr = 0
-        debugFile = "/tmp/frOfs"
-        os.system("echo ---- > " + debugFile)
         while True:
             count += 1
             anim = self.parmDic("anim")
             if anim == 1:
                 fr = self.parmDic("fr")
-                frPerCycle = self.parmDic("frPerCycle")
-                nLevels = self.parmDic("nLevels")
-                fr += 1
-                self.setVal("fr", fr)
+                if fr == self.frEnd:
+                    self.setVal("anim", 0)
+                else:
+                    frPerCycle = self.parmDic("frPerCycle")
+                    nLevels = self.parmDic("nLevels")
+                    fr += 1
+                    #self.setVal("fr", fr)
+                    self.setFrAndUpdate(fr)
 
-                # For ofs anim.
-                ofs = fr/float(frPerCycle) % 1
-                self.setVal("ofs", ofs)
-                if recFr < frPerCycle:
-                    os.system("echo fr" + str(fr) + "- ofs" + str(ofs) + ">>" + debugFile)
-                    recFr += 1
-
-                self.updateCurImg()
-                self.updateDebugImg()
+                    # For ofs anim.
+                    ofs = fr/float(frPerCycle) % 1
+                    self.setVal("ofs", ofs)
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
 

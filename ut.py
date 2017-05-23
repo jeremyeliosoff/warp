@@ -10,13 +10,13 @@ seqDir = projDir + "/seq"
 
 imgDir = projDir + "/img"
 imgIn = imgDir + "/input"
-imgPlay = imgDir + "/controls/play.jpg"
-imgPause = imgDir + "/controls/pause.jpg"
 
 # TODO Why is there anim and play
 staticImgPaths = {
     "play":imgDir + "/controls/play.jpg",
     "pause":imgDir + "/controls/pause.jpg",
+    "rew":imgDir + "/controls/rew.jpg",
+    "ffw":imgDir + "/controls/ffw.jpg",
 }
 
 # CLASSES
