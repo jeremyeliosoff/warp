@@ -293,7 +293,7 @@ def initJtGrid(img, warpUi):
     print "==============="
     return jtGrid
     
-def growCurves(warpUi, jtGrid, inSurfGridPrev):
+def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     # Old growCurves() return values that are seemingly not needed:
     # inCurvesGrid, surfDics
     # Maybe just for debugging:
@@ -459,6 +459,8 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
 
                                 # Looks like some acrobatics here to get around reference/referred issues...
                                 # TODO: At least TRY to make it less fugly.
+                                # It appears to replace curToPrevSidDic[currentSid] = [],
+                                # which means there are no prev sids corresponding to the current sid.
                                 # Anyway, the idea is, if there's nothing in the prev frame here and you
                                 # haven't recorded anything in curToPrevSidDic, record an empty list.
                                 # TODO: Do you really need above conditional?  Just repeately re-set it?
@@ -526,6 +528,23 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev):
             #print "============== warpUi.seqDataDir:", warpUi.seqDataDir, " -- saving", imgPath
             print "|||||||||||-- saving debug img", imgPath
             pygame.image.save(imgs[lev], imgPath)
+
+
+#def saveCurToPrevSidDic(frameDir, curToPrevSidDic):
+    td = open(frameDir + "/curToPrevSidDic.txt", 'w')
+    for lev in range(len(curToPrevSidDic)):
+        td.write("\n\n--------------\nlev: " + str(lev))
+        curToPrevSidDicThisLev = curToPrevSidDic[lev]
+        for sidCur,sidPrevs in curToPrevSidDicThisLev.items():
+            td.write("\n\nsidCur: " + str(sidCur) + "\nsidPrev: ")
+            for sidPrev in sidPrevs:
+                td.write("\t" + str(sidPrev))
+    td.close()
+            
+    dicFile = open(frameDir + "/surfCurToPrevSidDic", 'w')
+    pickle.dump(curToPrevSidDic, dicFile)
+    dicFile.close()
+
     return inSurfGrid
 
     #-- END OF growCurves(warpUi, jtGrid, inSurfGridPrev):
@@ -556,7 +575,7 @@ def genData(warpUi):
 
 
     jtGrid = initJtGrid(img, warpUi)
-    inSurfGrid = growCurves(warpUi, jtGrid, inSurfGridPrev)
+    inSurfGrid = growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir)
 
     # Save inSurfGrid
     inSurfGridFile = open(frameDir + "/surfGrid", 'w')

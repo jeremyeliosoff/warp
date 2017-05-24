@@ -1,6 +1,6 @@
 fr
 type int
-val 1556
+val 3
 
 frPerCycle
 type int
@@ -8,11 +8,11 @@ val 10
 
 ofs
 type float
-val 0.6
+val 0.8
 
 nLevels
 type int
-val 7
+val 2
 
 anim
 hidden True
@@ -37,12 +37,12 @@ val 0.9725490196078431,0.8705882352941177,0.7647058823529411
 
 fps
 type int
-val  8  
+val 40  
 
 image
 hidden True
 type str
-val laundry
+val testCircles
 
 dbImg1
 hidden True
@@ -52,7 +52,7 @@ val inPrev
 lev_dbImg1
 hidden True
 type str
-val ALL
+val lev00
 
 dbImg2
 hidden True
@@ -62,5 +62,5 @@ val inSurfNow
 lev_dbImg2
 hidden True
 type str
-val ALL
+val lev00
 
