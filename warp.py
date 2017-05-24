@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut
+import os, genData, ut, time
 from Tkinter import *
 import Tkinter
 import PIL
@@ -16,7 +16,7 @@ class warpUi():
         ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
         
     def refreshParms(self):
-        print "parmDic", self.parmDic
+        #print "parmDic", self.parmDic
         for k,v in self.parmDic.parmDic.items():
             thisDic = self.parmDic.parmDic[k]
             #print "\nIN refreshParms: k", k, "thisDic", thisDic
@@ -160,7 +160,7 @@ class warpUi():
         # keep those images "on hand" as PhotoImages that you switch between
         for k,thisDic in self.images.items():
             if not k in (self.staticImageNames + self.varyingStaticImageNames):
-                print "IN refreshPhotoImages: loading", thisDic["path"]
+                #print "IN refreshPhotoImages: loading", thisDic["path"]
                 pImg = self.safeLoad(thisDic["path"])
                 if k in self.images.keys():
                     self.images[k]["pImg"] = pImg
@@ -208,8 +208,28 @@ class warpUi():
         self.updateCurImg()
         self.updateDebugImg()
 
+    def stepBackButCmd(self):
+        self.setFrAndUpdate(self.parmDic("fr") - 1)
+
+    def stepFwdButCmd(self):
+        self.setFrAndUpdate(self.parmDic("fr") + 1)
+
+    def rewButCmd(self):
+        self.setFrAndUpdate(self.frStart)
+
+    def ffwButCmd(self):
+        self.setFrAndUpdate(self.frEnd)
+
+
     def animButCmd(self):
-        self.setVal("anim", 1 if self.parmDic("anim") == 0 else 0)
+        anim = self.parmDic("anim")
+        print "Pressing anim button, anim:", anim
+        if anim == 0:
+            self.setVal("anim", 1)
+            self.timeStart = time.time()
+            self.frStartAnim = self.parmDic("fr")
+        else:
+            self.setVal("anim", 0)
         self.refreshParms()
         self.refreshButtonImages()
 
@@ -219,7 +239,7 @@ class warpUi():
 
 
     def saveParmDic(self):
-        print "\n\n\n INSIDE saveParmDic"
+        #print "\n\n\n INSIDE saveParmDic"
         with open(parmPath, 'w') as f:
             for k in self.parmDic.parmLs:
                 parm = k[0]
@@ -234,7 +254,7 @@ class warpUi():
                 f.write("\n")
 
     def updateDebugImg(self):
-        print " -- IN updateDebugImg"
+        #print " -- IN updateDebugImg"
         #self.updateDataDirs()  # TODO: should this be part of updateCurImg?
         for i in range(2):
             img = self.parmDic("dbImg" + str(i+1))
@@ -242,9 +262,10 @@ class warpUi():
             dbImgPath = self.getDebugDirAndImg(img, lev)[1]
             self.images["dbImg" + str(i+1)]["path"] = dbImgPath
             self.setVal("dbImg" + str(i+1), img)
-            print "dbImgPath", dbImgPath
+            #print "dbImgPath", dbImgPath
 	self.refreshButtonImages()
 
+    # TODO: I sense that this is done too much ie. every frame, need only do when img is selected.
     def getSourceImgPath(self):
         imageTitle = self.parmDic("image")
         fr = self.parmDic("fr")
@@ -255,7 +276,7 @@ class warpUi():
         for img in seqImages:
             if img == "bak" or not "." in img:
                 continue
-            print "--------img", img
+            #print "--------img", img
             imgSplit = img.split(".")
             thisFr = int(imgSplit[-2])
             if thisFr < mn:
@@ -265,6 +286,7 @@ class warpUi():
 
         fr = ut.clamp(fr, mn, mx)
         self.frStart = mn
+        self.frStartAnim = fr
         self.frEnd = mx
         self.setVal("fr", fr)
 
@@ -331,10 +353,10 @@ class warpUi():
                 uiElement.delete(0, END)
                 uiElement.insert(0, str(val))
         valStr = str(val)
-        print "valStr pre", valStr
+        #print "valStr pre", valStr
         if type(val) in [type(()), type([])]:
             valStr = valStr[1:-1].replace(' ','')
-        print "valStr pos", valStr
+        #print "valStr pos", valStr
         self.parmDic.parmDic[parmStr]["val"] = valStr
         self.refreshParms()
 
@@ -346,20 +368,20 @@ class warpUi():
 
     def updateDataDirs(self):
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
-        print "++++++++++++++ self.seqDataDir:", self.seqDataDir
+        #print "++++++++++++++ self.seqDataDir:", self.seqDataDir
         self.framesDataDir = self.seqDataDir + "/frames"
 
     def getDebugDirAndImg(self, debugInfo, lev):
         fr = self.parmDic("fr")
         levDir = self.seqDataDir + "/debugImg/" + debugInfo + "/" + lev # TODO: v00
-        print ",,,,,,,,,,,,,,,, levDir", levDir
+        #print ",,,,,,,,,,,,,,,, levDir", levDir
         imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
         return levDir,imgPath
     def safeLoad(self, path):
         if os.path.exists(path):
             img = ImageTk.PhotoImage(Image.open(path))
         else:
-            img = self.staticImages["pause"]
+            img = self.staticImages["error"]
         return img
 
 
@@ -381,6 +403,7 @@ class warpUi():
         self.record = False
         self.frEnd = -100
         self.frStart = 10000000
+        self.timeStart = time.time()
 
         sourceImages = os.listdir(ut.imgIn)
         sourceImages.sort()
@@ -389,10 +412,15 @@ class warpUi():
         sourceSequences.sort()
 
         self.root.bind('<Escape>', lambda e: self.root.destroy())
+        self.root.bind('<Left>', lambda e: self.stepBackButCmd())
+        self.root.bind('<Right>', lambda e: self.stepFwdButCmd())
+        self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
+        self.root.bind('<Control-Right>', lambda e: self.ffwButCmd())
+        self.root.bind('<space>', lambda e: self.animButCmd())
 
 
         # Load images.
-        self.staticImageNames = ["play", "pause", "rew", "stepBack", "stepFwd", "ffw", "recOn", "recOff"]
+        self.staticImageNames = ["play", "pause", "rew", "stepBack", "stepFwd", "ffw", "recOn", "recOff", "error"]
         self.varyingStaticImageNames = ["anim", "rec"]
         self.staticImages = {}
         base = ut.imgDir + "/controls/"
@@ -435,45 +463,14 @@ class warpUi():
 
 
         column = 0
-        #for name in ["rew", "ffw", "rec", "anim"]:
-        #    thisButton = self.makeImgButton("anim", framePlaybackControls)
-        #    thisButton.configure(command=lambda:self.animButCmd())
-
-        #    if name == "anim":
-        #        if self.parmDic("anim") == 1:
-        #            img = self.staticImages["pause"]
-        #        else:
-        #            img = self.staticImages["play"]
-        #    elif name == "rec":
-        #        rec = 1 # TODO make this work.
-        #        if rec == 1:
-        #            img = self.staticImages["recOn"]
-        #        else:
-        #            img = self.staticImages["recOff"]
-        #    else:
-        #        img = self.staticImages[name]
-
-        #    thisButton.configure(image=img)
-        #    thisButton.grid(row=0, column=column)
-        #    column += 1
-
-#    def makeImgButton(self, name, frameParent):
-#        print "name: ", name
-#        pImg = self.images[name]["pImg"]
-#	thisButton = Button(frameParent, image=pImg, command=lambda:self.imgButCmd())
-#	self.images[name]["button"] = thisButton
-#        return thisButton
-
         # Rew
-	thisButton = Button(framePlaybackControls, image=self.staticImages["rew"],
-                    command=lambda:self.setFrAndUpdate(self.frStart))
+	thisButton = Button(framePlaybackControls, image=self.staticImages["rew"], command=lambda:self.rewButCmd())
         thisButton.grid(row=0, column=column)
         column += 1
 
 
         # Step back
-	thisButton = Button(framePlaybackControls, image=self.staticImages["stepBack"],
-                    command=lambda:self.setFrAndUpdate(self.parmDic("fr") - 1))
+	thisButton = Button(framePlaybackControls, image=self.staticImages["stepBack"], command=lambda:self.stepBackButCmd())
         thisButton.grid(row=0, column=column)
         column += 1
 
@@ -489,15 +486,14 @@ class warpUi():
         column += 1
 
         # Step fwd
-	thisButton = Button(framePlaybackControls, image=self.staticImages["stepFwd"],
-                    command=lambda:self.setFrAndUpdate(self.parmDic("fr") + 1))
+	thisButton = Button(framePlaybackControls, image=self.staticImages["stepFwd"], command=lambda:self.stepFwdButCmd())
         thisButton.grid(row=0, column=column)
         column += 1
 
 
         # Ffw
 	thisButton = Button(framePlaybackControls, image=self.staticImages["ffw"],
-                    command=lambda:self.setFrAndUpdate(self.frEnd))
+                    command=lambda:self.ffwButCmd())
         thisButton.grid(row=0, column=column)
         column += 1
 
@@ -579,13 +575,17 @@ class warpUi():
                 else:
                     frPerCycle = self.parmDic("frPerCycle")
                     nLevels = self.parmDic("nLevels")
-                    fr += 1
-                    #self.setVal("fr", fr)
-                    self.setFrAndUpdate(fr)
+                    secondsPassed = time.time() - self.timeStart
+                    newFr = self.frStart + int(secondsPassed*self.parmDic("fps"))
+                    if newFr > fr:
+                        # This forces each frame to process.  TODO: maybe add forceFps
+                        fr = min(fr + 1, newFr)
+                        #self.setVal("fr", fr)
+                        self.setFrAndUpdate(fr)
 
-                    # For ofs anim.
-                    ofs = fr/float(frPerCycle) % 1
-                    self.setVal("ofs", ofs)
+                        # For ofs anim.
+                        ofs = fr/float(frPerCycle) % 1
+                        self.setVal("ofs", ofs)
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
 
