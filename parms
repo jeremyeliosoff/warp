@@ -1,6 +1,6 @@
 fr
 type int
-val 1
+val 5
 
 frPerCycle
 type int
@@ -8,7 +8,7 @@ val 10
 
 ofs
 type float
-val 0.5
+val 0.3
 
 nLevels
 type int
@@ -52,7 +52,7 @@ val cid
 lev_dbImg1
 hidden True
 type str
-val ALL
+val lev00
 
 dbImg2
 hidden True
@@ -62,5 +62,5 @@ val sid
 lev_dbImg2
 hidden True
 type str
-val ALL
+val lev00
 

@@ -198,8 +198,7 @@ class warpUi():
     def imgButCmd(self):
         reload(genData)
         self.refreshParms()
-        #self.updateCurImg(forceRecord=True)
-        self.updateCurImg()
+        self.updateCurImg(forceRecord=True)
         self.updateDebugImg()
 
     def setFrAndUpdate(self, fr):
@@ -294,7 +293,7 @@ class warpUi():
         imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
         return ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
 
-    def updateCurImg(self, forceRecord=True):
+    def updateCurImg(self, forceRecord=False):
         imgPath = self.getSourceImgPath()
         #self.images["source"]["path"] = ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
         self.images["source"]["path"] = imgPath

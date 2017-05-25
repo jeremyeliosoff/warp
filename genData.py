@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pygame, math, ut, pickle, os
+import pygame, math, ut, pickle, os, pprint
 
 black = (0, 0, 0)
 grey = (.3, .3, .3)
@@ -478,6 +478,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                     currentSid = inSurfs[lev][-1].surf.sid
                     inSurfGrid[lev][x][y] = currentSid
                     if inSurfGridPrev == None or (not len(inSurfGridPrev) == len(inSurfGrid)) or (not len(inSurfGridPrev[0]) == len(inSurfGrid[0])) : # NOTE:  this is apparently NOT the same as "if inSurfGridPrev:"
+                        # There is no prev grid or it is a different res.
                         inPrevClr = red
                     else:
                         # There is a surfGrid file for the previous frame.
@@ -495,6 +496,8 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                                 # Anyway, the idea is, if there's nothing in the prev frame here and you
                                 # haven't recorded anything in curToPrevSidDic, record an empty list.
                                 # TODO: Do you really need above conditional?  Just repeately re-set it?
+                                # MAYBE TRY A *SET*!
+                                # This seems to init curToPrevSidDic[lev][currentSid] to []
                                 newLs = curToPrevSidDic[:]
                                 newDic = newLs[lev].copy()
                                 newDic[currentSid] = []
@@ -520,15 +523,21 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                                 newDic = newLs[lev].copy()
                                 newDic[currentSid] = [inSurfPrev]
                                 newLs[lev] = newDic.copy()
+                                curToPrevSidDic = newLs[:]
 
                 if inPrevClr:
                     setDbIMg("inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
             # -- END OF for lev in range(nLevels):
             #dbImgDic["inPrev"][lev].set_at((x,y), green)
 
-    #if not inSurfPrev in curToPrevSidDic[lev][currentSid]:
     
     #print "\n\nallIndeces:", allIndeces
+
+    print "\n\n|||||| CIDs ||||||"
+    for lev in range(nLevels):
+        print "--lev", lev
+        for cv in curves[lev]:
+            print "sid", cv.surf.sid, ", cid", cv.cid
 
     # Draw the curve joint to joint - I think this is basically just for debug.
     drawCurveGrid = [[[0, 0, 0] for y in range(res[1])] for x in range(res[0])] 
@@ -537,15 +546,33 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     sidToSurf = [{}] * nLevels
     cidToCurve = [{}] * nLevels
     for lev in range(nLevels):
+        print "YYYXXX lev", lev, "sidToCvs[lev].keys():", sidToCvs[lev].keys()
         for cv in curves[lev]:
             cidToCurve[lev][cv.cid] = cv
             sid = cv.surf.sid
             if sid in sidToCvs[lev].keys():
-                sidToCvs[lev][sid] = sidToCvs[lev][sid][:] + [cv]
+                # THERE MUST BE A BETTER WAY!!
+                newLs = sidToCvs[:]
+                newDic = newLs[lev].copy()
+                newDic[sid] = newDic[sid][:] + [cv]
+                newLs[lev] = newDic.copy()
+                sidToCvs = newLs[:]
+                #sidToCvs[lev][sid] = sidToCvs[lev][sid][:] + [cv]
             else:
-                sidToCvs[lev][sid] = [cv]
+                newLs = sidToCvs[:]
+                newDic = newLs[lev].copy()
+                newDic[sid] = [cv]
+                newLs[lev] = newDic.copy()
+                sidToCvs = newLs[:]
+                #sidToCvs[lev][sid] = [cv]
+            print "XXX lev", lev, ", sid", sid, "sidToCvs[lev].keys():", sidToCvs[lev].keys()
             
-            sidToSurf[lev][sid] = cv.surf
+            newLs = sidToSurf[:]
+            newDic = newLs[lev].copy()
+            newDic[sid] = cv.surf
+            newLs[lev] = newDic.copy()
+            sidToSurf = newLs[:]
+            #sidToSurf[lev][sid] = cv.surf
             headId = cv.head.jid
             jt = cv.head
             while True:
@@ -559,6 +586,22 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 jt = jt.pv
                 if jt == None:
                     break
+
+
+    print "---------curToPrevSidDic"
+    pprint.pprint(curToPrevSidDic)
+    for lev in range(nLevels):
+        print "%%% lev", lev
+        print "sidToCvs[lev].keys()       :",sidToCvs[lev].keys()
+        print "sidToSurf[lev].keys()      :",sidToSurf[lev].keys()
+        print "curToPrevSidDic[lev].keys():",curToPrevSidDic[lev].keys()
+        for sidOld,prevs in curToPrevSidDic[lev].items():
+            if len(prevs) > 0:
+                prevs.sort()
+                sidNew = prevs[0]
+                #sidToCvs
+                #sidToSurf
+
 
     for lev in range(nLevels):
         print "\n--------------------lev", lev
@@ -574,6 +617,10 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
             print
             print "\t sid", thisSurf.sid
             print "\t tid", thisSurf.tid
+            #prevSid = curToPrevSidDic[lev][thisSurf.sid]
+            #print "\t prevSid", prevSid
+
+
 
             for cv in cvSet:
                 print "----- cv.cid", cv.cid
@@ -618,16 +665,16 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     # the dominant one -- arbitrarily, the lower one.
     # replace all previous
 
-    for lev in range(len(curToPrevSidDic)):
-        for sidCur,sidPrevs in curToPrevSidDic[lev].items():
-            if len(sidPrevs) > 1 or not sidPrevs[0] == sidCur:
-                # If you have multiple prev sids corresponding to the current one,
-                # or if they prev doesn't match, all prev dics must be updated.
-                for prevFr in range(fr-1, warpUi.frStart-1, -1):
-                    frameDirPrev = warpUi.makeFramesDataDir(prevFr)
-                    dicFile = open(frameDirPrev + "/surfCurToPrevSidDic", 'w')
-                    pickle.dump(curToPrevSidDic, dicFile)
-                    dicFile.close()
+    #for lev in range(len(curToPrevSidDic)):
+    #    for sidCur,sidPrevs in curToPrevSidDic[lev].items():
+    #        if len(sidPrevs) > 1 or not sidPrevs[0] == sidCur:
+    #            # If you have multiple prev sids corresponding to the current one,
+    #            # or if they prev doesn't match, all prev dics must be updated.
+    #            for prevFr in range(fr-1, warpUi.frStart-1, -1):
+    #                frameDirPrev = warpUi.makeFramesDataDir(prevFr)
+    #                dicFile = open(frameDirPrev + "/surfCurToPrevSidDic", 'w')
+    #                pickle.dump(curToPrevSidDic, dicFile)
+    #                dicFile.close()
 
 
 
