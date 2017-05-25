@@ -352,7 +352,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
 
     imgJtInOut = pygame.Surface(res)
-    dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid"]
+    dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid", "sidPost"]
     dbImgDic = {}
     for dbi in dbImgs:
         # The last cell - that is, [nLevels] - is reserved for "all"
@@ -590,17 +590,39 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
     print "---------curToPrevSidDic"
     pprint.pprint(curToPrevSidDic)
+
+    merges = [{}] * nLevels
+    splits = [{}] * nLevels
+    births = [[]] * nLevels
+    sidOldToNew = [{} for i in range(nLevels)]
     for lev in range(nLevels):
         print "%%% lev", lev
         print "sidToCvs[lev].keys()       :",sidToCvs[lev].keys()
         print "sidToSurf[lev].keys()      :",sidToSurf[lev].keys()
         print "curToPrevSidDic[lev].keys():",curToPrevSidDic[lev].keys()
         for sidOld,prevs in curToPrevSidDic[lev].items():
-            if len(prevs) > 0:
+            if len(prevs) == 0:
+                #newLs = sidToSurf[:]
+                #newDic = newLs[lev].copy()
+                #newDic[sid] = cv.surf
+                #newLs[lev] = newDic.copy()
+                #sidToSurf = newLs[:]
+                births[lev] = births[lev][:]
+                
+            else:
                 prevs.sort()
                 sidNew = prevs[0]
-                #sidToCvs
-                #sidToSurf
+                if sidNew in curToPrevSidDic[lev]:
+                    # TODO: Avoid this by assigning new sids based on largest sid
+                    # in prev frame, ie. keep track of nSurfs accross frames.
+                    print "ERROR, sid already exists! sidNew=", sidNew
+                    continue
+                if not sidNew == sidOld:
+                    sidToCvs[lev][sidNew] = sidToCvs[lev][sidOld]
+                    del(sidToCvs[lev][sidOld])
+                    sidToSurf[lev][sidNew] = sidToSurf[lev][sidOld]
+                    del(sidToSurf[lev][sidOld])
+                    sidOldToNew[lev][sidOld] = sidNew
 
 
     for lev in range(nLevels):
@@ -626,6 +648,19 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 print "----- cv.cid", cv.cid
 
 
+    # Save db image with new sids.
+    print "\n\n sidOldToNew[0]:"
+    pprint.pprint(sidOldToNew[0])
+    for y in range(res[1]):
+        for x in range(res[0]):
+            for lev in range(nLevels):
+                sidOld = inSurfGrid[lev][x][y]
+                if sidOld:
+                    if lev in sidOldToNew and sidOld in sidOldToNew[lev]:
+                        sidNew = sidOldToNew[lev][sidOld]
+                    else:
+                        sidNew = sidOld
+                    setDbIMg("sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
 
 
     drawCurveImg = gridToImgV(drawCurveGrid)

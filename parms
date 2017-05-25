@@ -1,6 +1,6 @@
 fr
 type int
-val 5
+val 2
 
 frPerCycle
 type int
@@ -47,12 +47,12 @@ val testCircles
 dbImg1
 hidden True
 type str
-val cid
+val sidPost
 
 lev_dbImg1
 hidden True
 type str
-val lev00
+val lev01
 
 dbImg2
 hidden True
