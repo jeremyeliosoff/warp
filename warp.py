@@ -198,6 +198,7 @@ class warpUi():
     def imgButCmd(self):
         reload(genData)
         self.refreshParms()
+        #self.updateCurImg(forceRecord=True)
         self.updateCurImg()
         self.updateDebugImg()
 
@@ -293,7 +294,7 @@ class warpUi():
         imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
         return ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
 
-    def updateCurImg(self):
+    def updateCurImg(self, forceRecord=True):
         imgPath = self.getSourceImgPath()
         #self.images["source"]["path"] = ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
         self.images["source"]["path"] = imgPath
@@ -302,7 +303,7 @@ class warpUi():
         #print "\n\n------- self.images", self.images
 
         ######## THIS IS WHERE DATA GETS GENERATED ########
-        if self.record:
+        if self.record or forceRecord:
             genData.genData(self)
         ###################################################
 
@@ -360,8 +361,9 @@ class warpUi():
         self.parmDic.parmDic[parmStr]["val"] = valStr
         self.refreshParms()
 
-    def makeFramesDataDir(self):
-        fr = self.parmDic("fr")
+    def makeFramesDataDir(self, fr=None):
+        if not fr:
+            fr = self.parmDic("fr")
         frameDir = self.framesDataDir + ("/%05d" % fr)
         ut.mkDirSafe(frameDir)
         return frameDir
