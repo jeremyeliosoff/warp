@@ -341,12 +341,12 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
 
     # inHoles delimit holes; inSurfs do not.
-    curToPrevSidDic = [{}] * nLevels
-    surfs = [[]] * nLevels
-    inHoles = [[]] * nLevels
-    inSurfs = [[]] * nLevels
-    inSurfNow = [False] * nLevels
-    curves = [[]] * nLevels
+    curToPrevSidDic = [{} for i in range(nLevels)]
+    surfs = [[] for i in range(nLevels)]
+    inHoles = [[] for i in range(nLevels)]
+    inSurfs = [[] for i in range(nLevels)]
+    inSurfNow = [False for i in range(nLevels)]
+    curves = [[] for i in range(nLevels)]
     #sidToCurves = [{}] * nLevels
 
     inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
@@ -489,20 +489,12 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                             if not currentSid in curToPrevSidDic[lev].keys():
                                 inPrevClr = blue
 
-                                # Looks like some acrobatics here to get around reference/referred issues...
-                                # TODO: At least TRY to make it less fugly.
-                                # It appears to replace curToPrevSidDic[currentSid] = [],
-                                # which means there are no prev sids corresponding to the current sid.
-                                # Anyway, the idea is, if there's nothing in the prev frame here and you
-                                # haven't recorded anything in curToPrevSidDic, record an empty list.
+                                # There are no prev sids corresponding to the current sid.
+                                # If there's nothing in the prev frame here and you haven't
+                                # recorded anything in curToPrevSidDic, record an empty list.
                                 # TODO: Do you really need above conditional?  Just repeately re-set it?
                                 # MAYBE TRY A *SET*!
-                                # This seems to init curToPrevSidDic[lev][currentSid] to []
-                                newLs = curToPrevSidDic[:]
-                                newDic = newLs[lev].copy()
-                                newDic[currentSid] = []
-                                newLs[lev] = newDic.copy()
-                                curToPrevSidDic = newLs[:]
+                                curToPrevSidDic[lev][currentSid] = []
                         else:
                             # There ARE surfs in this cell in the previous frame.
                             if currentSid in curToPrevSidDic[lev].keys():
@@ -510,20 +502,10 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                                 # append inSurfPrev to that list.
 
                                 if not inSurfPrev in curToPrevSidDic[lev][currentSid]:
-                                    #curToPrevSidDic[lev][currentSid].append(inSurfPrev)
-                                    #curToPrevSidDic[lev][currentSid] = curToPrevSidDic[lev][currentSid][:] + [inSurfPrev]
-                                    newLs = curToPrevSidDic[:]
-                                    newDic = newLs[lev].copy()
-                                    newDic[currentSid] = newDic[currentSid][:] + [inSurfPrev]
-                                    newLs[lev] = newDic.copy()
-                                    curToPrevSidDic = newLs[:]
+                                    curToPrevSidDic[lev][currentSid].append(inSurfPrev)
                             else:
                                 # There's no list for currentSid, make a new one with just inSurfPrev
-                                newLs = curToPrevSidDic[:]
-                                newDic = newLs[lev].copy()
-                                newDic[currentSid] = [inSurfPrev]
-                                newLs[lev] = newDic.copy()
-                                curToPrevSidDic = newLs[:]
+                                curToPrevSidDic[lev][currentSid] = [inSurfPrev]
 
                 if inPrevClr:
                     setDbIMg("inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
@@ -542,9 +524,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     # Draw the curve joint to joint - I think this is basically just for debug.
     drawCurveGrid = [[[0, 0, 0] for y in range(res[1])] for x in range(res[0])] 
     curveId = 0
-    sidToCvs = [{}] * nLevels
-    sidToSurf = [{}] * nLevels
-    cidToCurve = [{}] * nLevels
+    sidToCvs = [{} for i in range(nLevels)]
+    sidToSurf = [{} for i in range(nLevels)]
+    cidToCurve = [{} for i in range(nLevels)]
     for lev in range(nLevels):
         print "YYYXXX lev", lev, "sidToCvs[lev].keys():", sidToCvs[lev].keys()
         for cv in curves[lev]:
@@ -552,27 +534,12 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
             sid = cv.surf.sid
             if sid in sidToCvs[lev].keys():
                 # THERE MUST BE A BETTER WAY!!
-                newLs = sidToCvs[:]
-                newDic = newLs[lev].copy()
-                newDic[sid] = newDic[sid][:] + [cv]
-                newLs[lev] = newDic.copy()
-                sidToCvs = newLs[:]
-                #sidToCvs[lev][sid] = sidToCvs[lev][sid][:] + [cv]
+                sidToCvs[lev][sid].append(cv)
             else:
-                newLs = sidToCvs[:]
-                newDic = newLs[lev].copy()
-                newDic[sid] = [cv]
-                newLs[lev] = newDic.copy()
-                sidToCvs = newLs[:]
-                #sidToCvs[lev][sid] = [cv]
+                sidToCvs[lev][sid] = [cv]
             print "XXX lev", lev, ", sid", sid, "sidToCvs[lev].keys():", sidToCvs[lev].keys()
             
-            newLs = sidToSurf[:]
-            newDic = newLs[lev].copy()
-            newDic[sid] = cv.surf
-            newLs[lev] = newDic.copy()
-            sidToSurf = newLs[:]
-            #sidToSurf[lev][sid] = cv.surf
+            sidToSurf[lev][sid] = cv.surf
             headId = cv.head.jid
             jt = cv.head
             while True:
@@ -591,9 +558,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     print "---------curToPrevSidDic"
     pprint.pprint(curToPrevSidDic)
 
-    merges = [{}] * nLevels
-    splits = [{}] * nLevels
-    births = [[]] * nLevels
+    merges = [{} for i in range(nLevels)]
+    splits = [{} for i in range(nLevels)]
+    births = [[] for i in range(nLevels)]
     sidOldToNew = [{} for i in range(nLevels)]
     for lev in range(nLevels):
         print "%%% lev", lev
@@ -602,11 +569,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
         print "curToPrevSidDic[lev].keys():",curToPrevSidDic[lev].keys()
         for sidOld,prevs in curToPrevSidDic[lev].items():
             if len(prevs) == 0:
-                #newLs = sidToSurf[:]
-                #newDic = newLs[lev].copy()
-                #newDic[sid] = cv.surf
-                #newLs[lev] = newDic.copy()
-                #sidToSurf = newLs[:]
                 births[lev] = births[lev][:]
                 
             else:
