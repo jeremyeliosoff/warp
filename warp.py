@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut, time
+import os, genData, ut, time, pprint
 from Tkinter import *
 import Tkinter
 import PIL
@@ -304,6 +304,14 @@ class warpUi():
         ######## THIS IS WHERE DATA GETS GENERATED ########
         if self.record or forceRecord:
             genData.genData(self)
+            print "\n\n\n"
+            print "===================="
+            print "===================="
+            print "===================="
+            print "======tidToSids[0]"
+            pprint.pprint(self.tidToSids[0])
+            print "======sidToTid[0]"
+            pprint.pprint(self.sidToTid[0])
         ###################################################
 
 	self.refreshButtonImages()
@@ -365,7 +373,7 @@ class warpUi():
             fr = self.parmDic("fr")
         frameDir = self.framesDataDir + ("/%05d" % fr)
         ut.mkDirSafe(frameDir)
-        return frameDir
+        return fr, frameDir
 
     def updateDataDirs(self):
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
@@ -395,6 +403,11 @@ class warpUi():
         print "\n\n\n********** parmDic2"
         print self.parmDic
         self.updateDataDirs()
+        self.nextSid = 0
+        nLevels = self.parmDic("nLevels")
+        self.tidToSids = [{} for i in range(nLevels)]
+        self.sidToTid = [{} for i in range(nLevels)]
+        self.processedFrames = set()
         self.root = Tk()
         self.root.wm_title("WARP")
         self.positionWindow()

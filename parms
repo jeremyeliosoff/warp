@@ -1,23 +1,23 @@
 fr
 type int
-val 4
+val 1348
 
 frPerCycle
 type int
-val 10
+val 20
 
 ofs
 type float
-val 0.3
+val 0.35
 
 nLevels
 type int
-val 2
+val 8
 
 anim
 hidden True
 type int
-val 0
+val 1
 
 kSurf
 type float
@@ -37,30 +37,30 @@ val 0.9725490196078431,0.8705882352941177,0.7647058823529411
 
 fps
 type int
-val 40
+val 80
 
 image
 hidden True
 type str
-val testCircles
+val laundry
 
 dbImg1
 hidden True
 type str
-val sid
+val sidPost
 
 lev_dbImg1
 hidden True
 type str
-val lev00
+val ALL
 
 dbImg2
 hidden True
 type str
-val sidPost
+val tid
 
 lev_dbImg2
 hidden True
 type str
-val lev00
+val ALL
 
