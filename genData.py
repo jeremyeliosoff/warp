@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pygame, math, ut, pickle, os, pprint
+import pygame, math, ut, pickle, os, pprint, sys
 
 black = (0, 0, 0)
 grey = (.3, .3, .3)
@@ -158,6 +158,11 @@ class surf:
 
 
 # FUNCTIONS
+
+def pickleDump(filename, data):
+    print "Pickle dumping", filename, "..."
+    with open(filename, 'w') as dicFile:
+        pickle.dump(data, dicFile)
 
 def border(img, v=(0, 0, 0, 255)):
     res = img.get_size()
@@ -556,8 +561,8 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                     break
 
 
-    print "---------curToPrevSidDic"
-    pprint.pprint(curToPrevSidDic)
+    #print "---------curToPrevSidDic"
+    #pprint.pprint(curToPrevSidDic)
 
     mergeKeyToVal = [{} for i in range(nLevels)]
     births = [[] for i in range(nLevels)]
@@ -734,7 +739,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
 
 
-    return inSurfGrid
+    return inSurfGrid, sidToCvs
 
     #-- END OF growCurves(warpUi, jtGrid, inSurfGridPrev):
 
@@ -776,6 +781,8 @@ def genData(warpUi):
     # Make required dirs.
     fr, frameDir = warpUi.makeFramesDataDir()
 
+    sidToCvs = {}
+
     if fr in warpUi.processedFrames:
         inSurfGridFile = open(frameDir + "/surfGrid", 'r') # TODO maybe try "with"
         inSurfGrid = pickle.load(inSurfGridFile)
@@ -794,7 +801,7 @@ def genData(warpUi):
 
 
         jtGrid = initJtGrid(img, warpUi)
-        inSurfGrid = growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir)
+        inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir)
 
     
         # Save inSurfGrid
@@ -834,4 +841,11 @@ def genData(warpUi):
     print "ppppppppppp processedFrames pre", warpUi.processedFrames
     warpUi.processedFrames.add(fr)
     print "ppppppppppp processedFrames pos", warpUi.processedFrames
+
+    
+    # Save tidToSids and sidToTid for whole seq.
+    pickleDump(warpUi.seqDataDir + "/tidToSids", warpUi.tidToSids)
+    pickleDump(warpUi.seqDataDir + "/sidToTid", warpUi.sidToTid)
+    # Save sidToCvs for this frame.
+    pickleDump(frameDir + "/sidToCvs", sidToCvs)
 

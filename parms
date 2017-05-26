@@ -1,6 +1,6 @@
 fr
 type int
-val 1348
+val 1556
 
 frPerCycle
 type int
@@ -8,7 +8,7 @@ val 20
 
 ofs
 type float
-val 0.35
+val 0.75
 
 nLevels
 type int

@@ -196,7 +196,6 @@ class warpUi():
 
 
     def imgButCmd(self):
-        reload(genData)
         self.refreshParms()
         self.updateCurImg(forceRecord=True)
         self.updateDebugImg()
@@ -303,15 +302,16 @@ class warpUi():
 
         ######## THIS IS WHERE DATA GETS GENERATED ########
         if self.record or forceRecord:
+            reload(genData)
             genData.genData(self)
-            print "\n\n\n"
-            print "===================="
-            print "===================="
-            print "===================="
-            print "======tidToSids[0]"
-            pprint.pprint(self.tidToSids[0])
-            print "======sidToTid[0]"
-            pprint.pprint(self.sidToTid[0])
+            #print "\n\n\n"
+            #print "===================="
+            #print "===================="
+            #print "===================="
+            #print "======tidToSids[0]"
+            #pprint.pprint(self.tidToSids[0])
+            #print "======sidToTid[0]"
+            #pprint.pprint(self.sidToTid[0])
         ###################################################
 
 	self.refreshButtonImages()
@@ -395,6 +395,10 @@ class warpUi():
 
 
     def __init__(self):
+        # Needed for pickling.
+        lim = sys.getrecursionlimit()
+        sys.setrecursionlimit(lim*1000)
+
         self.getImgDebugFunctions = {
                 "name":[self.getImgDebug1, self.getImgDebug2],
                 "lev":[self.getLevDebug1, self.getLevDebug2]
