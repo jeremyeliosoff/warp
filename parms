@@ -1,6 +1,6 @@
 fr
 type int
-val 1556
+val 1739
 
 frPerCycle
 type int
@@ -8,7 +8,7 @@ val 20
 
 ofs
 type float
-val 0.75
+val 0.95
 
 nLevels
 type int
@@ -17,7 +17,7 @@ val 8
 anim
 hidden True
 type int
-val 1
+val 0
 
 kSurf
 type float
@@ -38,6 +38,10 @@ val 0.9725490196078431,0.8705882352941177,0.7647058823529411
 fps
 type int
 val 80
+
+justRenTid
+type int
+val 0
 
 image
 hidden True
