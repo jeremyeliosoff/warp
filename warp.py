@@ -411,7 +411,6 @@ class warpUi():
         nLevels = self.parmDic("nLevels")
         self.tidToSids = [{} for i in range(nLevels)]
         self.sidToTid = [{} for i in range(nLevels)]
-        self.processedFrames = set()
         self.root = Tk()
         self.root.wm_title("WARP")
         self.positionWindow()

@@ -593,6 +593,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
         print "lev:", lev, "sids to be merged:", mergeKeyToVal[lev].keys()
         # Merge branches.
         for sid in set(allPrevs[lev] + sidToSurf[lev].keys()):
+            #print "--sid", sid, "lev", lev, "warpUi", warpUi, "warpUi.sidToTid", warpUi.sidToTid
             if sid in mergeKeyToVal[lev].keys():
                 # This sid will be merged.
                 mergeTo = mergeKeyToVal[lev][sid]
@@ -603,7 +604,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
                 # having merged the sid branch, delete it.
                 if sid in warpUi.tidToSids[lev].keys():
-                    if lev == 0: print "deleting from tidToSids, sid=", sid
+                    print "deleting from tidToSids, sid=", sid
                     del(warpUi.tidToSids[lev][sid])
             elif not sid in warpUi.sidToTid[lev].keys(): # Make sure this sid isn't already in a tid.
                 # This sid will not be merged, it will be a tid.
@@ -706,7 +707,7 @@ def genData(warpUi):
 
     sidToCvs = {}
 
-    if fr in warpUi.processedFrames or warpUi.parmDic("justRenTid") == 1:
+    if warpUi.parmDic("justRenTid") == 1:
         inSurfGrid = pickleLoad(frameDir + "/surfGrid")
         warpUi.tidToSids = pickleLoad(warpUi.seqDataDir  + "/tidToSids")
         warpUi.sidToTid = pickleLoad(warpUi.seqDataDir  + "/sidToTid")
@@ -726,7 +727,6 @@ def genData(warpUi):
         pickleDump(frameDir + "/surfGrid", inSurfGrid)
 
 
-    warpUi.processedFrames.add(fr)
 
     
     # Save tidToSids and sidToTid for whole seq.

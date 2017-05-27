@@ -1,6 +1,6 @@
 fr
 type int
-val 1739
+val 1
 
 frPerCycle
 type int
@@ -8,11 +8,11 @@ val 20
 
 ofs
 type float
-val 0.95
+val 0.65
 
 nLevels
 type int
-val 8
+val 2
 
 anim
 hidden True
@@ -41,12 +41,12 @@ val 80
 
 justRenTid
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val laundry
+val testCircles
 
 dbImg1
 hidden True
@@ -56,7 +56,7 @@ val sidPost
 lev_dbImg1
 hidden True
 type str
-val ALL
+val lev00
 
 dbImg2
 hidden True
@@ -66,5 +66,5 @@ val tid
 lev_dbImg2
 hidden True
 type str
-val ALL
+val lev00
 
