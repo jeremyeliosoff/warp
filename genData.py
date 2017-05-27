@@ -734,4 +734,77 @@ def genData(warpUi):
     pickleDump(warpUi.seqDataDir + "/sidToTid", warpUi.sidToTid)
     # Save sidToCvs for this frame.
     pickleDump(frameDir + "/sidToCvs", sidToCvs)
+    pickleDump(frameDir + "/sidToCvDic", convertCvDicToDic(sidToCvs, warpUi))
+    renCv(warpUi, inSurfGrid)
+
+def convertCvToLs(cv):
+    ret = []
+    jt = cv.head
+    while True:
+        ret.append(jt.xy)
+        jt = jt.pv
+        if jt == None:
+            break
+    return ret
+
+def convertCvDicToDic(cvDic, warpUi):
+    print "Doing convertCvDicToDic..."
+    nLevels = warpUi.parmDic("nLevels")
+    ret = {} # Could be list instead of dic
+    for lev in range(nLevels):
+        surfDic = cvDic[lev]
+        ret[lev] = {} # To be filed with surf dics.
+        for sid,cvs in surfDic.items():
+            cvLs = []
+            for cv in cvs:
+                cvLs.append(convertCvToLs(cv))
+            ret[lev][sid] = cvLs
+
+    return ret
+    #sidToCvs[lev][sid].append(cv)
+
+def renCv(warpUi, grid):
+    
+    print "\n\n\n"
+    print "*******************"
+    print "*** DOING renCv ***"
+    print "*******************"
+
+    res = (len(grid[0]), len(grid[0][0]))
+    #print "grid", grid
+    print "len(grid)", len(grid)
+    print "len(grid[0])", len(grid[0])
+    print "len(grid[0][0])", len(grid[0][0])
+    print "\n\n--res", res
+    nLevels = warpUi.parmDic("nLevels")
+    fr, frameDir = warpUi.makeFramesDataDir()
+
+    sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
+    
+    ret = pygame.Surface(res)
+
+    for lev in range(1 + 0*nLevels):
+        for tid,sids in warpUi.tidToSids[lev].items():
+            for sid in sids:
+                #print "type(sidToCvDic)", type(sidToCvDic)
+                #print "sid", sid
+                #print "\n sidToCvDic"
+                #pprint.pprint(sidToCvDic)
+                if sid in sidToCvDic[lev]:
+                    print "sid", sid
+                    cvs = sidToCvDic[lev][sid]
+                    #print "jts", jts
+                    #print "len(cv)", len(cv)
+                    #print "len(cv[0])", len(cv[0])
+                    for cv in cvs:
+                        for jt in cv:
+                            #print "jt", jt
+                            coord = list(jt)
+                            ret.set_at(tuple(coord), vX255(green))
+                            coord[0] +=  (sid % 10)*10
+                            ret.set_at(tuple(coord), vX255(red))
+
+    pygame.image.save(ret,  "/tmp/ren.jpg")
+
+
 
