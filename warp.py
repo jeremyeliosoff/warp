@@ -296,9 +296,9 @@ class warpUi():
                 mx = thisFr
 
         fr = ut.clamp(fr, mn, mx)
-        self.frStart = mn
+        self.seqStart = mn
         self.frStartAnim = fr
-        self.frEnd = mx
+        self.seqEnd = mx
         self.setVal("frStart", mn)
         self.setVal("frEnd", mx)
         self.setVal("fr", fr)
@@ -357,6 +357,9 @@ class warpUi():
             self.updateDebugImg()
         else:
             print "################ setting selection:", selection
+            if self.record:
+                # Turn off recording so you don't render right away.
+                self.recButCmd()
             self.setVal("image", selection)
             self.updateDataDirs()
             self.updateCurImg()
@@ -447,8 +450,8 @@ class warpUi():
         self.gridLevels = None
         self.gridOut = None
         self.record = False
-        self.frEnd = -100
-        self.frStart = 10000000
+        self.seqEnd = -100
+        self.seqStart = 10000000
         self.timeStart = time.time()
 
         sourceImages = os.listdir(ut.imgIn)
@@ -636,37 +639,32 @@ class warpUi():
 
         # Update menu-dependent images to reflect current selection.
         self.getImg(self.parmDic("image")) 
-        count = 0
         while True:
-            count += 1
             anim = self.parmDic("anim")
             if anim == 1:
                 fr = self.parmDic("fr")
-                if fr == self.frEnd:
-                    self.setVal("anim", 0)
-                else:
-                    frPerCycle = self.parmDic("frPerCycle")
-                    nLevels = self.parmDic("nLevels")
-                    secondsPassed = time.time() - self.timeStart
-                    newFr = self.frStart + int(secondsPassed*self.parmDic("fps"))
-                    if newFr > fr:        
-                        fr = min(fr + 1, newFr)
-                        if fr > self.parmDic("frEnd"):
-                            if self.parmDic("justRenTid") == 0:
-                                # Restart and render justRenTid (and renCv).
-                                print "Turning on justRenTid"
-                                self.setVal("justRenTid", 1)
-                                print "Returning to", self.parmDic("frStart")
-                                fr = self.parmDic("frStart")
-                            else:
-                                # Stop
-                                self.setVal("anim", 0)
-                        # This forces each frame to process.  TODO: maybe add forceFps
-                        self.setFrAndUpdate(fr)
+                frPerCycle = self.parmDic("frPerCycle")
+                nLevels = self.parmDic("nLevels")
+                secondsPassed = time.time() - self.timeStart
+                newFr = self.seqStart + int(secondsPassed*self.parmDic("fps"))
+                if newFr > fr:        
+                    fr = min(fr + 1, newFr)
+                    if fr > self.parmDic("frEnd"):
+                        if self.parmDic("justRenTid") == 0:
+                            # Restart and render justRenTid (and renCv).
+                            print "Turning on justRenTid"
+                            self.setVal("justRenTid", 1)
+                            print "Returning to", self.parmDic("frStart")
+                            fr = self.parmDic("frStart")
+                        else:
+                            # Stop
+                            self.setVal("anim", 0)
+                    # This forces each frame to process.  TODO: maybe add forceFps
+                    self.setFrAndUpdate(fr)
 
-                        # For ofs anim.
-                        ofs = fr/float(frPerCycle) % 1
-                        self.setVal("ofs", ofs)
+                    # For ofs anim.
+                    ofs = fr/float(frPerCycle) % 1
+                    self.setVal("ofs", ofs)
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
 

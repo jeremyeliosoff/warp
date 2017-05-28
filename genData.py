@@ -236,15 +236,6 @@ def gridToImgV(grid):
     return ret
 
 
-def gridToImgS(grid):
-    res = (len(grid), len(grid[0]))
-    ret = pygame.Surface(res)
-    for x in range(res[0]):
-        for y in range(res[1]):
-            v = int(grid[x][y]*255)
-            v = int(max(0, min(255, v)))
-            ret.set_at((x, y), (v, v, v, 255))
-    return ret
 
 def heatMap(v, parmDic):
     cDark = parmDic("cDark")
