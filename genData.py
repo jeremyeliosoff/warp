@@ -166,7 +166,7 @@ def pOut(*ss):
     for s in ss:
         ret += str(s) + " "
     ret += "\n"
-    print "pOut: printing to", outFile, ":", ret
+    #print "pOut: printing to", outFile, ":", ret
     with open(outFile, "a") as f:
         f.write(ret)
     #os.system("echo " + ret + " >> " + outFile)
@@ -719,6 +719,7 @@ def writeTidImg(warpUi, inSurfGrid):
     dbImgDic["tid"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
     allTids = set()
     for y in range(res[1]):
+        print ("in writeTidImg, y=", y);
         for x in range(res[0]):
             for lev in range(nLevels):
                 sid = inSurfGrid[lev][x][y]
@@ -756,15 +757,23 @@ def genData(warpUi):
     sidToCvs = {}
 
     if warpUi.parmDic("justRenTid") == 1:
-        inSurfGrid = pickleLoad(frameDir + "/surfGrid")
+        #inSurfGrid = pickleLoad(frameDir + "/surfGrid")
+        #if inSurfGrid == None:
+        #    warpUi.setStatus("error", "File not found: " +  frameDir + "/surfGrid")
         warpUi.tidToSids = pickleLoad(warpUi.seqDataDir  + "/tidToSids")
         warpUi.sidToTid = pickleLoad(warpUi.seqDataDir  + "/sidToTid")
         pp = pprint.pformat(warpUi.sidToTid)
         pOut("warpUi.sidToTid", pp)
         pp = pprint.pformat(warpUi.tidToSids)
         pOut("warpUi.tidToSids", pp)
-        writeTidImg(warpUi, inSurfGrid)
-        renCv(warpUi, inSurfGrid)
+        #writeTidImg(warpUi, inSurfGrid)
+        try:
+            renCvWrapper(warpUi, warpUi.res)
+        except:
+            if warpUi.parmDic("anim") == 1:
+                warpUi.animButCmd()
+            print "\nERROR: could not perform renCvWrapper; unknown error."
+            warpUi.setStatus("error", "fuck!")
     else:
         # Load prev inSurfGrid.
         inSurfGridPrev = None
@@ -825,31 +834,34 @@ def convertCvDicToDic(cvDic, warpUi):
         for sid,cvs in surfDic.items():
             cvLs = []
             for cv in cvs:
-                print "XXXX cv", cv
                 cvLs.append(convertCvToLs(cv))
             ret[lev][sid] = cvLs
 
     return ret
     #sidToCvs[lev][sid].append(cv)
 
-def renCv(warpUi, grid):
+def renCvWrapper(warpUi, res):
+    fr, frameDir = warpUi.makeFramesDataDir()
+    sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
+    if sidToCvDic == None:
+        if warpUi.parmDic("anim") == 1:
+            warpUi.animButCmd()
+        warpUi.setStatus("error", "fuck!")
+    else:
+        pOut("\nREN loaded sidToCvDic:")
+        renCv(warpUi, res, sidToCvDic)
+
+
+def renCv(warpUi, res, sidToCvDic):
     
     print "\n\n\n"
     print "*******************"
     print "*** DOING renCv ***"
     print "*******************"
 
-    res = (len(grid[0]), len(grid[0][0]))
-    #print "grid", grid
-    print "len(grid)", len(grid)
-    print "len(grid[0])", len(grid[0])
-    print "len(grid[0][0])", len(grid[0][0])
-    print "\n\n--res", res
     nLevels = warpUi.parmDic("nLevels")
-    fr, frameDir = warpUi.makeFramesDataDir()
 
-    sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
-    pOut("\nREN loaded sidToCvDic:")
+
     for lev in range(nLevels):
         for sid,cvs in sidToCvDic[lev].items():
             pOut("\tsid:", sid)
@@ -867,37 +879,34 @@ def renCv(warpUi, grid):
         for tid,sids in warpUi.tidToSids[lev].items():
             sc = 1
             fact = 1.5
-            seedX = (5-(tid % 10))*sc
-            seedY = (5-((7*tid) % 10))*sc
-            print "SEEEDs", seedX, seedY
+            dirX = (5-(tid % 10))*sc
+            dirY = (5-((7*tid) % 10))*sc
             for sid in sids:
-                #print "type(sidToCvDic)", type(sidToCvDic)
-                #print "sid", sid
-                #print "\n sidToCvDic"
-                #pprint.pprint(sidToCvDic)
                 if sid in sidToCvDic[lev]:
                     if lev == 0:
                         pOut("tid", tid, "sid", sid)
                         allTids.add(tid)
-                    print "sid", sid
                     cvs = sidToCvDic[lev][sid]
-                    #print "jts", jts
-                    #print "len(cv)", len(cv)
-                    #print "len(cv[0])", len(cv[0])
                     for cv in cvs:
                         for jt in cv:
                             #print "jt", jt
                             coord = list(jt)
+                            xx = (coord[0] - res[0]/2)
+                            yy = (coord[1] - res[1]/2)
+                            #dist = math.sqrt(xx*xx + yy*yy)
+
+                            
 
                             clr = intToClr(tid)
                             setDbIMg("renCv", dbImgDic, lev, nLevels, coord[0], coord[1], clr)
-                            tint = ut.vMult((1, .98, .95), .7)
+                            tint = ut.vMult((1, .98, .95), .5)
                             #tint = (1, 1, 1)
                             clrs = []
                             xys = []
-                            rg = range(10)
-                            incX = seedX
-                            incY = seedY
+                            rg = range(5)
+                            kLev = nLevels - (warpUi.parmDic("ofs")+lev)
+                            incX = kLev*xx/25
+                            incY = kLev*yy/25
                             for i in rg:
                                 coord[0] +=  incX
                                 incX = int(math.ceil(incX*fact))
@@ -908,6 +917,8 @@ def renCv(warpUi, grid):
                                 clrs.append(clr)
 
                                 x,y = xys[i]
+                                x = int(x)
+                                y = int(y)
                                 if x < res[0] and y < res[1] and x > 0 and y > 0:
                                     oldClr = dbImgDic["renCv"][lev].get_at((x,y))
                                     newClr = ut.clamp(ut.vAdd(clrs[i], oldClr),0, 255)

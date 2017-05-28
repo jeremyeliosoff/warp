@@ -65,7 +65,7 @@ class warpUi():
                 print "HIDDEN, skipping..."
                 continue
             lab = Label(self.frameParm, text=k)
-            lab.grid(row=row, column=0)
+            lab.grid(row=row, column=0, sticky=E)
 
 
             if thisParmDic["type"] == "clr":
@@ -74,7 +74,7 @@ class warpUi():
                 ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(k,clrTuple): self.btn_getColor(args))
             else:
                 ent = Entry(self.frameParm)
-            ent.grid(row=row, column=1)
+            ent.grid(row=row, column=1, sticky=W)
             thisParmDic["uiElement"] = ent
             #print "-------- ent:", ent
 
@@ -155,6 +155,10 @@ class warpUi():
                 #else:
                 #    # this is a dud/placeholder image.
                 #    self.images[img]["pImg"] = self.safeLoad(self.staticImages["play"])
+
+        image = self.images["source"]["pImg"]
+        self.res = (image.width(), image.height())
+
         print "\n\nVVVVVVVVVVv self.images:"
         for k,v in self.images.items():
             print k, v
@@ -234,6 +238,7 @@ class warpUi():
             self.setVal("anim", 1)
             self.timeStart = time.time()
             self.frStartAnim = self.parmDic("fr")
+            self.updateCurImg()
         else:
             self.setVal("anim", 0)
         self.refreshParms()
@@ -312,15 +317,9 @@ class warpUi():
         ######## THIS IS WHERE DATA GETS GENERATED ########
         if self.record or forceRecord:
             reload(genData)
+            self.setStatus("busy", "Doing genData...")
             genData.genData(self)
-            #print "\n\n\n"
-            #print "===================="
-            #print "===================="
-            #print "===================="
-            #print "======tidToSids[0]"
-            #pprint.pprint(self.tidToSids[0])
-            #print "======sidToTid[0]"
-            #pprint.pprint(self.sidToTid[0])
+            self.setStatus("idle")
         ###################################################
 
 	self.refreshButtonImages()
@@ -386,21 +385,41 @@ class warpUi():
 
     def updateDataDirs(self):
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
-        #print "++++++++++++++ self.seqDataDir:", self.seqDataDir
         self.framesDataDir = self.seqDataDir + "/frames"
 
     def getDebugDirAndImg(self, debugInfo, lev):
         fr = self.parmDic("fr")
         levDir = self.seqDataDir + "/debugImg/" + debugInfo + "/" + lev # TODO: v00
-        #print ",,,,,,,,,,,,,,,, levDir", levDir
         imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
         return levDir,imgPath
+
     def safeLoad(self, path):
         if os.path.exists(path):
             img = ImageTk.PhotoImage(Image.open(path))
         else:
             img = self.staticImages["error"]
         return img
+
+    def setStatus(self, typ, msg=""):
+
+        defaultBg = self.root.cget('bg')
+        fgClr= {
+                "error":"black",
+                "idle":"black",
+                "busy":"red"}
+
+        bgClr= {
+                "error":"red",
+                "idle":defaultBg,
+                "busy":defaultBg}
+        # You can't go directly from error to idle.
+        if not (self.status == "error" and typ == "idle"):
+            if typ == "idle":
+                msg = "Idle"
+            self.status = typ
+            self.labelStatus.configure(text=msg, bg=bgClr[typ], fg=fgClr[typ])
+            Tk.update_idletasks(self.root)
+
 
 
     def __init__(self):
@@ -438,12 +457,15 @@ class warpUi():
         sourceSequences = os.listdir(ut.seqDir)
         sourceSequences.sort()
 
+        # TODO e needed?
         self.root.bind('<Escape>', lambda e: self.root.destroy())
+        self.root.bind('<Return>', lambda e: self.frameMaster.focus_set())
         self.root.bind('<Left>', lambda e: self.stepBackButCmd())
         self.root.bind('<Right>', lambda e: self.stepFwdButCmd())
         self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
         self.root.bind('<Control-Right>', lambda e: self.ffwButCmd())
         self.root.bind('<space>', lambda e: self.animButCmd())
+        self.root.bind('<r>', lambda e: self.recButCmd())
 
 
         # Load images.
@@ -463,18 +485,32 @@ class warpUi():
         self.frameParmAndControls = Frame(self.frameMaster)
         self.frameParmAndControls.grid(row=0, column=0, sticky=N)
 
-        self.frameParm = Frame(self.frameParmAndControls)
-        self.frameParm.grid(row=0, column=0, sticky=N)
+        self.frameLeft = Frame(self.frameParmAndControls)
+        self.frameLeft.grid(row=0, column=0, sticky=NW)
         row = 0
 
+        self.frameTopControls = Frame(self.frameLeft)
+        self.frameTopControls.grid(row=0, sticky=NW)
+
+        self.frameParm = Frame(self.frameLeft)
+        self.frameParm.grid(row=1, sticky=N)
+        row = 0
+
+        # Status label
+	self.labelStatus = Label(self.frameTopControls, justify="left")
+	self.labelStatus.grid(row=row, column=0, sticky=W)
+        self.status = "idle"
+        self.setStatus("idle")
+        row +=1
+
         # Recreate UI button
-	self.but_rebuildUi = Button(self.frameParm, text="Recreate UI", command=lambda:self.rebuildUI())
-	self.but_rebuildUi.grid(row=row, column=0)
+	self.but_rebuildUi = Button(self.frameTopControls, text="Recreate UI", command=lambda:self.rebuildUI())
+	self.but_rebuildUi.grid(row=row, column=0, sticky=W)
         row +=1
 
         # Flush dics button
-	self.but_flushDics = Button(self.frameParm, text="Flush dics", command=lambda:self.flushDics())
-	self.but_flushDics.grid(row=row, column=0)
+	self.but_flushDics = Button(self.frameTopControls, text="Flush dics", command=lambda:self.flushDics())
+	self.but_flushDics.grid(row=row, column=0, sticky=W)
         row +=1
 
         # Make parm UI
@@ -560,7 +596,11 @@ class warpUi():
 
 
         # Debug images.
-        sourceImages = os.listdir(self.seqDataDir + "/debugImg")
+        path = self.seqDataDir + "/debugImg"
+        if os.path.exists(path):
+            sourceImages = os.listdir(path)
+        else:
+            sourceImages = []
         if sourceImages == []:
             sourceImages = ["----"]
 
