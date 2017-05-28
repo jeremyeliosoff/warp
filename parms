@@ -1,23 +1,31 @@
 fr
 type int
-val 1000
+val 1039
 
 frPerCycle
 type int
 val 20
 
+frStart
+type int
+val 1000
+
+frEnd
+type int
+val 1999
+
 ofs
 type float
-val 0.65
+val 0.9
 
 nLevels
 type int
-val 2
+val 6
 
 anim
 hidden True
 type int
-val 0
+val 1
 
 kSurf
 type float
@@ -56,15 +64,15 @@ val sidPost
 lev_dbImg1
 hidden True
 type str
-val lev00
+val ALL
 
 dbImg2
 hidden True
 type str
-val tid
+val renCv
 
 lev_dbImg2
 hidden True
 type str
-val lev00
+val ALL
 

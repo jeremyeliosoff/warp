@@ -15,6 +15,13 @@ class warpUi():
         self.refreshParms()
         ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
         
+    def flushDics(self):
+        print "Flushing dics"
+        nLevels = self.parmDic("nLevels")
+        self.tidToSids = [{} for i in range(nLevels)]
+        self.sidToTid = [{} for i in range(nLevels)]
+        self.nextSid = 0
+        
     def refreshParms(self):
         #print "parmDic", self.parmDic
         for k,v in self.parmDic.parmDic.items():
@@ -214,10 +221,10 @@ class warpUi():
         self.setFrAndUpdate(self.parmDic("fr") + 1)
 
     def rewButCmd(self):
-        self.setFrAndUpdate(self.frStart)
+        self.setFrAndUpdate(self.parmDic("frStart"))
 
     def ffwButCmd(self):
-        self.setFrAndUpdate(self.frEnd)
+        self.setFrAndUpdate(self.parmDic("frEnd"))
 
 
     def animButCmd(self):
@@ -287,6 +294,8 @@ class warpUi():
         self.frStart = mn
         self.frStartAnim = fr
         self.frEnd = mx
+        self.setVal("frStart", mn)
+        self.setVal("frEnd", mx)
         self.setVal("fr", fr)
 
         imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
@@ -406,9 +415,10 @@ class warpUi():
         self.parmDic = ut.parmDic(parmPath)
         print "\n\n\n********** parmDic2"
         print self.parmDic
+        self.setVal("anim", 0)
+        nLevels = self.parmDic("nLevels")
         self.updateDataDirs()
         self.nextSid = 0
-        nLevels = self.parmDic("nLevels")
         self.tidToSids = [{} for i in range(nLevels)]
         self.sidToTid = [{} for i in range(nLevels)]
         self.root = Tk()
@@ -460,6 +470,11 @@ class warpUi():
         # Recreate UI button
 	self.but_rebuildUi = Button(self.frameParm, text="Recreate UI", command=lambda:self.rebuildUI())
 	self.but_rebuildUi.grid(row=row, column=0)
+        row +=1
+
+        # Flush dics button
+	self.but_flushDics = Button(self.frameParm, text="Flush dics", command=lambda:self.flushDics())
+	self.but_flushDics.grid(row=row, column=0)
         row +=1
 
         # Make parm UI
@@ -594,10 +609,19 @@ class warpUi():
                     nLevels = self.parmDic("nLevels")
                     secondsPassed = time.time() - self.timeStart
                     newFr = self.frStart + int(secondsPassed*self.parmDic("fps"))
-                    if newFr > fr:
-                        # This forces each frame to process.  TODO: maybe add forceFps
+                    if newFr > fr:        
                         fr = min(fr + 1, newFr)
-                        #self.setVal("fr", fr)
+                        if fr > self.parmDic("frEnd"):
+                            if self.parmDic("justRenTid") == 0:
+                                # Restart and render justRenTid (and renCv).
+                                print "Turning on justRenTid"
+                                self.setVal("justRenTid", 1)
+                                print "Returning to", self.parmDic("frStart")
+                                fr = self.parmDic("frStart")
+                            else:
+                                # Stop
+                                self.setVal("anim", 0)
+                        # This forces each frame to process.  TODO: maybe add forceFps
                         self.setFrAndUpdate(fr)
 
                         # For ofs anim.
