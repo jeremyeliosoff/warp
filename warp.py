@@ -27,14 +27,11 @@ class warpUi():
         for k,v in self.parmDic.parmDic.items():
             thisDic = self.parmDic.parmDic[k]
             #print "\nIN refreshParms: k", k, "thisDic", thisDic
-            # Below is just so parmCallback doesn't make errors before all the
+            # Below is just so we don't make errors before all the
             # ui is built - a bit unsatisfying.
             if "uiElement" in thisDic.keys() and not thisDic["type"] == "clr":
                 thisDic["val"] = thisDic["uiElement"].get()
         self.saveParmDic()
-
-    def parmCallback(self, sv):
-        self.refreshParms()
 
     def btn_getColor(self, args):
         k,c = args
@@ -80,7 +77,11 @@ class warpUi():
 
             if not thisParmDic["type"] == "clr":
                 sv = StringVar()
-                sv.trace("w", lambda name, index, mode, sv=sv: self.parmCallback(sv))
+                # TODO: How does this work?
+                if k == "fr":
+                    sv.trace("w", lambda name, index, mode, sv=sv: self.refreshParms())
+                else:
+                    sv.trace("w", lambda name, index, mode, sv=sv: self.frCallback())
 
                 thisParmDic["uiElement"].configure(textvariable=sv)
                 thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
@@ -299,8 +300,6 @@ class warpUi():
         self.seqStart = mn
         self.frStartAnim = fr
         self.seqEnd = mx
-        self.setVal("frStart", mn)
-        self.setVal("frEnd", mx)
         self.setVal("fr", fr)
 
         imgWithFrame = ".".join(imgSplit[:-2]) + (".%05d." % fr) + imgSplit[-1]
@@ -319,6 +318,7 @@ class warpUi():
             reload(genData)
             self.setStatus("busy", "Doing genData...")
             genData.genData(self)
+            print "\nDone genData\n\n"
             self.setStatus("idle")
         ###################################################
 
@@ -364,6 +364,11 @@ class warpUi():
             self.updateDataDirs()
             self.updateCurImg()
             self.updateDebugImg()
+
+    def menuImgChooser(self, selection):
+        self.getImg(selection)
+        self.setVal("frStart", self.seqStart)
+        self.setVal("frEnd", self.seqEnd)
 
     def setVal(self, parmStr, val):
         if "uiElement" in self.parmDic.parmDic[parmStr]:
@@ -424,6 +429,9 @@ class warpUi():
             Tk.update_idletasks(self.root)
 
 
+    def frCallback(self):
+        self.refreshParms()
+        self.updateCurImg()
 
     def __init__(self):
         # Needed for pickling.
@@ -518,13 +526,14 @@ class warpUi():
 
         # Make parm UI
         row = self.makeParmUi(row)
+        #self.parmDic.parmDic["fr"]["uiElement"].configure(command=lambda:self.frChange())
 
 	self.imgLabel = Label(self.frameParm, text="image")
         self.imgLabel.grid(row=row)
 
         vv = StringVar(self.frameParm)
         vv.set(self.parmDic.parmDic["image"]["val"])
-        self.imgChooser = OptionMenu(self.frameParm, vv, *sourceSequences, command=self.getImg)
+        self.imgChooser = OptionMenu(self.frameParm, vv, *sourceSequences, command=self.menuImgChooser)
         self.imgChooser.grid(row=row, column=1)
         row += 1
 

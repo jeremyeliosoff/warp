@@ -1,6 +1,6 @@
 fr
 type int
-val 1130
+val 6
 
 frPerCycle
 type int
@@ -8,15 +8,15 @@ val 20
 
 frStart
 type int
-val 1000
+val 1
 
 frEnd
 type int
-val 1599
+val 6
 
 ofs
 type float
-val 0.65
+val 0.55
 
 nLevels
 type int
@@ -25,7 +25,7 @@ val 6
 anim
 hidden True
 type int
-val 1
+val 0
 
 kSurf
 type float
@@ -45,7 +45,7 @@ val 0.9725490196078431,0.8705882352941177,0.7647058823529411
 
 fps
 type int
-val 80
+val 15
 
 justRenTid
 type int
@@ -54,7 +54,7 @@ val 0
 image
 hidden True
 type str
-val div07_rl_GOODpassOverGreatLightShakeyAtEnd
+val testCirclesBW
 
 dbImg1
 hidden True
