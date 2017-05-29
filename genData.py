@@ -672,30 +672,13 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                     setDbIMg("sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
 
 
-    fr = warpUi.parmDic("fr")
     print "Saving debug images", dbImgDic.keys()
     for debugInfo,imgs in dbImgDic.items():
         for lev in range(nLevels+1):
-            # Debug images are organized like so (ALL CAPS or numbers means placeholder):
-            # ../dev/warp/data/SEQNAME/v00/debugImg/DATAINFO/lev00/fr.00000.jpg
             levStr = "ALL" if lev == nLevels else "lev%02d" % lev
             levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, levStr)
             ut.mkDirSafe(levDir)
             pygame.image.save(imgs[lev], imgPath)
-
-
-#def saveCurToPrevSidDic(frameDir, curToPrevSidDic):
-    td = open(frameDir + "/curToPrevSidDic.txt", 'w')
-    for lev in range(len(curToPrevSidDic)):
-        td.write("\n\n--------------\nlev: " + str(lev))
-        curToPrevSidDicThisLev = curToPrevSidDic[lev]
-        for sidCur,sidPrevs in curToPrevSidDicThisLev.items():
-            td.write("\n\nsidCur: " + str(sidCur) + "\nsidPrev: ")
-            for sidPrev in sidPrevs:
-                td.write("\t" + str(sidPrev))
-    td.close()
-            
-    pickleDump(frameDir + "/surfCurToPrevSidDic", curToPrevSidDic)
 
     return inSurfGrid, sidToCvs
 
@@ -748,9 +731,6 @@ def genData(warpUi):
     sidToCvs = {}
 
     if warpUi.parmDic("justRenTid") == 1:
-        #inSurfGrid = pickleLoad(frameDir + "/surfGrid")
-        #if inSurfGrid == None:
-        #    warpUi.setStatus("error", "File not found: " +  frameDir + "/surfGrid")
         warpUi.tidToSids = pickleLoad(warpUi.seqDataDir  + "/tidToSids")
         warpUi.sidToTid = pickleLoad(warpUi.seqDataDir  + "/sidToTid")
         pp = pprint.pformat(warpUi.sidToTid)
@@ -758,26 +738,28 @@ def genData(warpUi):
         pp = pprint.pformat(warpUi.tidToSids)
         pOut("warpUi.tidToSids", pp)
         #writeTidImg(warpUi, inSurfGrid)
-        try:
-            renCvWrapper(warpUi, warpUi.res)
-        except:
-            if warpUi.parmDic("anim") == 1:
-                warpUi.animButCmd()
-            print "\nERROR: could not perform renCvWrapper; unknown error."
-            warpUi.setStatus("error", "fuck!")
+        renCvWrapper(warpUi, warpUi.res)
+        #try:
+        #    renCvWrapper(warpUi, warpUi.res)
+        #except:
+        #    if warpUi.parmDic("anim") == 1:
+        #        warpUi.animButCmd()
+        #    print "\nERROR: could not perform renCvWrapper; unknown error."
+        #    warpUi.setStatus("error", "fuck!")
     else:
         # Load prev inSurfGrid.
         inSurfGridPrev = None
         frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
-        inSurfGridPrev = pickleLoad(frameDirPrev + "/surfGrid")
+        #inSurfGridPrev = pickleLoad(frameDirPrev + "/surfGrid")
 
         jtGrid = initJtGrid(img, warpUi)
-        inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir)
+        inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
+        warpUi.inSurfGridPrev = inSurfGrid[:]
 
     
         # Save inSurfGrid
         inSurfGridFile = open(frameDir + "/surfGrid", 'w')
-        pickleDump(frameDir + "/surfGrid", inSurfGrid)
+        #pickleDump(frameDir + "/surfGrid", inSurfGrid)
         pp = pprint.pformat(sidToCvs)
         pOut("GEN: sidToCvs", pp)
         pOut("GEN: sidToCvDic")

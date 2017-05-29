@@ -78,10 +78,7 @@ class warpUi():
             if not thisParmDic["type"] == "clr":
                 sv = StringVar()
                 # TODO: How does this work?
-                if k == "fr":
-                    sv.trace("w", lambda name, index, mode, sv=sv: self.refreshParms())
-                else:
-                    sv.trace("w", lambda name, index, mode, sv=sv: self.frCallback())
+                sv.trace("w", lambda name, index, mode, sv=sv: self.refreshParms())
 
                 thisParmDic["uiElement"].configure(textvariable=sv)
                 thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
@@ -218,6 +215,11 @@ class warpUi():
         self.updateDataDirs()
         self.updateCurImg()
         self.updateDebugImg()
+
+    def returnCmd(self):
+        self.frameMaster.focus_set()
+        self.refreshParms()
+        self.updateCurImg()
 
     def stepBackButCmd(self):
         self.setFrAndUpdate(self.parmDic("fr") - 1)
@@ -429,9 +431,6 @@ class warpUi():
             Tk.update_idletasks(self.root)
 
 
-    def frCallback(self):
-        self.refreshParms()
-        self.updateCurImg()
 
     def __init__(self):
         # Needed for pickling.
@@ -445,6 +444,7 @@ class warpUi():
         self.parmDic = ut.parmDic(parmPath)
         print "\n\n\n********** parmDic2"
         print self.parmDic
+        self.inSurfGridPrev = None
         self.setVal("anim", 0)
         nLevels = self.parmDic("nLevels")
         self.updateDataDirs()
@@ -470,7 +470,7 @@ class warpUi():
 
         # TODO e needed?
         self.root.bind('<Escape>', lambda e: self.root.destroy())
-        self.root.bind('<Return>', lambda e: self.frameMaster.focus_set())
+        self.root.bind('<Return>', lambda e: self.returnCmd())
         self.root.bind('<Left>', lambda e: self.stepBackButCmd())
         self.root.bind('<Right>', lambda e: self.stepFwdButCmd())
         self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
@@ -526,7 +526,6 @@ class warpUi():
 
         # Make parm UI
         row = self.makeParmUi(row)
-        #self.parmDic.parmDic["fr"]["uiElement"].configure(command=lambda:self.frChange())
 
 	self.imgLabel = Label(self.frameParm, text="image")
         self.imgLabel.grid(row=row)

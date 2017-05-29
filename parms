@@ -1,6 +1,6 @@
 fr
 type int
-val 6
+val 1000
 
 frPerCycle
 type int
@@ -8,19 +8,19 @@ val 20
 
 frStart
 type int
-val 1
+val 1000
 
 frEnd
 type int
-val 6
+val 1999
 
 ofs
 type float
-val 0.55
+val 0.35
 
 nLevels
 type int
-val 6
+val 1
 
 anim
 hidden True
@@ -54,7 +54,7 @@ val 0
 image
 hidden True
 type str
-val testCirclesBW
+val laundry
 
 dbImg1
 hidden True
