@@ -1,6 +1,6 @@
 fr
 type int
-val 1000
+val 1338
 
 frPerCycle
 type int
@@ -8,53 +8,58 @@ val 20
 
 frStart
 type int
-val 1000
+val 1200
 
 frEnd
 type int
-val 1999
-
-ofs
-type float
-val 0.35
-
-nLevels
-type int
-val 1
-
-anim
-hidden True
-type int
-val 0
-
-kSurf
-type float
-val 1
-
-cDark
-type clr
-val 0.07450980392156863,0.09411764705882353,0.13725490196078433
-
-cMid
-type clr
-val 0.8196078431372549,0.3607843137254902,0.5019607843137255
-
-cLight
-type clr
-val 0.9725490196078431,0.8705882352941177,0.7647058823529411
+val 1400
 
 fps
 type int
 val 15
 
-justRenTid
+ofs
+type float
+val 0.85
+
+nLevels
+type int
+val 3
+
+anim
+hidden True
+type int
+val 1
+
+kSurf
+type float
+val 1
+
+gamma
+type float
+val 1.5
+
+cDark
+type clr
+val 0.07450980392156863,0.18823529411764706,0.13725490196078433
+
+cMid
+type clr
+val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+doRenCv
+hidden True
 type int
 val 0
 
 image
 hidden True
 type str
-val laundry
+val op_paddleBoatPassing_GOOD
 
 dbImg1
 hidden True

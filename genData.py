@@ -286,11 +286,13 @@ def initJtGrid(img, warpUi):
 
             for lev in range(nLevels):
                 levWOfs = float(lev + ofs)
-                levThresh = int((levWOfs/nLevels)*255)
+                levThresh = levWOfs/nLevels
+                levThresh = ut.gamma(levThresh, warpUi.parmDic("gamma"))
+                levThreshInt = int(levThresh*255)
                 isHigher = []
                 tot = 0
                 for nbr in nbrs:
-                    higher = 1 if nbr > levThresh else 0
+                    higher = 1 if nbr > levThreshInt else 0
                     tot += higher
                     isHigher.append(higher)
                 # Only add joint if different.
@@ -312,16 +314,17 @@ def initJtGrid(img, warpUi):
     renSeqDir = "/".join(renPath.split("/")[:-1])
     ut.mkDirSafe(renSeqDir)
     print "SAVING RENDERED IMAGE:", renPath
-    # TODO: maybe use a more general purpose version of setDbIMg instead.
+    # TODO: maybe use a more general purpose version of setDbImg instead.
     pygame.image.save(gridToImgV(warpUi.gridOut),  renPath)
 
 
     return jtGrid
 
-def setDbIMg(name, dbImgDic, lev, nLevels, x, y, val, db=False):
+def setDbImg(warpUi, name, dbImgDic, lev, nLevels, x, y, val, db=False):
     levMult = (lev+1.0)/nLevels
-    if db:
-        print "setting", name, ", lev:", lev, "x,y", x,y
+    #levMult = ut.gamma(levMult, warpUi.parmDic("gamma"))
+    #print "setting", name, ", lev:", lev, "x,y", x,y, "levMult", levMult
+    #print "levMult", levMult
     dbImgDic[name][lev].set_at((x,y), val)
     dbImgDic[name][nLevels].set_at((x,y), ut.vMult(val, levMult))
 
@@ -333,7 +336,14 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     nCurves = 0
     res = (len(jtGrid), len(jtGrid[0]))
     print "\ngrowing curves for", frameDir
+    
+    if warpUi.tidToSids == None:
+        warpUi.tidToSids = [{} for i in range(nLevels)]
+    if warpUi.sidToTid == None:
+        warpUi.sidToTid = [{} for i in range(nLevels)]
 
+    #warpUi.tidToSids = [{} for i in range(nLevels)]
+    #warpUi.sidToTid = [{} for i in range(nLevels)]
 
     # inHoles delimit holes; inSurfs do not.
     curToPrevSidDic = [{} for i in range(nLevels)]
@@ -368,7 +378,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 if inSurfNow[lev]:
                     sid = inSurfs[lev][-1].cid
                     inSurfNowVal = vX255(clrs[sid%len(clrs)])
-                    setDbIMg("inSurfNow", dbImgDic, lev, nLevels, x, y, inSurfNowVal)
+                    setDbImg(warpUi, "inSurfNow", dbImgDic, lev, nLevels, x, y, inSurfNowVal)
                     
                 val = (0, 0, 0)
                 if len(inSurfs[lev]) > 0:
@@ -378,7 +388,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 if not val == (0, 0, 0):
                     val = ut.vMult(val, .5)
                     val = ut.clamp(val, 0, 255)
-                    setDbIMg("surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
+                    setDbImg(warpUi, "surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
 
             for lev,jts in jtGrid[x][y].items():
                 for jt in jts:
@@ -396,7 +406,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                         cvClr = intToClr(jt.cv.cid)
                         while thisJt.cv == None:
                             nJoints += 1
-                            setDbIMg("cid", dbImgDic, lev, nLevels, xx, yy, cvClr)
+                            setDbImg(warpUi, "cid", dbImgDic, lev, nLevels, xx, yy, cvClr)
                             thisJt.cv = jt.cv
                             jt.cv.add(thisJt)
                             xx += thisJt.cons[1][0]
@@ -454,7 +464,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 if inSurfNow[lev]:
                     currentSid = inSurfs[lev][-1].surf.sid
                     sidClr = intToClr(currentSid)
-                    setDbIMg("sid", dbImgDic, lev, nLevels, x, y, sidClr)
+                    setDbImg(warpUi, "sid", dbImgDic, lev, nLevels, x, y, sidClr)
                     inPrevClr = green
                     inSurfGrid[lev][x][y] = currentSid
                     if inSurfGridPrev == None or (not len(inSurfGridPrev) == len(inSurfGrid)) or (not len(inSurfGridPrev[0]) == len(inSurfGrid[0])) : # NOTE:  this is apparently NOT the same as "if inSurfGridPrev:"
@@ -488,7 +498,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                                 curToPrevSidDic[lev][currentSid] = [inSurfPrev]
 
                 if inPrevClr:
-                    setDbIMg("inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
+                    setDbImg(warpUi, "inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
             # -- END OF for lev in range(nLevels):
             #dbImgDic["inPrev"][lev].set_at((x,y), green)
 
@@ -522,9 +532,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
             while True:
                 xx, yy = jt.xy
                 sfClr = intToClr(jt.cv.surf.sid)
-                setDbIMg("cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
+                setDbImg(warpUi, "cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
                 sfClr = intToClr(jt.cv.cid)
-                setDbIMg("cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
+                setDbImg(warpUi, "cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
                 drawCurveGrid[xx][yy] = clrs[cv.cid % len(clrs)]
                 #print "jt", jt, "jt.nx", jt.pv
                 jt = jt.pv
@@ -546,8 +556,8 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
         #print "sidToSurf[lev].keys()      :",sidToSurf[lev].keys()
         #print "curToPrevSidDic[lev].keys():",curToPrevSidDic[lev].keys()
         for sidOld,prevs in curToPrevSidDic[lev].items():
-            pOut("\nsidOld", sidOld, "; prevs", prevs)
-            pOut("allPrevs", allPrevs)
+            #pOut("\nsidOld", sidOld, "; prevs", prevs)
+            #pOut("allPrevs", allPrevs)
             if len(prevs) == 0:
                 births[lev].append(sidOld)
                 
@@ -555,10 +565,10 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 prevs.sort()
                 #allPrevs[lev].union(set(prevs))
                 sidNew = prevs[0]
-                pOut("sidNew", sidNew)
-                pOut("sidToCvs[lev][", sidNew, "]")
+                #pOut("sidNew", sidNew)
+                #pOut("sidToCvs[lev][", sidNew, "]")
                 if sidOld in allPrevs[lev] and sidNew in sidToCvs[lev].keys():
-                    pOut("IT'S IN allPrevs")
+                    #pOut("IT'S IN allPrevs")
                     # Another sid has the same prev, ie. this is a BRANCH.
                     sidToCvs[lev][sidNew] += sidToCvs[lev][sidOld][:]
                     
@@ -567,7 +577,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                     # Register the merge; elements after the first will merge to the first.
                     for prev in prevs[1:]:
                         mergeKeyToVal[lev][prev] = sidNew
-                        pOut("\tmergeKeyToVal", mergeKeyToVal)
+                        #pOut("\tmergeKeyToVal", mergeKeyToVal)
                 if sidNew in curToPrevSidDic[lev].keys():
                     # TODO: Avoid this by assigning new sids based on largest sid
                     # in prev frame, ie. keep track of nSurfs accross frames.
@@ -584,8 +594,8 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                     del(sidToSurf[lev][sidOld])
                     sidOldToNew[lev][sidOld] = sidNew
 
-                for cv in sidToCvs[lev][sidNew]:
-                    pOut("\t", cv.cid)
+                #for cv in sidToCvs[lev][sidNew]:
+                #    pOut("\t", cv.cid)
 
     for lev in range(nLevels*0):
         print "\n--------------------lev", lev
@@ -613,15 +623,13 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
     for lev in range(nLevels):
         print "lev:", lev, "sids to be merged:", mergeKeyToVal[lev].keys()
-        pOut("\nMerging branches for lev", lev)
+        #pOut("\nMerging branches for lev", lev)
         # Merge branches.
         for sid in set(allPrevs[lev] + sidToSurf[lev].keys()):
-            #print "--sid", sid, "lev", lev, "warpUi", warpUi, "warpUi.sidToTid", warpUi.sidToTid
-            pOut("Processing sid", sid)
             if sid in mergeKeyToVal[lev].keys():
                 # This sid will be merged.
                 sidToMergeTo = mergeKeyToVal[lev][sid]
-                pOut("Merging sid", sid, "as tid", sidToMergeTo)
+                #pOut("Merging sid", sid, "as tid", sidToMergeTo)
                 if sidToMergeTo in warpUi.tidToSids[lev].keys():
                     warpUi.tidToSids[lev][sidToMergeTo].add(sid)
                 else:
@@ -650,7 +658,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
         # Translate tidToSids to sidToTid.
         for tid,sids in warpUi.tidToSids[lev].items():
+            #pOut("\tgrowCurves, tid", tid)
             for sid in sids:
+                #pOut("\t\tsid", sid)
                 warpUi.sidToTid[lev][sid] = tid
     
 
@@ -661,7 +671,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 #print "JJJJJ lev", lev, ", sidOld", sidOld
                 sidOld = inSurfGrid[lev][x][y]
                 if not sidOld == None:
-                    setDbIMg("sidPre", dbImgDic, lev, nLevels, x, y, intToClr(sidOld))
+                    setDbImg(warpUi, "sidPre", dbImgDic, lev, nLevels, x, y, intToClr(sidOld))
                     #print "YYYYYYYes sidOld", sidOld
                     if lev <= (len(sidOldToNew) + 1) and sidOld in sidOldToNew[lev].keys():
                         #print "SETTING lev", lev, ", sidOld", sidOld, ",  sidOldToNew[lev][sidOld]", sidOldToNew[lev][sidOld]
@@ -669,7 +679,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                         inSurfGrid[lev][x][y] = sidNew
                     else:
                         sidNew = sidOld
-                    setDbIMg("sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
+                    setDbImg(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
 
 
     print "Saving debug images", dbImgDic.keys()
@@ -701,10 +711,10 @@ def writeTidImg(warpUi, inSurfGrid):
                     if sid in warpUi.sidToTid[lev].keys():
                         tid = warpUi.sidToTid[lev][sid]
                         if lev == 0: allTids.add(tid)
-                        setDbIMg("tid", dbImgDic, lev, nLevels, x, y, intToClr(tid))
+                        setDbImg(warpUi, "tid", dbImgDic, lev, nLevels, x, y, intToClr(tid))
     allTidsLs = list(allTids)
     allTidsLs.sort()
-    pOut("writeTidImg, allTids", allTidsLs)
+    #pOut("writeTidImg, allTids", allTidsLs)
 
     for lev in range(nLevels+1):
         levStr = "ALL" if lev == nLevels else "lev%02d" % lev
@@ -719,7 +729,7 @@ def genData(warpUi):
     print "### DOING genData ###"
     print "#####################"
 
-    os.system("rm " + outFile)
+    #os.system("rm " + outFile)
     nLevels = warpUi.parmDic("nLevels")
     ofs = warpUi.parmDic("ofs")
     img = pygame.image.load(warpUi.images["source"]["path"])
@@ -730,22 +740,36 @@ def genData(warpUi):
 
     sidToCvs = {}
 
-    if warpUi.parmDic("justRenTid") == 1:
-        warpUi.tidToSids = pickleLoad(warpUi.seqDataDir  + "/tidToSids")
-        warpUi.sidToTid = pickleLoad(warpUi.seqDataDir  + "/sidToTid")
+    if warpUi.parmDic("doRenCv") == 1:
+        #print "\n\n***** warpUi.tidToSids", warpUi.tidToSids
+        #print "\n\n***** warpUi.sidToTid", warpUi.sidToTid
+        if warpUi.tidToSids == None:
+            pOut("warpUi.tidToSids == None; loading", warpUi.seqDataDir  + "/tidToSids")
+            warpUi.tidToSids = pickleLoad(warpUi.seqDataDir  + "/tidToSids")
+        if warpUi.sidToTid == None:
+            pOut("warpUi.sidToTid == None; loading", warpUi.seqDataDir  + "/sidToTid")
+            warpUi.sidToTid = pickleLoad(warpUi.seqDataDir  + "/sidToTid")
         pp = pprint.pformat(warpUi.sidToTid)
-        pOut("warpUi.sidToTid", pp)
-        pp = pprint.pformat(warpUi.tidToSids)
-        pOut("warpUi.tidToSids", pp)
+        pOut("before renCv warpUi.sidToTid", pp)
+        #pp = pprint.pformat(warpUi.tidToSids)
+        #pOut("warpUi.tidToSids", pp)
         #writeTidImg(warpUi, inSurfGrid)
-        renCvWrapper(warpUi, warpUi.res)
-        #try:
-        #    renCvWrapper(warpUi, warpUi.res)
-        #except:
-        #    if warpUi.parmDic("anim") == 1:
-        #        warpUi.animButCmd()
-        #    print "\nERROR: could not perform renCvWrapper; unknown error."
-        #    warpUi.setStatus("error", "fuck!")
+
+        catchErrors = True
+        if catchErrors:
+            try:
+                renCvWrapper(warpUi, warpUi.res)
+            except:
+                if warpUi.parmDic("anim") == 1:
+                    warpUi.animButCmd()
+                print "\nERROR: could not perform renCvWrapper; unknown error."
+                err = sys.exc_info()
+                warpUi.setStatus("error", ("ERROR:" + str(err)))
+                print "ERROR:"
+                print err
+        else:
+            renCvWrapper(warpUi, warpUi.res)
+        print "Post renCvWrapper"
     else:
         # Load prev inSurfGrid.
         inSurfGridPrev = None
@@ -760,26 +784,27 @@ def genData(warpUi):
         # Save inSurfGrid
         inSurfGridFile = open(frameDir + "/surfGrid", 'w')
         #pickleDump(frameDir + "/surfGrid", inSurfGrid)
-        pp = pprint.pformat(sidToCvs)
-        pOut("GEN: sidToCvs", pp)
-        pOut("GEN: sidToCvDic")
+        #pp = pprint.pformat(sidToCvs)
+        #pOut("GEN: sidToCvs", pp)
+        #pOut("GEN: sidToCvDic")
         sidToCvDic = convertCvDicToDic(sidToCvs, warpUi)
-        for lev,sidToCv in sidToCvDic.items():
-            for sid,cvs in sidToCv.items():
-                pOut("\tsid", sid)
-                for cv in cvs:
-                    pOut("\t\tlen(cv)", len(cv))
+        #for lev,sidToCv in sidToCvDic.items():
+        #    for sid,cvs in sidToCv.items():
+        #        pOut("\tsid", sid)
+        #        for cv in cvs:
+        #            pOut("\t\tlen(cv)", len(cv))
         pickleDump(frameDir + "/sidToCvDic", sidToCvDic)
 
 
 
     
     # Save tidToSids and sidToTid for whole seq.
-    pp = pprint.pformat(warpUi.sidToTid)
-    pOut("GEN: warpUi.sidToTid", pp)
-    pp = pprint.pformat(warpUi.tidToSids)
-    pOut("GEN: warpUi.tidToSids", pp)
+    #pp = pprint.pformat(warpUi.sidToTid)
+    #pOut("GEN: warpUi.sidToTid", pp)
+    #pp = pprint.pformat(warpUi.tidToSids)
+    #pOut("GEN: warpUi.tidToSids", pp)
 
+    print "Post renCvWrapper block"
     pickleDump(warpUi.seqDataDir + "/tidToSids", warpUi.tidToSids)
     pickleDump(warpUi.seqDataDir + "/sidToTid", warpUi.sidToTid)
     # Save sidToCvs for this frame.
@@ -819,7 +844,7 @@ def renCvWrapper(warpUi, res):
     if sidToCvDic == None:
         if warpUi.parmDic("anim") == 1:
             warpUi.animButCmd()
-        warpUi.setStatus("error", "fuck!")
+        warpUi.setStatus("error", "ERROR: sidToCvDic == None")
     else:
         pOut("\nREN loaded sidToCvDic:")
         renCv(warpUi, res, sidToCvDic)
@@ -831,47 +856,59 @@ def renCv(warpUi, res, sidToCvDic):
     print "*******************"
     print "*** DOING renCv ***"
     print "*******************"
+    warpUi.setStatus("busy", "Doing renCv...")
 
     nLevels = warpUi.parmDic("nLevels")
 
 
-    for lev in range(nLevels):
-        for sid,cvs in sidToCvDic[lev].items():
-            pOut("\tsid:", sid)
-            for cv in cvs:
-                pOut("\t\tlen(cv):", len(cv))
+    #for lev in range(nLevels):
+    #    for sid,cvs in sidToCvDic[lev].items():
+    #        pOut("\tsid:", sid)
+    #        for cv in cvs:
+    #            pOut("\t\tlen(cv):", len(cv))
 
     
     ret = pygame.Surface(res)
     dbImgDic = {}
     dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
 
-    pOut("\n\n renCv")
+    #pOut("\n\n renCv")
     allTids = set()
+
+    #print "Progress:"
+    #for y in range(res[1]):
+    #    pct = int(100*float(y)/res[1])
+    #    if pct >= nextPrintout:
+    #        print "%d%%" % pct # in place didn't update enough: print "Progress %d%%\r" % pct,
+    #        nextPrintout += 10
     for lev in range(nLevels):
+        print "lev", lev, ", nLevels =", nLevels
         for tid,sids in warpUi.tidToSids[lev].items():
+            clr = intToClr(tid)
+            #pOut("IN renCv: tid", tid, ", sid", sids)
             sc = 1
             fact = 1.5
             dirX = (5-(tid % 10))*sc
             dirY = (5-((7*tid) % 10))*sc
             for sid in sids:
                 if sid in sidToCvDic[lev]:
+                    #pOut("\tsid", sid, "is in sidToCvDic")
                     if lev == 0:
-                        pOut("tid", tid, "sid", sid)
+                        #pOut("\t\ttid", tid, "sid", sid)
                         allTids.add(tid)
                     cvs = sidToCvDic[lev][sid]
+                    #pOut("\t\tlen(cvs)", len(cvs))
                     for cv in cvs:
+                        #pOut("\t\t\tlen(cv)", len(cv))
                         for jt in cv:
                             #print "jt", jt
                             coord = list(jt)
                             xx = (coord[0] - res[0]/2)
                             yy = (coord[1] - res[1]/2)
-                            #dist = math.sqrt(xx*xx + yy*yy)
 
                             
 
-                            clr = intToClr(tid)
-                            setDbIMg("renCv", dbImgDic, lev, nLevels, coord[0], coord[1], clr)
+                            setDbImg(warpUi, "renCv", dbImgDic, lev, nLevels, coord[0], coord[1], clr)
                             tint = ut.vMult((1, .98, .95), .5)
                             #tint = (1, 1, 1)
                             clrs = []
@@ -880,14 +917,15 @@ def renCv(warpUi, res, sidToCvDic):
                             kLev = nLevels - (warpUi.parmDic("ofs")+lev)
                             incX = kLev*xx/25
                             incY = kLev*yy/25
+                            clrVary = clr
                             for i in rg:
                                 coord[0] +=  incX
                                 incX = int(math.ceil(incX*fact))
                                 coord[1] +=  incY
                                 incY = int(math.ceil(incY*fact))
                                 xys.append(coord)
-                                clr = ut.vMult(clr, tint)
-                                clrs.append(clr)
+                                clrVary = ut.vMult(clrVary, tint)
+                                clrs.append(clrVary)
 
                                 x,y = xys[i]
                                 x = int(x)
@@ -895,11 +933,11 @@ def renCv(warpUi, res, sidToCvDic):
                                 if x < res[0] and y < res[1] and x > 0 and y > 0:
                                     oldClr = dbImgDic["renCv"][lev].get_at((x,y))
                                     newClr = ut.clamp(ut.vAdd(clrs[i], oldClr),0, 255)
-                                    setDbIMg("renCv", dbImgDic, lev, nLevels, x, y, newClr)
+                                    setDbImg(warpUi, "renCv", dbImgDic, lev, nLevels, x, y, newClr)
 
                             #rg.reverse()
                             #for i in range(10):
-                            #    setDbIMg("renCv", dbImgDic, lev, nLevels, xys[i][0], xys[i][1], clrs[i])
+                            #    setDbImg(warpUi, "renCv", dbImgDic, lev, nLevels, xys[i][0], xys[i][1], clrs[i])
 
     for lev in range(nLevels+1):
         levStr = "ALL" if lev == nLevels else "lev%02d" % lev
@@ -908,10 +946,11 @@ def renCv(warpUi, res, sidToCvDic):
         print "imgPath", imgPath
         pygame.image.save(dbImgDic["renCv"][lev], imgPath)
 
-    allTidsLs = list(allTids)
-    allTidsLs.sort()
-    pOut("renCv, allTids", allTidsLs)
+    #allTidsLs = list(allTids)
+    #allTidsLs.sort()
+    #pOut("renCv, allTids", allTidsLs)
 
+    print "done renCv for fr", warpUi.parmDic("fr")
     #pygame.image.save(ret,  "/tmp/ren.jpg")
 
 

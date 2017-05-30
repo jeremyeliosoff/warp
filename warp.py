@@ -15,11 +15,20 @@ class warpUi():
         self.refreshParms()
         ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
         
+    def saveDics(self):
+        print "Saving dics..."
+        genData.pickleDump(self.seqDataDir + "/tidToSids", self.tidToSids)
+        genData.pickleDump(self.seqDataDir + "/sidToTid", self.sidToTid)
+
+    def delDics(self):
+        print "Saving dics..."
+        ut.exeCmd("rm " + self.seqDataDir + "/tidToSids")
+        ut.exeCmd("rm " + self.seqDataDir + "/sidToTid")
+        
     def flushDics(self):
         print "Flushing dics"
-        nLevels = self.parmDic("nLevels")
-        self.tidToSids = [{} for i in range(nLevels)]
-        self.sidToTid = [{} for i in range(nLevels)]
+        self.tidToSids = None
+        self.sidToTid = None
         self.nextSid = 0
         
     def refreshParms(self):
@@ -88,16 +97,16 @@ class warpUi():
         
 
     def positionWindow(self):
-        w = 1300 # width for the Tk root
-        h = 650 # height for the Tk root
+        w = 1500 # width for the Tk root
+        h = 750 # height for the Tk root
 
         # get screen width and height
         ws = self.root.winfo_screenwidth() # width of the screen
         hs = self.root.winfo_screenheight() # height of the screen
 
         # calculate x and y coordinates for the Tk root window
-        x = ws/4
-        y = hs/4
+        x = ws/8
+        y = hs/8
         #x = ws - (w/2)
         #y = hs - (h/2)
 
@@ -236,21 +245,30 @@ class warpUi():
 
     def animButCmd(self):
         anim = self.parmDic("anim")
-        print "Pressing anim button, anim:", anim
         if anim == 0:
             self.setVal("anim", 1)
+            self.refreshButtonImages()
             self.timeStart = time.time()
             self.frStartAnim = self.parmDic("fr")
             self.updateCurImg()
         else:
             self.setVal("anim", 0)
+            self.refreshButtonImages()
+        print "Pressed anim button, anim set to", anim
         self.refreshParms()
-        self.refreshButtonImages()
 
     def recButCmd(self):
         self.record = False if self.record else True
+        print "recButCmd; self.record =", self.record
         self.refreshButtonImages()
 
+    def toggleDoRenCv(self):
+        if self.chk_doRenCv_var.get() == 1:
+            val = 0
+        else:
+            val = 1
+        self.chk_doRenCv_var.set(val)
+        self.setVal("doRenCv", val)
 
     def saveParmDic(self):
         #print "\n\n\n INSIDE saveParmDic"
@@ -314,15 +332,26 @@ class warpUi():
         self.images["ren"]["path"] = imgPath.replace("/seq/","/ren/")
         self.refreshParms()
         #print "\n\n------- self.images", self.images
+        print "\n\n self.record", self.record
+
+        ut.exeCmd("rm " + genData.outFile)
+        genData.pOut("\nPRE genData")
 
         ######## THIS IS WHERE DATA GETS GENERATED ########
         if self.record or forceRecord:
+            genData.pOut("doing genData")
             reload(genData)
             self.setStatus("busy", "Doing genData...")
             genData.genData(self)
             print "\nDone genData\n\n"
             self.setStatus("idle")
+        else:
+            genData.pOut("skipping genData")
         ###################################################
+        
+
+        pp = pprint.pformat(self.sidToTid)
+        genData.pOut("Post genData, sidToTid", pp)
 
 	self.refreshButtonImages()
 
@@ -371,6 +400,11 @@ class warpUi():
         self.getImg(selection)
         self.setVal("frStart", self.seqStart)
         self.setVal("frEnd", self.seqEnd)
+
+    def chk_doRenCv_cmd(self):
+        val = self.chk_doRenCv_var.get()
+        print "Setting doRenCv to:", val
+        self.setVal("doRenCv", val)
 
     def setVal(self, parmStr, val):
         if "uiElement" in self.parmDic.parmDic[parmStr]:
@@ -449,8 +483,8 @@ class warpUi():
         nLevels = self.parmDic("nLevels")
         self.updateDataDirs()
         self.nextSid = 0
-        self.tidToSids = [{} for i in range(nLevels)]
-        self.sidToTid = [{} for i in range(nLevels)]
+        self.tidToSids = None
+        self.sidToTid = None
         self.root = Tk()
         self.root.wm_title("WARP")
         self.positionWindow()
@@ -477,7 +511,12 @@ class warpUi():
         self.root.bind('<Control-Right>', lambda e: self.ffwButCmd())
         self.root.bind('<space>', lambda e: self.animButCmd())
         self.root.bind('<r>', lambda e: self.recButCmd())
+        self.root.bind('<c>', lambda e: self.toggleDoRenCv())
+        self.root.bind('<x>', lambda e: self.imgButCmd())
+        #self.root.bind('<c>', lambda e: if self.chk_doRenCv_var.get() == 1 : self.chk_doRenCv_var.set(0) else self.chk_doRenCv_var.set(1))
+        #self.root.bind('<c>', lambda e: self.chk_doRenCv())
 
+        #self.chk_doRenCv_var.set(self.parmDic("doRenCv"))
 
         # Load images.
         self.staticImageNames = ["play", "pause", "rew", "stepBack", "stepFwd", "ffw", "recOn", "recOff", "error"]
@@ -519,10 +558,29 @@ class warpUi():
 	self.but_rebuildUi.grid(row=row, column=0, sticky=W)
         row +=1
 
-        # Flush dics button
-	self.but_flushDics = Button(self.frameTopControls, text="Flush dics", command=lambda:self.flushDics())
-	self.but_flushDics.grid(row=row, column=0, sticky=W)
+        # Dics button
+        self.frameDics = Frame(self.frameTopControls)
+        self.frameDics.grid(row=row, sticky=N)
         row +=1
+
+	self.but_flushDics = Button(self.frameDics, text="Flush dics", command=lambda:self.flushDics())
+	self.but_flushDics.grid(row=0, column=0, sticky=W)
+
+	self.but_delDics = Button(self.frameDics, text="Delete saved dics", command=lambda:self.delDics())
+	self.but_delDics.grid(row=0, column=1, sticky=W)
+
+	self.but_saveDics = Button(self.frameDics, text="Save dics", command=lambda:self.saveDics())
+	self.but_saveDics.grid(row=0, column=2, sticky=W)
+
+
+        # Do renCv checkbox
+
+        self.chk_doRenCv_var = IntVar()
+        self.chk_doRenCv_var.set(self.parmDic("doRenCv"))
+        self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Do renCv", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
+	self.chk_doRenCv.grid(row=row, column=0, sticky=W)
+        row +=1
+
 
         # Make parm UI
         row = self.makeParmUi(row)
@@ -531,7 +589,7 @@ class warpUi():
         self.imgLabel.grid(row=row)
 
         vv = StringVar(self.frameParm)
-        vv.set(self.parmDic.parmDic["image"]["val"])
+        vv.set(self.parmDic("image"))
         self.imgChooser = OptionMenu(self.frameParm, vv, *sourceSequences, command=self.menuImgChooser)
         self.imgChooser.grid(row=row, column=1)
         row += 1
@@ -654,14 +712,15 @@ class warpUi():
                 frPerCycle = self.parmDic("frPerCycle")
                 nLevels = self.parmDic("nLevels")
                 secondsPassed = time.time() - self.timeStart
-                newFr = self.seqStart + int(secondsPassed*self.parmDic("fps"))
+                newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
+                print "frStartAnim:", self.frStartAnim, ", secondsPassed:", secondsPassed, "\tfr", fr, "\tnewFr = ", newFr
                 if newFr > fr:        
                     fr = min(fr + 1, newFr)
                     if fr > self.parmDic("frEnd"):
-                        if self.parmDic("justRenTid") == 0:
-                            # Restart and render justRenTid (and renCv).
-                            print "Turning on justRenTid"
-                            self.setVal("justRenTid", 1)
+                        if self.parmDic("doRenCv") == 0:
+                            # Restart and do renCv
+                            print "Turning on doRenCv"
+                            self.setVal("doRenCv", 1)
                             print "Returning to", self.parmDic("frStart")
                             fr = self.parmDic("frStart")
                         else:

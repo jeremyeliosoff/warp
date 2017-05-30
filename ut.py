@@ -89,6 +89,10 @@ class parmDic:
 # FUNCTIONS
 
 # os
+def exeCmd(cmd):
+	print "executing", cmd
+	os.system(cmd)
+
 def mkDirSafe(path):
     if not os.path.isdir(path):
         print "Making dir:", path
@@ -159,6 +163,18 @@ def vMult(a, b):
             ret.append(a[i] * b)
         else:
             ret.append(a[i] * b[i])
+    return ret
+
+def gamma(a, g):
+    return pow(a, 1.0/g)
+
+def vGamma(a, g):
+    ret = []
+    for i in range(len(a)):
+        if isScalar(g):
+            ret.append(gamma(a[i], g))
+        else:
+            ret.append(gamma(a[i], g[i]))
     return ret
 
 def vNeg(a):
