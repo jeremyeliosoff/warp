@@ -1,6 +1,6 @@
 fr
 type int
-val 1338
+val 1235
 
 frPerCycle
 type int
@@ -20,7 +20,7 @@ val 15
 
 ofs
 type float
-val 0.85
+val 0.7
 
 nLevels
 type int
@@ -54,7 +54,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
