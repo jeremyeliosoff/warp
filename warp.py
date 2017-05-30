@@ -17,13 +17,13 @@ class warpUi():
         
     def saveDics(self):
         print "Saving dics..."
-        genData.pickleDump(self.seqDataDir + "/tidToSids", self.tidToSids)
-        genData.pickleDump(self.seqDataDir + "/sidToTid", self.sidToTid)
+        genData.pickleDump(self.seqDataVDir + "/tidToSids", self.tidToSids)
+        genData.pickleDump(self.seqDataVDir + "/sidToTid", self.sidToTid)
 
     def delDics(self):
         print "Saving dics..."
-        ut.exeCmd("rm " + self.seqDataDir + "/tidToSids")
-        ut.exeCmd("rm " + self.seqDataDir + "/sidToTid")
+        ut.exeCmd("rm " + self.seqDataVDir + "/tidToSids")
+        ut.exeCmd("rm " + self.seqDataVDir + "/sidToTid")
         
     def flushDics(self):
         print "Flushing dics"
@@ -224,6 +224,8 @@ class warpUi():
         self.updateDataDirs()
         self.updateCurImg()
         self.updateDebugImg()
+        Tk.update_idletasks(self.root)
+        
 
     def returnCmd(self):
         self.frameMaster.focus_set()
@@ -287,7 +289,6 @@ class warpUi():
 
     def updateDebugImg(self):
         #print " -- IN updateDebugImg"
-        #self.updateDataDirs()  # TODO: should this be part of updateCurImg?
         for i in range(2):
             img = self.parmDic("dbImg" + str(i+1))
             lev = self.parmDic("lev_dbImg" + str(i+1))
@@ -398,8 +399,30 @@ class warpUi():
 
     def menuImgChooser(self, selection):
         self.getImg(selection)
+        dataVers = self.getDataVersions()
+        print "\n******self.seqDataDir", self.seqDataDir, "self.imgVChooserVar.get()", self.imgVChooserVar.get(), "dataVers", dataVers
+        if not self.imgVChooserVar.get() in dataVers:
+            latestVer = int(dataVers[0][1:])
+            print "\tresetting  latestVer to ", latestVer
+            self.imgVChooserVar.set("v%03d" % latestVer)
+            self.setVal("dataVer", latestVer)
+
         self.setVal("frStart", self.seqStart)
         self.setVal("frEnd", self.seqEnd)
+
+    def menuImgVChooser(self, selection):
+        verNum = int(selection[1:])
+        print "menuImgVChooser: setting dataVer to", verNum
+        self.setVal("dataVer", verNum)
+
+    def but_imgVNew(self):
+        dataVers = self.getDataVersions()
+        dataVers.sort()
+        nextVer = int(dataVers[-1][1:]) + 1
+        ut.mkDirSafe(self.seqDataDir + ("/v%03d" % nextVer))
+        self.setVal("dataVer", nextVer)
+        self.rebuildUI()
+
 
     def chk_doRenCv_cmd(self):
         val = self.chk_doRenCv_var.get()
@@ -417,6 +440,7 @@ class warpUi():
         if type(val) in [type(()), type([])]:
             valStr = valStr[1:-1].replace(' ','')
         #print "valStr pos", valStr
+        print "setVal: setting parmDic[" + parmStr + "] to", valStr
         self.parmDic.parmDic[parmStr]["val"] = valStr
         self.refreshParms()
 
@@ -427,13 +451,28 @@ class warpUi():
         ut.mkDirSafe(frameDir)
         return fr, frameDir
 
+    def getDataVersions(self):
+        dataVers = [f for f in os.listdir(self.seqDataDir) if re.match('v[0-9][0-9][0-9]$', f)]
+        dataVers.sort()
+        dataVers.reverse()
+
+        # Make v000 dir if there is none.
+        if dataVers == []:
+            ut.mkDirSafe(self.seqDataDir + "/v000")
+            dataVers = ["v000"]
+
+        return dataVers
+
     def updateDataDirs(self):
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
-        self.framesDataDir = self.seqDataDir + "/frames"
+        ut.mkDirSafe(self.seqDataDir)
+        #self.seqDataVDir = self.getLatestVersion()
+        self.seqDataVDir = self.seqDataDir + ("/v%03d/" % self.parmDic("dataVer"))
+        self.framesDataDir = self.seqDataVDir + "/frames"
 
     def getDebugDirAndImg(self, debugInfo, lev):
         fr = self.parmDic("fr")
-        levDir = self.seqDataDir + "/debugImg/" + debugInfo + "/" + lev # TODO: v00
+        levDir = self.seqDataVDir + "/debugImg/" + debugInfo + "/" + lev # TODO: v00
         imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
         return levDir,imgPath
 
@@ -499,8 +538,6 @@ class warpUi():
         sourceImages = os.listdir(ut.imgIn)
         sourceImages.sort()
 
-        sourceSequences = os.listdir(ut.seqDir)
-        sourceSequences.sort()
 
         # TODO e needed?
         self.root.bind('<Escape>', lambda e: self.root.destroy())
@@ -555,7 +592,7 @@ class warpUi():
 
         # Recreate UI button
 	self.but_rebuildUi = Button(self.frameTopControls, text="Recreate UI", command=lambda:self.rebuildUI())
-	self.but_rebuildUi.grid(row=row, column=0, sticky=W)
+	self.but_rebuildUi.grid(row=row, column=0, sticky=EW)
         row +=1
 
         # Dics button
@@ -585,18 +622,49 @@ class warpUi():
         # Make parm UI
         row = self.makeParmUi(row)
 
-	self.imgLabel = Label(self.frameParm, text="image")
-        self.imgLabel.grid(row=row)
 
-        vv = StringVar(self.frameParm)
-        vv.set(self.parmDic("image"))
-        self.imgChooser = OptionMenu(self.frameParm, vv, *sourceSequences, command=self.menuImgChooser)
-        self.imgChooser.grid(row=row, column=1)
+        # Image chooser
+	self.imgLabel = Label(self.frameParm, text="image")
+        self.imgLabel.grid(row=row, sticky=E)
+
+        sourceSequences = os.listdir(ut.seqDir)
+        if "bak" in sourceSequences: # Skip bak dir
+            sourceSequences.remove("bak")
+        sourceSequences.sort()
+        self.imgChooserVar = StringVar(self.frameParm)
+        self.imgChooserVar.set(self.parmDic("image"))
+        self.imgChooser = OptionMenu(self.frameParm, self.imgChooserVar, *sourceSequences, command=self.menuImgChooser)
+        self.imgChooser.grid(row=row, column=1, sticky=EW)
         row += 1
 
-        # Anim button
+        # Data version chooser
+
+	self.imgVLabel = Label(self.frameParm, text="dataVersion")
+        self.imgVLabel.grid(row=row, column=0, sticky=E)
+
+
+        self.frameImgV = Frame(self.frameParm)
+        self.frameImgV.grid(row=row, column=1, sticky=EW)
+        self.imgVChooserVar = StringVar(self.frameImgV)
+        self.imgVChooserVar.set("v%03d" % self.parmDic("dataVer"))
+        print "--- self.imgVChooserVar.get()", self.imgVChooserVar.get()
+        dataVers = self.getDataVersions()
+        print "\n dataVers:", dataVers
+        self.imgVChooser = OptionMenu(self.frameImgV, self.imgVChooserVar, *dataVers, command=self.menuImgVChooser)
+        self.imgVChooser.grid(row=0, column=0, sticky=W)
+
+	#self.imgVNewLabel = Label(self.frameImgV, text="makeNew")
+	self.imgVNew = Button(self.frameImgV, text="Make New", command=lambda:self.but_imgVNew())
+        self.imgVNew.grid(row=0, column=1, sticky=E)
+        #self.imgVNewLabel.grid(row=0, column=1)
+        row += 1
+
+
+
+
+        # Playback controls.
         framePlaybackControls = Frame(self.frameParmAndControls)
-        framePlaybackControls.grid(row=1, sticky=S) # Not convinced sticky does anything here.
+        framePlaybackControls.grid(row=row, sticky=S) # Not convinced sticky does anything here.
 
 
         column = 0
@@ -665,7 +733,8 @@ class warpUi():
 
 
         # Debug images.
-        path = self.seqDataDir + "/debugImg"
+        path = self.seqDataVDir + "/debugImg"
+        print "=========== PATH", path
         if os.path.exists(path):
             sourceImages = os.listdir(path)
         else:
@@ -698,7 +767,7 @@ class warpUi():
             levChooser.grid(row=0,column=1)
 
             # TODO: varName and varLev are not yet used.
-            self.dbMenus[dbImgName] = {"menu":imgChooser, "varName":vv, "varLev":varLev}
+            self.dbMenus[dbImgName] = {"menu":imgChooser, "varName":varLev, "varLev":varLev}
             frameDbParm.grid(row=row,column=col)
             col += 1
 

@@ -1,6 +1,6 @@
 fr
 type int
-val 1235
+val 24
 
 frPerCycle
 type int
@@ -8,11 +8,11 @@ val 20
 
 frStart
 type int
-val 1200
+val 1
 
 frEnd
 type int
-val 1400
+val 29
 
 fps
 type int
@@ -20,16 +20,16 @@ val 15
 
 ofs
 type float
-val 0.7
+val 0.5
 
 nLevels
 type int
-val 3
+val 2
 
 anim
 hidden True
 type int
-val 1
+val 0
 
 kSurf
 type float
@@ -37,7 +37,7 @@ val 1
 
 gamma
 type float
-val 1.5
+val 1
 
 cDark
 type clr
@@ -59,7 +59,7 @@ val 1
 image
 hidden True
 type str
-val op_paddleBoatPassing_GOOD
+val testCirclesBW_zig
 
 dbImg1
 hidden True
@@ -69,7 +69,7 @@ val sidPost
 lev_dbImg1
 hidden True
 type str
-val ALL
+val lev01
 
 dbImg2
 hidden True
@@ -79,5 +79,10 @@ val renCv
 lev_dbImg2
 hidden True
 type str
-val ALL
+val lev01
+
+dataVer
+hidden True
+type int
+val 4
 

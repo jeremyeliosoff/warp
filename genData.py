@@ -357,7 +357,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
 
     imgJtInOut = pygame.Surface(res)
-    dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid", "sidPost", "sidPre", "tid", "cvRen"]
+    dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid", "sidPost"]
     dbImgDic = {}
     for dbi in dbImgs:
         # The last cell - that is, [nLevels] - is reserved for "all"
@@ -671,7 +671,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 #print "JJJJJ lev", lev, ", sidOld", sidOld
                 sidOld = inSurfGrid[lev][x][y]
                 if not sidOld == None:
-                    setDbImg(warpUi, "sidPre", dbImgDic, lev, nLevels, x, y, intToClr(sidOld))
+                    #setDbImg(warpUi, "sidPre", dbImgDic, lev, nLevels, x, y, intToClr(sidOld))
                     #print "YYYYYYYes sidOld", sidOld
                     if lev <= (len(sidOldToNew) + 1) and sidOld in sidOldToNew[lev].keys():
                         #print "SETTING lev", lev, ", sidOld", sidOld, ",  sidOldToNew[lev][sidOld]", sidOldToNew[lev][sidOld]
@@ -744,11 +744,11 @@ def genData(warpUi):
         #print "\n\n***** warpUi.tidToSids", warpUi.tidToSids
         #print "\n\n***** warpUi.sidToTid", warpUi.sidToTid
         if warpUi.tidToSids == None:
-            pOut("warpUi.tidToSids == None; loading", warpUi.seqDataDir  + "/tidToSids")
-            warpUi.tidToSids = pickleLoad(warpUi.seqDataDir  + "/tidToSids")
+            pOut("warpUi.tidToSids == None; loading", warpUi.seqDataVDir  + "/tidToSids")
+            warpUi.tidToSids = pickleLoad(warpUi.seqDataVDir  + "/tidToSids")
         if warpUi.sidToTid == None:
-            pOut("warpUi.sidToTid == None; loading", warpUi.seqDataDir  + "/sidToTid")
-            warpUi.sidToTid = pickleLoad(warpUi.seqDataDir  + "/sidToTid")
+            pOut("warpUi.sidToTid == None; loading", warpUi.seqDataVDir  + "/sidToTid")
+            warpUi.sidToTid = pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
         pp = pprint.pformat(warpUi.sidToTid)
         pOut("before renCv warpUi.sidToTid", pp)
         #pp = pprint.pformat(warpUi.tidToSids)
@@ -805,8 +805,8 @@ def genData(warpUi):
     #pOut("GEN: warpUi.tidToSids", pp)
 
     print "Post renCvWrapper block"
-    pickleDump(warpUi.seqDataDir + "/tidToSids", warpUi.tidToSids)
-    pickleDump(warpUi.seqDataDir + "/sidToTid", warpUi.sidToTid)
+    pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
+    pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
     # Save sidToCvs for this frame.
     #pickleDump(frameDir + "/sidToCvs", sidToCvs)
     #pOut("\nDUMPING\ntidToSids[0][0]", warpUi.tidToSids[0][0])
@@ -846,7 +846,7 @@ def renCvWrapper(warpUi, res):
             warpUi.animButCmd()
         warpUi.setStatus("error", "ERROR: sidToCvDic == None")
     else:
-        pOut("\nREN loaded sidToCvDic:")
+        pOut("\nIn renCvWrapper, about to do renCv()...")
         renCv(warpUi, res, sidToCvDic)
 
 
