@@ -199,3 +199,11 @@ def vAdd(a, b):
         ret.append(a[i] + b[i])
     return ret
 
+def smoothstep(edge0, edge1, x):
+    # Scale, bias and saturate x to 0..1 range
+	ret = edge1
+	if edge1 > edge0:
+		x = clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0); 
+		# Evaluate polynomial
+		ret = x*x*(3 - 2*x);
+	return ret

@@ -260,7 +260,7 @@ class warpUi():
         self.refreshParms()
 
     def recButCmd(self):
-        self.record = False if self.record else True
+        self.record = not self.record
         print "recButCmd; self.record =", self.record
         self.refreshButtonImages()
 
@@ -319,7 +319,7 @@ class warpUi():
 
         fr = ut.clamp(fr, mn, mx)
         self.seqStart = mn
-        self.frStartAnim = fr
+        #self.frStartAnim = fr
         self.seqEnd = mx
         self.setVal("fr", fr)
 
@@ -793,7 +793,7 @@ class warpUi():
                 nLevels = self.parmDic("nLevels")
                 secondsPassed = time.time() - self.timeStart
                 newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
-                print "frStartAnim:", self.frStartAnim, ", secondsPassed:", secondsPassed, "\tfr", fr, "\tnewFr = ", newFr
+                #print "frStartAnim:", self.frStartAnim, ", secondsPassed:", secondsPassed, "\tfr", fr, "\tnewFr = ", newFr
                 if newFr > fr:        
                     fr = min(fr + 1, newFr)
                     if fr > self.parmDic("frEnd"):
@@ -805,6 +805,9 @@ class warpUi():
                             fr = self.parmDic("frStart")
                         else:
                             # Stop
+                            if self.record:
+                                self.recButCmd()
+                            fr -= 1
                             self.setVal("anim", 0)
                     # This forces each frame to process.  TODO: maybe add forceFps
                     self.setFrAndUpdate(fr)
@@ -812,7 +815,7 @@ class warpUi():
                     # For ofs anim.
                     #ofs = fr/float(frPerCycle) % 1
                     ofs = self.getOfs() % 1
-                    self.setVal("ofs", ofs)
+                self.setVal("fr", fr)
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
 

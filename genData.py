@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pygame, math, ut, pickle, os, pprint, sys
+import pygame, math, ut, pickle, os, pprint, sys, random
 
 outFile = "/tmp/out"
 
@@ -904,7 +904,7 @@ def renCv(warpUi, res, sidToCvDic):
             #level = warpUi.tidToSids[lev][tid]["level"]
             #level = 1
             level = warpUi.getOfsWLev(lev) % 1.0
-            level *= (1-level)**2
+            levMult = level* (1-level)**2
             levMult = min(level*6, 1)
             levClr = vX255(ut.mix(red, green, levMult))
             #print "______________ level", level
@@ -915,6 +915,8 @@ def renCv(warpUi, res, sidToCvDic):
             dirX = (5-(tid % 10))*sc
             dirY = (5-((7*tid) % 10))*sc
             for sid in sids:
+                random.seed(sid)
+                sidRand = random.random()
                 if sid in sidToCvDic[lev]:
                     #pOut("\tsid", sid, "is in sidToCvDic")
                     if lev == 0:
@@ -926,31 +928,49 @@ def renCv(warpUi, res, sidToCvDic):
                         #pOut("\t\t\tlen(cv)", len(cv))
                         for jt in cv:
                             #print "jt", jt
-                            coord = list(jt)
-                            xx = (coord[0] - res[0]/2)
-                            yy = (coord[1] - res[1]/2)
+                            jx,jy = list(jt)
+                            fromCentX = (jx - res[0]/2)
+                            fromCentY = (jy - res[1]/2)
+
+                            kMove = ut.smoothstep(.3, .4, level)
+                            kMove = ut.mix(0, level, kMove) * 10
+
+                            fallTime = .2
+                            fallStart = ut.mix(.3, 1, sidRand)
+                            fall = ut.smoothstep(fallStart, fallStart+fallTime, level) * res[1]
+                            #kMove = level
+                            #print "kMove", kMove
+                            #xRen = int(jx + fromCentX * kMove)
+                            #yRen = int(jy + fromCentY * kMove)
+                            xRen = jx
+                            yRen = int(jy + fall)
 
                             
 
-                            setDbImg("renCv", dbImgDic, lev, nLevels, coord[0], coord[1], ut.vMult(clr, levMult))
-                            setDbImg("level", dbImgDic, lev, nLevels, coord[0], coord[1], levClr)
+                            setDbImg("renCv", dbImgDic, lev, nLevels, xRen, yRen, ut.vMult(clr, levMult))
+                            setDbImg("level", dbImgDic, lev, nLevels, jx, jy, levClr)
                             tint = ut.vMult((1, .98, .95), .5)
                             #tint = (1, 1, 1)
                             clrs = []
                             xys = []
+
+
+
+
+                            # Starburst stuff, slated for fuck it
                             rg = range(0)
                             #rg = range(0)
                             #kLev = nLevels - (warpUi.parmDic("ofs")+lev)
                             kLev = level
-                            incX = kLev*xx/25
-                            incY = kLev*yy/25
+                            incX = kLev*fromCentX/25
+                            incY = kLev*fromCentY/25
                             clrVary = clr
                             for i in rg:
-                                coord[0] +=  incX
+                                jx +=  incX
                                 incX = int(math.ceil(incX*fact))
-                                coord[1] +=  incY
+                                jy +=  incY
                                 incY = int(math.ceil(incY*fact))
-                                xys.append(coord)
+                                xys.append((jx,jy))
                                 clrVary = ut.vMult(clrVary, tint)
                                 clrs.append(clrVary)
 

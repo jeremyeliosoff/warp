@@ -1,6 +1,6 @@
 fr
 type int
-val 1066
+val 12
 
 frPerCycle
 type int
@@ -8,11 +8,11 @@ val 30
 
 frStart
 type int
-val 1000
+val 0
 
 frEnd
 type int
-val 1999
+val 29
 
 fps
 type int
@@ -20,7 +20,7 @@ val 1
 
 ofs
 type float
-val 0.966666666667
+val 0.6
 
 nLevels
 type int
@@ -29,7 +29,7 @@ val 4
 anim
 hidden True
 type int
-val 0
+val 1
 
 kSurf
 type float
@@ -37,7 +37,7 @@ val 1
 
 gamma
 type float
-val .5
+val 1
 
 minThresh
 type float
@@ -62,12 +62,12 @@ val 1.0,0.8941176470588236,0.9137254901960784
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
 type str
-val laundry
+val testRadRamp
 
 dbImg1
 hidden True
@@ -92,5 +92,5 @@ val ALL
 dataVer
 hidden True
 type int
-val 2
+val 0
 
