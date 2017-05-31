@@ -351,8 +351,8 @@ class warpUi():
         ###################################################
         
 
-        pp = pprint.pformat(self.sidToTid)
-        genData.pOut("Post genData, sidToTid", pp)
+        #pp = pprint.pformat(self.sidToTid)
+        #genData.pOut("Post genData, sidToTid", pp)
 
 	self.refreshButtonImages()
 
@@ -414,6 +414,9 @@ class warpUi():
         verNum = int(selection[1:])
         print "menuImgVChooser: setting dataVer to", verNum
         self.setVal("dataVer", verNum)
+        self.updateDataDirs()
+        self.updateCurImg()
+        self.updateDebugImg()
 
     def but_imgVNew(self):
         dataVers = self.getDataVersions()
@@ -482,6 +485,14 @@ class warpUi():
         else:
             img = self.staticImages["error"]
         return img
+
+    def getOfs(self, fr=None):
+        if fr == None:
+            fr = self.parmDic("fr")
+        return fr/float(self.parmDic("frPerCycle"))
+
+    def getOfsWLev(self, lev, fr=None):
+        return self.getOfs(fr) + float(lev)/self.parmDic("nLevels")
 
     def setStatus(self, typ, msg=""):
 
@@ -799,7 +810,8 @@ class warpUi():
                     self.setFrAndUpdate(fr)
 
                     # For ofs anim.
-                    ofs = fr/float(frPerCycle) % 1
+                    #ofs = fr/float(frPerCycle) % 1
+                    ofs = self.getOfs() % 1
                     self.setVal("ofs", ofs)
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
