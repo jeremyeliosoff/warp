@@ -219,6 +219,7 @@ class warpUi():
         self.updateDebugImg()
 
     def setFrAndUpdate(self, fr):
+        self.setStatus("busy")
         self.setVal("fr", fr)
         self.refreshParms()
         self.updateDataDirs()
@@ -355,6 +356,11 @@ class warpUi():
         #genData.pOut("Post genData, sidToTid", pp)
 
 	self.refreshButtonImages()
+        image = self.images["source"]["pImg"]
+        self.res = (image.width(), image.height())
+        print "--------XXX PRE setStatus"
+        self.setStatus("idle")
+        print "--------XXX POSt setStatus"
 
 
     # This is a horrendous mess - must be a cleaner way to get debug num + lev num

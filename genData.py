@@ -875,6 +875,8 @@ def renCvWrapper(warpUi, res):
 
 def echoCurve(): # NOTE: Not currently used.
     # Starburst stuff, slated for fuck it
+    tint = ut.vMult((1, .98, .95), .5)
+    #tint = (1, 1, 1)
     kLev = level
     incSc = 1.0/25
     incX = kLev*incSc
@@ -899,6 +901,75 @@ def echoCurve(): # NOTE: Not currently used.
             setDbImg("renCv", dbImgDic, lev, nLevels, x, y, newClr)
 
 
+def calcXf(sid, level, res):
+    fallTime = .6
+    random.seed(sid)
+    fallStart = ut.mix(.2, 1, random.random())
+    fall = ut.smoothstep(fallStart, fallStart+fallTime, level) * res[1]
+    #fall = 0
+    tx = 0
+    ty = int(fall)
+
+    return tx, ty
+
+def setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr):
+    clr = srcImg.get_at((jx, jy))
+    clr = ut.vMult(clr, 1.0/nLevels)
+    setDbImg("renCv", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
+
+    
+
+def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, dbImgDic):
+    sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
+
+
+    tx,ty = calcXf(sid, level, res)
+
+
+    if sid in sidToCvDic[lev]:
+        cvs = sidToCvDic[lev][sid]
+        allCoords = []
+        for cv in cvs:
+            allCoords += cv
+        for cv in cvs:
+            iJt = 0
+            while iJt < len(cv):
+                jt = cv[iJt]
+                jtNext = cv[(iJt+1) % len(cv)]
+                jtPrev = cv[(iJt-1) % len(cv)]
+                jx,jy = list(jt)
+
+
+                if jx < jtNext[0] or jx > jtPrev[0]:
+                    # Skip to the top (lowest #) of a vertical line
+                    while (jtNext[0] == jx    # next x is same - vertical line
+                            and jtNext[1] < jy):   # next y is lower
+                        iJt += 1
+                        jx,jy = list(cv[iJt])
+                        jtNext = cv[(iJt+1) % len(cv)]
+                        setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr)
+                    if jtNext[0] < jx:
+                        # If the next x is less than this x -- which I think would only happen if
+                        # the above while loop landed us at a back-curving turn - skip this jt.
+                        setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr)
+                        iJt += 1
+                        continue
+
+                    yy = jy -1
+
+                    # Draw vertical line up to next curve in this sid.
+                    while ( not (jx, yy) in allCoords) and yy > 0:
+                        setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, sidRanClr)
+                        yy -= 1
+
+
+                # Draw the curve. 
+                setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr)
+
+                iJt += 1
+
+
+
 def renCv(warpUi, res, sidToCvDic):
     
     print "\n\n\n"
@@ -913,6 +984,7 @@ def renCv(warpUi, res, sidToCvDic):
     dbImgDic = {}
     dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
     dbImgDic["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
+    srcImg = pygame.image.load(warpUi.images["source"]["path"])
 
     for lev in range(nLevels):
         print "lev", lev, ", nLevels =", nLevels
@@ -924,75 +996,11 @@ def renCv(warpUi, res, sidToCvDic):
             # Fade in and out - TODO: Improve this
             levMult = level* (1-level)**2
             levMult = min(level*6, 1)
-            levClr = vX255(ut.mix(red, green, levMult))
 
             for sid in sids:
-                random.seed(sid)
-                sidRand = random.random()
-                sidRanClr = ut.vMult(intToClr(sid), 1.0/nLevels)
-                if sid in sidToCvDic[lev]:
-                    cvs = sidToCvDic[lev][sid]
-                    allCoords = []
-                    for cv in cvs:
-                        allCoords += cv
-                    for cv in cvs:
-                        iJt = 0
-                        while iJt < len(cv):
-                            jt = cv[iJt]
-                            jtNext = cv[(iJt+1) % len(cv)]
-                            jtPrev = cv[(iJt-1) % len(cv)]
-                            jx,jy = list(jt)
+                renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, dbImgDic)
 
 
-                            if jx < jtNext[0] or jx > jtPrev[0]:
-                                # Skip to the top (lowest #) of a vertical line
-                                while (jtNext[0] == jx    # next x is same - vertical line
-                                        and jtNext[1] < jy):   # next y is lower
-                                    iJt += 1
-                                    jx,jy = list(cv[iJt])
-                                    jtNext = cv[(iJt+1) % len(cv)]
-                                    setDbImg("renCv", dbImgDic, lev, nLevels, jx, jy, vX255(cyan))
-                                if jtNext[0] < jx:
-                                    # If the next x is less than this x -- which I think would only happen if
-                                    # the above while loop landed us at a back-curving turn - skip this jt.
-                                    iJt += 1
-                                    setDbImg("renCv", dbImgDic, lev, nLevels, jx, jy, vX255(white))
-                                    continue
-
-                                yy = jy -1
-                                while ( not (jx, yy) in allCoords) and yy > 0:
-                                    setDbImg("renCv", dbImgDic, lev, nLevels, jx, yy, sidRanClr)
-                                    yy -= 1
-
-                            fromCentX = (jx - res[0]/2)
-                            fromCentY = (jy - res[1]/2)
-
-                            kMove = ut.smoothstep(.3, .4, level)
-                            kMove = ut.mix(0, level, kMove) * 10
-
-                            fallTime = .2
-                            fallStart = ut.mix(.3, 1, sidRand)
-                            fall = ut.smoothstep(fallStart, fallStart+fallTime, level) * res[1]
-                            #fall = 0
-                            xRen = jx
-                            yRen = int(jy + fall)
-
-                            
-
-                            if iJt < 2:
-                                thisClr = vX255(blue)
-                            elif iJt > len(cv) -2:
-                                thisClr = vX255(magenta)
-                            else:
-                                thisClr = sidRanClr
-                            setDbImg("renCv", dbImgDic, lev, nLevels, xRen, yRen, thisClr)
-                            setDbImg("level", dbImgDic, lev, nLevels, jx, jy, levClr)
-                            tint = ut.vMult((1, .98, .95), .5)
-                            #tint = (1, 1, 1)
-                            clrs = []
-                            xys = []
-
-                            iJt += 1
 
 
     for name in ["renCv", "level"]:
