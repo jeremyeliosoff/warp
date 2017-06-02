@@ -329,8 +329,18 @@ def setDbImg(name, dbImgDic, lev, nLevels, x, y, val, db=False):
     #levMult = ut.gamma(levMult, warpUi.parmDic("gamma"))
     #print "setting", name, ", lev:", lev, "x,y", x,y, "levMult", levMult
     #print "levMult", levMult
-    dbImgDic[name][lev].set_at((x,y), val)
-    dbImgDic[name][nLevels].set_at((x,y), ut.vMult(val, levMult))
+    prevVal = black
+    if lev <= len(dbImgDic[name]):
+        res = dbImgDic[name][lev].get_size()
+        if x < res[0] and y < res[1]:
+            prevVal = dbImgDic[name][lev].get_at((x,y))
+            newVal = list(val) + [0]
+            newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
+            dbImgDic[name][lev].set_at((x,y), newVal)
+
+            prevValAll = dbImgDic[name][nLevels].get_at((x,y))
+            newValAll = ut.vMin(ut.vAdd(prevValAll, ut.vMult(newVal, levMult)), 255)
+            dbImgDic[name][nLevels].set_at((x,y), newValAll)
 
 def intToClr(i):
     return vX255(clrs[i%len(clrs)])
@@ -863,6 +873,32 @@ def renCvWrapper(warpUi, res):
         renCv(warpUi, res, sidToCvDic)
 
 
+def echoCurve(): # NOTE: Not currently used.
+    # Starburst stuff, slated for fuck it
+    kLev = level
+    incSc = 1.0/25
+    incX = kLev*incSc
+    incY = kLev*incSc
+    clrVary = intToClr(tid)
+    fact = 1.5
+    for i in range(0):
+        jx +=  incX
+        incX = int(math.ceil(incX*fact))
+        jy +=  incY
+        incY = int(math.ceil(incY*fact))
+        xys.append((jx,jy))
+        clrVary = ut.vMult(clrVary, tint)
+        clrs.append(clrVary)
+
+        x,y = xys[i]
+        x = int(x)
+        y = int(y)
+        if x < res[0] and y < res[1] and x > 0 and y > 0:
+            oldClr = dbImgDic["renCv"][lev].get_at((x,y))
+            newClr = ut.clamp(ut.vAdd(clrs[i], oldClr),0, 255)
+            setDbImg("renCv", dbImgDic, lev, nLevels, x, y, newClr)
+
+
 def renCv(warpUi, res, sidToCvDic):
     
     print "\n\n\n"
@@ -874,61 +910,60 @@ def renCv(warpUi, res, sidToCvDic):
     nLevels = warpUi.parmDic("nLevels")
 
 
-    #for lev in range(nLevels):
-    #    for sid,cvs in sidToCvDic[lev].items():
-    #        pOut("\tsid:", sid)
-    #        for cv in cvs:
-    #            pOut("\t\tlen(cv):", len(cv))
-
-    
-    ret = pygame.Surface(res)
     dbImgDic = {}
     dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
     dbImgDic["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
 
-    #pOut("\n\n renCv")
-    allTids = set()
-
-    #print "Progress:"
-    #for y in range(res[1]):
-    #    pct = int(100*float(y)/res[1])
-    #    if pct >= nextPrintout:
-    #        print "%d%%" % pct # in place didn't update enough: print "Progress %d%%\r" % pct,
-    #        nextPrintout += 10
     for lev in range(nLevels):
         print "lev", lev, ", nLevels =", nLevels
         for tid in warpUi.tidToSids[lev].keys():
             sids = warpUi.tidToSids[lev][tid]["sids"]
-            #print "XXXXXXXXXXX warpUi.tidToSids[lev][tid]"
-            #pprint.pprint(warpUi.tidToSids[lev][tid])
-            #level = warpUi.tidToSids[lev][tid]["level"]
-            #level = 1
+
             level = warpUi.getOfsWLev(lev) % 1.0
+
+            # Fade in and out - TODO: Improve this
             levMult = level* (1-level)**2
             levMult = min(level*6, 1)
             levClr = vX255(ut.mix(red, green, levMult))
-            #print "______________ level", level
-            clr = intToClr(tid)
-            #pOut("IN renCv: tid", tid, ", sid", sids)
-            sc = 1
-            fact = 1.5
-            dirX = (5-(tid % 10))*sc
-            dirY = (5-((7*tid) % 10))*sc
+
             for sid in sids:
                 random.seed(sid)
                 sidRand = random.random()
+                sidRanClr = ut.vMult(intToClr(sid), 1.0/nLevels)
                 if sid in sidToCvDic[lev]:
-                    #pOut("\tsid", sid, "is in sidToCvDic")
-                    if lev == 0:
-                        #pOut("\t\ttid", tid, "sid", sid)
-                        allTids.add(tid)
                     cvs = sidToCvDic[lev][sid]
-                    #pOut("\t\tlen(cvs)", len(cvs))
+                    allCoords = []
                     for cv in cvs:
-                        #pOut("\t\t\tlen(cv)", len(cv))
-                        for jt in cv:
-                            #print "jt", jt
+                        allCoords += cv
+                    for cv in cvs:
+                        iJt = 0
+                        while iJt < len(cv):
+                            jt = cv[iJt]
+                            jtNext = cv[(iJt+1) % len(cv)]
+                            jtPrev = cv[(iJt-1) % len(cv)]
                             jx,jy = list(jt)
+
+
+                            if jx < jtNext[0] or jx > jtPrev[0]:
+                                # Skip to the top (lowest #) of a vertical line
+                                while (jtNext[0] == jx    # next x is same - vertical line
+                                        and jtNext[1] < jy):   # next y is lower
+                                    iJt += 1
+                                    jx,jy = list(cv[iJt])
+                                    jtNext = cv[(iJt+1) % len(cv)]
+                                    setDbImg("renCv", dbImgDic, lev, nLevels, jx, jy, vX255(cyan))
+                                if jtNext[0] < jx:
+                                    # If the next x is less than this x -- which I think would only happen if
+                                    # the above while loop landed us at a back-curving turn - skip this jt.
+                                    iJt += 1
+                                    setDbImg("renCv", dbImgDic, lev, nLevels, jx, jy, vX255(white))
+                                    continue
+
+                                yy = jy -1
+                                while ( not (jx, yy) in allCoords) and yy > 0:
+                                    setDbImg("renCv", dbImgDic, lev, nLevels, jx, yy, sidRanClr)
+                                    yy -= 1
+
                             fromCentX = (jx - res[0]/2)
                             fromCentY = (jy - res[1]/2)
 
@@ -938,53 +973,27 @@ def renCv(warpUi, res, sidToCvDic):
                             fallTime = .2
                             fallStart = ut.mix(.3, 1, sidRand)
                             fall = ut.smoothstep(fallStart, fallStart+fallTime, level) * res[1]
-                            #kMove = level
-                            #print "kMove", kMove
-                            #xRen = int(jx + fromCentX * kMove)
-                            #yRen = int(jy + fromCentY * kMove)
+                            #fall = 0
                             xRen = jx
                             yRen = int(jy + fall)
 
                             
 
-                            setDbImg("renCv", dbImgDic, lev, nLevels, xRen, yRen, ut.vMult(clr, levMult))
+                            if iJt < 2:
+                                thisClr = vX255(blue)
+                            elif iJt > len(cv) -2:
+                                thisClr = vX255(magenta)
+                            else:
+                                thisClr = sidRanClr
+                            setDbImg("renCv", dbImgDic, lev, nLevels, xRen, yRen, thisClr)
                             setDbImg("level", dbImgDic, lev, nLevels, jx, jy, levClr)
                             tint = ut.vMult((1, .98, .95), .5)
                             #tint = (1, 1, 1)
                             clrs = []
                             xys = []
 
+                            iJt += 1
 
-
-
-                            # Starburst stuff, slated for fuck it
-                            rg = range(0)
-                            #rg = range(0)
-                            #kLev = nLevels - (warpUi.parmDic("ofs")+lev)
-                            kLev = level
-                            incX = kLev*fromCentX/25
-                            incY = kLev*fromCentY/25
-                            clrVary = clr
-                            for i in rg:
-                                jx +=  incX
-                                incX = int(math.ceil(incX*fact))
-                                jy +=  incY
-                                incY = int(math.ceil(incY*fact))
-                                xys.append((jx,jy))
-                                clrVary = ut.vMult(clrVary, tint)
-                                clrs.append(clrVary)
-
-                                x,y = xys[i]
-                                x = int(x)
-                                y = int(y)
-                                if x < res[0] and y < res[1] and x > 0 and y > 0:
-                                    oldClr = dbImgDic["renCv"][lev].get_at((x,y))
-                                    newClr = ut.clamp(ut.vAdd(clrs[i], oldClr),0, 255)
-                                    setDbImg("renCv", dbImgDic, lev, nLevels, x, y, newClr)
-
-                            #rg.reverse()
-                            #for i in range(10):
-                            #    setDbImg(warpUi, "renCv", dbImgDic, lev, nLevels, xys[i][0], xys[i][1], clrs[i])
 
     for name in ["renCv", "level"]:
         for lev in range(nLevels+1):
@@ -993,13 +1002,11 @@ def renCv(warpUi, res, sidToCvDic):
             ut.mkDirSafe(levDir)
             print "imgPath", imgPath
             pygame.image.save(dbImgDic[name][lev], imgPath)
-
-    #allTidsLs = list(allTids)
-    #allTidsLs.sort()
-    #pOut("renCv, allTids", allTidsLs)
+            bmpPath = imgPath.replace(".jpg", ".bmp")
+            pygame.image.save(dbImgDic[name][lev], bmpPath)
+            ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
     print "done renCv for fr", warpUi.parmDic("fr")
-    #pygame.image.save(ret,  "/tmp/ren.jpg")
 
 
 

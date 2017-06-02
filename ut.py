@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os
+import os, random
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
@@ -207,3 +207,8 @@ def smoothstep(edge0, edge1, x):
 		# Evaluate polynomial
 		ret = x*x*(3 - 2*x);
 	return ret
+
+def ranClr(seed):
+	random.seed(seed)
+	return [random.random(), random.random(), random.random()] 
+
