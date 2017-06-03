@@ -333,13 +333,16 @@ def setDbImg(name, dbImgDic, lev, nLevels, x, y, val, db=False):
     if lev <= len(dbImgDic[name]):
         res = dbImgDic[name][lev].get_size()
         if x < res[0] and y < res[1]:
-            prevVal = dbImgDic[name][lev].get_at((x,y))
-            newVal = list(val) + [0]
-            newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
+            #prevVal = dbImgDic[name][lev].get_at((x,y))
+            newVal = tuple(list(val))
+            newVal = ut.clamp(newVal, 0, 255)
+            #print "\nnewVal", newVal, "\n"
+            #newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
+            #newVal = tuple(val)
             dbImgDic[name][lev].set_at((x,y), newVal)
 
             prevValAll = dbImgDic[name][nLevels].get_at((x,y))
-            newValAll = ut.vMin(ut.vAdd(prevValAll, ut.vMult(newVal, levMult)), 255)
+            newValAll = newVal # ut.vMin(ut.vAdd(prevValAll, ut.vMult(newVal, levMult)), 255)
             dbImgDic[name][nLevels].set_at((x,y), newValAll)
 
 def intToClr(i):
@@ -914,16 +917,21 @@ def calcXf(sid, level, res):
 
 def setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr):
     clr = srcImg.get_at((jx, jy))
-    clr = ut.vMult(clr, 1.0/nLevels)
+    clr = list(clr)[:3]
+    #clr = ut.mix(clr, sidRanClr, .6)
+    #clr = ut.vMult(clr, 1.0/nLevels)
     setDbImg("renCv", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
 
     
 
 def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, dbImgDic):
-    sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
+    #sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
+    # TODO: Change levMult to levOpac + integrate that.
+    sidRanClr = ut.vMult(intToClr(sid), levMult)
 
 
     tx,ty = calcXf(sid, level, res)
+    #tx,ty = (0, 0)
 
 
     if sid in sidToCvDic[lev]:
@@ -951,6 +959,7 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, d
                     if jtNext[0] < jx:
                         # If the next x is less than this x -- which I think would only happen if
                         # the above while loop landed us at a back-curving turn - skip this jt.
+                        # TODO: must this next line exist?
                         setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr)
                         iJt += 1
                         continue
@@ -986,8 +995,11 @@ def renCv(warpUi, res, sidToCvDic):
     dbImgDic["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
     srcImg = pygame.image.load(warpUi.images["source"]["path"])
 
-    for lev in range(nLevels):
-        print "lev", lev, ", nLevels =", nLevels
+    for levNotOfs in range(nLevels):
+        #lev = int(warpUi.getOfsWLev(levNotOfs)) % nLevels
+        lev = int(warpUi.getOfs() + levNotOfs + nLevels - 1) % nLevels
+        print "levNotOfs", levNotOfs, "lev", lev, ", nLevels =", nLevels
+        #lev = levNotOfs
         for tid in warpUi.tidToSids[lev].keys():
             sids = warpUi.tidToSids[lev][tid]["sids"]
 
@@ -1010,9 +1022,9 @@ def renCv(warpUi, res, sidToCvDic):
             ut.mkDirSafe(levDir)
             print "imgPath", imgPath
             pygame.image.save(dbImgDic[name][lev], imgPath)
-            bmpPath = imgPath.replace(".jpg", ".bmp")
-            pygame.image.save(dbImgDic[name][lev], bmpPath)
-            ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
+            #bmpPath = imgPath.replace(".jpg", ".bmp")
+            #pygame.image.save(dbImgDic[name][lev], bmpPath)
+            #ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
     print "done renCv for fr", warpUi.parmDic("fr")
 

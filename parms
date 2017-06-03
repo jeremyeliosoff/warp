@@ -1,6 +1,6 @@
 fr
 type int
-val 1006
+val 1110
 
 frPerCycle
 type int
@@ -8,11 +8,11 @@ val 30
 
 frStart
 type int
-val 1000
+val 1100
 
 frEnd
 type int
-val 1999
+val 1600
 
 fps
 type int
@@ -24,7 +24,7 @@ val 0.6
 
 nLevels
 type int
-val 4
+val 3
 
 anim
 hidden True
@@ -62,22 +62,22 @@ val 1.0,0.8941176470588236,0.9137254901960784
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
 type str
-val laundry
+val op_waterfrontPaddlersCU_GOOD
 
 dbImg1
 hidden True
 type str
-val inSurfNow
+val sid
 
 lev_dbImg1
 hidden True
 type str
-val lev01
+val ALL
 
 dbImg2
 hidden True
