@@ -417,10 +417,15 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                             if jtt.cons[0][0] == -jt.cons[1][0] and jtt.cons[0][1] == -jt.cons[1][1]:
                                 thisJt = jtt
                         nJoints = 0
+                        xTot = 0
+                        yTot = 0
+
                         
                         # Grow the actual curve.
                         cvClr = intToClr(jt.cv.cid)
                         while thisJt.cv == None:
+                            xTot += xx
+                            yTot += yy
                             nJoints += 1
                             setDbImg("cid", dbImgDic, lev, nLevels, xx, yy, cvClr)
                             thisJt.cv = jt.cv
@@ -432,6 +437,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                                 if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
                                     thisJt = jtt
                         jt.cv.nJoints = nJoints
+                        jt.cv.avgXy = (float(xx)/nJoints, float(xx)/nJoints)
                         curves[lev] = curves[lev][:] + [jt.cv]
 
                     # Register when entering or leaving a curve.  By convention, only look at y = -1 direction.
@@ -682,6 +688,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 firstCurve = firstCurves[0]
                 #print "xxxxxx firstCurve", firstCurve
 
+                # TODO: Not convinced this is necessary -- ww reset level a few lines down.
                 warpUi.tidToSids[lev][tid]["level"] = firstCurve.level
 
             for sid in sids:

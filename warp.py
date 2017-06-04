@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut, time, pprint
+import os, genData, ut, time, pprint, glob
 from Tkinter import *
 import Tkinter
 import PIL
@@ -408,16 +408,17 @@ class warpUi():
         dataVers = self.getDataVersions()
         print "\n******self.seqDataDir", self.seqDataDir, "self.imgVChooserVar.get()", self.imgVChooserVar.get(), "dataVers", dataVers
         if not self.imgVChooserVar.get() in dataVers:
-            latestVer = int(dataVers[0][1:])
+            latestVer = int(dataVers[0])
             print "\tresetting  latestVer to ", latestVer
-            self.imgVChooserVar.set("v%03d" % latestVer)
+            #self.imgVChooserVar.set("v%03d" % latestVer)
+            self.imgVChooserVar.set(latestVer)
             self.setVal("dataVer", latestVer)
 
         self.setVal("frStart", self.seqStart)
         self.setVal("frEnd", self.seqEnd)
 
     def menuImgVChooser(self, selection):
-        verNum = int(selection[1:])
+        verNum = selection
         print "menuImgVChooser: setting dataVer to", verNum
         self.setVal("dataVer", verNum)
         self.updateDataDirs()
@@ -427,8 +428,13 @@ class warpUi():
     def but_imgVNew(self):
         dataVers = self.getDataVersions()
         dataVers.sort()
-        nextVer = int(dataVers[-1][1:]) + 1
-        ut.mkDirSafe(self.seqDataDir + ("/v%03d" % nextVer))
+        print "dataVers"
+        print dataVers
+        print "dataVers[-1]", dataVers[-1]
+        print "dataVers[-1][1:4]", dataVers[-1][1:4]
+        nextVerInt = int(dataVers[-1][1:4]) + 1
+        nextVer = ("v%03d" % nextVerInt) + self.imgVNewSfx.get()
+        ut.mkDirSafe(self.seqDataDir + "/" + nextVer)
         self.setVal("dataVer", nextVer)
         self.rebuildUI()
 
@@ -461,7 +467,7 @@ class warpUi():
         return fr, frameDir
 
     def getDataVersions(self):
-        dataVers = [f for f in os.listdir(self.seqDataDir) if re.match('v[0-9][0-9][0-9]$', f)]
+        dataVers = [f for f in os.listdir(self.seqDataDir) if re.match('v[0-9][0-9][0-9]*', f)]
         dataVers.sort()
         dataVers.reverse()
 
@@ -476,7 +482,7 @@ class warpUi():
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
         ut.mkDirSafe(self.seqDataDir)
         #self.seqDataVDir = self.getLatestVersion()
-        self.seqDataVDir = self.seqDataDir + ("/v%03d/" % self.parmDic("dataVer"))
+        self.seqDataVDir = self.seqDataDir + self.parmDic("dataVer")
         self.framesDataDir = self.seqDataVDir + "/frames"
 
     def getDebugDirAndImg(self, debugInfo, lev):
@@ -663,7 +669,7 @@ class warpUi():
         self.frameImgV = Frame(self.frameParm)
         self.frameImgV.grid(row=row, column=1, sticky=EW)
         self.imgVChooserVar = StringVar(self.frameImgV)
-        self.imgVChooserVar.set("v%03d" % self.parmDic("dataVer"))
+        self.imgVChooserVar.set(self.parmDic("dataVer"))
         print "--- self.imgVChooserVar.get()", self.imgVChooserVar.get()
         dataVers = self.getDataVersions()
         print "\n dataVers:", dataVers
@@ -673,6 +679,9 @@ class warpUi():
 	#self.imgVNewLabel = Label(self.frameImgV, text="makeNew")
 	self.imgVNew = Button(self.frameImgV, text="Make New", command=lambda:self.but_imgVNew())
         self.imgVNew.grid(row=0, column=1, sticky=E)
+
+	self.imgVNewSfx = Entry(self.frameImgV, width=12)
+        self.imgVNewSfx.grid(row=0, column=3, sticky=E)
         #self.imgVNewLabel.grid(row=0, column=1)
         row += 1
 

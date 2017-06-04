@@ -1,6 +1,6 @@
 fr
 type int
-val 29
+val 14
 
 frPerCycle
 type int
@@ -29,7 +29,7 @@ val 3
 anim
 hidden True
 type int
-val 0
+val 1
 
 kSurf
 type float
@@ -62,7 +62,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
@@ -77,7 +77,7 @@ val sidPost
 lev_dbImg1
 hidden True
 type str
-val lev02
+val ALL
 
 dbImg2
 hidden True
@@ -91,6 +91,6 @@ val ALL
 
 dataVer
 hidden True
-type int
-val 0
+type str
+val v001tryTidInSidToTid
 
