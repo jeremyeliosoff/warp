@@ -341,7 +341,6 @@ def setDbImg(name, dbImgDic, lev, nLevels, x, y, val, db=False):
             #newVal = tuple(val)
             dbImgDic[name][lev].set_at((x,y), newVal)
 
-            prevValAll = dbImgDic[name][nLevels].get_at((x,y))
             newValAll = newVal # ut.vMin(ut.vAdd(prevValAll, ut.vMult(newVal, levMult)), 255)
             dbImgDic[name][nLevels].set_at((x,y), newValAll)
 
@@ -909,7 +908,7 @@ def calcXf(sid, level, res):
     random.seed(sid)
     fallStart = ut.mix(.2, 1, random.random())
     fall = ut.smoothstep(fallStart, fallStart+fallTime, level) * res[1]
-    #fall = 0
+    fall = 0
     tx = 0
     ty = int(fall)
 
@@ -918,9 +917,12 @@ def calcXf(sid, level, res):
 def setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr):
     clr = srcImg.get_at((jx, jy))
     clr = list(clr)[:3]
-    #clr = ut.mix(clr, sidRanClr, .6)
+    clr.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
+    clr = ut.mix(clr, sidRanClr, .5)
     #clr = ut.vMult(clr, 1.0/nLevels)
     setDbImg("renCv", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
+
+
 
     
 
@@ -991,15 +993,18 @@ def renCv(warpUi, res, sidToCvDic):
 
 
     dbImgDic = {}
+    srcImg = pygame.image.load(warpUi.images["source"]["path"])
+    # TODO can you reuse srcImg for srcImgRenCv without referencing/modifying it?
+    srcImgRenCv = pygame.image.load(warpUi.images["source"]["path"])
+    # TODO are those [:]s necessary?
+    #dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels)][:]
+    #dbImgDic["renCv"] += [srcImgRenCv][:]
     dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
     dbImgDic["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
-    srcImg = pygame.image.load(warpUi.images["source"]["path"])
 
     for levNotOfs in range(nLevels):
-        #lev = int(warpUi.getOfsWLev(levNotOfs)) % nLevels
-        lev = int(warpUi.getOfs() + levNotOfs + nLevels - 1) % nLevels
-        print "levNotOfs", levNotOfs, "lev", lev, ", nLevels =", nLevels
-        #lev = levNotOfs
+        ofs = int(warpUi.getOfs() * nLevels)
+        lev = int(math.floor(levNotOfs - ofs)) % nLevels
         for tid in warpUi.tidToSids[lev].keys():
             sids = warpUi.tidToSids[lev][tid]["sids"]
 
@@ -1020,7 +1025,7 @@ def renCv(warpUi, res, sidToCvDic):
             levStr = "ALL" if lev == nLevels else "lev%02d" % lev
             levDir,imgPath = warpUi.getDebugDirAndImg(name, levStr)
             ut.mkDirSafe(levDir)
-            print "imgPath", imgPath
+            #print "imgPath", imgPath
             pygame.image.save(dbImgDic[name][lev], imgPath)
             #bmpPath = imgPath.replace(".jpg", ".bmp")
             #pygame.image.save(dbImgDic[name][lev], bmpPath)
