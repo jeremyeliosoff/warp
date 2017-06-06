@@ -482,7 +482,7 @@ class warpUi():
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
         ut.mkDirSafe(self.seqDataDir)
         #self.seqDataVDir = self.getLatestVersion()
-        self.seqDataVDir = self.seqDataDir + self.parmDic("dataVer")
+        self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
         self.framesDataDir = self.seqDataVDir + "/frames"
 
     def getDebugDirAndImg(self, debugInfo, lev):

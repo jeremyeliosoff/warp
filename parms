@@ -1,6 +1,6 @@
 fr
 type int
-val 14
+val 1291
 
 frPerCycle
 type int
@@ -8,11 +8,11 @@ val 30
 
 frStart
 type int
-val 0
+val 900
 
 frEnd
 type int
-val 29
+val 1999
 
 fps
 type int
@@ -24,7 +24,7 @@ val 0.6
 
 nLevels
 type int
-val 3
+val 5
 
 anim
 hidden True
@@ -41,7 +41,7 @@ val 2
 
 minThresh
 type float
-val .4
+val .3
 
 maxThresh
 type float
@@ -62,12 +62,12 @@ val 1.0,0.8941176470588236,0.9137254901960784
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val testRadRamp
+val op_waterfrontPaddlersCU_GOOD
 
 dbImg1
 hidden True
@@ -92,5 +92,5 @@ val ALL
 dataVer
 hidden True
 type str
-val v001tryTidInSidToTid
+val v003fallingClr
 

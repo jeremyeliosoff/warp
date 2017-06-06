@@ -611,7 +611,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
         #sidDicThisLev = sidToCurves[lev]
         sidDicThisLev = sidToCvs[lev]
         for sid,cvSet in sidDicThisLev.items():
-            print "\n---sid:", sid
+            #print "\n---sid:", sid
             thisSurf =  sidToSurf[lev][sid]
             print "\t inSurf.cid", thisSurf.inSurf.cid, ", nJoints:", thisSurf.inSurf.nJoints
             print "\t inHoles",
@@ -635,7 +635,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
         #pOut("\nMerging branches for lev", lev)
         # Merge branches.
         for sid in set(allPrevs[lev] + sidToSurf[lev].keys()):
-            print "\tsid:", sid
+            #print "\tsid:", sid
             if sid in mergeKeyToVal[lev].keys():
                 # This sid will be merged.
                 sidToMergeTo = mergeKeyToVal[lev][sid]
@@ -910,22 +910,28 @@ def echoCurve(): # NOTE: Not currently used.
             setDbImg("renCv", dbImgDic, lev, nLevels, x, y, newClr)
 
 
-def calcXf(sid, level, res):
-    fallTime = .6
+def calcProg(sid, level):
+    progDur = .6
     random.seed(sid)
-    fallStart = ut.mix(.2, 1, random.random())
-    fall = ut.smoothstep(fallStart, fallStart+fallTime, level) * res[1]
-    fall = 0
+    progStart = ut.mix(.2, 1, random.random())
+    return ut.smoothstep(progStart, progStart+progDur, level)
+
+def calcXf(prog, res):
+    fall = prog * res[1] * .2
+    #fall = 0
     tx = 0
     ty = int(fall)
 
     return tx, ty
 
-def setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr):
+def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult):
     clr = srcImg.get_at((jx, jy))
     clr = list(clr)[:3]
     clr.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
-    clr = ut.mix(clr, sidRanClr, .5)
+    cTripMin = .3
+    mixTrip = ut.mix(cTripMin, 1, pow(prog, .5))
+    clr = ut.mix(clr, sidRanClr, mixTrip)
+    #clr = ut.vMult(clr, levMult)
     #clr = ut.vMult(clr, 1.0/nLevels)
     setDbImg("renCv", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
 
@@ -936,10 +942,11 @@ def setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidR
 def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, dbImgDic):
     #sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
     # TODO: Change levMult to levOpac + integrate that.
-    sidRanClr = ut.vMult(intToClr(sid), levMult)
+    sidRanClr = intToClr(sid)
 
 
-    tx,ty = calcXf(sid, level, res)
+    prog = calcProg(sid, level)
+    tx,ty = calcXf(prog, res)
     #tx,ty = (0, 0)
 
 
@@ -964,25 +971,26 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, d
                         iJt += 1
                         jx,jy = list(cv[iJt])
                         jtNext = cv[(iJt+1) % len(cv)]
-                        setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr)
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult)
                     if jtNext[0] < jx:
                         # If the next x is less than this x -- which I think would only happen if
                         # the above while loop landed us at a back-curving turn - skip this jt.
                         # TODO: must this next line exist?
-                        setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr)
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult)
                         iJt += 1
                         continue
 
                     yy = jy -1
 
-                    # Draw vertical line up to next curve in this sid.
+                    # MAIN FILLING - Draw vertical line up to next curve in this sid.
                     while ( not (jx, yy) in allCoords) and yy > 0:
-                        setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, sidRanClr)
+                        fillClr = ut.vMult(sidRanClr, 1-prog*.9)
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, levMult)
                         yy -= 1
 
 
                 # Draw the curve. 
-                setRenCvFromTex(warpUi, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr)
+                setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult)
 
                 iJt += 1
 
@@ -1003,10 +1011,14 @@ def renCv(warpUi, res, sidToCvDic):
     srcImg = pygame.image.load(warpUi.images["source"]["path"])
     # TODO can you reuse srcImg for srcImgRenCv without referencing/modifying it?
     srcImgRenCv = pygame.image.load(warpUi.images["source"]["path"])
+
+    dark = pygame.Surface((srcImgRenCv.get_width(), srcImgRenCv.get_height()), flags=pygame.SRCALPHA)
+    dark.fill((50, 50, 50, 0))
+    srcImgRenCv.blit(dark, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
     # TODO are those [:]s necessary?
-    #dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels)][:]
-    #dbImgDic["renCv"] += [srcImgRenCv][:]
-    dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
+    dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels)][:]
+    dbImgDic["renCv"] += [srcImgRenCv][:]
+    #dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
     dbImgDic["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
 
     for levNotOfs in range(nLevels):
