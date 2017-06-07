@@ -1,6 +1,6 @@
 fr
 type int
-val 1022
+val 1024
 
 frPerCycle
 type int

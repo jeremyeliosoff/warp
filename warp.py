@@ -32,6 +32,38 @@ class warpUi():
         self.nextSid = 0
         
     def refreshParms(self):
+        ints="0123456789"
+        floats= ints + "."
+        for k,v in self.parmDic.parmDic.items():
+            thisDic = self.parmDic.parmDic[k]
+            # Below is just so we don't make errors before all the
+            # ui is built - a bit unsatisfying.
+            setVal = True
+            if "uiElement" in thisDic.keys() and not thisDic["type"] == "clr":
+                uiElement = thisDic["uiElement"]
+                val = uiElement.get()
+                typ = thisDic["type"]
+                if typ == "int":
+                    for v in val:
+                        if not v in ints:
+                            print "ERROR: bad character entered", v
+                            setVal = False
+                            break
+                elif typ == "float":
+                    for v in val:
+                        if not v in floats:
+                            print "ERROR: bad character entered", v
+                            setVal = False
+                            break
+
+                if setVal:
+                    thisDic["val"] = val
+                else:
+                    uiElement.delete(0, END)
+                    uiElement.insert(0, str(thisDic["val"]))
+        self.saveParmDic()
+
+    def refreshParmsOld(self):
         #print "parmDic", self.parmDic
         for k,v in self.parmDic.parmDic.items():
             thisDic = self.parmDic.parmDic[k]
