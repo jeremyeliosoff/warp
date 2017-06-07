@@ -43,12 +43,13 @@ class parmDic:
                     if nextIsParm:
                         if stripped[:3] == "---" and stripped[-3:] == "---":
                             thisStage = stripped[3:-3]
+                            continue
 
                         if not thisParmName == "":
                             # This isn't the beginnig of file/stage; store previously collecte attrs.
                             self.parmLs.append([thisParmName, thisParmDic])
                         thisParmName = stripped
-                        thisParmDic = {"stage",thisStage}
+                        thisParmDic = {"stage":thisStage}
                     else:
                         k,v = stripped.split()
                         thisParmDic[k] = v
@@ -70,10 +71,10 @@ class parmDic:
             self.parmDic[k] = v
             if "stage" in v.keys(): # Should always be true
                 stage = v["stage"]
-                if stage in parmStages.keys():
-                    parmStages[stage].append(k)
+                if stage in self.parmStages.keys():
+                    self.parmStages[stage].append(k)
                 else:
-                    parmStages[stage] = [k]
+                    self.parmStages[stage] = [k]
 
 
     def loadParms(self):

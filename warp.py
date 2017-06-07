@@ -96,7 +96,7 @@ class warpUi():
         row = startRow
         print "\n\n************** parmLs", self.parmDic.parmLs
         print "\n\n++++++++++++++ parmStages"
-        pprint.pprint(self.parmStages)
+        pprint.pprint(self.parmDic.parmStages)
         for k,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
             thisParmDic = self.parmDic.parmDic[k]
             #print "-------------IN makeParmUi, k:", k, ", thisParmDic:", thisParmDic
