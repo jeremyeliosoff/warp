@@ -82,6 +82,14 @@ class warpUi():
                 ent = Entry(self.frameParm)
             ent.grid(row=row, column=1, sticky=W)
             thisParmDic["uiElement"] = ent
+
+            # Add entry to dic of corresponding types.
+            if thisParmDic["type"] in self.parmEntries.keys():
+                self.parmEntries[thisParmDic["type"]].append(ent)
+            else:
+                self.parmEntries[thisParmDic["type"]] = [ent]
+
+
             #print "-------- ent:", ent
 
             if not thisParmDic["type"] == "clr":
@@ -218,6 +226,20 @@ class warpUi():
         self.updateCurImg(forceRecord=True)
         self.updateDebugImg()
 
+    def keyPress(self, event):
+        print "event.keysym", event.keysym
+        focused = self.frameMaster.focus_get()
+        #print "\ndata widget typ:", type(focused) 
+        #print "\ndata widget typ.__name__:", type(focused).__class__.__name__
+        #print "\tfocused.get():", focused.get()
+        dataType = None
+        for typ,ents in self.parmEntries.items():
+            if focused in ents:
+                print "\tdata typ:", typ
+                dataType = typ
+                break
+
+
     def setFrAndUpdate(self, fr):
         self.setStatus("busy")
         self.setVal("fr", fr)
@@ -233,8 +255,40 @@ class warpUi():
         self.refreshParms()
         self.updateCurImg()
 
-    def stepBackButCmd(self):
-        self.setFrAndUpdate(self.parmDic("fr") - 1)
+    #def keyWrap(self, v):
+
+    def execHotkey(self, v):
+        focused = self.frameMaster.focus_get()
+        dataType = None
+        for typ,ents in self.parmEntries.items():
+            if focused in ents:
+                print "\tdata typ:", typ
+                dataType = typ
+                break
+        key = v.keysym
+        if dataType in ["int", "float", "str"]: 
+            if key == "Escape":
+                self.returnCmd()
+        else:
+            print "v", key
+            if key == "Left":
+                self.setFrAndUpdate(self.parmDic("fr") - 1)
+            elif key == "Right":
+                self.setFrAndUpdate(self.parmDic("fr") + 1)
+            elif key == "Escape":
+                self.root.destroy()
+            elif key == "Control-Left":
+                self.setFrAndUpdate(self.parmDic("frStart"))
+            elif key == "Control-Right":
+                self.setFrAndUpdate(self.parmDic("frEnd"))
+            elif key == "space":
+                self.animButCmd()
+            elif key == "r":
+                self.recButCmd()
+            elif key == "c":
+                self.toggleDoRenCv()
+            elif key == "x":
+                self.imgButCmd()
 
     def stepFwdButCmd(self):
         self.setFrAndUpdate(self.parmDic("fr") + 1)
@@ -280,7 +334,6 @@ class warpUi():
                 parm = k[0]
                 f.write(parm + "\n")
                 thisDic = self.parmDic.parmDic[parm]
-                #print "k", k, "thisDic", thisDic
                 keys = thisDic.keys()
                 keys.sort()
                 for attr in keys:
@@ -352,8 +405,6 @@ class warpUi():
         ###################################################
         
 
-        #pp = pprint.pformat(self.sidToTid)
-        #genData.pOut("Post genData, sidToTid", pp)
 
 	self.refreshButtonImages()
         image = self.images["source"]["pImg"]
@@ -405,13 +456,12 @@ class warpUi():
 
     def menuImgChooser(self, selection):
         self.getImg(selection)
-        dataVers = self.getDataVersions()
-        print "\n******self.seqDataDir", self.seqDataDir, "self.imgVChooserVar.get()", self.imgVChooserVar.get(), "dataVers", dataVers
-        if not self.imgVChooserVar.get() in dataVers:
+        dataVers = self.getVersions("data")
+        print "\n******self.seqDataDir", self.seqDataDir, "self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get(), "dataVers", dataVers
+        if not self.verUI[verType]["menuVar"].get() in dataVers:
             latestVer = int(dataVers[0])
             print "\tresetting  latestVer to ", latestVer
-            #self.imgVChooserVar.set("v%03d" % latestVer)
-            self.imgVChooserVar.set(latestVer)
+            self.verUI[verType]["menuVar"].set(latestVer)
             self.setVal("dataVer", latestVer)
 
         self.setVal("frStart", self.seqStart)
@@ -425,17 +475,17 @@ class warpUi():
         self.updateCurImg()
         self.updateDebugImg()
 
-    def but_imgVNew(self):
-        dataVers = self.getDataVersions()
-        dataVers.sort()
-        print "dataVers"
-        print dataVers
-        print "dataVers[-1]", dataVers[-1]
-        print "dataVers[-1][1:4]", dataVers[-1][1:4]
-        nextVerInt = int(dataVers[-1][1:4]) + 1
-        nextVer = ("v%03d" % nextVerInt) + self.imgVNewSfx.get()
+    def but_imgVNew(self, verType):
+        vers = self.getVersions(verType)
+        vers.sort()
+        print verType + "Vers"
+        print vers
+        print verType + "Vers[-1]", vers[-1]
+        print verType + "Vers[-1][1:4]", vers[-1][1:4]
+        nextVerInt = int(vers[-1][1:4]) + 1
+        nextVer = ("v%03d" % nextVerInt) + self.verUI[verType]["sfx"].get()
         ut.mkDirSafe(self.seqDataDir + "/" + nextVer)
-        self.setVal("dataVer", nextVer)
+        self.setVal(verType + "Ver", nextVer)
         self.rebuildUI()
 
 
@@ -466,7 +516,7 @@ class warpUi():
         ut.mkDirSafe(frameDir)
         return fr, frameDir
 
-    def getDataVersions(self):
+    def getVersions(self, verType):
         dataVers = [f for f in os.listdir(self.seqDataDir) if re.match('v[0-9][0-9][0-9]*', f)]
         dataVers.sort()
         dataVers.reverse()
@@ -538,6 +588,7 @@ class warpUi():
                 "lev":[self.getLevDebug1, self.getLevDebug2]
         }
         self.parmDic = ut.parmDic(parmPath)
+        self.parmEntries = {}
         print "\n\n\n********** parmDic2"
         print self.parmDic
         self.inSurfGridPrev = None
@@ -563,20 +614,9 @@ class warpUi():
 
 
         # TODO e needed?
-        self.root.bind('<Escape>', lambda e: self.root.destroy())
         self.root.bind('<Return>', lambda e: self.returnCmd())
-        self.root.bind('<Left>', lambda e: self.stepBackButCmd())
-        self.root.bind('<Right>', lambda e: self.stepFwdButCmd())
-        self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
-        self.root.bind('<Control-Right>', lambda e: self.ffwButCmd())
-        self.root.bind('<space>', lambda e: self.animButCmd())
-        self.root.bind('<r>', lambda e: self.recButCmd())
-        self.root.bind('<c>', lambda e: self.toggleDoRenCv())
-        self.root.bind('<x>', lambda e: self.imgButCmd())
-        #self.root.bind('<c>', lambda e: if self.chk_doRenCv_var.get() == 1 : self.chk_doRenCv_var.set(0) else self.chk_doRenCv_var.set(1))
-        #self.root.bind('<c>', lambda e: self.chk_doRenCv())
-
-        #self.chk_doRenCv_var.set(self.parmDic("doRenCv"))
+        for kk in ["Left", "Right", "Escape", "Control-Left", "Control-Right", "space", "c", "r", "x"]:
+            self.root.bind('<' + kk + '>', self.execHotkey)
 
         # Load images.
         self.staticImageNames = ["play", "pause", "rew", "stepBack", "stepFwd", "ffw", "recOn", "recOff", "error"]
@@ -660,30 +700,42 @@ class warpUi():
         self.imgChooser.grid(row=row, column=1, sticky=EW)
         row += 1
 
-        # Data version chooser
+        # Version choosers
 
-	self.imgVLabel = Label(self.frameParm, text="dataVersion")
-        self.imgVLabel.grid(row=row, column=0, sticky=E)
+        #self.verUI = {"data":{}, "ren":{}}
+        self.verUI = {"data":{}}
 
 
-        self.frameImgV = Frame(self.frameParm)
-        self.frameImgV.grid(row=row, column=1, sticky=EW)
-        self.imgVChooserVar = StringVar(self.frameImgV)
-        self.imgVChooserVar.set(self.parmDic("dataVer"))
-        print "--- self.imgVChooserVar.get()", self.imgVChooserVar.get()
-        dataVers = self.getDataVersions()
-        print "\n dataVers:", dataVers
-        self.imgVChooser = OptionMenu(self.frameImgV, self.imgVChooserVar, *dataVers, command=self.menuImgVChooser)
-        self.imgVChooser.grid(row=0, column=0, sticky=W)
+        for verType in self.verUI.keys():
+            verLabel = Label(self.frameParm, text=(verType + "Version"))
+            verLabel.grid(row=row, column=0, sticky=E)
 
-	#self.imgVNewLabel = Label(self.frameImgV, text="makeNew")
-	self.imgVNew = Button(self.frameImgV, text="Make New", command=lambda:self.but_imgVNew())
-        self.imgVNew.grid(row=0, column=1, sticky=E)
 
-	self.imgVNewSfx = Entry(self.frameImgV, width=12)
-        self.imgVNewSfx.grid(row=0, column=3, sticky=E)
-        #self.imgVNewLabel.grid(row=0, column=1)
-        row += 1
+            frameImgV = Frame(self.frameParm)
+            frameImgV.grid(row=row, column=1, sticky=EW)
+            self.verUI[verType]["menuVar"] = StringVar(frameImgV)
+            self.verUI[verType]["menuVar"].set(self.parmDic("dataVer"))
+            print "--- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
+            vers = self.getVersions("data")
+            print "\n" + verType + " vers:", vers
+            verMenu = OptionMenu(frameImgV, self.verUI[verType]["menuVar"], *vers, command=self.menuImgVChooser)
+            verMenu.grid(row=0, column=0, sticky=W)
+
+            verButton = Button(frameImgV, text="Make New", command=lambda:self.but_imgVNew(verType))
+            verButton.grid(row=0, column=1, sticky=E)
+
+            self.verUI[verType]["sfx"] = Entry(frameImgV, width=12)
+            self.verUI[verType]["sfx"].grid(row=0, column=3, sticky=E)
+
+            # Add entry to dic of corresponding types.
+            # TODO: maybe make this if/else thing into a function for initiating/appending lists
+            if "str" in self.parmEntries.keys():
+                self.parmEntries["str"].append(self.verUI[verType]["sfx"])
+            else:
+                self.parmEntries["str"] = [self.verUI[verType]["sfx"]]
+
+            #self.imgVNewLabel.grid(row=0, column=1)
+            row += 1
 
 
 

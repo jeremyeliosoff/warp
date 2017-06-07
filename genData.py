@@ -818,7 +818,6 @@ def genData(warpUi):
         # Load prev inSurfGrid.
         inSurfGridPrev = None
         frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
-        #inSurfGridPrev = pickleLoad(frameDirPrev + "/surfGrid")
 
         jtGrid = initJtGrid(img, warpUi)
         inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
@@ -1024,7 +1023,14 @@ def renCv(warpUi, res, sidToCvDic):
     for levNotOfs in range(nLevels):
         ofs = int(warpUi.getOfs() * nLevels)
         lev = int(math.floor(levNotOfs - ofs)) % nLevels
-        for tid in warpUi.tidToSids[lev].keys():
+        print "\nnLevels:", nLevels, "    levNotOfs:", levNotOfs, "    ofs:", ofs, "    lev:", lev
+        tids = warpUi.tidToSids[lev].keys()
+        iTid = 0
+        nTids = len(tids)
+        print "nTids:", nTids
+        for tid in tids:
+            iTid += 1
+            print "\r\ttid:", tid, ("(%d of %d)" % (iTid, nTids)), "sids:",
             sids = warpUi.tidToSids[lev][tid]["sids"]
 
             level = warpUi.getOfsWLev(lev) % 1.0
@@ -1033,8 +1039,12 @@ def renCv(warpUi, res, sidToCvDic):
             levMult = level* (1-level)**2
             levMult = min(level*6, 1)
 
+            iSid = 0
             for sid in sids:
+                iSid += 1
+                print sid,
                 renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, dbImgDic)
+        print
 
 
 
