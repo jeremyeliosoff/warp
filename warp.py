@@ -21,7 +21,7 @@ class warpUi():
         genData.pickleDump(self.seqDataVDir + "/sidToTid", self.sidToTid)
 
     def delDics(self):
-        print "Saving dics..."
+        print "Deleting dics..."
         ut.exeCmd("rm " + self.seqDataVDir + "/tidToSids")
         ut.exeCmd("rm " + self.seqDataVDir + "/sidToTid")
         
@@ -95,6 +95,8 @@ class warpUi():
     def makeParmUi(self, startRow):
         row = startRow
         print "\n\n************** parmLs", self.parmDic.parmLs
+        print "\n\n++++++++++++++ parmStages"
+        pprint.pprint(self.parmStages)
         for k,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
             thisParmDic = self.parmDic.parmDic[k]
             #print "-------------IN makeParmUi, k:", k, ", thisParmDic:", thisParmDic
@@ -303,12 +305,12 @@ class warpUi():
                 self.returnCmd()
         else:
             print "v", key
-            if key == "Left":
+            if key == "Escape":
+                self.root.destroy()
+            elif key == "Left":
                 self.setFrAndUpdate(self.parmDic("fr") - 1)
             elif key == "Right":
                 self.setFrAndUpdate(self.parmDic("fr") + 1)
-            elif key == "Escape":
-                self.root.destroy()
             elif key == "Control-Left":
                 self.setFrAndUpdate(self.parmDic("frStart"))
             elif key == "Control-Right":
@@ -647,9 +649,13 @@ class warpUi():
 
         # TODO e needed?
         self.root.bind('<Return>', lambda e: self.returnCmd())
+        #self.root.bind('<KeyPress>', self.keyPress)
         for kk in ["Left", "Right", "Escape", "Control-Left", "Control-Right", "space", "c", "r", "x"]:
             self.root.bind('<' + kk + '>', self.execHotkey)
+        self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
+        self.root.bind('<Control-Right>', lambda e: self.ffwButCmd())
 
+        #self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
         # Load images.
         self.staticImageNames = ["play", "pause", "rew", "stepBack", "stepFwd", "ffw", "recOn", "recOff", "error"]
         self.varyingStaticImageNames = ["anim", "rec"]
@@ -748,7 +754,7 @@ class warpUi():
             self.verUI[verType]["menuVar"] = StringVar(frameImgV)
             self.verUI[verType]["menuVar"].set(self.parmDic("dataVer"))
             print "--- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
-            vers = self.getVersions("data")
+            vers = self.getVersions(verType)
             print "\n" + verType + " vers:", vers
             verMenu = OptionMenu(frameImgV, self.verUI[verType]["menuVar"], *vers, command=self.menuImgVChooser)
             verMenu.grid(row=0, column=0, sticky=W)

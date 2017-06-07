@@ -282,15 +282,26 @@ def initJtGrid(img, warpUi):
                 for xx in range(x, x+2):
                     nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
 
+            minThreshMin = warpUi.parmDic("minThresh")
+            maxThreshMax = warpUi.parmDic("maxThresh")
+            rangeThresh = warpUi.parmDic("rangeThresh")
+            minThreshMax = ut.mix(minThreshMin, maxThreshMax, 1-rangeThresh)
+            maxThreshMin = ut.mix(minThreshMin, maxThreshMax, rangeThresh)
+
+
             for lev in range(nLevels):
                 #levWOfs = float(lev + ofs)
                 #levThresh = levWOfs/nLevels
                 levThresh = warpUi.getOfsWLev(lev) % 1.0
                 levThreshRemap = ut.gamma(levThresh, warpUi.parmDic("gamma"))
-                #minThresh = .5
-                #maxThresh = 1.2
-                #levThreshRemap = ut.mix(minThresh, maxThresh, levThreshRemap)
-                levThreshRemap = ut.mix(warpUi.parmDic("minThresh"), warpUi.parmDic("maxThresh"), levThreshRemap)
+
+                levProg = float(lev)/(nLevels-1)
+                minThreshThisLev = ut.mix(minThreshMin, minThreshMax, levProg)
+                maxThreshThisLev = ut.mix(maxThreshMin, maxThreshMax, levProg)
+
+
+                #levThreshRemap = ut.mix(warpUi.parmDic("minThresh"), warpUi.parmDic("maxThresh"), levThreshRemap)
+                levThreshRemap = ut.mix(minThreshThisLev, maxThreshThisLev, levThreshRemap)
                 levThreshInt = int(levThreshRemap*255)
                 isHigher = []
                 tot = 0

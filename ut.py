@@ -23,6 +23,7 @@ staticImgPaths = {
 class parmDic:
     parmFile = None
     parmDic = {}
+    parmStages = {}
     parmLs = []
 
     def loadParmLs(self):
@@ -31,7 +32,8 @@ class parmDic:
         self.parmLs = []
         thisParmDic = {}
         thisParmName = ""
-        nextIsParm = True
+        thisStage = "META"
+        nextIsParm = True # nextIsParmOrDivider, really
         with open(self.parmFile) as f:
             for line in f.readlines():
                 stripped = line.strip()
@@ -39,10 +41,14 @@ class parmDic:
                     nextIsParm = True
                 else:
                     if nextIsParm:
+                        if stripped[:3] == "---" and stripped[-3:] == "---":
+                            thisStage = stripped[3:-3]
+
                         if not thisParmName == "":
+                            # This isn't the beginnig of file/stage; store previously collecte attrs.
                             self.parmLs.append([thisParmName, thisParmDic])
                         thisParmName = stripped
-                        thisParmDic = {}
+                        thisParmDic = {"stage",thisStage}
                     else:
                         k,v = stripped.split()
                         thisParmDic[k] = v
@@ -62,6 +68,12 @@ class parmDic:
         for k,v in self.parmLs:
             print "loading parm " + k + ", dic:", v
             self.parmDic[k] = v
+            if "stage" in v.keys(): # Should always be true
+                stage = v["stage"]
+                if stage in parmStages.keys():
+                    parmStages[stage].append(k)
+                else:
+                    parmStages[stage] = [k]
 
 
     def loadParms(self):
