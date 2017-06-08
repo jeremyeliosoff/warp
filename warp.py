@@ -353,10 +353,11 @@ class warpUi():
 
     def saveParmDic(self):
         print "\n\n\n INSIDE saveParmDic"
-        pathsAndStages = [
-                (parmPath, ["META", "GEN", "REN"]),
-                (self.seqDataVDir + "/parms", ["GEN"]),
-                (self.seqRenVDir + "/parms", ["REN"])]
+        pathsAndStages = [(parmPath, ["META", "GEN", "REN"])]
+        if os.path.exists(self.seqDataVDir):
+            pathsAndStages.append((self.seqDataVDir + "/parms", ["GEN"]))
+        if os.path.exists(self.seqRenVDir):
+            pathsAndStages.append((self.seqRenVDir + "/parms", ["REN"]))
         for path, stages in pathsAndStages:
             print "path:", path, "stages", stages
             with open(path, 'w') as f:
@@ -515,15 +516,30 @@ class warpUi():
 
     def menuImgChooser(self, selection):
         self.getImg(selection)
-        dataVers = self.getVersions("data")
+        dataVers = self.getSeqVersions("data")
         if not self.verUI["data"]["menuVar"].get() in dataVers:
-            latestVer = int(dataVers[0])
+            latestVer = dataVers[0]
             print "\tresetting  latestVer to ", latestVer
             self.verUI["data"]["menuVar"].set(latestVer)
             self.setVal("dataVer", latestVer)
 
-        self.setVal("frStart", self.seqStart)
+        self.setVal("frStart", self.seqStart) #TODO remove these lines
         self.setVal("frEnd", self.seqEnd)
+
+        renParmPath = self.seqRenDir + "/" + self.getSeqVersions("ren")[-1] + "/parms"
+        if os.path.exists(renParmPath):
+            print "VVV loading parms from", renParmPath, "..."
+            self.parmDic.loadParms(renParmPath)
+        else:
+            print "^^^", renParmPath, "not found"
+
+        dataParmPath = self.seqDataDir + "/" + self.getSeqVersions("data")[-1] + "/parms"
+        if os.path.exists(dataParmPath):
+            print "VVV loading parms from", dataParmPath, "..."
+            self.parmDic.loadParms(dataParmPath)
+        else:
+            print "^^^", dataParmPath, "not found"
+        
 
     def menuDataVChooser(self, selection):
         verNum = selection
@@ -546,7 +562,7 @@ class warpUi():
 
     def butDataVNew(self):
         verType = "data"
-        vers = self.getVersions(verType)
+        vers = self.getSeqVersions(verType)
         vers.sort()
         print verType + "Vers"
         print vers
@@ -562,7 +578,7 @@ class warpUi():
 
     def butRenVNew(self):
         verType = "ren"
-        vers = self.getVersions(verType)
+        vers = self.getSeqVersions(verType)
         vers.sort()
         print verType + "Vers"
         print vers
@@ -604,7 +620,7 @@ class warpUi():
         ut.mkDirSafe(frameDir)
         return fr, frameDir
 
-    def getVersions(self, verType):
+    def getSeqVersions(self, verType):
         verDir = self.seqDataDir if verType == "data" else self.seqRenDir
 #        vers = [f for f in os.listdir(verDir) if re.match('v[0-9][0-9][0-9]*', f)]
 #        vers.sort()
@@ -831,7 +847,7 @@ class warpUi():
             self.verUI[verType]["menuVar"] = StringVar(frameImgVmenu)
             self.verUI[verType]["menuVar"].set(self.parmDic(verType + "Ver"))
             print "--- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
-            vers = self.getVersions(verType)
+            vers = self.getSeqVersions(verType)
             print "\n" + verType + " vers:", vers
             if verType == "data":
                 menuCmd = self.menuDataVChooser

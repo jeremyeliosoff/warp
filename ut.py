@@ -32,7 +32,7 @@ class parmDic:
             parmFile = self.parmFile
         #print "\n\n\n"
         #print "\n\n\n INSIDE loadParmLs"
-        self.parmLs = []
+        #self.parmLs = []
         thisParmDic = {}
         thisParmName = ""
         thisStage = "META"
@@ -49,8 +49,14 @@ class parmDic:
                             continue
 
                         if not thisParmName == "":
-                            # This isn't the beginnig of file/stage; store previously collecte attrs.
-                            self.parmLs.append([thisParmName, thisParmDic])
+                            # This isn't the beginnig of file/stage; store previously collected attrs.
+                            alreadyInList = False
+                            for i,nameAndDic in enumerate(self.parmLs):
+                                if nameAndDic[0] == thisParmName:
+                                    self.parmLs[i] = [thisParmName, thisParmDic]
+                                    alreadyInList = True
+                            if not alreadyInList:
+                                self.parmLs.append([thisParmName, thisParmDic])
                         thisParmName = stripped
                         thisParmDic = {"stage":thisStage}
                     else:
@@ -68,7 +74,7 @@ class parmDic:
         print self.parmLs
 
     def parmLsToDic(self):
-        self.parmDic = {}
+        #self.parmDic = {}
         for k,v in self.parmLs:
             print "loading parm " + k + ", dic:", v
             self.parmDic[k] = v
