@@ -915,19 +915,18 @@ def echoCurve(): # NOTE: Not currently used.
         x = int(x)
         y = int(y)
         if x < res[0] and y < res[1] and x > 0 and y > 0:
-            oldClr = dbImgDic["renCv"][lev].get_at((x,y))
+            oldClr = dbImgDic["ren"][lev].get_at((x,y))
             newClr = ut.clamp(ut.vAdd(clrs[i], oldClr),0, 255)
-            setDbImg("renCv", dbImgDic, lev, nLevels, x, y, newClr)
+            setDbImg("ren", dbImgDic, lev, nLevels, x, y, newClr)
 
 
-def calcProg(sid, level):
-    progDur = .6
+def calcProg(warpUi, sid, level):
     random.seed(sid)
     progStart = ut.mix(.2, 1, random.random())
-    return ut.smoothstep(progStart, progStart+progDur, level)
+    return ut.smoothstep(progStart, progStart+warpUi.parmDic("progDur"), level)
 
-def calcXf(prog, res):
-    fall = prog * res[1] * .2
+def calcXf(warpUi, prog, res):
+    fall = prog * res[1] * warpUi.parmDic("fallDist")
     #fall = 0
     tx = 0
     ty = int(fall)
@@ -943,7 +942,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
     clr = ut.mix(clr, sidRanClr, mixTrip)
     #clr = ut.vMult(clr, levMult)
     #clr = ut.vMult(clr, 1.0/nLevels)
-    setDbImg("renCv", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
+    setDbImg("ren", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
 
 
 
@@ -955,8 +954,8 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, d
     sidRanClr = intToClr(sid)
 
 
-    prog = calcProg(sid, level)
-    tx,ty = calcXf(prog, res)
+    prog = calcProg(warpUi, sid, level)
+    tx,ty = calcXf(warpUi, prog, res)
     #tx,ty = (0, 0)
 
 
@@ -1017,7 +1016,7 @@ def renCv(warpUi, res, sidToCvDic):
     nLevels = warpUi.parmDic("nLevels")
 
 
-    dbImgDic = {}
+    outputs = {}
     srcImg = pygame.image.load(warpUi.images["source"]["path"])
     # TODO can you reuse srcImg for srcImgRenCv without referencing/modifying it?
     srcImgRenCv = pygame.image.load(warpUi.images["source"]["path"])
@@ -1026,10 +1025,9 @@ def renCv(warpUi, res, sidToCvDic):
     dark.fill((50, 50, 50, 0))
     srcImgRenCv.blit(dark, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
     # TODO are those [:]s necessary?
-    dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels)][:]
-    dbImgDic["renCv"] += [srcImgRenCv][:]
-    #dbImgDic["renCv"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
-    dbImgDic["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
+    outputs["ren"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
+    #outputs["ren"] += [srcImgRenCv][:]
+    outputs["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
 
     for levNotOfs in range(nLevels):
         ofs = int(warpUi.getOfs() * nLevels)
@@ -1054,21 +1052,21 @@ def renCv(warpUi, res, sidToCvDic):
             for sid in sids:
                 iSid += 1
                 print sid,
-                renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, dbImgDic)
+                renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, outputs)
         print
 
 
 
 
-    for name in ["renCv", "level"]:
+    for name in ["ren", "level"]:
         for lev in range(nLevels+1):
             levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-            levDir,imgPath = warpUi.getDebugDirAndImg(name, levStr)
+            levDir,imgPath = warpUi.getRenDirAndImg(name, levStr)
             ut.mkDirSafe(levDir)
             #print "imgPath", imgPath
-            pygame.image.save(dbImgDic[name][lev], imgPath)
+            pygame.image.save(outputs[name][lev], imgPath)
             #bmpPath = imgPath.replace(".jpg", ".bmp")
-            #pygame.image.save(dbImgDic[name][lev], bmpPath)
+            #pygame.image.save(outputs[name][lev], bmpPath)
             #ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
     print "done renCv for fr", warpUi.parmDic("fr")

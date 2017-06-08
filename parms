@@ -1,133 +1,128 @@
+
+
+
+---META---
+
 fr
-stage META
 type int
-val 1426
+val 786
 
 frStart
-stage META
 type int
-val 1400
+val 300
 
 frEnd
-stage META
 type int
-val 1426
+val 900
 
 fps
-stage META
 type int
-val 10
+val 11
 
 ofs
-stage META
 type float
 val 0.6
 
 anim
 hidden True
-stage META
 type int
 val 0
 
 doRenCv
 hidden True
-stage META
 type int
 val 1
 
 image
 hidden True
-stage META
 type str
-val GOODbikingThruFoliage
+val grl04_renLev_GOODtillMidEnd
 
 dbImg1
 hidden True
-stage META
 type str
 val sidPost
 
 lev_dbImg1
 hidden True
-stage META
 type str
 val ALL
 
 dbImg2
 hidden True
-stage META
 type str
-val renCv
+val cidPost
 
 lev_dbImg2
 hidden True
-stage META
 type str
 val ALL
 
-dataVer
+renVer
 hidden True
-stage META
 type str
-val v001tryRangeThresh
+val v003newBackupsEtcRen
+
+
+
+
+---GEN---
 
 frPerCycle
-stage GEN
 type int
 val 30
 
 nLevels
-stage GEN
 type int
 val 3
 
 kSurf
-stage GEN
 type float
 val 1
 
 gamma
-stage GEN
 type float
 val 2
 
 minThresh
-stage GEN
 type float
 val .1
 
 maxThresh
-stage GEN
 type float
 val 1
 
 rangeThresh
-stage GEN
 type float
 val .5
 
 cDark
-stage GEN
 type clr
 val 0.07450980392156863,0.18823529411764706,0.13725490196078433
 
 cMid
-stage GEN
 type clr
 val 0.10980392156862745,0.3058823529411765,0.6392156862745098
 
 cLight
-stage GEN
 type clr
 val 1.0,0.8941176470588236,0.9137254901960784
 
+
+
+
+---REN---
+
+dataVer
+hidden True
+type str
+val v008newBackupsEtcData
+
 fallDist
-stage REN
 type float
 val .2
 
 progDur
-stage REN
 type float
 val .6
 

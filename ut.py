@@ -1,9 +1,10 @@
 #!/usr/bin/python
-import os, random
+import sys, os, random, re, glob, pprint
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
 dataDir = projDir + "/data"
+renDir = projDir + "/ren"
 framesDir = dataDir + "/frames"
 
 seqDir = projDir + "/seq"
@@ -26,7 +27,9 @@ class parmDic:
     parmStages = {}
     parmLs = []
 
-    def loadParmLs(self):
+    def loadParmLs(self, parmFile=None):
+        if parmFile == None:
+            parmFile = self.parmFile
         #print "\n\n\n"
         #print "\n\n\n INSIDE loadParmLs"
         self.parmLs = []
@@ -34,7 +37,7 @@ class parmDic:
         thisParmName = ""
         thisStage = "META"
         nextIsParm = True # nextIsParmOrDivider, really
-        with open(self.parmFile) as f:
+        with open(parmFile) as f:
             for line in f.readlines():
                 stripped = line.strip()
                 if stripped == "":
@@ -77,8 +80,8 @@ class parmDic:
                     self.parmStages[stage] = [k]
 
 
-    def loadParms(self):
-        self.loadParmLs()
+    def loadParms(self, parmFile=None):
+        self.loadParmLs(parmFile)
         self.parmLsToDic()
 
     def __call__(self, parmStr):
@@ -108,7 +111,7 @@ def exeCmd(cmd):
 
 def mkDirSafe(path):
     if not os.path.isdir(path):
-        print "Making dir:", path
+        #print "Making dir:", path
         os.makedirs(path)
 
 # Colours, rgb + tex
@@ -225,3 +228,60 @@ def ranClr(seed):
 	random.seed(seed)
 	return [random.random(), random.random(), random.random()] 
 
+
+# NAVAGATION
+
+
+#def getVersions(verType, seq=None):
+def getVersions(verDir):
+    #if seq == None:
+    #    verDir = self.seqDataDir if verType == "data" else self.seqRenDir
+    #elif verType == "data":
+    #    verDir = dataDir + "/" + seq
+    #else:
+    #    verDir = renDir + "/" + seq
+
+    vers = [f for f in os.listdir(verDir) if re.match('v[0-9][0-9][0-9]*', f)]
+    vers.sort()
+    vers.reverse()
+
+    # Make v000 dir if there is none.
+    if vers == []:
+        mkDirSafe(verDir + "/v000")
+        vers = ["v000"]
+
+    return vers
+
+def main():
+    verType = sys.argv[1]
+    pref = ""
+    if len(sys.argv) > 2:
+        pref = sys.argv[2]
+    if verType == "data":
+        verDir = dataDir + "/"
+        #seqs = glob.glob(dataDir + "/" + pref + "*")
+    else:
+        verDir = renDir + "/"
+    seqs = glob.glob(verDir + pref + "*")
+    seqs.sort(key=os.path.getmtime)
+    #print "seqs"
+    #pprint.pprint(seqs)
+    seqPath = seqs[-1]
+    #seq = seqPath.split("/")[-1]
+    #print "hhhhhhhey - seq:", seq
+    vers = getVersions(seqPath)
+    vers.sort()
+    #print "verDir"
+    #print verDir
+    #print "seqPath"
+    #print seqPath
+    #print "vers"
+    #pprint.pprint(vers)
+    verPath = seqPath + "/" + vers[-1]
+    if verType == "ren":
+        verPath += "/ren/ALL"
+    print verPath
+    return "fuck"
+
+if __name__ == "__main__":
+    main()
