@@ -5,15 +5,15 @@
 
 fr
 type int
-val 1205
+val 0
 
 frStart
 type int
-val 1200
+val 0
 
 frEnd
 type int
-val 1755
+val 29
 
 fps
 type int
@@ -26,17 +26,137 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
 type str
-val GOODbikingThruFoliageHR
+val testCirclesBW_zig
+
+dbImg1
+hidden True
+type str
+val sidPost
+
+lev_dbImg1
+hidden True
+type str
+val ALL
+
+dbImg2
+hidden True
+type str
+val cidPost
+
+lev_dbImg2
+hidden True
+type str
+val ALL
+
+renVer
+hidden True
+type str
+val v003newBackupsEtcRen
+
+fr
+type int
+val 0
+
+frStart
+type int
+val 0
+
+frEnd
+type int
+val 29
+
+fps
+type int
+val 10
+
+ofs
+type float
+val 0.6
+
+anim
+hidden True
+type int
+val 0
+
+doRenCv
+hidden True
+type int
+val 0
+
+image
+hidden True
+type str
+val testCirclesBW_zig
+
+dbImg1
+hidden True
+type str
+val sidPost
+
+lev_dbImg1
+hidden True
+type str
+val ALL
+
+dbImg2
+hidden True
+type str
+val cidPost
+
+lev_dbImg2
+hidden True
+type str
+val ALL
+
+renVer
+hidden True
+type str
+val v003newBackupsEtcRen
+
+fr
+type int
+val 0
+
+frStart
+type int
+val 0
+
+frEnd
+type int
+val 29
+
+fps
+type int
+val 10
+
+ofs
+type float
+val 0.6
+
+anim
+hidden True
+type int
+val 0
+
+doRenCv
+hidden True
+type int
+val 0
+
+image
+hidden True
+type str
+val testCirclesBW_zig
 
 dbImg1
 hidden True
@@ -74,7 +194,7 @@ val 30
 
 nLevels
 type int
-val 5
+val 2
 
 kSurf
 type float
@@ -82,7 +202,7 @@ val 1
 
 gamma
 type float
-val 1
+val 2
 
 minThresh
 type float
@@ -108,6 +228,98 @@ cLight
 type clr
 val 1.0,0.8941176470588236,0.9137254901960784
 
+frPerCycle
+type int
+val 30
+
+nLevels
+type int
+val 2
+
+kSurf
+type float
+val 1
+
+gamma
+type float
+val 2
+
+minThresh
+type float
+val .1
+
+maxThresh
+type float
+val 1
+
+rangeThresh
+type float
+val .5
+
+cDark
+type clr
+val 0.07450980392156863,0.18823529411764706,0.13725490196078433
+
+cMid
+type clr
+val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+frPerCycle
+type int
+val 30
+
+nLevels
+type int
+val 2
+
+kSurf
+type float
+val 1
+
+gamma
+type float
+val 2
+
+minThresh
+type float
+val .1
+
+maxThresh
+type float
+val 1
+
+rangeThresh
+type float
+val .5
+
+cDark
+type clr
+val 0.07450980392156863,0.18823529411764706,0.13725490196078433
+
+cMid
+type clr
+val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
 
 
 
@@ -116,7 +328,41 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v000
+val v011lev4
+
+fallDist
+type float
+val .2
+
+progDur
+type float
+val .6
+
+progDur
+type float
+val .6
+
+dataVer
+hidden True
+type str
+val v011lev4
+
+fallDist
+type float
+val .2
+
+progDur
+type float
+val .6
+
+progDur
+type float
+val .6
+
+dataVer
+hidden True
+type str
+val v011lev4
 
 fallDist
 type float

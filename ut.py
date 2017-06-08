@@ -58,7 +58,11 @@ class parmDic:
                             if not alreadyInList:
                                 self.parmLs.append([thisParmName, thisParmDic])
                         thisParmName = stripped
-                        thisParmDic = {"stage":thisStage}
+                        if thisParmName in self.parmDic.keys():
+                            thisParmDic = self.parmDic[thisParmName]
+                            thisParmDic["stage"] = thisStage
+                        else:
+                            thisParmDic = {"stage":thisStage}
                     else:
                         k,v = stripped.split()
                         thisParmDic[k] = v
@@ -70,8 +74,8 @@ class parmDic:
                 #print "nextIsParm:", nextIsParm
 
         self.parmLs.append([thisParmName, thisParmDic])
-        print "\n\n\nparmLs"
-        print self.parmLs
+        #print "\n\n\nparmLs"
+        #print self.parmLs
 
     def parmLsToDic(self):
         #self.parmDic = {}

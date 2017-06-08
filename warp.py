@@ -31,37 +31,55 @@ class warpUi():
         self.sidToTid = None
         self.nextSid = 0
         
-    def refreshParms(self):
-        ints="0123456789"
-        floats= ints + "."
-        for k,v in self.parmDic.parmDic.items():
-            thisDic = self.parmDic.parmDic[k]
-            # Below is just so we don't make errors before all the
-            # ui is built - a bit unsatisfying.
-            setVal = True
+    def syncUIToParmDic(self):
+        self.pauseRefreshParms = True
+        print "\n\n\n===>>>>>> self.parmDic.parmDic.keys():", self.parmDic.parmDic.keys()
+        for k,thisDic in self.parmDic.parmDic.items():
+            if k in ["nLevels", "frEnd"]: print "\t%%% k", k, "; thisDic", thisDic
             if "uiElement" in thisDic.keys() and not thisDic["type"] == "clr":
                 uiElement = thisDic["uiElement"]
-                val = uiElement.get()
-                typ = thisDic["type"]
-                if typ == "int":
-                    for v in val:
-                        if not v in ints:
-                            print "ERROR: bad character entered", v
-                            setVal = False
-                            break
-                elif typ == "float":
-                    for v in val:
-                        if not v in floats:
-                            print "ERROR: bad character entered", v
-                            setVal = False
-                            break
+                uiElement.delete(0, END)
+                #val = self.parmDic(k)
+                val = thisDic["val"]
+                if k in ["nLevels", "frEnd"]: print "&&&&& k:", k, " -- inserting", val
+                uiElement.insert(0, str(val))
 
-                if setVal:
-                    thisDic["val"] = val
-                else:
-                    uiElement.delete(0, END)
-                    uiElement.insert(0, str(thisDic["val"]))
-        self.saveParmDic()
+        self.pauseRefreshParms = False
+
+    def refreshParms(self):
+        if not self.pauseRefreshParms:
+            ints="0123456789"
+            floats= ints + "."
+            for k,v in self.parmDic.parmDic.items():
+                thisDic = self.parmDic.parmDic[k]
+                # Below is just so we don't make errors before all the
+                # ui is built - a bit unsatisfying.
+                setVal = True
+                if "uiElement" in thisDic.keys() and not thisDic["type"] == "clr":
+                    uiElement = thisDic["uiElement"]
+                    val = uiElement.get()
+                    typ = thisDic["type"]
+                    if typ == "int":
+                        for v in val:
+                            if not v in ints:
+                                print "ERROR: bad character entered", v
+                                setVal = False
+                                break
+                    elif typ == "float":
+                        for v in val:
+                            if not v in floats:
+                                print "ERROR: bad character entered", v
+                                setVal = False
+                                break
+
+                    if setVal:
+                        thisDic["val"] = val
+                    else:
+                        val = thisDic["val"]
+                        uiElement.delete(0, END)
+                        #print "&&&&& k:", k, " -- inserting", val
+                        uiElement.insert(0, str(val))
+            self.saveParmDic()
 
 
     def btn_getColor(self, args):
@@ -125,6 +143,8 @@ class warpUi():
                 thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
             row += 1
+        print "\n\n===========================\n======================= parmDic"
+        pprint.pprint(self.parmDic.parmDic)
         return row
         
 
@@ -339,6 +359,13 @@ class warpUi():
         self.refreshParms()
 
     def recButCmd(self):
+        print "\n\n\n\t\t\tYYYYYYYY doing this!!"
+        if self.parmDic("fr") < 100:
+            print "\n\n\n\t\t\tXXXXXXXXX doing this!!"
+            menu = self.imgChooser["menu"]
+            menu.delete(0, "end")
+            for s in ["ya", "you", "can"]:
+                menu.add_command(label=s)
         self.record = not self.record
         print "recButCmd; self.record =", self.record
         self.refreshButtonImages()
@@ -516,8 +543,22 @@ class warpUi():
 
     def menuImgChooser(self, selection):
         self.getImg(selection)
+        print "\n\n********** A nLevels", self.parmDic("nLevels")
+        renVers = self.getSeqVersions("ren")
         dataVers = self.getSeqVersions("data")
-        if not self.verUI["data"]["menuVar"].get() in dataVers:
+        print ">>>>>>>>> renVers", renVers
+        print ">>>>>>>>> dataVers", dataVers
+
+        # Update version menu options
+        menu = self.verUI["data"]["OptionMenu"]["menu"]
+        menu.delete(0, "end")
+        for s in dataVers:
+            #menu.add_command(label=s, command=self.menuRenVChooser)
+            menu.add_command(label=s, command=lambda value=s: self.verUI["data"]["menuVar"].set(value))
+
+        print "\n\n********** B nLevels", self.parmDic("nLevels")
+
+        if True or not self.verUI["data"]["menuVar"].get() in dataVers:
             latestVer = dataVers[0]
             print "\tresetting  latestVer to ", latestVer
             self.verUI["data"]["menuVar"].set(latestVer)
@@ -526,23 +567,35 @@ class warpUi():
         self.setVal("frStart", self.seqStart) #TODO remove these lines
         self.setVal("frEnd", self.seqEnd)
 
-        renParmPath = self.seqRenDir + "/" + self.getSeqVersions("ren")[-1] + "/parms"
+        print "\n\n********** C nLevels", self.parmDic("nLevels")
+
+        renParmPath = self.seqRenDir + "/" + renVers[-1] + "/parms"
         if os.path.exists(renParmPath):
             print "VVV loading parms from", renParmPath, "..."
             self.parmDic.loadParms(renParmPath)
         else:
             print "^^^", renParmPath, "not found"
 
-        dataParmPath = self.seqDataDir + "/" + self.getSeqVersions("data")[-1] + "/parms"
+        dataParmPath = self.seqDataDir + "/" + dataVers[-1] + "/parms"
         if os.path.exists(dataParmPath):
             print "VVV loading parms from", dataParmPath, "..."
             self.parmDic.loadParms(dataParmPath)
         else:
             print "^^^", dataParmPath, "not found"
+        print "\n\n********** D nLevels", self.parmDic("nLevels")
         
 
     def menuDataVChooser(self, selection):
         verNum = selection
+        dataParmPath = self.seqDataDir + "/" + verNum + "/parms"
+        if os.path.exists(dataParmPath):
+            print "\n\n!!! loading parms from", dataParmPath, "..."
+            print "\n\n AAAAAA \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
+            self.parmDic.loadParms(dataParmPath)
+            self.syncUIToParmDic()
+            print "\n\n BBBBBB \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
+        else:
+            print "???", dataParmPath, "not found"
         print "menuDataVChooser: setting dataVer to", verNum
         self.setVal("dataVer", verNum)
         self.updateDataDirs()
@@ -705,6 +758,7 @@ class warpUi():
         self.parmDic = ut.parmDic(parmPath)
         print "\n\n\n********** parmDic2"
         print self.parmDic
+        self.pauseRefreshParms = False
         self.parmEntries = {}
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
         self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
@@ -857,13 +911,13 @@ class warpUi():
                 butCmd = self.butRenVNew
 
             command = self.menuDataVChooser if verType == "data" else self.menuRenVChooser
-            verMenu = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=menuCmd)
-            verMenu.grid(row=row, column=0, sticky=EW)
+            self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=menuCmd)
+            self.verUI[verType]["OptionMenu"].grid(row=row, column=0, sticky=EW)
 
             verButton = Button(self.frameParm, text="Make New", command=butCmd)
             verButton.grid(row=row, column=0, sticky=W)
 
-            self.verUI[verType]["sfx"] = Entry(self.frameParm, width=12)
+            self.verUI[verType]["sfx"] = Entry(self.frameParm, width=22)
             self.verUI[verType]["sfx"].grid(row=row, column=1, sticky=W)
             row +=1
 
