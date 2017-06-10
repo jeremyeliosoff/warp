@@ -1063,7 +1063,7 @@ def renCv(warpUi, res, sidToCvDic):
             levStr = "ALL" if lev == nLevels else "lev%02d" % lev
             levDir,imgPath = warpUi.getRenDirAndImg(name, levStr)
             ut.mkDirSafe(levDir)
-            #print "imgPath", imgPath
+            print "Saving", name, " image, path:", imgPath
             pygame.image.save(outputs[name][lev], imgPath)
             #bmpPath = imgPath.replace(".jpg", ".bmp")
             #pygame.image.save(outputs[name][lev], bmpPath)

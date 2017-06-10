@@ -31,7 +31,9 @@ class parmDic:
         if parmFile == None:
             parmFile = self.parmFile
         #print "\n\n\n"
-        #print "\n\n\n INSIDE loadParmLs"
+        for i in range(5):
+            print "------------------------------"
+        print "\n\n\n INSIDE loadParmLs, parmFile:", parmFile
         #self.parmLs = []
         thisParmDic = {}
         thisParmName = ""
@@ -50,6 +52,8 @@ class parmDic:
 
                         if not thisParmName == "":
                             # This isn't the beginnig of file/stage; store previously collected attrs.
+                            if thisParmName == "nLevels":
+                                print "--loading nLevels=", thisParmDic["val"]
                             alreadyInList = False
                             for i,nameAndDic in enumerate(self.parmLs):
                                 if nameAndDic[0] == thisParmName:
@@ -79,8 +83,11 @@ class parmDic:
 
     def parmLsToDic(self):
         #self.parmDic = {}
+        print "\n\n XXXXXXXXXXXXXXX self.parmLs first items"
         for k,v in self.parmLs:
-            print "loading parm " + k + ", dic:", v
+            print "\t", k, v["val"]
+        for k,v in self.parmLs:
+            #print "loading parm " + k + ", dic:", v
             self.parmDic[k] = v
             if "stage" in v.keys(): # Should always be true
                 stage = v["stage"]

@@ -12,7 +12,8 @@ parmPath = ut.projDir + "/parms"
 class warpUi():
     def rebuildUI(self):
         print "reloading........"
-        self.refreshParms()
+        #self.syncUIToParmsAndSave()
+        self.saveParmDic()
         ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
         
     def saveDics(self):
@@ -46,12 +47,12 @@ class warpUi():
 
         self.pauseRefreshParms = False
 
-    def refreshParms(self):
+    def syncUIToParmsAndSave(self):
         if not self.pauseRefreshParms:
             ints="0123456789"
             floats= ints + "."
-            for k,v in self.parmDic.parmDic.items():
-                thisDic = self.parmDic.parmDic[k]
+            for parmName in self.parmDic.parmDic.keys():
+                thisDic = self.parmDic.parmDic[parmName]
                 # Below is just so we don't make errors before all the
                 # ui is built - a bit unsatisfying.
                 setVal = True
@@ -79,6 +80,7 @@ class warpUi():
                         uiElement.delete(0, END)
                         #print "&&&&& k:", k, " -- inserting", val
                         uiElement.insert(0, str(val))
+            print "\n\nending syncUIToParmsAndSave, about to do saveParmDic"
             self.saveParmDic()
 
 
@@ -137,14 +139,16 @@ class warpUi():
             if not thisParmDic["type"] == "clr":
                 sv = StringVar()
                 # TODO: How does this work?
-                sv.trace("w", lambda name, index, mode, sv=sv: self.refreshParms())
+                sv.trace("w", lambda name, index, mode, sv=sv: self.syncUIToParmsAndSave())
 
                 thisParmDic["uiElement"].configure(textvariable=sv)
                 thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
             row += 1
         print "\n\n===========================\n======================= parmDic"
-        pprint.pprint(self.parmDic.parmDic)
+        for k,v in self.parmDic.parmDic.items():
+            print "\t", k, v["val"]
+        #pprint.pprint(self.parmDic.parmDic)
         return row
         
 
@@ -266,7 +270,7 @@ class warpUi():
 
 
     def imgButCmd(self):
-        self.refreshParms()
+        #self.syncUIToParmsAndSave()
         self.updateCurImg(forceRecord=True)
         self.updateDebugImg()
 
@@ -287,8 +291,9 @@ class warpUi():
     def setFrAndUpdate(self, fr):
         self.setStatus("busy")
         self.setVal("fr", fr)
-        self.refreshParms()
-        self.updateDataDirs()
+        print "\nin setFrAndUpdate, about to do syncUIToParmsAndSave"
+        self.syncUIToParmsAndSave()
+        self.updateRenAndDataDirs()
         self.updateCurImg()
         self.updateDebugImg()
         Tk.update_idletasks(self.root)
@@ -296,7 +301,7 @@ class warpUi():
 
     def returnCmd(self):
         self.frameMaster.focus_set()
-        self.refreshParms()
+        self.syncUIToParmsAndSave() #TODO: Needed?
         self.updateCurImg()
 
     #def keyWrap(self, v):
@@ -356,16 +361,9 @@ class warpUi():
             self.setVal("anim", 0)
             self.refreshButtonImages()
         print "Pressed anim button, anim set to", anim
-        self.refreshParms()
+        self.syncUIToParmsAndSave()
 
     def recButCmd(self):
-        print "\n\n\n\t\t\tYYYYYYYY doing this!!"
-        if self.parmDic("fr") < 100:
-            print "\n\n\n\t\t\tXXXXXXXXX doing this!!"
-            menu = self.imgChooser["menu"]
-            menu.delete(0, "end")
-            for s in ["ya", "you", "can"]:
-                menu.add_command(label=s)
         self.record = not self.record
         print "recButCmd; self.record =", self.record
         self.refreshButtonImages()
@@ -379,49 +377,43 @@ class warpUi():
         self.setVal("doRenCv", val)
 
     def saveParmDic(self):
-        print "\n\n\n INSIDE saveParmDic"
+        print "######### in saveParmDic ######"
         pathsAndStages = [(parmPath, ["META", "GEN", "REN"])]
+        print "\t", self.seqDataVDir, "for GEN -- ",
         if os.path.exists(self.seqDataVDir):
             pathsAndStages.append((self.seqDataVDir + "/parms", ["GEN"]))
+            print "EXISTS"
+        else:
+            print "DOES NOT EXIST"
+
+        print "\t", self.seqRenVDir, "for REN -- ",
         if os.path.exists(self.seqRenVDir):
             pathsAndStages.append((self.seqRenVDir + "/parms", ["REN"]))
+            print "EXISTS"
+        else:
+            print "DOES NOT EXIST"
+
         for path, stages in pathsAndStages:
-            print "path:", path, "stages", stages
+            #print "path:", path, "stages", stages
             with open(path, 'w') as f:
                 for stage in stages:
-                    #fAllParmFiles = [fAllParms]
-                    #if stage == "GEN":
-                    #    fAllParmFiles.append(open(self.seqDataVDir + "/parms", 'w'))
-                    #elif stage == "REN":
-                    #    fAllParmFiles.append(open(self.seqRenVDir + "/parms", 'w'))
-
-                    print "\twriting", stage, "to", path
+                    #print "\twriting", stage, "to", path
                     f.write("\n\n\n---" + stage + "---\n\n")
 
                     for parm in self.parmDic.parmStages[stage]:
                         #parm = k[0]
+                        #print "\t\t\tparm:", parm
                         f.write(parm + "\n")
                         thisDic = self.parmDic.parmDic[parm]
                         keys = thisDic.keys()
                         keys.sort()
+                        if parm == "nLevels": print "\nsaving:", parm, "=", thisDic["val"], "to", path
                         for attr in keys:
                             if not attr in ["uiElement", "stage"]:
                                  f.write(attr + " " + str(thisDic[attr]) + "\n")
+                                 #if parm == "nLevels" and attr == "val": print "val:", thisDic[attr]
                         f.write("\n")
 
-    def saveParmDicOld(self):
-        #print "\n\n\n INSIDE saveParmDic"
-        with open(parmPath, 'w') as f:
-            for k in self.parmDic.parmLs:
-                parm = k[0]
-                f.write(parm + "\n")
-                thisDic = self.parmDic.parmDic[parm]
-                keys = thisDic.keys()
-                keys.sort()
-                for attr in keys:
-                    if not attr == "uiElement":
-                        f.write(attr + " " + str(thisDic[attr]) + "\n")
-                f.write("\n")
 
     def updateDebugImg(self):
         #print " -- IN updateDebugImg"
@@ -471,8 +463,9 @@ class warpUi():
         renLevDir,renImgPath = self.getRenDirAndImg("ren", "ALL")
 
         self.images["ren"]["path"] = renImgPath
-        print "\n\n <<<<<<<<<<self.images[\"ren\"][\"path\"]:", self.images["ren"]["path"] 
-        self.refreshParms()
+        #print "\n\n <<<<<<<<<<self.images[\"ren\"][\"path\"]:", self.images["ren"]["path"] 
+        print "\nin updateCurImg, about to do syncUIToParmsAndSave"
+        self.syncUIToParmsAndSave() #TODO: Needed?
         #print "\n\n------- self.images", self.images
         print "\n\n self.record", self.record
 
@@ -525,11 +518,11 @@ class warpUi():
         thisImg = selection
         if debugNum:
             self.setVal("dbImg" + str(debugNum), selection)
-            self.updateDataDirs()
+            self.updateRenAndDataDirs()
             self.updateDebugImg()
         elif debugNumLev:
             self.setVal("lev_dbImg" + str(debugNumLev), selection)
-            self.updateDataDirs()
+            self.updateRenAndDataDirs()
             self.updateDebugImg()
         else:
             print "################ setting selection:", selection
@@ -537,113 +530,124 @@ class warpUi():
                 # Turn off recording so you don't render right away.
                 self.recButCmd()
             self.setVal("image", selection)
-            self.updateDataDirs()
+            self.updateRenAndDataDirs()
             self.updateCurImg()
             self.updateDebugImg()
 
+    def repopulateMenu(self, verType, vers):
+        menu = self.verUI[verType]["OptionMenu"]["menu"]
+        menu.delete(0, "end")
+        for s in vers:
+            menu.add_command(label=s, command=lambda value=s: self.verUI[verType]["menuVar"].set(value))
+
     def menuImgChooser(self, selection):
+        print "----pre getImg - self.seqDataDir", self.seqDataDir
+        print "----pre getImg - self.seqDataVDir", self.seqDataVDir
+        print "----pre getImg - self.seqRenDir", self.seqRenDir
+        print "----pre getImg - self.seqRenVDir", self.seqRenVDir
         self.getImg(selection)
-        print "\n\n********** A nLevels", self.parmDic("nLevels")
+
         renVers = self.getSeqVersions("ren")
         dataVers = self.getSeqVersions("data")
-        print ">>>>>>>>> renVers", renVers
-        print ">>>>>>>>> dataVers", dataVers
+        verss = {"ren":renVers, "data":dataVers}
 
-        # Update version menu options
-        menu = self.verUI["data"]["OptionMenu"]["menu"]
-        menu.delete(0, "end")
-        for s in dataVers:
-            #menu.add_command(label=s, command=self.menuRenVChooser)
-            menu.add_command(label=s, command=lambda value=s: self.verUI["data"]["menuVar"].set(value))
+        self.seqDataVDir = self.seqDataDir + "/" + dataVers[0]
+        self.seqRenVDir = self.seqRenDir + "/" + renVers[0]
+        print "----pos getImg - self.seqDataDir", self.seqDataDir
+        print "----pos getImg - self.seqDataVDir", self.seqDataVDir
+        print "----pos getImg - self.seqRenDir", self.seqRenDir
+        print "----pos getImg - self.seqRenVDir", self.seqRenVDir
+        print "\n\n"
 
-        print "\n\n********** B nLevels", self.parmDic("nLevels")
+        verDic = {}
 
-        if True or not self.verUI["data"]["menuVar"].get() in dataVers:
-            latestVer = dataVers[0]
+        print "\n\n\n self.verUI"
+        pprint.pprint(self.verUI)
+        for verType in ["ren", "data"]:
+            #verDic[verType]["vers"] = self.getSeqVersions(verType)
+        #print ">>>>>>>>> renVers", renVers
+        #print ">>>>>>>>> dataVers", dataVers
+
+
+            # Update version menu options
+            #menu = self.verUI[verType]["OptionMenu"]["menu"]
+            #menu.delete(0, "end")
+            #for s in dataVers:
+            #    #menu.add_command(label=s, command=self.menuRenVChooser)
+            #    menu.add_command(label=s, command=lambda value=s: self.verUI[verType]["menuVar"].set(value))
+            self.repopulateMenu(verType, verss[verType])
+
+
+        #if True or not self.verUI["data"]["menuVar"].get() in dataVers:
+            latestVer = verss[verType][0]
             print "\tresetting  latestVer to ", latestVer
-            self.verUI["data"]["menuVar"].set(latestVer)
-            self.setVal("dataVer", latestVer)
+            self.verUI[verType]["menuVar"].set(latestVer)
+            self.setVal(verType + "Ver", latestVer)
 
         self.setVal("frStart", self.seqStart) #TODO remove these lines
         self.setVal("frEnd", self.seqEnd)
 
-        print "\n\n********** C nLevels", self.parmDic("nLevels")
 
-        renParmPath = self.seqRenDir + "/" + renVers[-1] + "/parms"
+        renParmPath = self.seqRenDir + "/" + renVers[0] + "/parms"
         if os.path.exists(renParmPath):
             print "VVV loading parms from", renParmPath, "..."
             self.parmDic.loadParms(renParmPath)
         else:
             print "^^^", renParmPath, "not found"
 
-        dataParmPath = self.seqDataDir + "/" + dataVers[-1] + "/parms"
+        dataParmPath = self.seqDataDir + "/" + dataVers[0] + "/parms"
         if os.path.exists(dataParmPath):
             print "VVV loading parms from", dataParmPath, "..."
             self.parmDic.loadParms(dataParmPath)
         else:
             print "^^^", dataParmPath, "not found"
-        print "\n\n********** D nLevels", self.parmDic("nLevels")
         
 
-    def menuDataVChooser(self, selection):
+    def menuVChooser(self, verType, selection):
         verNum = selection
-        dataParmPath = self.seqDataDir + "/" + verNum + "/parms"
-        if os.path.exists(dataParmPath):
-            print "\n\n!!! loading parms from", dataParmPath, "..."
+        if verType == "data":
+            self.seqDataVDir = self.seqDataDir + "/" + verNum
+            parmPath = self.seqDataVDir + "/parms"
+        else:
+            self.seqRenVDir = self.seqRenDir + "/" + verNum
+            parmPath = self.seqRenVDir + "/parms"
+
+        if os.path.exists(parmPath):
+            print "\n\n!!! loading parms from", parmPath, "..."
             print "\n\n AAAAAA \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
-            self.parmDic.loadParms(dataParmPath)
+            self.parmDic.loadParms(parmPath)
             self.syncUIToParmDic()
             print "\n\n BBBBBB \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
         else:
-            print "???", dataParmPath, "not found"
-        print "menuDataVChooser: setting dataVer to", verNum
-        self.setVal("dataVer", verNum)
-        self.updateDataDirs()
-        self.updateCurImg()
-        self.updateDebugImg()
-
-    def menuRenVChooser(self, selection):
-        verNum = selection
-        print "menuRenVChooser: setting renVer to", verNum
-        self.setVal("renVer", verNum)
-        self.updateDataDirs()
+            print "???", parmPath, "not found"
+        print "menuVChooser: setting " + verType + "Ver to", verNum
+        self.setVal(verType + "Ver", verNum)
+        self.updateRenAndDataDirs()
         self.updateCurImg()
         self.updateDebugImg()
 
 
-    # TODO: can we streamline butDataVNew and butRenVNew?
-
-    def butDataVNew(self):
-        verType = "data"
+    def butVNew(self, verType):
+        print "\n\n\nXXXXXxxX verType\n\n", verType
+        #verType = "ren"
         vers = self.getSeqVersions(verType)
         vers.sort()
+        vers.reverse()
         print verType + "Vers"
         print vers
-        print verType + "Vers[-1]", vers[-1]
-        print verType + "Vers[-1][1:4]", vers[-1][1:4]
-        nextVerInt = int(vers[-1][1:4]) + 1
+        print verType + "Vers[-1]", vers[0]
+        print verType + "Vers[-1][1:4]", vers[0][1:4]
+        nextVerInt = int(vers[0][1:4]) + 1
+        print "\n\n\n self.verUI"
+        pprint.pprint(self.verUI)
         nextVer = ("v%03d" % nextVerInt) + self.verUI[verType]["sfx"].get()
 
-        verDir = self.seqDataDir
+        verDir = self.seqRenDir if verType == "ren" else self.seqDataDir
         ut.mkDirSafe(verDir + "/" + nextVer)
         self.setVal(verType + "Ver", nextVer)
-        self.rebuildUI()
-
-    def butRenVNew(self):
-        verType = "ren"
-        vers = self.getSeqVersions(verType)
-        vers.sort()
-        print verType + "Vers"
-        print vers
-        print verType + "Vers[-1]", vers[-1]
-        print verType + "Vers[-1][1:4]", vers[-1][1:4]
-        nextVerInt = int(vers[-1][1:4]) + 1
-        nextVer = ("v%03d" % nextVerInt) + self.verUI[verType]["sfx"].get()
-
-        verDir = self.seqRenDir
-        ut.mkDirSafe(verDir + "/" + nextVer)
-        self.setVal(verType + "Ver", nextVer)
-        self.rebuildUI()
+        vers = [nextVer] + vers
+        self.repopulateMenu(verType, vers)
+        self.verUI[verType]["menuVar"].set(nextVer)
 
 
     def chk_doRenCv_cmd(self):
@@ -664,7 +668,8 @@ class warpUi():
         #print "valStr pos", valStr
         print "setVal: setting parmDic[" + parmStr + "] to", valStr
         self.parmDic.parmDic[parmStr]["val"] = valStr
-        self.refreshParms()
+        print "ending setVal, about to do syncUIToParmsAndSave"
+        self.syncUIToParmsAndSave()
 
     def makeFramesDataDir(self, fr=None):
         if not fr:
@@ -687,7 +692,7 @@ class warpUi():
         return ut.getVersions(verDir)
 
 
-    def updateDataDirs(self):
+    def updateRenAndDataDirs(self):
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
         ut.mkDirSafe(self.seqDataDir)
         self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
@@ -767,7 +772,7 @@ class warpUi():
         self.inSurfGridPrev = None
         self.setVal("anim", 0)
         nLevels = self.parmDic("nLevels")
-        self.updateDataDirs()
+        self.updateRenAndDataDirs()
         self.nextSid = 0
         self.tidToSids = None
         self.sidToTid = None
@@ -903,22 +908,16 @@ class warpUi():
             print "--- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
             vers = self.getSeqVersions(verType)
             print "\n" + verType + " vers:", vers
-            if verType == "data":
-                menuCmd = self.menuDataVChooser
-                butCmd = self.butDataVNew
-            else:
-                menuCmd = self.menuRenVChooser
-                butCmd = self.butRenVNew
 
-            command = self.menuDataVChooser if verType == "data" else self.menuRenVChooser
-            self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=menuCmd)
+            self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda thisVerType=verType : self.menuVChooser(thisVerType, *vers))
             self.verUI[verType]["OptionMenu"].grid(row=row, column=0, sticky=EW)
-
-            verButton = Button(self.frameParm, text="Make New", command=butCmd)
-            verButton.grid(row=row, column=0, sticky=W)
 
             self.verUI[verType]["sfx"] = Entry(self.frameParm, width=22)
             self.verUI[verType]["sfx"].grid(row=row, column=1, sticky=W)
+
+            verButton = Button(self.frameParm, text="Make New", command=lambda thisVerType=verType : self.butVNew(thisVerType))
+            verButton.grid(row=row, column=0, sticky=W)
+
             row +=1
 
             # Add entry to dic of corresponding types.
@@ -1064,12 +1063,16 @@ class warpUi():
                             self.setVal("doRenCv", 1)
                             print "Returning to", self.parmDic("frStart")
                             fr = self.parmDic("frStart")
-                        else:
-                            # Stop
-                            if self.record:
-                                self.recButCmd()
+                        elif self.record:
+                            # Stop if recording
+                            self.recButCmd()
                             fr -= 1
                             self.setVal("anim", 0)
+                        else:
+                            # Loop if not recording
+                            print "Returning to", self.parmDic("frStart")
+                            fr = self.parmDic("frStart")
+
                     # This forces each frame to process.  TODO: maybe add forceFps
                     self.setFrAndUpdate(fr)
 
