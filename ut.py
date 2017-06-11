@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, os, random, re, glob, pprint
+import sys, os, random, re, glob, pprint, inspect
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
@@ -85,7 +85,8 @@ class parmDic:
         #self.parmDic = {}
         print "\n\n XXXXXXXXXXXXXXX self.parmLs first items"
         for k,v in self.parmLs:
-            print "\t", k, v["val"]
+            if k == "nLevels":
+                print "\t", k, v["val"]
         for k,v in self.parmLs:
             #print "loading parm " + k + ", dic:", v
             self.parmDic[k] = v
@@ -268,6 +269,18 @@ def getVersions(verDir):
         vers = ["v000"]
 
     return vers
+
+def printFrameStack():
+    curframe = inspect.currentframe()
+    calframe = inspect.getouterframes(curframe, 2)
+    print "\n** FRAME STACK ** in",
+    first = True
+    for i in calframe[1:]:
+        print " <" + str(i[3]) + ">",
+        if first:
+            print "called by:",
+        first = False
+    print "\n"
 
 def main():
     verType = sys.argv[1]

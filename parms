@@ -5,11 +5,11 @@
 
 fr
 type int
-val 818
+val 1002
 
 fps
 type int
-val 30
+val 10
 
 ofs
 hidden True
@@ -19,17 +19,17 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val up_busGoing
+val laundry
 
 dbImg1
 hidden True
@@ -54,15 +54,15 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v005launRen5
 
 fr
 type int
-val 818
+val 1002
 
 fps
 type int
-val 30
+val 10
 
 ofs
 hidden True
@@ -72,17 +72,17 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val up_busGoing
+val laundry
 
 dbImg1
 hidden True
@@ -107,15 +107,15 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v005launRen5
 
 fr
 type int
-val 818
+val 1002
 
 fps
 type int
-val 30
+val 10
 
 ofs
 hidden True
@@ -125,17 +125,17 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val up_busGoing
+val laundry
 
 dbImg1
 hidden True
@@ -160,15 +160,15 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v005launRen5
 
 fr
 type int
-val 818
+val 1002
 
 fps
 type int
-val 30
+val 10
 
 ofs
 hidden True
@@ -178,17 +178,17 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val up_busGoing
+val laundry
 
 dbImg1
 hidden True
@@ -213,15 +213,15 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v005launRen5
 
 fr
 type int
-val 818
+val 1002
 
 fps
 type int
-val 30
+val 10
 
 ofs
 hidden True
@@ -231,17 +231,17 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val up_busGoing
+val laundry
 
 dbImg1
 hidden True
@@ -266,7 +266,113 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v005launRen5
+
+fr
+type int
+val 1002
+
+fps
+type int
+val 10
+
+ofs
+hidden True
+type float
+val 0.6
+
+anim
+hidden True
+type int
+val 0
+
+doRenCv
+hidden True
+type int
+val 1
+
+image
+hidden True
+type str
+val laundry
+
+dbImg1
+hidden True
+type str
+val sidPost
+
+lev_dbImg1
+hidden True
+type str
+val ALL
+
+dbImg2
+hidden True
+type str
+val cidPost
+
+lev_dbImg2
+hidden True
+type str
+val ALL
+
+renVer
+hidden True
+type str
+val v005launRen5
+
+fr
+type int
+val 1002
+
+fps
+type int
+val 10
+
+ofs
+hidden True
+type float
+val 0.6
+
+anim
+hidden True
+type int
+val 0
+
+doRenCv
+hidden True
+type int
+val 1
+
+image
+hidden True
+type str
+val laundry
+
+dbImg1
+hidden True
+type str
+val sidPost
+
+lev_dbImg1
+hidden True
+type str
+val ALL
+
+dbImg2
+hidden True
+type str
+val cidPost
+
+lev_dbImg2
+hidden True
+type str
+val ALL
+
+renVer
+hidden True
+type str
+val v005launRen5
 
 
 
@@ -275,11 +381,11 @@ val v000
 
 frStart
 type int
-val 600
+val 2
 
 frEnd
 type int
-val 1000
+val 29
 
 frPerCycle
 type int
@@ -287,7 +393,7 @@ val 30
 
 nLevels
 type int
-val 5
+val 3
 
 kSurf
 type float
@@ -323,11 +429,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 
 frStart
 type int
-val 600
+val 2
 
 frEnd
 type int
-val 1000
+val 29
 
 frPerCycle
 type int
@@ -335,7 +441,7 @@ val 30
 
 nLevels
 type int
-val 5
+val 3
 
 kSurf
 type float
@@ -371,11 +477,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 
 frStart
 type int
-val 600
+val 2
 
 frEnd
 type int
-val 1000
+val 29
 
 frPerCycle
 type int
@@ -383,59 +489,7 @@ val 30
 
 nLevels
 type int
-val 5
-
-kSurf
-type float
-val 1
-
-gamma
-type float
-val .4
-
-minThresh
-type float
-val 0
-
-maxThresh
-type float
-val 1
-
-rangeThresh
-type float
-val .25
-
-cDark
-type clr
-val 0.07450980392156863,0.18823529411764706,0.13725490196078433
-
-cMid
-type clr
-val 0.10980392156862745,0.3058823529411765,0.6392156862745098
-
-cLight
-type clr
-val 1.0,0.8941176470588236,0.9137254901960784
-
-cLight
-type clr
-val 1.0,0.8941176470588236,0.9137254901960784
-
-frStart
-type int
-val 600
-
-frEnd
-type int
-val 1000
-
-frPerCycle
-type int
-val 30
-
-nLevels
-type int
-val 5
+val 3
 
 kSurf
 type float
@@ -475,11 +529,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 
 frStart
 type int
-val 600
+val 2
 
 frEnd
 type int
-val 1000
+val 29
 
 frPerCycle
 type int
@@ -487,7 +541,7 @@ val 30
 
 nLevels
 type int
-val 5
+val 3
 
 kSurf
 type float
@@ -516,6 +570,174 @@ val 0.07450980392156863,0.18823529411764706,0.13725490196078433
 cMid
 type clr
 val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+frStart
+type int
+val 2
+
+frEnd
+type int
+val 29
+
+frPerCycle
+type int
+val 30
+
+nLevels
+type int
+val 3
+
+kSurf
+type float
+val 1
+
+gamma
+type float
+val .4
+
+minThresh
+type float
+val 0
+
+maxThresh
+type float
+val 1
+
+rangeThresh
+type float
+val .25
+
+cDark
+type clr
+val 0.07450980392156863,0.18823529411764706,0.13725490196078433
+
+cMid
+type clr
+val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+frStart
+type int
+val 2
+
+frEnd
+type int
+val 29
+
+frPerCycle
+type int
+val 30
+
+nLevels
+type int
+val 3
+
+kSurf
+type float
+val 1
+
+gamma
+type float
+val .4
+
+minThresh
+type float
+val 0
+
+maxThresh
+type float
+val 1
+
+rangeThresh
+type float
+val .25
+
+cDark
+type clr
+val 0.07450980392156863,0.18823529411764706,0.13725490196078433
+
+cMid
+type clr
+val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
+
+frStart
+type int
+val 2
+
+frEnd
+type int
+val 29
+
+frPerCycle
+type int
+val 30
+
+nLevels
+type int
+val 3
+
+kSurf
+type float
+val 1
+
+gamma
+type float
+val .4
+
+minThresh
+type float
+val 0
+
+maxThresh
+type float
+val 1
+
+rangeThresh
+type float
+val .25
+
+cDark
+type clr
+val 0.07450980392156863,0.18823529411764706,0.13725490196078433
+
+cMid
+type clr
+val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+
+cLight
+type clr
+val 1.0,0.8941176470588236,0.9137254901960784
 
 cLight
 type clr
@@ -537,7 +759,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v000
+val v006launData6
 
 fallDist
 type float
@@ -545,16 +767,16 @@ val .2
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 dataVer
 hidden True
 type str
-val v000
+val v006launData6
 
 fallDist
 type float
@@ -562,20 +784,20 @@ val .2
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 dataVer
 hidden True
 type str
-val v000
+val v006launData6
 
 fallDist
 type float
@@ -583,20 +805,20 @@ val .2
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 dataVer
 hidden True
 type str
-val v000
+val v006launData6
 
 fallDist
 type float
@@ -604,24 +826,24 @@ val .2
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 dataVer
 hidden True
 type str
-val v000
+val v006launData6
 
 fallDist
 type float
@@ -629,17 +851,75 @@ val .2
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
 
 progDur
 type float
-val .6
+val 4
+
+dataVer
+hidden True
+type str
+val v006launData6
+
+fallDist
+type float
+val .2
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
+
+dataVer
+hidden True
+type str
+val v006launData6
+
+fallDist
+type float
+val .2
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
+
+progDur
+type float
+val 4
 

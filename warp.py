@@ -12,7 +12,7 @@ parmPath = ut.projDir + "/parms"
 class warpUi():
     def rebuildUI(self):
         print "reloading........"
-        #self.syncUIToParmsAndSave()
+        #self.saveUIToParmsAndFile()
         self.saveParmDic()
         ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
         
@@ -32,8 +32,8 @@ class warpUi():
         self.sidToTid = None
         self.nextSid = 0
         
-    def syncUIToParmDic(self):
-        self.pauseRefreshParms = True
+    def putParmDicInUI(self):
+        self.pauseSaveUIToParmsAndFile = True
         print "\n\n\n===>>>>>> self.parmDic.parmDic.keys():", self.parmDic.parmDic.keys()
         for k,thisDic in self.parmDic.parmDic.items():
             if k in ["nLevels", "frEnd"]: print "\t%%% k", k, "; thisDic", thisDic
@@ -45,42 +45,48 @@ class warpUi():
                 if k in ["nLevels", "frEnd"]: print "&&&&& k:", k, " -- inserting", val
                 uiElement.insert(0, str(val))
 
-        self.pauseRefreshParms = False
+        self.pauseSaveUIToParmsAndFile = False
 
-    def syncUIToParmsAndSave(self):
-        if not self.pauseRefreshParms:
+    #def saveUIToParmsAndFile(self, svName, pn):
+    def saveUIToParmsAndFile(self, svName, parmName, sv):
+        val = sv.get()
+        print "\n---------------svName:", svName, "pn:", parmName, "val", val, "sv.get()", sv.get()
+        if self.pauseSaveUIToParmsAndFile:
+            print "\n NOT DOING CONTENTS OF saveUIToParmsAndFile because pauseSaveUIToParmsAndFile is True!"
+        else:
+            print "\n YESSSSSSSS DOING CONTENTS OF saveUIToParmsAndFile because pauseSaveUIToParmsAndFile is False!"
             ints="0123456789"
             floats= ints + "."
-            for parmName in self.parmDic.parmDic.keys():
-                thisDic = self.parmDic.parmDic[parmName]
-                # Below is just so we don't make errors before all the
-                # ui is built - a bit unsatisfying.
-                setVal = True
-                if "uiElement" in thisDic.keys() and not thisDic["type"] == "clr":
-                    uiElement = thisDic["uiElement"]
-                    val = uiElement.get()
-                    typ = thisDic["type"]
-                    if typ == "int":
-                        for v in val:
-                            if not v in ints:
-                                print "ERROR: bad character entered", v
-                                setVal = False
-                                break
-                    elif typ == "float":
-                        for v in val:
-                            if not v in floats:
-                                print "ERROR: bad character entered", v
-                                setVal = False
-                                break
+            #for parmName in self.parmDic.parmDic.keys():
+            thisDic = self.parmDic.parmDic[parmName]
+            # Below is just so we don't make errors before all the
+            # ui is built - a bit unsatisfying.
+            setVal = True
+            typ = thisDic["type"]
+            if typ == "int":
+                for v in val:
+                    print "v", v
+                    if not v in ints:
+                        print "ERROR: bad character entered", v
+                        setVal = False
+                        break
+            elif typ == "float":
+                for v in val:
+                    if not v in floats:
+                        print "ERROR: bad character entered", v
+                        setVal = False
+                        break
 
-                    if setVal:
-                        thisDic["val"] = val
-                    else:
-                        val = thisDic["val"]
-                        uiElement.delete(0, END)
-                        #print "&&&&& k:", k, " -- inserting", val
-                        uiElement.insert(0, str(val))
-            print "\n\nending syncUIToParmsAndSave, about to do saveParmDic"
+            if setVal:
+                print "====for", parmName, ": setting thisDic['val'] to", val
+                thisDic["val"] = val
+            else:
+                val = thisDic["val"]
+                print "====+++++++++re setting entry to ", val;
+                self.parmDic.parmDic[parmName]["uiElement"].delete(0, END)
+                #print "&&&&& k:", k, " -- inserting", val
+                self.parmDic.parmDic[parmName]["uiElement"].insert(0, str(val))
+            print "\n\nending saveUIToParmsAndFile, about to do saveParmDic"
             self.saveParmDic()
 
 
@@ -107,21 +113,21 @@ class warpUi():
         #print "\n\n************** parmLs", self.parmDic.parmLs
         #print "\n\n++++++++++++++ parmStages"
         #pprint.pprint(self.parmDic.parmStages)
-        for k,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
-            thisParmDic = self.parmDic.parmDic[k]
-            #print "-------------IN makeParmUi, k:", k, ", thisParmDic:", thisParmDic
+        for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
+            thisParmDic = self.parmDic.parmDic[parmName]
+            #print "-------------IN makeParmUi, parmName:", parmName, ", thisParmDic:", thisParmDic
             
             if "hidden" in thisParmDic.keys() and thisParmDic["hidden"] == "True":
                 print "HIDDEN, skipping..."
                 continue
-            lab = Label(self.frameParm, text=k)
+            lab = Label(self.frameParm, text=parmName)
             lab.grid(row=row, column=0, sticky=E)
 
 
             if thisParmDic["type"] == "clr":
-                clrTuple = self.parmDic(k)
+                clrTuple = self.parmDic(parmName)
                 hx = ut.rgb_to_hex(clrTuple)
-                ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(k,clrTuple): self.btn_getColor(args))
+                ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
             else:
                 ent = Entry(self.frameParm)
             ent.grid(row=row, column=1, sticky=W)
@@ -139,7 +145,10 @@ class warpUi():
             if not thisParmDic["type"] == "clr":
                 sv = StringVar()
                 # TODO: How does this work?
-                sv.trace("w", lambda name, index, mode, sv=sv: self.syncUIToParmsAndSave())
+                #sv.trace("w", lambda svName, pn=parmName: self.saveUIToParmsAndFile(svName))
+                #sv.trace("w", lambda x, y=parmName, z=sv : self.saveUIToParmsAndFile(x, y, z, parmName))
+                sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(name, pn, sv))
+                #sv.trace("w", lambda name, index, mode, sv=sv: self.saveUIToParmsAndFile())
 
                 thisParmDic["uiElement"].configure(textvariable=sv)
                 thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
@@ -270,7 +279,7 @@ class warpUi():
 
 
     def imgButCmd(self):
-        #self.syncUIToParmsAndSave()
+        #self.saveUIToParmsAndFile()
         self.updateCurImg(forceRecord=True)
         self.updateDebugImg()
 
@@ -291,8 +300,7 @@ class warpUi():
     def setFrAndUpdate(self, fr):
         self.setStatus("busy")
         self.setVal("fr", fr)
-        print "\nin setFrAndUpdate, about to do syncUIToParmsAndSave"
-        self.syncUIToParmsAndSave()
+        self.saveParmDic()
         self.updateRenAndDataDirs()
         self.updateCurImg()
         self.updateDebugImg()
@@ -301,8 +309,8 @@ class warpUi():
 
     def returnCmd(self):
         self.frameMaster.focus_set()
-        self.syncUIToParmsAndSave() #TODO: Needed?
-        self.updateCurImg()
+        #self.saveUIToParmsAndFile() #TODO: Needed?
+        #self.updateCurImg()
 
     #def keyWrap(self, v):
 
@@ -361,7 +369,7 @@ class warpUi():
             self.setVal("anim", 0)
             self.refreshButtonImages()
         print "Pressed anim button, anim set to", anim
-        self.syncUIToParmsAndSave()
+        #self.saveUIToParmsAndFile()
 
     def recButCmd(self):
         self.record = not self.record
@@ -393,8 +401,12 @@ class warpUi():
         else:
             print "DOES NOT EXIST"
 
+        print ">>>>>>>> self.parmDic.parmStages:"
+        for k,v in self.parmDic.parmStages.items():
+            print "\t", k, ":", v
         for path, stages in pathsAndStages:
             #print "path:", path, "stages", stages
+            print "--path", path, "stages", stages
             with open(path, 'w') as f:
                 for stage in stages:
                     #print "\twriting", stage, "to", path
@@ -455,17 +467,13 @@ class warpUi():
         return ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
 
     def updateCurImg(self, forceRecord=False):
-        #imgPath = self.getSourceImgPath()
-        #self.images["source"]["path"] = ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
         self.images["source"]["path"] = self.getSourceImgPath()
-        #self.images["ren"]["path"] = imgPath.replace("/seq/","/ren/") + "/ren"
-        
         renLevDir,renImgPath = self.getRenDirAndImg("ren", "ALL")
 
         self.images["ren"]["path"] = renImgPath
         #print "\n\n <<<<<<<<<<self.images[\"ren\"][\"path\"]:", self.images["ren"]["path"] 
-        print "\nin updateCurImg, about to do syncUIToParmsAndSave"
-        self.syncUIToParmsAndSave() #TODO: Needed?
+        #print "\nin updateCurImg, about to do saveUIToParmsAndFile"
+        #self.saveUIToParmsAndFile() #TODO: Needed?
         #print "\n\n------- self.images", self.images
         print "\n\n self.record", self.record
 
@@ -529,7 +537,7 @@ class warpUi():
             if self.record:
                 # Turn off recording so you don't render right away.
                 self.recButCmd()
-            self.setVal("image", selection)
+            self.setVal("image", selection) #TODO: Rename image to maybe seqName?
             self.updateRenAndDataDirs()
             self.updateCurImg()
             self.updateDebugImg()
@@ -616,7 +624,7 @@ class warpUi():
             print "\n\n!!! loading parms from", parmPath, "..."
             print "\n\n AAAAAA \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
             self.parmDic.loadParms(parmPath)
-            self.syncUIToParmDic()
+            self.putParmDicInUI()
             print "\n\n BBBBBB \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
         else:
             print "???", parmPath, "not found"
@@ -656,6 +664,9 @@ class warpUi():
         self.setVal("doRenCv", val)
 
     def setVal(self, parmStr, val):
+        ut.printFrameStack()
+
+        self.pauseSaveUIToParmsAndFile = True
         if "uiElement" in self.parmDic.parmDic[parmStr]:
             uiElement = self.parmDic.parmDic[parmStr]["uiElement"]
             if not self.parmDic.parmDic[parmStr]["type"] == "clr":
@@ -668,8 +679,9 @@ class warpUi():
         #print "valStr pos", valStr
         print "setVal: setting parmDic[" + parmStr + "] to", valStr
         self.parmDic.parmDic[parmStr]["val"] = valStr
-        print "ending setVal, about to do syncUIToParmsAndSave"
-        self.syncUIToParmsAndSave()
+        self.pauseSaveUIToParmsAndFile = False
+        #print "ending setVal, about to do saveUIToParmsAndFile"
+        #self.saveUIToParmsAndFile()
 
     def makeFramesDataDir(self, fr=None):
         if not fr:
@@ -763,7 +775,7 @@ class warpUi():
         self.parmDic = ut.parmDic(parmPath)
         print "\n\n\n********** parmDic2"
         print self.parmDic
-        self.pauseRefreshParms = False
+        self.pauseSaveUIToParmsAndFile = False
         self.parmEntries = {}
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
         self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
