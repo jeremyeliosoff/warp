@@ -334,14 +334,9 @@ def initJtGrid(img, warpUi):
 
     return jtGrid
 
-def setDbImg(name, dbImgDic, lev, nLevels, x, y, val, db=False):
-    #levMult = (lev+1.0)/nLevels
-    levMult = 1
-    #levMult = ut.gamma(levMult, warpUi.parmDic("gamma"))
-    #print "setting", name, ", lev:", lev, "x,y", x,y, "levMult", levMult
-    #print "levMult", levMult
+def setDbImg(name, dbImgDic, lev, nLevels, x, y, val):
     prevVal = black
-    if lev <= len(dbImgDic[name]):
+    if lev <= len(dbImgDic[name]): # TODO: Won't this always be true?
         res = dbImgDic[name][lev].get_size()
         if x < res[0] and y < res[1]:
             #prevVal = dbImgDic[name][lev].get_at((x,y))
@@ -351,9 +346,7 @@ def setDbImg(name, dbImgDic, lev, nLevels, x, y, val, db=False):
             #newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
             #newVal = tuple(val)
             dbImgDic[name][lev].set_at((x,y), newVal)
-
-            newValAll = newVal # ut.vMin(ut.vAdd(prevValAll, ut.vMult(newVal, levMult)), 255)
-            dbImgDic[name][nLevels].set_at((x,y), newValAll)
+            dbImgDic[name][nLevels].set_at((x,y), newVal)
 
 def intToClr(i):
     return vX255(clrs[i%len(clrs)])
@@ -727,8 +720,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 #print "JJJJJ lev", lev, ", sidOld", sidOld
                 sidOld = inSurfGrid[lev][x][y]
                 if not sidOld == None:
-                    #setDbImg("sidPre", dbImgDic, lev, nLevels, x, y, intToClr(sidOld))
-                    #print "YYYYYYYes sidOld", sidOld
                     if lev <= (len(sidOldToNew) + 1) and sidOld in sidOldToNew[lev].keys():
                         #print "SETTING lev", lev, ", sidOld", sidOld, ",  sidOldToNew[lev][sidOld]", sidOldToNew[lev][sidOld]
                         sidNew = sidOldToNew[lev][sidOld]
@@ -933,22 +924,39 @@ def calcXf(warpUi, prog, res):
 
     return tx, ty
 
-def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult):
-    clr = srcImg.get_at((jx, jy))
-    clr = list(clr)[:3]
-    clr.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
+def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha):
+    texClr = srcImg.get_at((jx, jy))
+    texClr = list(texClr)[:3]
+    texClr.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
     cTripMin = .3
     mixTrip = ut.mix(cTripMin, 1, pow(prog, .5))
-    clr = ut.mix(clr, sidRanClr, mixTrip)
-    #clr = ut.vMult(clr, levMult)
-    #clr = ut.vMult(clr, 1.0/nLevels)
-    setDbImg("ren", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
+    clr = ut.mix(texClr, sidRanClr, mixTrip)
+
+    # Adapted from  setDbImg("ren", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
+    thisDic = dbImgDic["ren"]
+    prevVal = black
+    jxt = jx + tx
+    jyt = jy + ty
+    if lev <= len(thisDic): # TODO: Won't this always be true?
+        res = thisDic[lev].get_size()
+        if jxt < res[0] and jxt > -1 and jyt < res[1] and jyt > -1:
+            newVal = tuple(list(clr) + [255])
+            thisDic[lev].set_at((jxt,jyt), newVal)
+
+            # Comp for ALL level
+            prevVal = thisDic[nLevels].get_at((jxt,jyt))
+            newVal = ut.mix(prevVal, newVal, alpha)
+            newVal = ut.clamp(newVal, 0, 255)
+            #print "\nnewVal", newVal, "\n"
+            #newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
+            #newVal = tuple(val)
+            thisDic[nLevels].set_at((jxt,jyt), newVal)
 
 
 
     
 
-def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, dbImgDic):
+def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic):
     #sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
     # TODO: Change levMult to levOpac + integrate that.
     sidRanClr = intToClr(sid)
@@ -980,12 +988,12 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, d
                         iJt += 1
                         jx,jy = list(cv[iJt])
                         jtNext = cv[(iJt+1) % len(cv)]
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult)
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha)
                     if jtNext[0] < jx:
                         # If the next x is less than this x -- which I think would only happen if
                         # the above while loop landed us at a back-curving turn - skip this jt.
                         # TODO: must this next line exist?
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult)
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha)
                         iJt += 1
                         continue
 
@@ -993,13 +1001,17 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, d
 
                     # MAIN FILLING - Draw vertical line up to next curve in this sid.
                     while ( not (jx, yy) in allCoords) and yy > 0:
-                        fillClr = ut.vMult(sidRanClr, 1-prog*.9)
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, levMult)
+                        # TODO: Try chaning alpha instead - make transparent instead of dark
+                        #fillClr = ut.vMult(sidRanClr, 1-prog*.9)
+                        fillClr = sidRanClr
+                        thisAlpha = alpha * (1-prog*.9)
+
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, thisAlpha)
                         yy -= 1
 
 
                 # Draw the curve. 
-                setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, levMult)
+                setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha)
 
                 iJt += 1
 
@@ -1045,14 +1057,14 @@ def renCv(warpUi, res, sidToCvDic):
             level = warpUi.getOfsWLev(lev) % 1.0
 
             # Fade in and out - TODO: Improve this
-            levMult = level* (1-level)**2
-            levMult = min(level*6, 1)
+            alpha = level* (1-level)**2
+            alpha = min(level*6, 1)
 
             iSid = 0
             for sid in sids:
                 iSid += 1
                 print sid,
-                renSid(warpUi, srcImg, sid, nLevels, lev, level, levMult, res, sidToCvDic, outputs)
+                renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
         print
 
 

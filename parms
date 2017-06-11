@@ -5,7 +5,7 @@
 
 fr
 type int
-val 1001
+val 29
 
 fps
 type int
@@ -24,12 +24,12 @@ val 0
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val laundry
+val testCirclesBW_zig
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v005launRen5
+val v013alphaStillBuggy
 
 
 
@@ -63,11 +63,11 @@ val v005launRen5
 
 frStart
 type int
-val 1000
+val 0
 
 frEnd
 type int
-val 1002
+val 29
 
 frPerCycle
 type int
@@ -75,7 +75,7 @@ val 30
 
 nLevels
 type int
-val 5
+val 3
 
 kSurf
 type float
@@ -83,11 +83,11 @@ val 1
 
 gamma
 type float
-val 1
+val .4
 
 minThresh
 type float
-val 0
+val 0.1
 
 maxThresh
 type float
@@ -95,7 +95,7 @@ val 1
 
 rangeThresh
 type float
-val .25
+val 1
 
 cDark
 type clr
@@ -117,11 +117,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v006launData6
+val v014lessParmSavingZigDataV14
 
 fallDist
 type float
-val .2
+val .3
 
 progDur
 type float

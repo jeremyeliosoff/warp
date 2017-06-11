@@ -163,8 +163,8 @@ def clamp(v, mn, mx):
     if isScalar(v):
         return max(min(v, mx), mn)
     else:
-        vmn = (mn, mn, mn) if isScalar(mn) else mn
-        vmx = (mx, mx, mx) if isScalar(mx) else mx
+        vmn = tuple([mn]*len(v)) if isScalar(mn) else mn
+        vmx = tuple([mx]*len(v)) if isScalar(mx) else mx
         return vMax(vMin(v, vmx), vmn)
 
 

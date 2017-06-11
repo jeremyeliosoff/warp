@@ -1091,6 +1091,7 @@ class warpUi():
                             # Loop if not recording
                             print "Returning to", self.parmDic("frStart")
                             fr = self.parmDic("frStart")
+                            self.timeStart = time.time()
 
                     # This forces each frame to process.  TODO: maybe add forceFps
                     self.setFrAndUpdate(fr)
