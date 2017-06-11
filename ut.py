@@ -36,6 +36,7 @@ class parmDic:
         print "\n\n\n INSIDE loadParmLs, parmFile:", parmFile
         #self.parmLs = []
         thisParmDic = {}
+        alreadyInList = False
         thisParmName = ""
         thisStage = "META"
         nextIsParm = True # nextIsParmOrDivider, really
@@ -54,6 +55,8 @@ class parmDic:
                             # This isn't the beginnig of file/stage; store previously collected attrs.
                             if thisParmName == "nLevels":
                                 print "--loading nLevels=", thisParmDic["val"]
+
+                            # TODO: Why would the parm already be in list?
                             alreadyInList = False
                             for i,nameAndDic in enumerate(self.parmLs):
                                 if nameAndDic[0] == thisParmName:
@@ -61,11 +64,14 @@ class parmDic:
                                     alreadyInList = True
                             if not alreadyInList:
                                 self.parmLs.append([thisParmName, thisParmDic])
+
                         thisParmName = stripped
                         if thisParmName in self.parmDic.keys():
+                            # Add "stage" attr to this parm if it exists in dic...
                             thisParmDic = self.parmDic[thisParmName]
                             thisParmDic["stage"] = thisStage
                         else:
+                            #...else init dictionary with just stage attr
                             thisParmDic = {"stage":thisStage}
                     else:
                         k,v = stripped.split()
@@ -77,7 +83,8 @@ class parmDic:
                 #print "stripped:", stripped
                 #print "nextIsParm:", nextIsParm
 
-        self.parmLs.append([thisParmName, thisParmDic])
+        if not alreadyInList:
+            self.parmLs.append([thisParmName, thisParmDic])
         #print "\n\n\nparmLs"
         #print self.parmLs
 
@@ -87,6 +94,8 @@ class parmDic:
         for k,v in self.parmLs:
             if k == "nLevels":
                 print "\t", k, v["val"]
+
+        self.parmStages = {}
         for k,v in self.parmLs:
             #print "loading parm " + k + ", dic:", v
             self.parmDic[k] = v

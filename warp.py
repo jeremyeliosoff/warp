@@ -110,9 +110,6 @@ class warpUi():
     
     def makeParmUi(self, startRow):
         row = startRow
-        #print "\n\n************** parmLs", self.parmDic.parmLs
-        #print "\n\n++++++++++++++ parmStages"
-        #pprint.pprint(self.parmDic.parmStages)
         for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
             thisParmDic = self.parmDic.parmDic[parmName]
             #print "-------------IN makeParmUi, parmName:", parmName, ", thisParmDic:", thisParmDic
@@ -157,6 +154,9 @@ class warpUi():
         print "\n\n===========================\n======================= parmDic"
         for k,v in self.parmDic.parmDic.items():
             print "\t", k, v["val"]
+        print "\n\nparmLs:"
+        for pm in self.parmDic.parmLs:
+            print "\t", pm[0]
         #pprint.pprint(self.parmDic.parmDic)
         return row
         
@@ -404,6 +404,11 @@ class warpUi():
         print ">>>>>>>> self.parmDic.parmStages:"
         for k,v in self.parmDic.parmStages.items():
             print "\t", k, ":", v
+
+        print "\n\nparmLs:"
+        for pm in self.parmDic.parmLs:
+            print "\t", pm[0]
+
         for path, stages in pathsAndStages:
             #print "path:", path, "stages", stages
             print "--path", path, "stages", stages
@@ -609,6 +614,8 @@ class warpUi():
             self.parmDic.loadParms(dataParmPath)
         else:
             print "^^^", dataParmPath, "not found"
+
+        self.putParmDicInUI()
         
 
     def menuVChooser(self, verType, selection):
