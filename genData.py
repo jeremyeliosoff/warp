@@ -913,8 +913,12 @@ def echoCurve(): # NOTE: Not currently used.
 
 def calcProg(warpUi, sid, level):
     random.seed(sid)
-    progStart = ut.mix(.2, 1, random.random())
-    return ut.smoothstep(progStart, progStart+warpUi.parmDic("progDur"), level)
+    progDur = warpUi.parmDic("progDur")
+    progStartMin = .2
+    progStart = ut.mix(progStartMin, 1-progDur, random.random())
+    #progEnd = min(1.0, progStart+warpUi.parmDic("progDur"))
+    progEnd = progStart + progDur
+    return ut.smoothstep(progStart, progEnd, level)
 
 def calcXf(warpUi, prog, res):
     fall = prog * res[1] * warpUi.parmDic("fallDist")
@@ -980,6 +984,9 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
                 jtPrev = cv[(iJt-1) % len(cv)]
                 jx,jy = list(jt)
 
+                surfAlpha = alpha * (1-prog)
+                surfAlpha = min(1.0, 1.5*surfAlpha)
+                curveAlpha = min(1.0, 5*surfAlpha)
 
                 if jx < jtNext[0] or jx > jtPrev[0]:
                     # Skip to the top (lowest #) of a vertical line
@@ -988,12 +995,12 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
                         iJt += 1
                         jx,jy = list(cv[iJt])
                         jtNext = cv[(iJt+1) % len(cv)]
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha)
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
                     if jtNext[0] < jx:
                         # If the next x is less than this x -- which I think would only happen if
                         # the above while loop landed us at a back-curving turn - skip this jt.
                         # TODO: must this next line exist?
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha)
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
                         iJt += 1
                         continue
 
@@ -1004,14 +1011,16 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
                         # TODO: Try chaning alpha instead - make transparent instead of dark
                         #fillClr = ut.vMult(sidRanClr, 1-prog*.9)
                         fillClr = sidRanClr
-                        thisAlpha = alpha * (1-prog*.9)
+                        #thisAlpha = alpha * (1-prog*.9)
 
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, thisAlpha)
+                        #fillClr = vX255(ut.mix(red, green, prog))
+                        #thisAlpha = 1
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, surfAlpha)
                         yy -= 1
 
 
                 # Draw the curve. 
-                setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha)
+                setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
 
                 iJt += 1
 
@@ -1064,6 +1073,7 @@ def renCv(warpUi, res, sidToCvDic):
             for sid in sids:
                 iSid += 1
                 print sid,
+                #if lev == 2: renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
                 renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
         print
 
