@@ -50,11 +50,8 @@ class warpUi():
     #def saveUIToParmsAndFile(self, svName, pn):
     def saveUIToParmsAndFile(self, svName, parmName, sv):
         val = sv.get()
-        print "\n---------------svName:", svName, "pn:", parmName, "val", val, "sv.get()", sv.get()
-        if self.pauseSaveUIToParmsAndFile:
-            print "\n NOT DOING CONTENTS OF saveUIToParmsAndFile because pauseSaveUIToParmsAndFile is True!"
-        else:
-            print "\n YESSSSSSSS DOING CONTENTS OF saveUIToParmsAndFile because pauseSaveUIToParmsAndFile is False!"
+        #print "\n---------------svName:", svName, "pn:", parmName, "val", val, "sv.get()", sv.get()
+        if not self.pauseSaveUIToParmsAndFile:
             ints="0123456789"
             floats= ints + "."
             #for parmName in self.parmDic.parmDic.keys():
@@ -141,11 +138,7 @@ class warpUi():
 
             if not thisParmDic["type"] == "clr":
                 sv = StringVar()
-                # TODO: How does this work?
-                #sv.trace("w", lambda svName, pn=parmName: self.saveUIToParmsAndFile(svName))
-                #sv.trace("w", lambda x, y=parmName, z=sv : self.saveUIToParmsAndFile(x, y, z, parmName))
                 sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(name, pn, sv))
-                #sv.trace("w", lambda name, index, mode, sv=sv: self.saveUIToParmsAndFile())
 
                 thisParmDic["uiElement"].configure(textvariable=sv)
                 thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
@@ -577,17 +570,6 @@ class warpUi():
         print "\n\n\n self.verUI"
         pprint.pprint(self.verUI)
         for verType in ["ren", "data"]:
-            #verDic[verType]["vers"] = self.getSeqVersions(verType)
-        #print ">>>>>>>>> renVers", renVers
-        #print ">>>>>>>>> dataVers", dataVers
-
-
-            # Update version menu options
-            #menu = self.verUI[verType]["OptionMenu"]["menu"]
-            #menu.delete(0, "end")
-            #for s in dataVers:
-            #    #menu.add_command(label=s, command=self.menuRenVChooser)
-            #    menu.add_command(label=s, command=lambda value=s: self.verUI[verType]["menuVar"].set(value))
             self.repopulateMenu(verType, verss[verType])
 
 
@@ -615,17 +597,26 @@ class warpUi():
         else:
             print "^^^", dataParmPath, "not found"
 
+        self.updateCurImg()
+        self.updateDebugImg()
+        self.refreshButtonImages()
         self.putParmDicInUI()
         
 
-    def menuVChooser(self, verType, selection):
+    def menuVChooser(self, selection, verType):
+        print "\nNNNNNNN menuVChooser: selection", selection, "verType", verType
+        print "\n\n\n self.verUI"
+        pprint.pprint(self.verUI)
+        #print "\nNNNNNNN menuVChooser:\n\tthisVerType", thisVerType, "\n\tverType", verType, "\n\t*extr", extr
         verNum = selection
+        print "in menuVChooser OLD:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
         if verType == "data":
             self.seqDataVDir = self.seqDataDir + "/" + verNum
             parmPath = self.seqDataVDir + "/parms"
         else:
             self.seqRenVDir = self.seqRenDir + "/" + verNum
             parmPath = self.seqRenVDir + "/parms"
+        print "in menuVChooser NEW:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
 
         if os.path.exists(parmPath):
             print "\n\n!!! loading parms from", parmPath, "..."
@@ -637,9 +628,10 @@ class warpUi():
             print "???", parmPath, "not found"
         print "menuVChooser: setting " + verType + "Ver to", verNum
         self.setVal(verType + "Ver", verNum)
-        self.updateRenAndDataDirs()
+        self.updateRenAndDataDirs() #TODO: I don't think this is necessary, it's done above - useful for menuImgChooser
         self.updateCurImg()
         self.updateDebugImg()
+        self.flushDics()
 
 
     def butVNew(self, verType):
@@ -712,6 +704,8 @@ class warpUi():
 
 
     def updateRenAndDataDirs(self):
+        ut.printFrameStack()
+        print "OLD:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
         ut.mkDirSafe(self.seqDataDir)
         self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
@@ -720,6 +714,7 @@ class warpUi():
         self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
         ut.mkDirSafe(self.seqRenDir)
         self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
+        print "NEW:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
 
     def getDebugDirAndImg(self, debugInfo, lev):
         fr = self.parmDic("fr")
@@ -905,8 +900,13 @@ class warpUi():
 
         self.verTypeLs = ["data", "ren"]
         self.verUI = {}
-        #for ve{"data":{}, "ren":{}}
-        #self.verUI = {"data":{}}
+        # Example:
+        # {'data': {'OptionMenu': <Tkinter.OptionMenu instance at 0x7fbd2e0f3680>,
+        #       'menuVar': <Tkinter.StringVar instance at 0x7fbd2e0f3290>,
+        #       'sfx': <Tkinter.Entry instance at 0x7fbd2e0fd248>},
+        #  'ren': {'OptionMenu': <Tkinter.OptionMenu instance at 0x7fbd2e0fd3b0>,
+        #       'menuVar': <Tkinter.StringVar instance at 0x7fbd2e0fd320>,
+        #       'sfx': <Tkinter.Entry instance at 0x7fbd2e0fdd40>}}
 
 
         #for verType in self.verUI.keys():
@@ -928,7 +928,9 @@ class warpUi():
             vers = self.getSeqVersions(verType)
             print "\n" + verType + " vers:", vers
 
-            self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda thisVerType=verType : self.menuVChooser(thisVerType, *vers))
+            print "\n\nYYYYY setting up OptionMenu for", verType
+            self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda selection, thisVerType=verType : self.menuVChooser(selection, thisVerType))
+            #self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda thisVerType=verType : self.menuVChooser(thisVerType, *vers))
             self.verUI[verType]["OptionMenu"].grid(row=row, column=0, sticky=EW)
 
             self.verUI[verType]["sfx"] = Entry(self.frameParm, width=22)

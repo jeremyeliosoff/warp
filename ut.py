@@ -285,9 +285,10 @@ def printFrameStack():
     print "\n** FRAME STACK ** in",
     first = True
     for i in calframe[1:]:
-        print " <" + str(i[3]) + ">",
         if first:
-            print "called by:",
+            print " {{{" + str(i[3]) + "}}}", "called by:",
+        else:
+            print " <" + str(i[3]) + ">",
         first = False
     print "\n"
 

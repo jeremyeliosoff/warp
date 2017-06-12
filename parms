@@ -5,7 +5,7 @@
 
 fr
 type int
-val 29
+val 4
 
 fps
 type int
@@ -19,12 +19,12 @@ val 0.6
 anim
 hidden True
 type int
-val 0
+val 1
 
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v013alphaStillBuggy
+val v018testPopping
 
 
 
@@ -67,7 +67,7 @@ val 0
 
 frEnd
 type int
-val 29
+val 30
 
 frPerCycle
 type int
@@ -75,7 +75,7 @@ val 30
 
 nLevels
 type int
-val 3
+val 4
 
 kSurf
 type float
@@ -117,11 +117,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v014lessParmSavingZigDataV14
+val v017testPopping
 
 fallDist
 type float
-val .3
+val .2
 
 progDur
 type float
