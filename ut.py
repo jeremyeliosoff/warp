@@ -282,13 +282,13 @@ def getVersions(verDir):
 def printFrameStack():
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)
-    print "\n** FRAME STACK ** in",
+    print "\n*FRAME STACK* in",
     first = True
     for i in calframe[1:]:
         if first:
-            print " {{{" + str(i[3]) + "}}}", "called by:",
+            print " [ " + str(i[3]) + " ], called by:",
         else:
-            print " <" + str(i[3]) + ">",
+            print " " + str(i[3]),
         first = False
     print "\n"
 

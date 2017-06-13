@@ -112,6 +112,7 @@ class curve:
 	level = None
 	avgTexClr = None
 	avgXy = None
+	bbx = None
 	prevCids = {}
 
 	def add(self, jt):
@@ -120,10 +121,12 @@ class curve:
 			self.head.nx = jt
 		self.head = jt
 		self.level = jt.level
+                self.bbx = bbxAccom(self.bbx, jt.xy)
 
 	def __init__(self, jt, nCurves, inSurf):
 		self.inSurf = inSurf
 		self.tail = jt
+                self.bbx = [list(jt.xy), list(jt.xy)]
 		self.add(jt)
 		self.cid = nCurves
 
@@ -147,21 +150,40 @@ class joint:
 		self.nbrs = nbrs
 
 class surf:
-	inSurf = None
+        inSurf = None # TODO: FFS rename this - outerCurve
 	inHoles = []
 	sid = None
 	tid = None
 	level = None
+	bbx = None
 
 	def __init__(self, inSurf, sid):
 		self.inSurf = inSurf
                 self.level = inSurf.level
 		self.sid = sid
 		self.tid = sid
+                self.bbx = inSurf.bbx
 
 
 
 # FUNCTIONS
+
+
+def bbxAccom(bbxOld, xy):
+    bbxNew = bbxOld
+    bbxNew[0][0] = min(bbxNew[0][0], xy[0])
+    bbxNew[0][1] = min(bbxNew[0][1], xy[1])
+    bbxNew[1][0] = max(bbxNew[1][0], xy[0])
+    bbxNew[1][1] = max(bbxNew[1][1], xy[1])
+    return bbxNew
+
+def bbxUnion(bbxA, bbxB):
+    bbxUnion = [[None for i in range(2)] for j in range(2)]
+    for xy in range(2):
+        bbxUnion[0][xy] = min(bbxA[0][xy], bbxB[0][xy])
+        bbxUnion[1][xy] = max(bbxA[1][xy], bbxB[1][xy])
+    return bbxUnion
+
 
 def pOut(*ss):
     ret = ""
@@ -362,8 +384,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     if warpUi.sidToTid == None:
         warpUi.sidToTid = [{} for i in range(nLevels)]
 
-    #warpUi.tidToSids = [{} for i in range(nLevels)]
-    #warpUi.sidToTid = [{} for i in range(nLevels)]
 
     # inHoles delimit holes; inSurfs do not.
     curToPrevSidDic = [{} for i in range(nLevels)]
@@ -383,6 +403,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
         # The last cell - that is, [nLevels] - is reserved for "all"
         dbImgDic[dbi] = [pygame.Surface(res) for i in range(nLevels+1)][:]
 
+
+
+    # Grow curves following the con(nection)s in jtGrid
 
     nextPrintout = 10
     print "Progress:"
@@ -410,6 +433,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                     val = ut.clamp(val, 0, 255)
                     setDbImg("surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
 
+
+            # Initiate curve growth for any joints in this cell of jtGrid.
+
             for lev,jts in jtGrid[x][y].items():
                 for jt in jts:
                     if jt.cv == None:
@@ -423,7 +449,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                         nJoints = 0
                         xTot = 0
                         yTot = 0
-
                         
                         # Grow the actual curve.
                         cvClr = intToClr(jt.cv.cid)
@@ -444,7 +469,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                         jt.cv.avgXy = (float(xx)/nJoints, float(xx)/nJoints)
                         curves[lev] = curves[lev][:] + [jt.cv]
 
+
                     # Register when entering or leaving a curve.  By convention, only look at y = -1 direction.
+
                     if jt.cons[0][1] == -1 or jt.cons[1][1] == -1:
                         if jt.cons[0][1] == -1:
                             imgJtInOut.set_at((x, y), (255, 0, 0))
@@ -483,6 +510,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                                 jt.cv.surf = inSurfs[lev][-1].surf
                                 inHoles[lev] = inHoles[lev][:] + [jt.cv]
             # -- END OF for lev,jts in jtGrid[x][y].items():
+
+            
+            # Work out which prev surf the cur surfs are in.
 
             for lev in range(nLevels):
                 levMult = (lev+1.0)/nLevels
@@ -529,7 +559,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 if inPrevClr:
                     setDbImg("inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
 
-    # Draw the curve joint to joint - I think this is basically just for debug.
+
+    # Draw the curve joint to joint - I think this is just for debug.
+
     drawCurveGrid = [[[0, 0, 0] for y in range(res[1])] for x in range(res[0])] 
     curveId = 0
     sidToCvs = [{} for i in range(nLevels)]
@@ -540,16 +572,19 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
             cidToCurve[lev][cv.cid] = cv
             sid = cv.surf.sid
             if sid in sidToCvs[lev].keys():
-                sidToCvs[lev][sid].append(cv)
+                sidToCvs[lev][sid]["cvs"].append(cv)
+                sidToCvs[lev][sid]["bbx"] = bbxUnion(sidToCvs[lev][sid]["bbx"], cv.surf.bbx)
             else:
-                sidToCvs[lev][sid] = [cv]
-            
+                # TODO: looks like you're comparing each curve's bbx - should only be done with inSurfs
+                sidToCvs[lev][sid] = {"cvs":[cv], "bbx":cv.surf.bbx}
+
+            # TODO: next line - I thought a sid could have > 1 surfs??? It appears surf is never used, just key.
             sidToSurf[lev][sid] = cv.surf
             headId = cv.head.jid
             jt = cv.head
+            sfClr = intToClr(jt.cv.surf.sid)
             while True:
                 xx, yy = jt.xy
-                sfClr = intToClr(jt.cv.surf.sid)
                 setDbImg("cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
                 sfClr = intToClr(jt.cv.cid)
                 setDbImg("cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
@@ -559,12 +594,37 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 if jt == None:
                     break
 
+            # Draw cvBbx
+            xmn, ymn = cv.bbx[0]
+            xmx, ymx = cv.bbx[1]
+            print "\n\n\n=========== }}}}}}}}}} cv.bbx", cv.bbx
+            # Vertical lines
+            for xx in range(xmn, xmx):
+                setDbImg("cidPost", dbImgDic, lev, nLevels, xx, ymn, sfClr)
+                setDbImg("cidPost", dbImgDic, lev, nLevels, xx, ymx, sfClr)
+            # Horizontal lines
+            for yy in range(ymn, ymx):
+                setDbImg("cidPost", dbImgDic, lev, nLevels, xmn, yy, sfClr)
+                setDbImg("cidPost", dbImgDic, lev, nLevels, xmx, yy, sfClr)
 
-    #print "---------curToPrevSidDic"
-    #pprint.pprint(curToPrevSidDic)
 
-    mergeKeyToVal = [{} for i in range(nLevels)]
-    births = [[] for i in range(nLevels)]
+
+    # Sort out which sids need to be merged (and eventually split):
+    #   merge: multiple prev surfs overlap a given cur surf
+    #   split: multiple cur surfs overlap a given prev surf
+    # At the moment, definitions + concepts have limited clarity + utility.
+    # One sid applies to >= 1 surf at this fr, ie. all the surfs that splitted
+    # from a "common ancestor", but with no regard to future merging.
+    
+    # Eventually, there will be the concept of a "branch", ie:
+    # the sequence of contiguuous surfs between a "root" (start, no prev surf) or
+    # split, and the next merge or "tip" (end, no next surf)
+    # A branch has exactly 1 surf per frame for all the frames within a range.
+    # A "turf" (tid, time-surf) consists of >= 1 branch, connected by splits
+    # and/or merges.
+
+    mergeKeySidToValSid = [{} for i in range(nLevels)]
+    births = [[] for i in range(nLevels)] # NOT YET USED
     sidOldToNew = [{} for i in range(nLevels)]
     allPrevs = [[] for i in range(nLevels)]
     for lev in range(nLevels):
@@ -572,77 +632,49 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
             #pOut("\nsidOld", sidOld, "; prevs", prevs)
             #pOut("allPrevs", allPrevs)
             if len(prevs) == 0:
-                births[lev].append(sidOld)
-                
+                births[lev].append(sidOld) # NOT YET USED
             else:
                 prevs.sort()
-                #allPrevs[lev].union(set(prevs))
                 sidNew = prevs[0]
-                #pOut("sidNew", sidNew)
-                #pOut("sidToCvs[lev][", sidNew, "]")
                 if sidOld in allPrevs[lev] and sidNew in sidToCvs[lev].keys():
-                    #pOut("IT'S IN allPrevs")
-                    # Another sid has the same prev, ie. this is a BRANCH.
-                    sidToCvs[lev][sidNew] += sidToCvs[lev][sidOld][:]
+                    # Another sid has the same prev, ie. this is a SPLIT.
+                    sidToCvs[lev][sidNew]["cvs"] += sidToCvs[lev][sidOld]["cvs"][:] # TODO: why [:]?
+                    sidToCvs[lev][sidNew]["bbx"] = bbxUnion(sidToCvs[lev][sidNew]["bbx"], sidToCvs[lev][sidOld]["bbx"])
                     
                 allPrevs[lev] += prevs
                 if len(prevs) > 1:
                     # Register the merge; elements after the first will merge to the first.
                     for prev in prevs[1:]:
-                        mergeKeyToVal[lev][prev] = sidNew
-                        #pOut("\tmergeKeyToVal", mergeKeyToVal)
+                        mergeKeySidToValSid[lev][prev] = sidNew
+                        #pOut("\tmergeKeySidToValSid", mergeKeySidToValSid)
                 if sidNew in curToPrevSidDic[lev].keys():
                     # TODO: Avoid this by assigning new sids based on largest sid
                     # in prev frame, ie. keep track of nSurfs accross frames.
                     print "\n----------------------------------------------ERROR, sid already exists! sidNew=", sidNew, "curToPrevSidDic[lev][sidNew]:", curToPrevSidDic[lev][sidNew]
                     continue
                 if not sidNew == sidOld:
-                    # Branching: add sidOld's cv's to sidNew, then delete sidOld.
+                    # Splitting: add sidOld's cv's to sidNew, then delete sidOld.
                     if sidNew in sidToCvs[lev].keys():
-                        sidToCvs[lev][sidNew] += sidToCvs[lev][sidOld]
+                        sidToCvs[lev][sidNew]["cvs"] += sidToCvs[lev][sidOld]["cvs"] # TODO: add bbx
                     else:
-                        sidToCvs[lev][sidNew] = sidToCvs[lev][sidOld]
+                        sidToCvs[lev][sidNew]["cvs"] = sidToCvs[lev][sidOld]["cvs"]
                     del(sidToCvs[lev][sidOld])
                     sidToSurf[lev][sidNew] = sidToSurf[lev][sidOld]
                     del(sidToSurf[lev][sidOld])
                     sidOldToNew[lev][sidOld] = sidNew
 
-                #for cv in sidToCvs[lev][sidNew]:
-                #    pOut("\t", cv.cid)
-
-    for lev in range(nLevels*0):
-        print "\n--------------------lev", lev
-        #sidDicThisLev = sidToCurves[lev]
-        sidDicThisLev = sidToCvs[lev]
-        for sid,cvSet in sidDicThisLev.items():
-            #print "\n---sid:", sid
-            thisSurf =  sidToSurf[lev][sid]
-            print "\t inSurf.cid", thisSurf.inSurf.cid, ", nJoints:", thisSurf.inSurf.nJoints
-            print "\t inHoles",
-            for ih in thisSurf.inHoles:
-                print "cid:", ih.cid, ", nJoints:", ih.nJoints, "|",
-            print
-            print "\t sid", thisSurf.sid
-            print "\t tid", thisSurf.tid
-            #prevSid = curToPrevSidDic[lev][thisSurf.sid]
-            #print "\t prevSid", prevSid
 
 
 
-            for cv in cvSet:
-                print "----- cv.cid", cv.cid
-
-
+    # Merge surfaces for marked sids.
 
     for lev in range(nLevels):
-        print "lev:", lev, "sids to be merged:", mergeKeyToVal[lev].keys()
-        #pOut("\nMerging branches for lev", lev)
+        print "lev:", lev, "sids to be merged:", mergeKeySidToValSid[lev].keys()
         # Merge branches.
         for sid in set(allPrevs[lev] + sidToSurf[lev].keys()):
-            #print "\tsid:", sid
-            if sid in mergeKeyToVal[lev].keys():
+            if sid in mergeKeySidToValSid[lev].keys():
                 # This sid will be merged.
-                sidToMergeTo = mergeKeyToVal[lev][sid]
+                sidToMergeTo = mergeKeySidToValSid[lev][sid]
                 #pOut("Merging sid", sid, "as tid", sidToMergeTo)
                 if sidToMergeTo in warpUi.tidToSids[lev].keys():
                     warpUi.tidToSids[lev][sidToMergeTo]["sids"].add(sid)
@@ -651,9 +683,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 if sid in sidToCvs[lev].keys():
                     cvsToAdd = sidToCvs[lev][sid]
                     if sidToMergeTo in sidToCvs[lev].keys():
-                        sidToCvs[lev][sidToMergeTo] += cvsToAdd
+                        sidToCvs[lev][sidToMergeTo]["cvs"] += cvsToAdd
                     else:
-                        sidToCvs[lev][sidToMergeTo] = cvsToAdd
+                        sidToCvs[lev][sidToMergeTo]["cvs"] = cvsToAdd
 
                 # having merged the sid branch, delete it.
                 if sid in warpUi.tidToSids[lev].keys():
@@ -673,21 +705,10 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
         # Translate tidToSids to sidToTid.
         #for tid,sids in warpUi.tidToSids[lev].items():
         for tid,sids in warpUi.tidToSids[lev].items():
-            #pOut("\tgrowCurves, tid", tid)
-            #firstSid = next(iter(sids))
-            #print "*********** firstSid", firstSid
-            #print "sidToCvs[lev][firstSid]"
-            #pprint.pprint(sidToCvs[lev][firstSid])
-            #firstSurfDic = sidToCvs[lev][firstSid]
-            #firstCurve = firstSurfDic[firstSurfDic.keys()[0]][0]
-            #print "firstCurve"
-            #pprint.pprint(firstCurve)
-            #print "-------- level", firstCurve.level
             sidToCvsKeys = sidToCvs[lev].keys()
             #print "\nxxxxxx sidToCvsKeys", sidToCvsKeys
             if len(sidToCvsKeys) > 0:
-                irstSidToCvsKeys = sidToCvs[lev][sidToCvsKeys[0]]
-                firstCurves = sidToCvs[lev][sidToCvsKeys[0]]
+                firstCurves = sidToCvs[lev][sidToCvsKeys[0]]["cvs"]
                 #print "xxxxxx firstCurves", firstCurves
                 firstCurve = firstCurves[0]
                 #print "xxxxxx firstCurve", firstCurve
@@ -699,7 +720,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                 #pOut("\t\tsid", sid)
                 warpUi.sidToTid[lev][sid] = tid
                 if False and sid in sidToCvsKeys:
-                    cvs = sidToCvs[lev][sid]
+                    cvs = sidToCvs[lev][sid]["cvs"]
                     print "^^^^^^^ cvs", cvs
                     print "^^^^^^^ type(cvs)", type(cvs)
                     print "^^^^^^^ pprint(cvs)"
@@ -714,6 +735,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
     
 
     # Save db image with new sids.
+
     for y in range(res[1]):
         for x in range(res[0]):
             for lev in range(nLevels):
@@ -862,9 +884,9 @@ def convertCvDicToDic(cvDic, warpUi):
     for lev in range(nLevels):
         surfDic = cvDic[lev]
         ret[lev] = {} # To be filed with surf dics.
-        for sid,cvs in surfDic.items():
+        for sid,sidData in surfDic.items():
             cvLs = []
-            for cv in cvs:
+            for cv in sidData["cvs"]:
                 cvLs.append(convertCvToLs(cv))
             ret[lev][sid] = cvLs
 
@@ -917,8 +939,10 @@ def calcProg(warpUi, sid, level):
     progStartMin = .2
     progStart = ut.mix(progStartMin, 1-progDur, random.random())
     #progEnd = min(1.0, progStart+warpUi.parmDic("progDur"))
-    progEnd = progStart + progDur
-    return ut.smoothstep(progStart, progEnd, level)
+    progEnd = progStart + progDur*2
+    #progEnd = progStart + progDur
+    #return ut.smoothstep(progStart, progEnd, level)
+    return min(1, 2*ut.smoothstep(progStart, progEnd, level))
 
 def calcXf(warpUi, prog, res):
     fall = prog * res[1] * warpUi.parmDic("fallDist")

@@ -663,8 +663,6 @@ class warpUi():
         self.setVal("doRenCv", val)
 
     def setVal(self, parmStr, val):
-        ut.printFrameStack()
-
         self.pauseSaveUIToParmsAndFile = True
         if "uiElement" in self.parmDic.parmDic[parmStr]:
             uiElement = self.parmDic.parmDic[parmStr]["uiElement"]
@@ -763,6 +761,21 @@ class warpUi():
             self.labelStatus.configure(text=msg, bg=bgClr[typ], fg=fgClr[typ])
             Tk.update_idletasks(self.root)
 
+    def addToRenQButCmd(self):
+        ut.printFrameStack()
+        chosenImg = self.imgChooserVar.get()
+        print "\n\n chosenImg:", chosenImg
+        self.renQListbox.insert(END, chosenImg)
+        self.renQLs = self.renQListbox.get(0, END)
+        print "self.renQLs:", self.renQLs
+
+    def rmFromRenQButCmd(self):
+        ut.printFrameStack()
+        curSelInt = self.renQListbox.curselection()
+        curSelStr = None if curSelInt == "" else self.renQListbox.get(curSelInt)
+        print "\n\n deleting curSelStr:", curSelStr
+        self.renQListbox.delete(curSelInt)
+
 
 
     def __init__(self):
@@ -779,6 +792,7 @@ class warpUi():
         print self.parmDic
         self.pauseSaveUIToParmsAndFile = False
         self.parmEntries = {}
+        self.renQLs = []
         self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
         self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
         self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
@@ -952,6 +966,28 @@ class warpUi():
             row += 1
 
 
+        # Render queue controls - TODO: collapsible, better layout (stack buttons + label)
+        frameRenQueue = Frame(self.frameParmAndControls)
+        frameRenQueue.grid(row=row, sticky=S) # Not convinced sticky does anything here.
+
+	thisLabel = Label(frameRenQueue, text="RenQ", justify="left")
+        thisLabel.grid(row=row, column=0)
+
+	thisButton = Button(frameRenQueue, text="+", command=lambda:self.addToRenQButCmd())
+        thisButton.grid(row=row, column=1)
+
+	thisButton = Button(frameRenQueue, text="-", command=lambda:self.rmFromRenQButCmd())
+        thisButton.grid(row=row, column=2)
+
+        self.renQListbox = Listbox(frameRenQueue, height=4)
+        self.renQListbox.grid(row=row, column=3)
+
+        #for item in ["one", "two", "three", "four", "fv", "sx", "sv"]:
+        #    self.renQListbox.insert(END, item)
+
+
+        row += 1
+
 
 
         # Playback controls.
@@ -1078,17 +1114,27 @@ class warpUi():
                 if newFr > fr:        
                     fr = min(fr + 1, newFr)
                     if fr > self.parmDic("frEnd"):
-                        if self.parmDic("doRenCv") == 0:
-                            # Restart and do renCv
-                            print "Turning on doRenCv"
-                            self.setVal("doRenCv", 1)
-                            print "Returning to", self.parmDic("frStart")
-                            fr = self.parmDic("frStart")
-                        elif self.record:
-                            # Stop if recording
-                            self.recButCmd()
-                            fr -= 1
-                            self.setVal("anim", 0)
+                        if self.record:
+                            if self.parmDic("doRenCv") == 0:
+                                # Restart and do renCv
+                                print "Turning on doRenCv"
+                                self.setVal("doRenCv", 1)
+                                self.chk_doRenCv_var.set(1)
+                                print "Returning to", self.parmDic("frStart")
+                                fr = self.parmDic("frStart")
+                            elif self.parmDic("image") in self.renQLs and not self.parmDic("image") == self.renQLs[-1]:
+                                # If recording and in renQ but not last, turn off doRenCv, restart, and got to next img.
+                                nextImg = self.renQLs[self.renQLs.index(self.parmDic("image")) + 1]
+                                self.setVal("image", nextImg)
+                                self.imgChooserVar.set(nextImg)
+                                self.setVal("doRenCv", 0)
+                                self.chk_doRenCv_var.set(0)
+                                fr = self.parmDic("frStart")
+                            else:
+                                # If recording and not - or last - in renQ, stop.
+                                self.recButCmd()
+                                fr -= 1
+                                self.setVal("anim", 0)
                         else:
                             # Loop if not recording
                             print "Returning to", self.parmDic("frStart")
