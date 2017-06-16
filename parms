@@ -5,11 +5,11 @@
 
 fr
 type int
-val 0
+val 330
 
 fps
 type int
-val 4
+val 10
 
 ofs
 hidden True
@@ -19,17 +19,17 @@ val 0.6
 anim
 hidden True
 type int
-val 0
+val 1
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val testCirclesBW_zig
+val grl04_renLev_GOODtillMidEnd
 
 dbImg1
 hidden True
@@ -39,7 +39,7 @@ val sidPost
 lev_dbImg1
 hidden True
 type str
-val ALL
+val lev00
 
 dbImg2
 hidden True
@@ -49,12 +49,12 @@ val cidPost
 lev_dbImg2
 hidden True
 type str
-val lev01
+val ALL
 
 renVer
 hidden True
 type str
-val v021testPoppingAllLevsBetterCurveFade
+val v005trySortByTholds
 
 
 
@@ -63,19 +63,19 @@ val v021testPoppingAllLevsBetterCurveFade
 
 frStart
 type int
-val 0
+val 300
 
 frEnd
 type int
-val 5
+val 500
 
 frPerCycle
 type int
-val 30
+val 25
 
 nLevels
 type int
-val 4
+val 5
 
 kSurf
 type float
@@ -87,15 +87,15 @@ val .4
 
 minThresh
 type float
-val 0.1
+val .1
 
 maxThresh
 type float
-val 1
+val .75
 
 rangeThresh
 type float
-val 1
+val .25
 
 cDark
 type clr
@@ -117,7 +117,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v017testPopping
+val v010trySortByTholds
 
 fallDist
 type float

@@ -640,17 +640,20 @@ class warpUi():
         vers = self.getSeqVersions(verType)
         vers.sort()
         vers.reverse()
+        latestVer = vers[0]
         print verType + "Vers"
         print vers
         print verType + "Vers[-1]", vers[0]
         print verType + "Vers[-1][1:4]", vers[0][1:4]
-        nextVerInt = int(vers[0][1:4]) + 1
+        nextVerInt = int(latestVer[1:4]) + 1
         print "\n\n\n self.verUI"
         pprint.pprint(self.verUI)
         nextVer = ("v%03d" % nextVerInt) + self.verUI[verType]["sfx"].get()
 
         verDir = self.seqRenDir if verType == "ren" else self.seqDataDir
         ut.mkDirSafe(verDir + "/" + nextVer)
+        # Copy parms
+        ut.exeCmd("cp " + verDir + "/" + latestVer + "/parms " + verDir + "/" + nextVer + "/")
         self.setVal(verType + "Ver", nextVer)
         vers = [nextVer] + vers
         self.repopulateMenu(verType, vers)
@@ -804,6 +807,7 @@ class warpUi():
         self.nextSid = 0
         self.tidToSids = None
         self.sidToTid = None
+        self.tholds = None
         self.root = Tk()
         self.root.wm_title("WARP")
         self.positionWindow()
@@ -1127,6 +1131,9 @@ class warpUi():
                                 nextImg = self.renQLs[self.renQLs.index(self.parmDic("image")) + 1]
                                 self.setVal("image", nextImg)
                                 self.imgChooserVar.set(nextImg)
+                                self.menuImgChooser(nextImg)
+                                # record should always be False after menuImgChooser, but throw in "if" just in case.
+                                if not self.record: self.recButCmd() 
                                 self.setVal("doRenCv", 0)
                                 self.chk_doRenCv_var.set(0)
                                 fr = self.parmDic("frStart")
