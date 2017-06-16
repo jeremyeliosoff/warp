@@ -5,7 +5,7 @@
 
 fr
 type int
-val 332
+val 310
 
 fps
 type int
@@ -24,7 +24,7 @@ val 1
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v005trySortByTholds
+val v006relSizePt5
 
 
 
@@ -67,7 +67,7 @@ val 300
 
 frEnd
 type int
-val 500
+val 310
 
 frPerCycle
 type int
@@ -117,7 +117,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v010trySortByTholds
+val v011relSizePt5
 
 fallDist
 type float

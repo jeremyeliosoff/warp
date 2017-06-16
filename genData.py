@@ -737,12 +737,9 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
 
             sidToCvsKeys = sidToCvs[lev].keys()
-            #print "\nxxxxxx sidToCvsKeys", sidToCvsKeys
             if len(sidToCvsKeys) > 0:
                 firstCurves = sidToCvs[lev][sidToCvsKeys[0]]["cvs"]
-                #print "xxxxxx firstCurves", firstCurves
                 firstCurve = firstCurves[0]
-                #print "xxxxxx firstCurve", firstCurve
 
                 # TODO: Not convinced this is necessary -- ww reset level a few lines down.
                 warpUi.tidToSids[lev][tid]["level"] = firstCurve.level
@@ -908,6 +905,27 @@ def convertCvDicToDic(cvDic, warpUi):
         surfDic = cvDic[lev]
         ret[lev] = {} # To be filed with surf dics.
         for sid,sidData in surfDic.items():
+            ret[lev][sid] = {}
+            for k,v in sidData.items():
+                if k == "cvs":
+                    cvLs = []
+                    for cv in v:
+                        cvLs.append(convertCvToLs(cv))
+                    ret[lev][sid]["cvs"] = cvLs
+                else:
+                    ret[lev][sid][k] = v
+
+    return ret
+    #sidToCvs[lev][sid].append(cv)
+
+def convertCvDicToDicOLD(cvDic, warpUi):
+    print "Doing convertCvDicToDicOLD..."
+    nLevels = warpUi.parmDic("nLevels")
+    ret = {} # Could be list instead of dic
+    for lev in range(nLevels):
+        surfDic = cvDic[lev]
+        ret[lev] = {} # To be filed with surf dics.
+        for sid,sidData in surfDic.items():
             cvLs = []
             for cv in sidData["cvs"]:
                 cvLs.append(convertCvToLs(cv))
@@ -1018,9 +1036,11 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
     tx,ty = calcXf(warpUi, prog, res)
     #tx,ty = (0, 0)
 
-
+    # TODO: You don't have to include the whole sidToCvDic, just sidToCvDic[lev]
     if sid in sidToCvDic[lev]:
-        cvs = sidToCvDic[lev][sid]
+        cvs = sidToCvDic[lev][sid]["cvs"]
+        #bbx = sidToCvDic[lev][sid]["bbx"]
+        #drawBbx(bbx, "ren", dbImgDic, lev, nLevels, vX255(red))
         allCoords = []
         for cv in cvs:
             allCoords += cv
@@ -1131,10 +1151,17 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 
             iSid = 0
             for sid in sids:
+                bbx = sidToCvDic[lev][sid]["bbx"]
+                bbxSize = [bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1]]
+                relSize = [float(bbxSize[0])/res[0], float(bbxSize[1])/res[1]]
                 iSid += 1
                 print sid,
-                #if lev == 2: renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
-                renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
+                #print "bbx:", bbx, "relSize:", relSize,
+                # Try only ren sids <= half res
+                relSizeToRen = .5
+                #print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
+                if relSize[0] <= relSizeToRen and relSize[1] <= relSizeToRen:
+                    renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
         print
 
 
