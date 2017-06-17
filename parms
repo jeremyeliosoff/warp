@@ -5,7 +5,7 @@
 
 fr
 type int
-val 310
+val 368
 
 fps
 type int
@@ -24,12 +24,12 @@ val 1
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val grl04_renLev_GOODtillMidEnd
+val ny_manyHeadlts
 
 dbImg1
 hidden True
@@ -39,7 +39,7 @@ val sidPost
 lev_dbImg1
 hidden True
 type str
-val lev00
+val ALL
 
 dbImg2
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v006relSizePt5
+val v001jitterless
 
 
 
@@ -63,19 +63,19 @@ val v006relSizePt5
 
 frStart
 type int
-val 300
+val 226
 
 frEnd
 type int
-val 310
+val 600
 
 frPerCycle
 type int
-val 25
+val 30
 
 nLevels
 type int
-val 5
+val 4
 
 kSurf
 type float
@@ -87,11 +87,11 @@ val .4
 
 minThresh
 type float
-val .1
+val 0.1
 
 maxThresh
 type float
-val .75
+val 1
 
 rangeThresh
 type float
@@ -117,7 +117,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v011relSizePt5
+val v001jitterless
 
 fallDist
 type float

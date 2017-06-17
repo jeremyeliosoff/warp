@@ -1037,61 +1037,60 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
     #tx,ty = (0, 0)
 
     # TODO: You don't have to include the whole sidToCvDic, just sidToCvDic[lev]
-    if sid in sidToCvDic[lev]:
-        cvs = sidToCvDic[lev][sid]["cvs"]
-        #bbx = sidToCvDic[lev][sid]["bbx"]
-        #drawBbx(bbx, "ren", dbImgDic, lev, nLevels, vX255(red))
-        allCoords = []
-        for cv in cvs:
-            allCoords += cv
-        for cv in cvs:
-            iJt = 0
-            while iJt < len(cv):
-                jt = cv[iJt]
-                jtNext = cv[(iJt+1) % len(cv)]
-                jtPrev = cv[(iJt-1) % len(cv)]
-                jx,jy = list(jt)
+    cvs = sidToCvDic[lev][sid]["cvs"]
+    #bbx = sidToCvDic[lev][sid]["bbx"]
+    #drawBbx(bbx, "ren", dbImgDic, lev, nLevels, vX255(red))
+    allCoords = []
+    for cv in cvs:
+        allCoords += cv
+    for cv in cvs:
+        iJt = 0
+        while iJt < len(cv):
+            jt = cv[iJt]
+            jtNext = cv[(iJt+1) % len(cv)]
+            jtPrev = cv[(iJt-1) % len(cv)]
+            jx,jy = list(jt)
 
-                surfAlpha = alpha * (1-prog)
-                surfAlpha = min(1.0, 1.5*surfAlpha)
-                #surfAlpha = 1
-                curveAlpha = min(1.0, 5*surfAlpha)
+            surfAlpha = alpha * (1-prog)
+            surfAlpha = min(1.0, 1.5*surfAlpha)
+            #surfAlpha = 1
+            curveAlpha = min(1.0, 5*surfAlpha)
 
-                if jx < jtNext[0] or jx > jtPrev[0]:
-                    # Skip to the top (lowest #) of a vertical line
-                    while (jtNext[0] == jx    # next x is same - vertical line
-                            and jtNext[1] < jy):   # next y is lower
-                        iJt += 1
-                        jx,jy = list(cv[iJt])
-                        jtNext = cv[(iJt+1) % len(cv)]
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
-                    if jtNext[0] < jx:
-                        # If the next x is less than this x -- which I think would only happen if
-                        # the above while loop landed us at a back-curving turn - skip this jt.
-                        # TODO: must this next line exist?
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
-                        iJt += 1
-                        continue
+            if jx < jtNext[0] or jx > jtPrev[0]:
+                # Skip to the top (lowest #) of a vertical line
+                while (jtNext[0] == jx    # next x is same - vertical line
+                        and jtNext[1] < jy):   # next y is lower
+                    iJt += 1
+                    jx,jy = list(cv[iJt])
+                    jtNext = cv[(iJt+1) % len(cv)]
+                    setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+                if jtNext[0] < jx:
+                    # If the next x is less than this x -- which I think would only happen if
+                    # the above while loop landed us at a back-curving turn - skip this jt.
+                    # TODO: must this next line exist?
+                    setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+                    iJt += 1
+                    continue
 
-                    yy = jy -1
+                yy = jy -1
 
-                    # MAIN FILLING - Draw vertical line up to next curve in this sid.
-                    while ( not (jx, yy) in allCoords) and yy > 0:
-                        # TODO: Try chaning alpha instead - make transparent instead of dark
-                        #fillClr = ut.vMult(sidRanClr, 1-prog*.9)
-                        fillClr = sidRanClr
-                        #thisAlpha = alpha * (1-prog*.9)
+                # MAIN FILLING - Draw vertical line up to next curve in this sid.
+                while ( not (jx, yy) in allCoords) and yy > 0:
+                    # TODO: Try chaning alpha instead - make transparent instead of dark
+                    #fillClr = ut.vMult(sidRanClr, 1-prog*.9)
+                    fillClr = sidRanClr
+                    #thisAlpha = alpha * (1-prog*.9)
 
-                        #fillClr = vX255(ut.mix(red, green, prog))
-                        #thisAlpha = 1
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, surfAlpha)
-                        yy -= 1
+                    #fillClr = vX255(ut.mix(red, green, prog))
+                    #thisAlpha = 1
+                    setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, surfAlpha)
+                    yy -= 1
 
 
-                # Draw the curve. 
-                setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+            # Draw the curve. 
+            setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
 
-                iJt += 1
+            iJt += 1
 
 
 
@@ -1151,17 +1150,18 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 
             iSid = 0
             for sid in sids:
-                bbx = sidToCvDic[lev][sid]["bbx"]
-                bbxSize = [bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1]]
-                relSize = [float(bbxSize[0])/res[0], float(bbxSize[1])/res[1]]
-                iSid += 1
-                print sid,
-                #print "bbx:", bbx, "relSize:", relSize,
-                # Try only ren sids <= half res
-                relSizeToRen = .5
-                #print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
-                if relSize[0] <= relSizeToRen and relSize[1] <= relSizeToRen:
-                    renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
+                if sid in sidToCvDic[lev]:
+                    bbx = sidToCvDic[lev][sid]["bbx"]
+                    bbxSize = [bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1]]
+                    relSize = [float(bbxSize[0])/res[0], float(bbxSize[1])/res[1]]
+                    iSid += 1
+                    print sid,
+                    #print "bbx:", bbx, "relSize:", relSize,
+                    # Try only ren sids <= half res
+                    relSizeToRen = .5
+                    #print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
+                    if relSize[0] <= relSizeToRen and relSize[1] <= relSizeToRen:
+                        renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
         print
 
 
