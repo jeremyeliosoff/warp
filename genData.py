@@ -769,7 +769,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
             #pprint.pprint(turfData)
             #print '\n'
             if "bbx" in turfData.keys(): # TODO should bbx always be in turfData.keys()?
-                drawBbx(turfData["bbx"], "sidPost", dbImgDic, lev, nLevels, intToClr(tid))
+                drawBbx(turfData["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(tid))
                         #sidToCvs[lev][sidToMergeTo]["cvs"] += sidToCvs[lev][sid]["cvs"]
 
 
@@ -865,6 +865,18 @@ def genData(warpUi):
 
         jtGrid, tholds = initJtGrid(img, warpUi)
         inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
+        # TODO: TEMP - this should be done in warp.py when genData is stopped.
+        print "\n\n ----- doing pickleDump(" + frameDir + "/inSurfGrid"
+        pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
+
+        frameDirLs = frameDir.split("/")
+        prevFr = int(frameDirLs[-1]) - 1
+        frameDirLs[-1] = "%05d" % prevFr
+        prevFrInSurfGrid = "/".join(frameDirLs) + "/inSurfGrid"
+        print "\n\n\n prevFrInSurfGrid:", prevFrInSurfGrid, "\n\n"
+        if os.path.exists(prevFrInSurfGrid):
+            ut.exeCmd("rm " + prevFrInSurfGrid)
+
         warpUi.inSurfGridPrev = inSurfGrid[:]
 
     
@@ -883,6 +895,12 @@ def genData(warpUi):
         pickleDump(frameDir + "/tholds", tholds)
         # Save sidToCvs for this frame.
         pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
+
+        tidToSidsBackupEvery = 20
+        if fr % tidToSidsBackupEvery == 0:
+            print "BACKING UP tidToSids:"
+            ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
+
         pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
 
     print "Post renCvWrapper block"
@@ -986,8 +1004,19 @@ def calcProg(warpUi, sid, level):
     #return ut.smoothstep(progStart, progEnd, level)
     return min(1, 2*ut.smoothstep(progStart, progEnd, level))
 
-def calcXf(warpUi, prog, res):
+def calcXf(warpUi, prog, res, relSize):
     fall = prog * res[1] * warpUi.parmDic("fallDist")
+    # Slower for bigger
+    relSizeF = relSize[0]*relSize[1]
+    #relSizeF = 0 #TMP
+    resF = res[0]*res[1]
+    rels = float(relSizeF)/(resF)
+    if rels > .5: print "\n\n............... rels:", rels, "relSizeF", relSizeF, "resF", res
+    print "\n\n............... rels:", rels, "relSize", relSize, "relSizeF", relSizeF, "resF", res
+    rels = .5
+    fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), rels)
+    print "*************** fallK", fallK
+    fall *= fallK
     #fall = 0
     tx = 0
     ty = int(fall)
@@ -1026,14 +1055,14 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
 
     
 
-def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic):
+def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic, bbx, bbxSize, relSize):
     #sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
     # TODO: Change levMult to levOpac + integrate that.
     sidRanClr = intToClr(sid)
 
 
     prog = calcProg(warpUi, sid, level)
-    tx,ty = calcXf(warpUi, prog, res)
+    tx,ty = calcXf(warpUi, prog, res, relSize)
     #tx,ty = (0, 0)
 
     # TODO: You don't have to include the whole sidToCvDic, just sidToCvDic[lev]
@@ -1158,10 +1187,10 @@ def renCv(warpUi, res, sidToCvDic, tholds):
                     print sid,
                     #print "bbx:", bbx, "relSize:", relSize,
                     # Try only ren sids <= half res
-                    relSizeToRen = .5
-                    #print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
+                    relSizeToRen = 1
+                    print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
                     if relSize[0] <= relSizeToRen and relSize[1] <= relSizeToRen:
-                        renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs)
+                        renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize)
         print
 
 

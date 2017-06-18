@@ -5,11 +5,11 @@
 
 fr
 type int
-val 368
+val 2262
 
 fps
 type int
-val 10
+val 40
 
 ofs
 hidden True
@@ -29,7 +29,7 @@ val 1
 image
 hidden True
 type str
-val ny_manyHeadlts
+val sub_coming
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v001jitterless
+val v001backupFknDics
 
 
 
@@ -63,11 +63,11 @@ val v001jitterless
 
 frStart
 type int
-val 226
+val 2000
 
 frEnd
 type int
-val 600
+val 2500
 
 frPerCycle
 type int
@@ -83,11 +83,11 @@ val 1
 
 gamma
 type float
-val .4
+val .1
 
 minThresh
 type float
-val 0.1
+val 0.25
 
 maxThresh
 type float
@@ -117,11 +117,15 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v001jitterless
+val v001backupFknDics
 
 fallDist
 type float
 val .2
+
+fallKForBiggest
+type float
+val 0
 
 progDur
 type float

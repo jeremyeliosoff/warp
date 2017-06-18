@@ -483,6 +483,12 @@ class warpUi():
             genData.pOut("doing genData")
             reload(genData)
             self.setStatus("busy", "Doing genData...")
+            if self.inSurfGridPrev == None:
+                prevFr, prevFrameDir = self.makeFramesDataDir(self.parmDic("fr") - 1)
+                prevFrInSurfGrid = prevFrameDir + "/inSurfGrid" 
+                if os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
+                    print "\n\n LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
+                    self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
             genData.genData(self)
             print "\nDone genData\n\n"
             self.setStatus("idle")
@@ -1148,7 +1154,7 @@ class warpUi():
                             fr = self.parmDic("frStart")
                             self.timeStart = time.time()
 
-                    # This forces each frame to process.  TODO: maybe add forceFps
+                    # This forces each frame to process, ie. actually generates the data.  TODO: maybe add forceFps
                     self.setFrAndUpdate(fr)
 
                     # For ofs anim.
