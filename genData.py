@@ -1004,22 +1004,38 @@ def calcProg(warpUi, sid, level):
     #return ut.smoothstep(progStart, progEnd, level)
     return min(1, 2*ut.smoothstep(progStart, progEnd, level))
 
-def calcXf(warpUi, prog, res, relSize):
+def calcXf(warpUi, prog, res, relSize, bbx):
     fall = prog * res[1] * warpUi.parmDic("fallDist")
-    # Slower for bigger
+    # Slower for biggekr
     relSizeF = relSize[0]*relSize[1]
-    #relSizeF = 0 #TMP
     resF = res[0]*res[1]
     rels = float(relSizeF)/(resF)
-    if rels > .5: print "\n\n............... rels:", rels, "relSizeF", relSizeF, "resF", res
-    print "\n\n............... rels:", rels, "relSize", relSize, "relSizeF", relSizeF, "resF", res
     rels = .5
     fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), rels)
-    print "*************** fallK", fallK
     fall *= fallK
-    #fall = 0
-    tx = 0
-    ty = int(fall)
+
+    if warpUi.parmDic("fallMode") == "orig":
+        bbxCent = ((bbx[0][0]+bbx[1][0])/2, (bbx[0][1]+bbx[1][1])/2)
+        origin = (res[0]*warpUi.parmDic("fallVecX"), res[1]*warpUi.parmDic("fallVecY"))
+        fallDir = ut.vDiff(origin, bbxCent)
+        #fallDir = (100, 100)
+        tx = int(fall * fallDir[0]/res[0])
+        ty = int(fall * fallDir[1]/res[1])
+    elif warpUi.parmDic("fallMode") == "xline":
+        bbxCent = (bbx[0][1]+bbx[1][1])/2
+        origin = res[1]*warpUi.parmDic("fallVecX")
+        fallDir = bbxCent - origin
+        tx = 0
+        ty = int(fall * fallDir/res[1])
+    elif warpUi.parmDic("fallMode") == "yline":
+        bbxCent = (bbx[0][0]+bbx[1][0])/2
+        origin = res[0]*warpUi.parmDic("fallVecX")
+        fallDir = bbxCent - origin
+        tx = int(fall * fallDir/res[0])
+        ty = 0
+    else:
+        tx = 0
+        ty = int(fall)
 
     return tx, ty
 
@@ -1062,7 +1078,7 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
 
 
     prog = calcProg(warpUi, sid, level)
-    tx,ty = calcXf(warpUi, prog, res, relSize)
+    tx,ty = calcXf(warpUi, prog, res, relSize, bbx)
     #tx,ty = (0, 0)
 
     # TODO: You don't have to include the whole sidToCvDic, just sidToCvDic[lev]
@@ -1083,7 +1099,7 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
             surfAlpha = alpha * (1-prog)
             surfAlpha = min(1.0, 1.5*surfAlpha)
             #surfAlpha = 1
-            curveAlpha = min(1.0, 5*surfAlpha)
+            curveAlpha = min(1.0, 3*surfAlpha)
 
             if jx < jtNext[0] or jx > jtPrev[0]:
                 # Skip to the top (lowest #) of a vertical line
@@ -1142,10 +1158,37 @@ def renCv(warpUi, res, sidToCvDic, tholds):
     dark = pygame.Surface((srcImgRenCv.get_width(), srcImgRenCv.get_height()), flags=pygame.SRCALPHA)
     dark.fill((50, 50, 50, 0))
     srcImgRenCv.blit(dark, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
-    # TODO are those [:]s necessary?
-    outputs["ren"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
-    #outputs["ren"] += [srcImgRenCv][:]
-    outputs["level"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
+
+    renOutputsMultiLev = ["ren"]
+    for name in renOutputsMultiLev:
+        # TODO are those [:]s necessary?
+        outputs[name] = [pygame.Surface(res) for i in range(nLevels+1)][:]
+
+    renOutputsOneLev = ["move"]
+    for name in renOutputsOneLev:
+        # TODO are those [:]s necessary?
+        outputs[name] = pygame.Surface(res)
+
+
+    # Visualize movement
+    #outputs["move"] = srcImgRenCv.copy()
+    circleSizeRel = .1
+    circleSize = circleSizeRel * max(res[0],res[1])
+    for x in range(res[0]):
+        for y in range(res[1]):
+            c = srcImgRenCv.get_at((x, y))
+            c = list(c)[:3]
+            c.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
+            lum = int(ut.vAvg(c))
+            origin = (res[0]*warpUi.parmDic("fallVecX"), res[1]*warpUi.parmDic("fallVecY"))
+            dist = ut.vDist(origin, (x,y))
+            c[0] = 0 if dist > circleSize else 255
+            c[1] = lum
+            c[2] = lum
+            newVal = tuple(list(c) + [255])
+            outputs["move"].set_at((x,y), newVal)
+
+
 
     # Sort levels in order of tholds (thresholds).
     levLs = range(nLevels)
@@ -1175,7 +1218,7 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 
             # Fade in and out - TODO: Improve this
             alpha = level* (1-level)**2
-            alpha = min(level*6, 1)
+            alpha = min(level*1.5, 1)
 
             iSid = 0
             for sid in sids:
@@ -1187,16 +1230,16 @@ def renCv(warpUi, res, sidToCvDic, tholds):
                     print sid,
                     #print "bbx:", bbx, "relSize:", relSize,
                     # Try only ren sids <= half res
-                    relSizeToRen = 1
-                    print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
-                    if relSize[0] <= relSizeToRen and relSize[1] <= relSizeToRen:
+                    maxSize = warpUi.parmDic("maxSize")
+                    #print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
+                    if relSize[0] <= maxSize and relSize[1] <= maxSize:
                         renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize)
         print
 
 
 
 
-    for name in ["ren", "level"]:
+    for name in renOutputsMultiLev:
         for lev in range(nLevels+1):
             levStr = "ALL" if lev == nLevels else "lev%02d" % lev
             levDir,imgPath = warpUi.getRenDirAndImg(name, levStr)
@@ -1206,6 +1249,12 @@ def renCv(warpUi, res, sidToCvDic, tholds):
             #bmpPath = imgPath.replace(".jpg", ".bmp")
             #pygame.image.save(outputs[name][lev], bmpPath)
             #ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
+
+    for name in renOutputsOneLev:
+        levDir,imgPath = warpUi.getRenDirAndImg(name)
+        ut.mkDirSafe(levDir)
+        print "Saving", name, " image, path:", imgPath
+        pygame.image.save(outputs[name], imgPath)
 
     print "done renCv for fr", warpUi.parmDic("fr")
 

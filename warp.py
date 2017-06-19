@@ -156,7 +156,7 @@ class warpUi():
 
     def positionWindow(self):
         w = 1500 # width for the Tk root
-        h = 750 # height for the Tk root
+        h = 850 # height for the Tk root
 
         # get screen width and height
         ws = self.root.winfo_screenwidth() # width of the screen
@@ -243,6 +243,19 @@ class warpUi():
                 else:
                     self.images[k]= {"pImg":pImg}
 
+
+    # TEMP!!!
+    def makeMoveImgButton(self, name, frameParent):
+        print "name: ", name
+        levDir,imgPath = self.getRenDirAndImg("move")
+        #pImg = pygame.image.load(imgPath)
+        pImgMove = self.safeLoad(imgPath)
+        print "\n\n ********* move imgPath:", imgPath
+	thisButton = Button(frameParent, image=pImgMove, command=lambda:self.imgButCmd())
+        pImg = self.images[name]["pImg"]
+	dudButton = Button(frameParent, image=pImg, command=lambda:self.imgButCmd())
+	self.images[name]["button"] = dudButton
+        return thisButton
 
     def makeImgButton(self, name, frameParent):
         print "name: ", name
@@ -354,6 +367,11 @@ class warpUi():
         anim = self.parmDic("anim")
         if anim == 0:
             self.setVal("anim", 1)
+            # If you're animating and recording and doGen == 0, turn on doRenCv
+            if self.record and self.parmDic("doGen") == 0:
+                self.setVal("doRenCv", 1)
+                self.chk_doRenCv_var.set(1)
+
             self.refreshButtonImages()
             self.timeStart = time.time()
             self.frStartAnim = self.parmDic("fr")
@@ -542,6 +560,7 @@ class warpUi():
                 # Turn off recording so you don't render right away.
                 self.recButCmd()
             self.setVal("image", selection) #TODO: Rename image to maybe seqName?
+	    self.flushDics()
             self.updateRenAndDataDirs()
             self.updateCurImg()
             self.updateDebugImg()
@@ -664,6 +683,7 @@ class warpUi():
         vers = [nextVer] + vers
         self.repopulateMenu(verType, vers)
         self.verUI[verType]["menuVar"].set(nextVer)
+        self.menuVChooser(nextVer, verType)
 
 
     def chk_doRenCv_cmd(self):
@@ -729,17 +749,25 @@ class warpUi():
         imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
         return levDir,imgPath
 
-    def getRenDirAndImg(self, outputName, lev):
+    def getRenDirAndImg(self, outputName, lev=None):
         fr = self.parmDic("fr")
-        levDir = self.seqRenVDir + "/" + outputName + "/" + lev # TODO: v00
-        imgPath = levDir + ("/" + outputName + "." + lev + ".%05d.jpg" % fr)
+        if lev == None:
+            levDir = self.seqRenVDir + "/" + outputName
+            imgPath = levDir + ("/" + outputName + ".%05d.jpg" % fr)
+        else:
+            levDir = self.seqRenVDir + "/" + outputName + "/" + lev
+            imgPath = levDir + ("/" + outputName + "." + lev + ".%05d.jpg" % fr)
         return levDir,imgPath
 
     def safeLoad(self, path):
+        ut.printFrameStack()
+        print "Attempting to load", path, "...",
         if os.path.exists(path):
             img = ImageTk.PhotoImage(Image.open(path))
+            print "success!"
         else:
             img = self.staticImages["error"]
+            print " ********** FAIL! **********"
         return img
 
     def getOfs(self, fr=None):
@@ -1111,6 +1139,7 @@ class warpUi():
 
 
         # Update menu-dependent images to reflect current selection.
+        print "\n ****** doing self.getImg", self.parmDic("image")
         self.getImg(self.parmDic("image")) 
         while True:
             anim = self.parmDic("anim")
@@ -1125,7 +1154,8 @@ class warpUi():
                     fr = min(fr + 1, newFr)
                     if fr > self.parmDic("frEnd"):
                         if self.record:
-                            if self.parmDic("doRenCv") == 0:
+                            # TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
+                            if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
                                 # Restart and do renCv
                                 print "Turning on doRenCv"
                                 self.setVal("doRenCv", 1)
@@ -1140,8 +1170,9 @@ class warpUi():
                                 self.menuImgChooser(nextImg)
                                 # record should always be False after menuImgChooser, but throw in "if" just in case.
                                 if not self.record: self.recButCmd() 
-                                self.setVal("doRenCv", 0)
-                                self.chk_doRenCv_var.set(0)
+                                if self.parmDic("doGen") == 1:
+                                    self.setVal("doRenCv", 0)
+                                    self.chk_doRenCv_var.set(0)
                                 fr = self.parmDic("frStart")
                             else:
                                 # If recording and not - or last - in renQ, stop.
@@ -1154,7 +1185,7 @@ class warpUi():
                             fr = self.parmDic("frStart")
                             self.timeStart = time.time()
 
-                    # This forces each frame to process, ie. actually generates the data.  TODO: maybe add forceFps
+                    # This forces each frame to process, ie. ACTUALLY GENERATES THE DATA.  TODO: maybe add forceFps
                     self.setFrAndUpdate(fr)
 
                     # For ofs anim.

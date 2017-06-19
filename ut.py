@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, os, random, re, glob, pprint, inspect
+import sys, os, random, re, glob, pprint, inspect, math
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
@@ -174,6 +174,22 @@ def vDiff(a, b):
         ret.append(b[i] - a[i])
     return ret
 
+def vAvg(a):
+    tot = 0
+    for v in a:
+        tot += v
+    return float(tot)/len(a)
+
+def vLen(a):
+    tot = 0
+    for v in a:
+        tot += v*v
+    return math.sqrt(tot)
+
+def vDist(a, b):
+    aToB = vDiff(b, a)
+    return vLen(aToB)
+
 
 def vAdd(a, b):
     ret = []
@@ -290,7 +306,7 @@ def printFrameStack():
         else:
             print " " + str(i[3]),
         first = False
-    print "\n"
+    print
 
 def main():
     verType = sys.argv[1]
