@@ -295,6 +295,11 @@ def getVersions(verDir):
 
     return vers
 
+def secsToHms(s):
+    m, s = divmod(s, 60)
+    h, m = divmod(m, 60)
+    return "%d:%02d:%02d" % (h, m, s)
+
 def printFrameStack():
     curframe = inspect.currentframe()
     calframe = inspect.getouterframes(curframe, 2)

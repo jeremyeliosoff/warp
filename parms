@@ -5,7 +5,7 @@
 
 fr
 type int
-val 238
+val 1118
 
 fps
 type int
@@ -29,7 +29,7 @@ val 0
 image
 hidden True
 type str
-val ts_fromBleachers2_GOODHR
+val ts_hershLeft2HR
 
 dbImg1
 hidden True
@@ -63,15 +63,15 @@ val v000
 
 frStart
 type int
-val 1
+val 1100
 
 frEnd
 type int
-val 300
+val 1400
 
 frPerCycle
 type int
-val 30
+val 25
 
 doGen
 type int
@@ -83,7 +83,7 @@ val 0
 
 nLevels
 type int
-val 4
+val 5
 
 kSurf
 type float
@@ -91,15 +91,15 @@ val 1
 
 gamma
 type float
-val 1
+val .4
 
 minThresh
 type float
-val 0.2
+val .1
 
 maxThresh
 type float
-val 1
+val .75
 
 rangeThresh
 type float
@@ -107,7 +107,7 @@ val .25
 
 maxSize
 type float
-val 1
+val .9
 
 cDark
 type clr
@@ -137,7 +137,7 @@ val 0
 
 fallDist
 type float
-val .2
+val .75
 
 fallKForBiggest
 type float
@@ -145,7 +145,7 @@ val 0
 
 fallUseAsBiggest
 type float
-val 1
+val .75
 
 fallBiggestPow
 type float
@@ -153,15 +153,15 @@ val .25
 
 fallVecX
 type float
-val .22
+val .4
 
 fallVecY
 type float
-val .29
+val .75
 
 fallMode
 type str
-val fall
+val orig
 
 progDur
 type float

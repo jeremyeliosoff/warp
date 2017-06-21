@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut, time, pprint, glob
+import os, genData, ut, time, datetime, pprint, glob
 from Tkinter import *
 import Tkinter
 import PIL
@@ -760,7 +760,7 @@ class warpUi():
         return levDir,imgPath
 
     def safeLoad(self, path):
-        ut.printFrameStack()
+        #ut.printFrameStack()
         print "Attempting to load", path, "...",
         if os.path.exists(path):
             img = ImageTk.PhotoImage(Image.open(path))
@@ -852,6 +852,7 @@ class warpUi():
         self.seqEnd = -100
         self.seqStart = 10000000
         self.timeStart = time.time()
+        self.animFrStart = self.parmDic("fr")
 
         sourceImages = os.listdir(ut.imgIn)
         sourceImages.sort()
@@ -1144,14 +1145,38 @@ class warpUi():
         while True:
             anim = self.parmDic("anim")
             if anim == 1:
+                frStart = self.parmDic("frStart")
+                frEnd = self.parmDic("frEnd")
                 fr = self.parmDic("fr")
                 frPerCycle = self.parmDic("frPerCycle")
                 nLevels = self.parmDic("nLevels")
                 secondsPassed = time.time() - self.timeStart
+
                 newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
                 #print "frStartAnim:", self.frStartAnim, ", secondsPassed:", secondsPassed, "\tfr", fr, "\tnewFr = ", newFr
                 if newFr > fr:        
                     fr = min(fr + 1, newFr)
+                    framesPassed = fr - self.frStartAnim
+                    secPerFr = secondsPassed/framesPassed
+                    framesToGo = self.parmDic("frEnd") - fr
+                    secondsToGo = secPerFr * framesToGo
+
+                    hmsPerFr = ut.secsToHms(secPerFr)
+                    hmsPassed = ut.secsToHms(secondsPassed)
+                    hmsToGo = ut.secsToHms(secondsToGo)
+                    eta = datetime.datetime.now() + datetime.timedelta(seconds=secondsToGo)
+
+                    print "\n\n%%%% TIME STATS %%%%\n%"
+                    print "% fr:", fr, "(" + str(fr - frStart + 1) + " of " + str(frEnd - frStart + 1) + ")"
+                    print "% animFrStart:", self.animFrStart
+                    print "% frames passed in this anim:", framesPassed
+                    print "% Time passed in this anim:", hmsPassed, "(" + str(secondsPassed), "seconds)"
+                    print "% Avg time per fr:", hmsPerFr, "(" + str(secPerFr), "seconds)"
+                    print "% Est time left in this anim:", hmsToGo, "(" + str(secondsToGo), "seconds)"
+                    print "%"
+                    print "% ETA", eta
+                    print "\n"
+
                     if fr > self.parmDic("frEnd"):
                         if self.record:
                             # TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
@@ -1184,6 +1209,7 @@ class warpUi():
                             print "Returning to", self.parmDic("frStart")
                             fr = self.parmDic("frStart")
                             self.timeStart = time.time()
+                            #self.animFrStart = fr
 
                     # This forces each frame to process, ie. ACTUALLY GENERATES THE DATA.  TODO: maybe add forceFps
                     self.setFrAndUpdate(fr)
