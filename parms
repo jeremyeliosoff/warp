@@ -5,11 +5,11 @@
 
 fr
 type int
-val 1062
+val 238
 
 fps
 type int
-val 40
+val 50
 
 ofs
 hidden True
@@ -24,12 +24,12 @@ val 1
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
 type str
-val div07_rl_GOODpassOverGreatLightShakeyAtEnd
+val ts_fromBleachers2_GOODHR
 
 dbImg1
 hidden True
@@ -63,11 +63,11 @@ val v000
 
 frStart
 type int
-val 1000
+val 1
 
 frEnd
 type int
-val 1200
+val 300
 
 frPerCycle
 type int
@@ -79,7 +79,7 @@ val 1
 
 doRen
 type int
-val 1
+val 0
 
 nLevels
 type int
@@ -129,7 +129,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v003
+val v000
+
+startLev
+type int
+val 0
 
 fallDist
 type float
@@ -139,9 +143,17 @@ fallKForBiggest
 type float
 val 0
 
+fallUseAsBiggest
+type float
+val 1
+
+fallBiggestPow
+type float
+val .25
+
 fallVecX
 type float
-val .1
+val .22
 
 fallVecY
 type float
@@ -149,7 +161,7 @@ val .29
 
 fallMode
 type str
-val yline
+val fall
 
 progDur
 type float

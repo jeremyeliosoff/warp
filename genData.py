@@ -1009,9 +1009,16 @@ def calcXf(warpUi, prog, res, relSize, bbx):
     # Slower for biggekr
     relSizeF = relSize[0]*relSize[1]
     resF = res[0]*res[1]
-    rels = float(relSizeF)/(resF)
-    rels = .5
-    fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), rels)
+    #rels = float(relSizeF)/(resF)
+    rels = relSizeF
+    #rels = .5
+    
+    relsPostSmooth = ut.smoothstep(0, warpUi.parmDic("fallUseAsBiggest"), rels)
+    relsPostSmooth = pow(relsPostSmooth, warpUi.parmDic("fallBiggestPow"))
+    #print "\n relsPostSmooth:", relsPostSmooth, "rels", rels, "relSizeF", relSizeF, "resF", resF
+    
+    fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), relsPostSmooth)
+
     fall *= fallK
 
     if warpUi.parmDic("fallMode") == "orig":
@@ -1204,7 +1211,7 @@ def renCv(warpUi, res, sidToCvDic, tholds):
     #    lev = int(math.floor(levNotOfs - ofs)) % nLevels
     #    print "\nnLevels:", nLevels, "    levNotOfs:", levNotOfs, "    ofs:", ofs, "    lev:", lev
     #    lev = levNotOfs
-    for lev in levsSortedByTholds:
+    for lev in levsSortedByTholds[warpUi.parmDic("startLev"):]:
         tids = warpUi.tidToSids[lev].keys()
         iTid = 0
         nTids = len(tids)
@@ -1246,8 +1253,9 @@ def renCv(warpUi, res, sidToCvDic, tholds):
             ut.mkDirSafe(levDir)
             print "Saving", name, " image, path:", imgPath
             pygame.image.save(outputs[name][lev], imgPath)
-            #bmpPath = imgPath.replace(".jpg", ".bmp")
-            #pygame.image.save(outputs[name][lev], bmpPath)
+            # TEMP save bmp
+            bmpPath = imgPath.replace(".jpg", ".bmp")
+            pygame.image.save(outputs[name][lev], bmpPath)
             #ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
     for name in renOutputsOneLev:
