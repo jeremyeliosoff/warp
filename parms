@@ -5,7 +5,7 @@
 
 fr
 type int
-val 2
+val 888
 
 fps
 type int
@@ -19,7 +19,7 @@ val 0.6
 anim
 hidden True
 type int
-val 0
+val 1
 
 doRenCv
 hidden True
@@ -29,7 +29,7 @@ val 1
 image
 hidden True
 type str
-val up_fromBridgeSouthCentered3min
+val div07_rl_GOODpassOverGreatLightShakeyAtEndHR
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v014tryAccelRen
+val v000
 
 
 
@@ -63,11 +63,11 @@ val v014tryAccelRen
 
 frStart
 type int
-val 1
+val 850
 
 frEnd
 type int
-val 2
+val 1150
 
 frPerCycle
 type int
@@ -83,7 +83,7 @@ val 1
 
 nLevels
 type int
-val 5
+val 4
 
 kSurf
 type float
@@ -91,19 +91,19 @@ val 1
 
 gamma
 type float
-val .4
+val 1
 
 minThresh
 type float
-val .075
+val 0.3
 
 maxThresh
 type float
-val .9
+val .6
 
 rangeThresh
 type float
-val .25
+val .1
 
 maxSize
 type float
@@ -129,15 +129,15 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v006tryAccelRen
+val v000
 
 startLev
 type int
-val 0
+val 1
 
 fallDist
 type float
-val .75
+val .2
 
 fallKForBiggest
 type float
@@ -153,15 +153,15 @@ val .25
 
 fallVecX
 type float
-val .5
+val .1
 
 fallVecY
 type float
-val .23
+val .29
 
 fallMode
 type str
-val orig
+val yline
 
 progDur
 type float

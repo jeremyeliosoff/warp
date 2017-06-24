@@ -290,6 +290,25 @@ def vecToClr(v):
     ret += [255]
     return tuple(ret)
 
+def getLevThresh(warpUi, lev, nLevels):
+    minThreshMin = warpUi.parmDic("minThresh")
+    maxThreshMax = warpUi.parmDic("maxThresh")
+    rangeThresh = warpUi.parmDic("rangeThresh")
+    minThreshMax = ut.mix(minThreshMin, maxThreshMax, 1-rangeThresh)
+    maxThreshMin = ut.mix(minThreshMin, maxThreshMax, rangeThresh)
+
+    levThresh = warpUi.getOfsWLev(lev) % 1.0
+    levThreshRemap = ut.gamma(levThresh, warpUi.parmDic("gamma"))
+
+    levProg = float(lev)/(nLevels-1)
+    minThreshThisLev = ut.mix(minThreshMin, minThreshMax, levProg)
+    maxThreshThisLev = ut.mix(maxThreshMin, maxThreshMax, levProg)
+
+
+    #levThreshRemap = ut.mix(warpUi.parmDic("minThresh"), warpUi.parmDic("maxThresh"), levThreshRemap)
+    levThreshRemap = ut.mix(minThreshThisLev, maxThreshThisLev, levThreshRemap)
+    levThreshInt = int(levThreshRemap*255)
+    return levThreshRemap, levThreshInt
 
 
 
@@ -306,7 +325,7 @@ def initJtGrid(img, warpUi):
     tholds = [None for lev in range(nLevels)]
     for x in range(res[0]-1):
         for y in range(res[1]-1):
-            # TODO: This is all a very temprorary placeholder for "final render"
+            # TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
             intens = float(avgLs(img.get_at((x,y))[:-1]))/255
             thisLev = math.ceil(nLevels*(-ofs/nLevels + intens))
             vFlt = float(thisLev+ofs)/nLevels
@@ -318,28 +337,12 @@ def initJtGrid(img, warpUi):
                 for xx in range(x, x+2):
                     nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
 
-            minThreshMin = warpUi.parmDic("minThresh")
-            maxThreshMax = warpUi.parmDic("maxThresh")
-            rangeThresh = warpUi.parmDic("rangeThresh")
-            minThreshMax = ut.mix(minThreshMin, maxThreshMax, 1-rangeThresh)
-            maxThreshMin = ut.mix(minThreshMin, maxThreshMax, rangeThresh)
 
 
             for lev in range(nLevels):
-                #levWOfs = float(lev + ofs)
-                #levThresh = levWOfs/nLevels
-                levThresh = warpUi.getOfsWLev(lev) % 1.0
-                levThreshRemap = ut.gamma(levThresh, warpUi.parmDic("gamma"))
-
-                levProg = float(lev)/(nLevels-1)
-                minThreshThisLev = ut.mix(minThreshMin, minThreshMax, levProg)
-                maxThreshThisLev = ut.mix(maxThreshMin, maxThreshMax, levProg)
-
-
-                #levThreshRemap = ut.mix(warpUi.parmDic("minThresh"), warpUi.parmDic("maxThresh"), levThreshRemap)
-                levThreshRemap = ut.mix(minThreshThisLev, maxThreshThisLev, levThreshRemap)
+                levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
                 tholds[lev] = levThreshRemap
-                levThreshInt = int(levThreshRemap*255)
+
                 isHigher = []
                 tot = 0
                 for nbr in nbrs:
@@ -1101,7 +1104,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
 
     
 
-def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic, bbx, bbxSize, relSize):
+def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic, bbx, bbxSize, relSize, thold):
     #sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
     # TODO: Change levMult to levOpac + integrate that.
     sidRanClr = intToClr(sid)
@@ -1116,6 +1119,9 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
     #bbx = sidToCvDic[lev][sid]["bbx"]
     #drawBbx(bbx, "ren", dbImgDic, lev, nLevels, vX255(red))
     allCoords = []
+
+    # This shouldn't be necessary - inelegant way of removing vertical stripe artifacts
+    dirtyPix = [[False for y in range(res[1])] for x in range(res[0])] 
     for cv in cvs:
         allCoords += cv
     for cv in cvs:
@@ -1139,26 +1145,32 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
                     jx,jy = list(cv[iJt])
                     jtNext = cv[(iJt+1) % len(cv)]
                     setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+                    dirtyPix[jx][jy] = True
                 if jtNext[0] < jx:
                     # If the next x is less than this x -- which I think would only happen if
                     # the above while loop landed us at a back-curving turn - skip this jt.
                     # TODO: must this next line exist?
                     setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+                    dirtyPix[jx][jy] = True
                     iJt += 1
                     continue
 
-                yy = jy -1
+                #yy = jy +1
+                yy = jy
 
                 # MAIN FILLING - Draw vertical line up to next curve in this sid.
-                while ( not (jx, yy) in allCoords) and yy > 0:
+                while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
+                #while ( not (jx, yy) in allCoords) and yy > 0:
                     # TODO: Try chaning alpha instead - make transparent instead of dark
                     #fillClr = ut.vMult(sidRanClr, 1-prog*.9)
-                    fillClr = sidRanClr
                     #thisAlpha = alpha * (1-prog*.9)
 
                     #fillClr = vX255(ut.mix(red, green, prog))
                     #thisAlpha = 1
-                    setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, surfAlpha)
+                    if not dirtyPix[jx][yy]:
+                        fillClr = sidRanClr
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, surfAlpha)
+                        dirtyPix[jx][yy] = True
                     yy -= 1
 
 
@@ -1234,7 +1246,8 @@ def renCv(warpUi, res, sidToCvDic, tholds):
     #    lev = int(math.floor(levNotOfs - ofs)) % nLevels
     #    print "\nnLevels:", nLevels, "    levNotOfs:", levNotOfs, "    ofs:", ofs, "    lev:", lev
     #    lev = levNotOfs
-    for lev in levsSortedByTholds[warpUi.parmDic("startLev"):]:
+    #for lev in levsSortedByTholds[warpUi.parmDic("startLev"):]:
+    for thold, lev in tholdsAndLevLs[warpUi.parmDic("startLev"):]:
         tids = warpUi.tidToSids[lev].keys()
         iTid = 0
         nTids = len(tids)
@@ -1263,7 +1276,7 @@ def renCv(warpUi, res, sidToCvDic, tholds):
                     maxSize = warpUi.parmDic("maxSize")
                     #print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
                     if relSize[0] <= maxSize and relSize[1] <= maxSize:
-                        renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize)
+                        renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold)
         print
 
 
