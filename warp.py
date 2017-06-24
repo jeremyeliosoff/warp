@@ -52,7 +52,7 @@ class warpUi():
         val = sv.get()
         #print "\n---------------svName:", svName, "pn:", parmName, "val", val, "sv.get()", sv.get()
         if not self.pauseSaveUIToParmsAndFile:
-            ints="0123456789"
+            ints="-0123456789"
             floats= ints + "."
             #for parmName in self.parmDic.parmDic.keys():
             thisDic = self.parmDic.parmDic[parmName]
@@ -147,10 +147,7 @@ class warpUi():
         print "\n\n===========================\n======================= parmDic"
         for k,v in self.parmDic.parmDic.items():
             print "\t", k, v["val"]
-        print "\n\nparmLs:"
-        for pm in self.parmDic.parmLs:
-            print "\t", pm[0]
-        #pprint.pprint(self.parmDic.parmDic)
+        print "\n\nparmLs:", self.parmDic.parmLs
         return row
         
 
@@ -418,7 +415,8 @@ class warpUi():
 
         print "\n\nparmLs:"
         for pm in self.parmDic.parmLs:
-            print "\t", pm[0]
+            print pm[0],
+        print
 
         for path, stages in pathsAndStages:
             #print "path:", path, "stages", stages
@@ -1166,7 +1164,7 @@ class warpUi():
                     hmsToGo = ut.secsToHms(secondsToGo)
                     eta = datetime.datetime.now() + datetime.timedelta(seconds=secondsToGo)
 
-                    print "\n\n%%%% TIME STATS %%%%\n%"
+                    print "\n\n\n%%%%%%%%%%%%%%%%%%%%%%% TIME STATS %%%%%%%%%%%%%%%%%%%%%%%\n%"
                     print "% fr:", fr, "(" + str(fr - frStart + 1) + " of " + str(frEnd - frStart + 1) + ")"
                     print "% animFrStart:", self.animFrStart
                     print "% frames passed in this anim:", framesPassed
@@ -1175,7 +1173,7 @@ class warpUi():
                     print "% Est time left in this anim:", hmsToGo, "(" + str(secondsToGo), "seconds)"
                     print "%"
                     print "% ETA", eta
-                    print "\n"
+                    print "\n\n"
 
                     if fr > self.parmDic("frEnd"):
                         if self.record:

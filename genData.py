@@ -168,6 +168,19 @@ class surf:
 
 # FUNCTIONS
 
+def toClrSpaceCIn255(r, g, b, c255):
+    c = vBy255(c255)
+    ret = ut.vMult(r, c[0])
+    ret = ut.vAdd(ut.vMult(g, c[1]), ret)
+    ret = ut.vAdd(ut.vMult(b, c[2]), ret)
+    return ret
+
+def toClrSpace(r, g, b, c):
+    ret = ut.vMult(r, c[0])
+    ret = ut.vAdd(ut.vMult(g, c[1]), ret)
+    ret = ut.vAdd(ut.vMult(b, c[2]), ret)
+    return ret
+
 
 def bbxAccom(bbxOld, xy):
     bbxNew = bbxOld
@@ -1068,10 +1081,20 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
             # Comp for ALL level
             prevVal = thisDic[nLevels].get_at((jxt,jyt))
             newVal = ut.mix(prevVal, newVal, alpha)
-            newVal = ut.clamp(newVal, 0, 255)
             #print "\nnewVal", newVal, "\n"
             #newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
             #newVal = tuple(val)
+            r = warpUi.parmDic("cDark")
+            g = warpUi.parmDic("cMid")
+            b = warpUi.parmDic("cLight")
+            #print "rgb", r, g, b
+            newVal = toClrSpace(r, g, b, newVal)
+            newValLs = []
+            for v in newVal:
+                newValLs.append(int(v))
+            newVal = tuple(newValLs)
+            newVal = ut.clamp(newVal, 0, 255)
+            #print "newVal", newVal
             thisDic[nLevels].set_at((jxt,jyt), newVal)
 
 

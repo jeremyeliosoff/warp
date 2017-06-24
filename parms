@@ -5,7 +5,7 @@
 
 fr
 type int
-val 1118
+val 2
 
 fps
 type int
@@ -19,17 +19,17 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val ts_hershLeft2HR
+val up_fromBridgeSouthCentered3min
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v014tryAccelRen
 
 
 
@@ -63,15 +63,15 @@ val v000
 
 frStart
 type int
-val 1100
+val 1
 
 frEnd
 type int
-val 1400
+val 2
 
 frPerCycle
 type int
-val 25
+val 30
 
 doGen
 type int
@@ -79,7 +79,7 @@ val 1
 
 doRen
 type int
-val 0
+val 1
 
 nLevels
 type int
@@ -95,11 +95,11 @@ val .4
 
 minThresh
 type float
-val .1
+val .075
 
 maxThresh
 type float
-val .75
+val .9
 
 rangeThresh
 type float
@@ -107,7 +107,7 @@ val .25
 
 maxSize
 type float
-val .9
+val 1
 
 cDark
 type clr
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v000
+val v006tryAccelRen
 
 startLev
 type int
@@ -145,7 +145,7 @@ val 0
 
 fallUseAsBiggest
 type float
-val .75
+val 1
 
 fallBiggestPow
 type float
@@ -153,11 +153,11 @@ val .25
 
 fallVecX
 type float
-val .4
+val .5
 
 fallVecY
 type float
-val .75
+val .23
 
 fallMode
 type str
