@@ -508,7 +508,11 @@ class warpUi():
 				if os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
 					print "\n\n LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
 					self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
-			genData.genData(self)
+
+			genDataStart = time.time()
+			genData.genData(self, self.seqRenVDir)
+			ut.writeTime(self.seqRenVDir, "genData", time.time() - genDataStart)
+
 			print "\nDone genData\n\n"
 			self.setStatus("idle")
 		else:
@@ -1189,19 +1193,9 @@ class warpUi():
 """
 
 					print "statsMsg:", statsMsg
-					with open(statsDirDest + "/stats", 'w') as f:
+					with open(self.seqRenVDir + "/stats", 'w') as f:
 						f.write(statsMsg)
 
-					print "\n\n\n%%%%%%%%%%%%%%%%%%%%%%% TIME STATS %%%%%%%%%%%%%%%%%%%%%%%\n%"
-					print "% fr:", fr, "(" + str(fr - frStart + 1) + " of " + str(frEnd - frStart + 1) + ")"
-					print "% animFrStart:", self.animFrStart
-					print "% frames passed in this anim:", framesPassed
-					print "% Time passed in this anim:", hmsPassed, "(" + str(secondsPassed), "seconds)"
-					print "% Avg time per fr:", hmsPerFr, "(" + str(secPerFr), "seconds)"
-					print "% Est time left in this anim:", hmsToGo, "(" + str(secondsToGo), "seconds)"
-					print "%"
-					print "% ETA", eta
-					print "\n\n"
 
 					if fr > self.parmDic("frEnd"):
 						if self.record:
@@ -1232,6 +1226,9 @@ class warpUi():
 								self.recButCmd()
 								fr -= 1
 								self.setVal("anim", 0)
+								secondsPassed = time.time() - self.timeStart
+								hmsPassed = ut.secsToHms(secondsPassed)
+								ut.writeTime(self.seqRenVDir, "totalTimeOfAnim", hmsPassed)
 						else:
 							# Loop if not recording
 							print "Returning to", self.parmDic("frStart")
@@ -1249,7 +1246,12 @@ class warpUi():
 			Tk.update_idletasks(self.root)
 			Tk.update(self.root)
 
-cProfile.run('warpUi()', statsObjPathSrc)
 
-ut.exeCmd("cp " + statsObjPathSrc + " " + statsDirDest)
+profiling = True
+
+if profiling:
+	cProfile.run('warpUi()', statsObjPathSrc)
+	ut.exeCmd("cp " + statsObjPathSrc + " " + statsDirDest)
+else:
+	warpUi()
 #with open(path, 'w') as f:

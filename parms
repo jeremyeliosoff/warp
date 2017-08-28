@@ -5,7 +5,7 @@
 
 fr
 type int
-val 10
+val 1
 
 fps
 type int
@@ -24,7 +24,7 @@ val 0
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v001
+val v005withProfiling2
 
 
 
@@ -67,7 +67,7 @@ val 1
 
 frEnd
 type int
-val 10
+val 2
 
 frPerCycle
 type int
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v005prof4lev
+val v001
 
 startLev
 type int
