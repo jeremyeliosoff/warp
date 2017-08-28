@@ -170,15 +170,15 @@ class surf:
 
 def toClrSpaceCIn255(r, g, b, c255):
     c = vBy255(c255)
-    ret = ut.vMult(r, c[0])
-    ret = ut.vAdd(ut.vMult(g, c[1]), ret)
-    ret = ut.vAdd(ut.vMult(b, c[2]), ret)
+    ret = ut.multVSc(r, c[0])
+    ret = ut.vAdd(ut.multVSc(g, c[1]), ret)
+    ret = ut.vAdd(ut.multVSc(b, c[2]), ret)
     return ret
 
 def toClrSpace(r, g, b, c):
-    ret = ut.vMult(r, c[0])
-    ret = ut.vAdd(ut.vMult(g, c[1]), ret)
-    ret = ut.vAdd(ut.vMult(b, c[2]), ret)
+    ret = ut.multVSc(r, c[0])
+    ret = ut.vAdd(ut.multVSc(g, c[1]), ret)
+    ret = ut.vAdd(ut.multVSc(b, c[2]), ret)
     return ret
 
 
@@ -267,8 +267,8 @@ def gridToImgV(grid):
     ret = pygame.Surface(res)
     for x in range(res[0]):
         for y in range(res[1]):
-            v = ut.vMult(grid[x][y], 255)
-            v = ut.clamp(v, 0, 255)
+            v = ut.multVSc(grid[x][y], 255)
+            v = ut.clampVSc(v, 0, 255)
             ret.set_at((x, y), (v[0], v[1], v[2], 255))
     return ret
 
@@ -279,9 +279,9 @@ def heatMap(v, parmDic):
     cMid = parmDic("cMid")
     cLight = parmDic("cLight")
     if v < .5:
-        return ut.mix(cDark, cMid, v/.5)
+        return ut.mixV(cDark, cMid, v/.5)
     else:
-        return ut.mix(cMid, cLight, (v-.5)/.5)
+        return ut.mixV(cMid, cLight, (v-.5)/.5)
 
 def vecToClr(v):
     ret = []
@@ -330,7 +330,7 @@ def initJtGrid(img, warpUi):
             thisLev = math.ceil(nLevels*(-ofs/nLevels + intens))
             vFlt = float(thisLev+ofs)/nLevels
             hm = heatMap(vFlt, warpUi.parmDic)
-            gridOut[x][y] = ut.vMult(hm, kSurf)
+            gridOut[x][y] = ut.multVSc(hm, kSurf)
             # get neighbours.
             nbrs = []
             for yy in range(y, y+2):
@@ -382,10 +382,7 @@ def setDbImg(name, dbImgDic, lev, nLevels, x, y, val):
         if x < res[0] and y < res[1]:
             #prevVal = dbImgDic[name][lev].get_at((x,y))
             newVal = tuple(list(val))
-            newVal = ut.clamp(newVal, 0, 255)
-            #print "\nnewVal", newVal, "\n"
-            #newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
-            #newVal = tuple(val)
+            newVal = ut.clampVSc(newVal, 0, 255)
             dbImgDic[name][lev].set_at((x,y), newVal)
             dbImgDic[name][nLevels].set_at((x,y), newVal)
 
@@ -460,12 +457,12 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
                     
                 val = (0, 0, 0)
                 if len(inSurfs[lev]) > 0:
-                    val = vX255(ut.vMult(red, len(inSurfs[lev])))
+                    val = vX255(ut.multVSc(red, len(inSurfs[lev])))
                 if len(inHoles[lev]) > 0:
-                    val = ut.vAdd(val, vX255(ut.vMult(green, len(inHoles[lev]))))
+                    val = ut.vAdd(val, vX255(ut.multVSc(green, len(inHoles[lev]))))
                 if not val == (0, 0, 0):
-                    val = ut.vMult(val, .5)
-                    val = ut.clamp(val, 0, 255)
+                    val = ut.multVSc(val, .5)
+                    val = ut.clampVSc(val, 0, 255)
                     setDbImg("surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
 
 
@@ -983,7 +980,7 @@ def renCvWrapper(warpUi, res):
 
 def echoCurve(): # NOTE: Not currently used.
     # Starburst stuff, slated for fuck it
-    tint = ut.vMult((1, .98, .95), .5)
+    tint = ut.multVSc((1, .98, .95), .5)
     #tint = (1, 1, 1)
     kLev = level
     incSc = 1.0/25
@@ -997,7 +994,7 @@ def echoCurve(): # NOTE: Not currently used.
         jy +=  incY
         incY = int(math.ceil(incY*fact))
         xys.append((jx,jy))
-        clrVary = ut.vMult(clrVary, tint)
+        clrVary = ut.multVSc(clrVary, tint)
         clrs.append(clrVary)
 
         x,y = xys[i]
@@ -1005,7 +1002,7 @@ def echoCurve(): # NOTE: Not currently used.
         y = int(y)
         if x < res[0] and y < res[1] and x > 0 and y > 0:
             oldClr = dbImgDic["ren"][lev].get_at((x,y))
-            newClr = ut.clamp(ut.vAdd(clrs[i], oldClr),0, 255)
+            newClr = ut.clampVSc(ut.vAdd(clrs[i], oldClr),0, 255)
             setDbImg("ren", dbImgDic, lev, nLevels, x, y, newClr)
 
 
@@ -1069,7 +1066,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
     texClr.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
     cTripMin = .3
     mixTrip = ut.mix(cTripMin, 1, pow(prog, .5))
-    clr = ut.mix(texClr, sidRanClr, mixTrip)
+    clr = ut.mixV(texClr, sidRanClr, mixTrip)
 
     # Adapted from  setDbImg("ren", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
     thisDic = dbImgDic["ren"]
@@ -1084,10 +1081,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
 
             # Comp for ALL level
             prevVal = thisDic[nLevels].get_at((jxt,jyt))
-            newVal = ut.mix(prevVal, newVal, alpha)
-            #print "\nnewVal", newVal, "\n"
-            #newVal = ut.vMin(ut.vAdd(prevVal, newVal), 255)
-            #newVal = tuple(val)
+            newVal = ut.mixV(prevVal, newVal, alpha)
             r = warpUi.parmDic("cDark")
             g = warpUi.parmDic("cMid")
             b = warpUi.parmDic("cLight")
@@ -1097,7 +1091,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
             for v in newVal:
                 newValLs.append(int(v))
             newVal = tuple(newValLs)
-            newVal = ut.clamp(newVal, 0, 255)
+            newVal = ut.clampVSc(newVal, 0, 255)
             #print "newVal", newVal
             thisDic[nLevels].set_at((jxt,jyt), newVal)
 
@@ -1106,7 +1100,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
     
 
 def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic, bbx, bbxSize, relSize, thold):
-    #sidRanClr = ut.vMult(intToClr(sid), levMult*1.0/nLevels)
+    #sidRanClr = ut.multVSc(intToClr(sid), levMult*1.0/nLevels)
     # TODO: Change levMult to levOpac + integrate that.
     sidRanClr = intToClr(sid)
 

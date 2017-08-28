@@ -5,7 +5,7 @@
 
 fr
 type int
-val 144
+val 1
 
 fps
 type int
@@ -19,7 +19,7 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
@@ -67,7 +67,7 @@ val 1
 
 frEnd
 type int
-val 300
+val 2
 
 frPerCycle
 type int
@@ -83,7 +83,7 @@ val 1
 
 nLevels
 type int
-val 4
+val 2
 
 kSurf
 type float
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v001
+val v004prof2lev
 
 startLev
 type int

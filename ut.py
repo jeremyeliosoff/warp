@@ -160,12 +160,16 @@ def isScalar(v):
     return isinstance(v, float) or isinstance(v, int)
 
 def clamp(v, mn, mx):
-    if isScalar(v):
-        return max(min(v, mx), mn)
-    else:
-        vmn = tuple([mn]*len(v)) if isScalar(mn) else mn
-        vmx = tuple([mx]*len(v)) if isScalar(mx) else mx
-        return vMax(vMin(v, vmx), vmn)
+    return max(min(v, mx), mn)
+
+def clampV(v, mn, mx):
+	return maxV(minV(v, vmx), vmn)
+
+def clampVSc(v, mn, mx):
+	vmn = tuple([mn]*len(v))
+	vmx = tuple([mx]*len(v))
+	return maxV(minV(v, vmx), vmn)
+
 
 
 def vDiff(a, b):
@@ -197,60 +201,72 @@ def vAdd(a, b):
         ret.append(a[i] + b[i])
     return ret
 
-def vMin(a, b):
+def minVSc(a, b):
     ret = []
     for i in range(len(a)):
-        if isScalar(b):
-            ret.append(min(a[i], b))
-        else:
-            ret.append(min(a[i], b[i]))
+        ret.append(min(a[i], b))
     return ret
 
-def vMax(a, b):
+def minV(a, b):
     ret = []
     for i in range(len(a)):
-        if isScalar(b):
-            ret.append(max(a[i], b))
-        else:
-            ret.append(max(a[i], b[i]))
+        ret.append(min(a[i], b[i]))
     return ret
 
-def vMult(a, b):
+def maxVSc(a, b):
     ret = []
     for i in range(len(a)):
-        if isScalar(b):
-            ret.append(a[i] * b)
-        else:
-            ret.append(a[i] * b[i])
+        ret.append(max(a[i], b))
+    return ret
+
+def maxV(a, b):
+    ret = []
+    for i in range(len(a)):
+        ret.append(max(a[i], b[i]))
+    return ret
+
+def multVSc(a, b):
+    ret = []
+    for i in range(len(a)):
+        ret.append(a[i] * b)
+    return ret
+
+def multV(a, b):
+    ret = []
+    for i in range(len(a)):
+        ret.append(a[i] * b[i])
     return ret
 
 def gamma(a, g):
     return pow(a, 1.0/g)
 
-def vGamma(a, g):
+def gammaV(a, g):
     ret = []
     for i in range(len(a)):
-        if isScalar(g):
-            ret.append(gamma(a[i], g))
-        else:
-            ret.append(gamma(a[i], g[i]))
+        ret.append(gamma(a[i], g[i]))
+    return ret
+
+def gammaVSc(a, g):
+    ret = []
+    for i in range(len(a)):
+        ret.append(gamma(a[i], g))
     return ret
 
 def vNeg(a):
-    return vMult(a, -1)
+    return multVSc(a, -1)
 
 def exeCmd(cmd):
     print "executing", cmd
     os.system(cmd)
 
 def mix(a, b, m):
-    if isScalar(a):
-        return a*(1-m) + b*m
-    else:
-        ret = []
-        for i in range(len(a)):
-            ret.append(a[i]*(1-m) + b[i]*m)
-        return ret
+    return a*(1-m) + b*m
+
+def mixV(a, b, m):
+	ret = []
+	for i in range(len(a)):
+		ret.append(a[i]*(1-m) + b[i]*m)
+	return ret
 
 def vAdd(a, b):
     ret = []

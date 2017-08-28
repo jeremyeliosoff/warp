@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut, time, datetime, pprint, glob
+import os, genData, ut, time, datetime, pprint, glob, cProfile
 from Tkinter import *
 import Tkinter
 import PIL
@@ -7,6 +7,9 @@ from PIL import ImageTk, Image
 from tkColorChooser import askcolor              
 
 parmPath = ut.projDir + "/parms"
+
+statsObjPathSrc="/tmp/statsObj"
+statsObjPathDest=""
 
 
 class warpUi():
@@ -1164,6 +1167,27 @@ class warpUi():
                     hmsToGo = ut.secsToHms(secondsToGo)
                     eta = datetime.datetime.now() + datetime.timedelta(seconds=secondsToGo)
 
+
+                    statsMsg =  """
+
+
+%%%%%%%%%%%%%%%%%%%%%%% TIME STATS %%%%%%%%%%%%%%%%%%%%%%%
+% fr:""", fr, "(" + str(fr - frStart + 1) + " of " + str(frEnd - frStart + 1) + """)
+% animFrStart:""", self.animFrStart, """
+% frames passed in this anim:""", framesPassed, """
+% Time passed in this anim:""", hmsPassed, "(" + str(secondsPassed), """seconds)
+% Avg time per fr:""", hmsPerFr, "(" + str(secPerFr), """seconds)
+% Est time left in this anim:""", hmsToGo, "(" + str(secondsToGo), """seconds)
+%
+% ETA", eta
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+"""
+
+                    print "statsMsg:", statsMsg
+
                     print "\n\n\n%%%%%%%%%%%%%%%%%%%%%%% TIME STATS %%%%%%%%%%%%%%%%%%%%%%%\n%"
                     print "% fr:", fr, "(" + str(fr - frStart + 1) + " of " + str(frEnd - frStart + 1) + ")"
                     print "% animFrStart:", self.animFrStart
@@ -1177,6 +1201,8 @@ class warpUi():
 
                     if fr > self.parmDic("frEnd"):
                         if self.record:
+                            # Global varable needed for final stats
+                            statsObjPathDest = self.seqRenVDir 
                             # TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
                             if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
                                 # Restart and do renCv
@@ -1219,4 +1245,5 @@ class warpUi():
             Tk.update_idletasks(self.root)
             Tk.update(self.root)
 
-warpUi()
+cProfile.run('warpUi()', statsObjPathSrc)
+#with open(path, 'w') as f:
