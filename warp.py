@@ -153,7 +153,7 @@ class warpUi():
 
     def positionWindow(self):
         w = 1500 # width for the Tk root
-        h = 920 # height for the Tk root
+        h = 950 # height for the Tk root
 
         # get screen width and height
         ws = self.root.winfo_screenwidth() # width of the screen

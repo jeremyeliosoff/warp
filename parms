@@ -5,7 +5,7 @@
 
 fr
 type int
-val 888
+val 144
 
 fps
 type int
@@ -29,7 +29,7 @@ val 1
 image
 hidden True
 type str
-val div07_rl_GOODpassOverGreatLightShakeyAtEndHR
+val tuktuk
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v001
 
 
 
@@ -63,11 +63,11 @@ val v000
 
 frStart
 type int
-val 850
+val 1
 
 frEnd
 type int
-val 1150
+val 300
 
 frPerCycle
 type int
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v000
+val v001
 
 startLev
 type int
@@ -153,15 +153,15 @@ val .25
 
 fallVecX
 type float
-val .1
+val .8
 
 fallVecY
 type float
-val .29
+val .5
 
 fallMode
 type str
-val yline
+val orig
 
 progDur
 type float

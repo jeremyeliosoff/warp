@@ -1041,6 +1041,7 @@ def calcXf(warpUi, prog, res, relSize, bbx):
         bbxCent = ((bbx[0][0]+bbx[1][0])/2, (bbx[0][1]+bbx[1][1])/2)
         origin = (res[0]*warpUi.parmDic("fallVecX"), res[1]*warpUi.parmDic("fallVecY"))
         fallDir = ut.vDiff(origin, bbxCent)
+        #fallDir[1] *= warpUi.parmDic("fallYscale")
         #fallDir = (100, 100)
         tx = int(fall * fallDir[0]/res[0])
         ty = int(fall * fallDir[1]/res[1])
@@ -1052,7 +1053,7 @@ def calcXf(warpUi, prog, res, relSize, bbx):
         ty = int(fall * fallDir/res[1])
     elif warpUi.parmDic("fallMode") == "yline":
         bbxCent = (bbx[0][0]+bbx[1][0])/2
-        origin = res[0]*warpUi.parmDic("fallVecX")
+        origin = res[0]*warpUi.parmDic("fallVecX") #TODO THAT SHOULD BE Y!!!
         fallDir = bbxCent - origin
         tx = int(fall * fallDir/res[0])
         ty = 0
@@ -1156,22 +1157,21 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
                     continue
 
                 #yy = jy +1
-                yy = jy
 
                 # MAIN FILLING - Draw vertical line up to next curve in this sid.
-                while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
-                #while ( not (jx, yy) in allCoords) and yy > 0:
-                    # TODO: Try chaning alpha instead - make transparent instead of dark
-                    #fillClr = ut.vMult(sidRanClr, 1-prog*.9)
-                    #thisAlpha = alpha * (1-prog*.9)
+                if False: # warpUi.parmDic("fillMode") == "cv":
+                    yy = jy -1
+                    while ( not (jx, yy) in allCoords) and yy > 0:
+                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
+                        yy -= 1
 
-                    #fillClr = vX255(ut.mix(red, green, prog))
-                    #thisAlpha = 1
-                    if not dirtyPix[jx][yy]:
-                        fillClr = sidRanClr
-                        setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, fillClr, surfAlpha)
-                        dirtyPix[jx][yy] = True
-                    yy -= 1
+                else:
+                    yy = jy
+                    while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
+                        if not dirtyPix[jx][yy]:
+                            setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
+                            dirtyPix[jx][yy] = True
+                        yy -= 1
 
 
             # Draw the curve. 
@@ -1251,7 +1251,7 @@ def renCv(warpUi, res, sidToCvDic, tholds):
         tids = warpUi.tidToSids[lev].keys()
         iTid = 0
         nTids = len(tids)
-        print "nTids:", nTids
+        print "lev:", lev, "thold:", thold, "nTids:", nTids
         for tid in tids:
             iTid += 1
             print "\r\ttid:", tid, ("(%d of %d)" % (iTid, nTids)), "sids:",
@@ -1261,7 +1261,7 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 
             # Fade in and out - TODO: Improve this
             alpha = level* (1-level)**2
-            alpha = min(level*1.5, 1)
+            alpha = min(level*1.5*pow(thold,.5), 1)
 
             iSid = 0
             for sid in sids:
