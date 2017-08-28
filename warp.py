@@ -835,7 +835,8 @@ class warpUi():
 		self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
 		self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
 		self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
-		self.statsDirDest = self.seqRenVDir 
+		global statsDirDest
+		statsDirDest = self.seqRenVDir 
 		self.inSurfGridPrev = None
 		self.setVal("anim", 0)
 		nLevels = self.parmDic("nLevels")
@@ -1188,7 +1189,7 @@ class warpUi():
 """
 
 					print "statsMsg:", statsMsg
-					with open(self.statsDirDest + "/stats", 'w') as f:
+					with open(statsDirDest + "/stats", 'w') as f:
 						f.write(statsMsg)
 
 					print "\n\n\n%%%%%%%%%%%%%%%%%%%%%%% TIME STATS %%%%%%%%%%%%%%%%%%%%%%%\n%"
@@ -1205,7 +1206,7 @@ class warpUi():
 					if fr > self.parmDic("frEnd"):
 						if self.record:
 							# Global varable needed for final stats
-							self.statsDirDest = self.seqRenVDir 
+							statsDirDest = self.seqRenVDir 
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
 							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
 								# Restart and do renCv
@@ -1249,4 +1250,6 @@ class warpUi():
 			Tk.update(self.root)
 
 cProfile.run('warpUi()', statsObjPathSrc)
+
+ut.exeCmd("cp " + statsObjPathSrc + " " + statsDirDest)
 #with open(path, 'w') as f:
