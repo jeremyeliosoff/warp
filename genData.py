@@ -871,7 +871,7 @@ def genData(warpUi, statsDirDest):
 			#	print err
 		else:
 			renCvWrapper(warpUi, warpUi.res)
-		ut.writeTime(statsDirDest, "renCvWrapper", time.time() - renCvWrapperStart)
+		ut.writeTime(warpUi, "renCvWrapper", time.time() - renCvWrapperStart)
 		print "Post renCvWrapper"
 	else:
 		# Load prev inSurfGrid.
@@ -880,7 +880,7 @@ def genData(warpUi, statsDirDest):
 
 		initJtGridStart = time.time()
 		jtGrid, tholds = initJtGrid(img, warpUi)
-		ut.writeTime(statsDirDest, "initJtGrid", time.time() - initJtGridStart)
+		ut.writeTime(warpUi, "initJtGrid", time.time() - initJtGridStart)
 
 		inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
 		# TODO: TEMP - this should be done in warp.py when genData is stopped.

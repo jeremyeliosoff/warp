@@ -15,7 +15,6 @@ statsDirDest=""
 class warpUi():
 	def rebuildUI(self):
 		print "reloading........"
-		#self.saveUIToParmsAndFile()
 		self.saveParmDic()
 		ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
 		
@@ -50,10 +49,12 @@ class warpUi():
 
 		self.pauseSaveUIToParmsAndFile = False
 
-	#def saveUIToParmsAndFile(self, svName, pn):
-	def saveUIToParmsAndFile(self, svName, parmName, sv):
-		val = sv.get()
-		#print "\n---------------svName:", svName, "pn:", parmName, "val", val, "sv.get()", sv.get()
+	def saveUIToParmsAndFile(self, parmName, arg):
+		if isinstance(arg, StringVar):
+			val = arg.get()
+		else:
+			val = arg
+
 		if not self.pauseSaveUIToParmsAndFile:
 			ints="-0123456789"
 			floats= ints + "."
@@ -141,6 +142,7 @@ class warpUi():
 
 			if not thisParmDic["type"] == "clr":
 				sv = StringVar()
+				a = 3
 				sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(name, pn, sv))
 
 				thisParmDic["uiElement"].configure(textvariable=sv)
@@ -285,7 +287,6 @@ class warpUi():
 
 
 	def imgButCmd(self):
-		#self.saveUIToParmsAndFile()
 		self.updateCurImg(forceRecord=True)
 		self.updateDebugImg()
 
@@ -315,10 +316,6 @@ class warpUi():
 
 	def returnCmd(self):
 		self.frameMaster.focus_set()
-		#self.saveUIToParmsAndFile() #TODO: Needed?
-		#self.updateCurImg()
-
-	#def keyWrap(self, v):
 
 	def execHotkey(self, v):
 		focused = self.frameMaster.focus_get()
@@ -380,7 +377,6 @@ class warpUi():
 			self.setVal("anim", 0)
 			self.refreshButtonImages()
 		print "Pressed anim button, anim set to", anim
-		#self.saveUIToParmsAndFile()
 
 	def recButCmd(self):
 		self.record = not self.record
@@ -488,10 +484,6 @@ class warpUi():
 		renLevDir,renImgPath = self.getRenDirAndImg("ren", "ALL")
 
 		self.images["ren"]["path"] = renImgPath
-		#print "\n\n <<<<<<<<<<self.images[\"ren\"][\"path\"]:", self.images["ren"]["path"] 
-		#print "\nin updateCurImg, about to do saveUIToParmsAndFile"
-		#self.saveUIToParmsAndFile() #TODO: Needed?
-		#print "\n\n------- self.images", self.images
 		print "\n\n self.record", self.record
 
 		ut.exeCmd("rm " + genData.outFile)
@@ -511,7 +503,7 @@ class warpUi():
 
 			genDataStart = time.time()
 			genData.genData(self, self.seqRenVDir)
-			ut.writeTime(self.seqRenVDir, "genData", time.time() - genDataStart)
+			ut.writeTime(self, "genData", time.time() - genDataStart)
 
 			print "\nDone genData\n\n"
 			self.setStatus("idle")
@@ -685,6 +677,10 @@ class warpUi():
 		# Copy parms
 		ut.exeCmd("cp " + verDir + "/" + latestVer + "/parms " + verDir + "/" + nextVer + "/")
 		self.setVal(verType + "Ver", nextVer)
+
+		# This has been removed from most functions cuz it's in trace
+		self.saveUIToParmsAndFile(verType + "Ver", nextVer)
+
 		vers = [nextVer] + vers
 		self.repopulateMenu(verType, vers)
 		self.verUI[verType]["menuVar"].set(nextVer)
@@ -711,8 +707,6 @@ class warpUi():
 		print "setVal: setting parmDic[" + parmStr + "] to", valStr
 		self.parmDic.parmDic[parmStr]["val"] = valStr
 		self.pauseSaveUIToParmsAndFile = False
-		#print "ending setVal, about to do saveUIToParmsAndFile"
-		#self.saveUIToParmsAndFile()
 
 	def makeFramesDataDir(self, fr=None):
 		if not fr:
@@ -817,6 +811,44 @@ class warpUi():
 		curSelStr = None if curSelInt == "" else self.renQListbox.get(curSelInt)
 		print "\n\n deleting curSelStr:", curSelStr
 		self.renQListbox.delete(curSelInt)
+
+
+	def sortStats(self):
+		if self.parmDic("doRenCv") == 1:
+			destDir = self.seqRenVDir 
+		else:
+			destDir = self.seqDataVDir
+		srcPath = destDir + "/statsPrintout"
+		destPath = destDir + "/statsSummary"
+
+		statsDic = {}
+		with open(srcPath) as f:
+			for line in f.readlines():
+				line = line.strip()
+				label, secs = line.split(" ")
+				if label == "totalTimeOfAnim":
+					continue
+				if label in statsDic.keys():
+					statsDic[label]["vals"].append(float(secs))
+				else:
+					statsDic[label]= {"vals":[float(secs)]}
+
+		sortBy = "avg"
+		toSort = []
+		for label,data in statsDic.items():
+			data["total"] = sum(data["vals"])
+			data["avg"] = data["total"]/len(data["vals"])
+			toSort.append((data[sortBy], label))
+
+
+		toSort.sort()
+		toSort.reverse()
+		dud,sortedLables = zip(*toSort)
+
+		with open(destPath, 'a') as f: # 'w' says "file not found" for some reason.
+			f.write("sorted by " + sortBy + ":\n\n")
+			for label in sortedLables:
+				f.write(label + " " + str(statsDic[label][sortBy]) + "\n")
 
 
 
@@ -990,7 +1022,6 @@ class warpUi():
 
 			print "\n\nYYYYY setting up OptionMenu for", verType
 			self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda selection, thisVerType=verType : self.menuVChooser(selection, thisVerType))
-			#self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda thisVerType=verType : self.menuVChooser(thisVerType, *vers))
 			self.verUI[verType]["OptionMenu"].grid(row=row, column=0, sticky=EW)
 
 			self.verUI[verType]["sfx"] = Entry(self.frameParm, width=22)
@@ -1204,13 +1235,22 @@ class warpUi():
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
 							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
 								# Restart and do renCv
+
+								# Write stats
+								secondsPassed = time.time() - self.timeStart
+								hmsPassed = ut.secsToHms(secondsPassed)
+								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
+								self.sortStats()
+
 								print "Turning on doRenCv"
 								self.setVal("doRenCv", 1)
 								self.chk_doRenCv_var.set(1)
 								print "Returning to", self.parmDic("frStart")
 								fr = self.parmDic("frStart")
 							elif self.parmDic("image") in self.renQLs and not self.parmDic("image") == self.renQLs[-1]:
-								# If recording and in renQ but not last, turn off doRenCv, restart, and got to next img.
+								# If recording and in renQ but not last,
+								# turn off doRenCv, restart, and got to next img.
+								# TODO: Make stats work for multiple seq
 								nextImg = self.renQLs[self.renQLs.index(self.parmDic("image")) + 1]
 								self.setVal("image", nextImg)
 								self.imgChooserVar.set(nextImg)
@@ -1228,7 +1268,8 @@ class warpUi():
 								self.setVal("anim", 0)
 								secondsPassed = time.time() - self.timeStart
 								hmsPassed = ut.secsToHms(secondsPassed)
-								ut.writeTime(self.seqRenVDir, "totalTimeOfAnim", hmsPassed)
+								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
+								self.sortStats()
 						else:
 							# Loop if not recording
 							print "Returning to", self.parmDic("frStart")
@@ -1247,7 +1288,7 @@ class warpUi():
 			Tk.update(self.root)
 
 
-profiling = True
+profiling = False
 
 if profiling:
 	cProfile.run('warpUi()', statsObjPathSrc)

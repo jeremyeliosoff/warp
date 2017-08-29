@@ -316,6 +316,10 @@ def secsToHms(s):
 	h, m = divmod(m, 60)
 	return "%d:%02d:%02d" % (h, m, s)
 
+def hmsToSecs(hms):
+	h, m, s = hms.split(":")
+	return float(s) + float(m)*60 + float(h)*60*60
+
 def printFrameStack():
 	curframe = inspect.currentframe()
 	calframe = inspect.getouterframes(curframe, 2)
@@ -330,10 +334,16 @@ def printFrameStack():
 	print
 
 
-def writeTime(destDir, label, time):
+def writeTime(warpUi, label, time):
+	if warpUi.parmDic("doRenCv") == 1:
+		destDir = warpUi.seqRenVDir 
+	else:
+		destDir = warpUi.seqDataVDir
+
 	toWrite = label + " " + str(time)
-	print "\n\n*********************************** writing", toWrite, "to " + (destDir + "/statsManual")
-	with open(destDir + "/statsManual", 'a') as f:
+	destPath = destDir + "/statsPrintout"
+	print "\nwriting \"" + toWrite + "\" to " + destPath
+	with open(destPath, 'a') as f:
 		f.write(toWrite + "\n")
 
 
