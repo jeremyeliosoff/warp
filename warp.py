@@ -142,8 +142,7 @@ class warpUi():
 
 			if not thisParmDic["type"] == "clr":
 				sv = StringVar()
-				a = 3
-				sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(name, pn, sv))
+				sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
 
 				thisParmDic["uiElement"].configure(textvariable=sv)
 				thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
@@ -501,9 +500,9 @@ class warpUi():
 					print "\n\n LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
 					self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
 
-			genDataStart = time.time()
+			ut.timerStart(self, "genData")
 			genData.genData(self, self.seqRenVDir)
-			ut.writeTime(self, "genData", time.time() - genDataStart)
+			ut.timerStop(self, "genData")
 
 			print "\nDone genData\n\n"
 			self.setStatus("idle")
@@ -653,6 +652,7 @@ class warpUi():
 		self.updateRenAndDataDirs() #TODO: I don't think this is necessary, it's done above - useful for menuImgChooser
 		self.updateCurImg()
 		self.updateDebugImg()
+		self.saveUIToParmsAndFile(verType + "Ver", verNum)
 		self.flushDics()
 
 
@@ -762,7 +762,11 @@ class warpUi():
 		#ut.printFrameStack()
 		print "Attempting to load", path, "...",
 		if os.path.exists(path):
-			img = ImageTk.PhotoImage(Image.open(path))
+			loadedImg = Image.open(path)
+			res = loadedImg.size
+			sc = 2 # TODO: Make this a parm
+			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
+			img = ImageTk.PhotoImage(loadedImg)
 			print "success!"
 		else:
 			img = self.staticImages["error"]
@@ -833,22 +837,23 @@ class warpUi():
 				else:
 					statsDic[label]= {"vals":[float(secs)]}
 
-		sortBy = "avg"
-		toSort = []
-		for label,data in statsDic.items():
-			data["total"] = sum(data["vals"])
-			data["avg"] = data["total"]/len(data["vals"])
-			toSort.append((data[sortBy], label))
+		if len(statsDic.keys()) > 0:
+			sortBy = "avg"
+			toSort = []
+			for label,data in statsDic.items():
+				data["total"] = sum(data["vals"])
+				data["avg"] = data["total"]/len(data["vals"])
+				toSort.append((data[sortBy], label))
 
 
-		toSort.sort()
-		toSort.reverse()
-		dud,sortedLables = zip(*toSort)
+			toSort.sort()
+			toSort.reverse()
+			dud,sortedLables = zip(*toSort)
 
-		with open(destPath, 'a') as f: # 'w' says "file not found" for some reason.
-			f.write("sorted by " + sortBy + ":\n\n")
-			for label in sortedLables:
-				f.write(label + " " + str(statsDic[label][sortBy]) + "\n")
+			with open(destPath, 'a') as f: # 'w' says "file not found" for some reason.
+				f.write("sorted by " + sortBy + ":\n\n")
+				for label in sortedLables:
+					f.write(label + " " + str(statsDic[label][sortBy]) + "\n")
 
 
 
@@ -871,7 +876,9 @@ class warpUi():
 		self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
 		self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
 		self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
-		global statsDirDest
+
+		self.timerStarts = {}
+		global statsDirDest # for cProfile
 		statsDirDest = self.seqRenVDir 
 		self.inSurfGridPrev = None
 		self.setVal("anim", 0)
@@ -912,7 +919,12 @@ class warpUi():
 		self.staticImages = {}
 		base = ut.imgDir + "/controls/"
 		for name in self.staticImageNames:
-			self.staticImages[name] = ImageTk.PhotoImage(Image.open(base + name + ".jpg"))
+			loadedImg = Image.open(base + name + ".jpg")
+			print "loadedImg", loadedImg
+			res = loadedImg.size
+			sc = 2
+			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
+			self.staticImages[name] = ImageTk.PhotoImage(loadedImg)
 		self.images = {}
 		self.loadImages()
 

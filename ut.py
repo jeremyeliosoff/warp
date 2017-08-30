@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, os, random, re, glob, pprint, inspect, math
+import sys, os, random, re, glob, pprint, inspect, math, time
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
@@ -342,9 +342,16 @@ def writeTime(warpUi, label, time):
 
 	toWrite = label + " " + str(time)
 	destPath = destDir + "/statsPrintout"
-	print "\nwriting \"" + toWrite + "\" to " + destPath
+	#print "\nwriting \"" + toWrite + "\" to " + destPath
 	with open(destPath, 'a') as f:
 		f.write(toWrite + "\n")
+
+def timerStart(warpUi, label):
+	warpUi.timerStarts[label] = time.time()
+
+def timerStop(warpUi, label):
+	writeTime(warpUi, label, time.time() - warpUi.timerStarts[label])
+	
 
 
 def main():

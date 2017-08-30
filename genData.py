@@ -323,6 +323,7 @@ def initJtGrid(img, warpUi):
 	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	gridOut = [[(0, 0, 0) for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tholds = [None for lev in range(nLevels)]
+
 	for x in range(res[0]-1):
 		for y in range(res[1]-1):
 			# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
@@ -362,7 +363,8 @@ def initJtGrid(img, warpUi):
 						jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, texClr, cons[0], nJoints, nbrs)]
 						nJoints += 1
 
-	
+	# Write stats
+
 	#warpUi.gridJt = jtGrid[:]
 	warpUi.gridOut = gridOut[:]
 	renPath = warpUi.images["ren"]["path"]
@@ -830,6 +832,7 @@ def writeTidImg(warpUi, inSurfGrid):
 
 
 def genData(warpUi, statsDirDest):
+	ut.timerStart(warpUi, "genData")
 	print "\n\n\n"
 	print "#####################"
 	print "### DOING genData ###"
@@ -856,7 +859,6 @@ def genData(warpUi, statsDirDest):
 #		pOut("before renCv warpUi.sidToTid", pp)
 
 		catchErrors = True
-		renCvWrapperStart = time.time()
 		if catchErrors:
 			renCvWrapper(warpUi, warpUi.res)
 			#try:
@@ -871,16 +873,13 @@ def genData(warpUi, statsDirDest):
 			#	print err
 		else:
 			renCvWrapper(warpUi, warpUi.res)
-		ut.writeTime(warpUi, "renCvWrapper", time.time() - renCvWrapperStart)
 		print "Post renCvWrapper"
 	else:
 		# Load prev inSurfGrid.
 		inSurfGridPrev = None
 		frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
 
-		initJtGridStart = time.time()
 		jtGrid, tholds = initJtGrid(img, warpUi)
-		ut.writeTime(warpUi, "initJtGrid", time.time() - initJtGridStart)
 
 		inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
 		# TODO: TEMP - this should be done in warp.py when genData is stopped.
@@ -922,6 +921,7 @@ def genData(warpUi, statsDirDest):
 		pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
 
 	print "Post renCvWrapper block"
+	ut.timerStop(warpUi, "genData")
 
 def convertCvToLs(cv):
 	ret = []
@@ -1104,7 +1104,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
 
 	
 
-def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic, bbx, bbxSize, relSize, thold):
+def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic, bbx, bbxSize, relSize, thold, falseArray):
 	#sidRanClr = ut.multVSc(intToClr(sid), levMult*1.0/nLevels)
 	# TODO: Change levMult to levOpac + integrate that.
 	sidRanClr = intToClr(sid)
@@ -1121,9 +1121,12 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
 	allCoords = []
 
 	# This shouldn't be necessary - inelegant way of removing vertical stripe artifacts
-	dirtyPix = [[False for y in range(res[1])] for x in range(res[0])] 
-	for cv in cvs:
+	dirtyPix = list(falseArray)
+	#dirtyPix = [[False for y in range(res[1])] for x in range(res[0])] 
+	
+	for cv in cvs: # TODO: Delete this, and "False" part below
 		allCoords += cv
+
 	for cv in cvs:
 		iJt = 0
 		while iJt < len(cv):
@@ -1133,7 +1136,7 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
 			jx,jy = list(jt)
 
 			surfAlpha = alpha * (1-prog)
-			surfAlpha = min(1.0, 1.5*surfAlpha)
+			surfAlpha = min(1.0, 3*surfAlpha)
 			#surfAlpha = 1
 			curveAlpha = min(1.0, 3*surfAlpha)
 
@@ -1158,19 +1161,12 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
 				#yy = jy +1
 
 				# MAIN FILLING - Draw vertical line up to next curve in this sid.
-				if False: # warpUi.parmDic("fillMode") == "cv":
-					yy = jy -1
-					while ( not (jx, yy) in allCoords) and yy > 0:
+				yy = jy
+				while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
+					if not dirtyPix[jx][yy]:
 						setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
-						yy -= 1
-
-				else:
-					yy = jy
-					while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
-						if not dirtyPix[jx][yy]:
-							setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
-							dirtyPix[jx][yy] = True
-						yy -= 1
+						dirtyPix[jx][yy] = True
+					yy -= 1
 
 
 			# Draw the curve. 
@@ -1246,6 +1242,8 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 	#	print "\nnLevels:", nLevels, "	levNotOfs:", levNotOfs, "	ofs:", ofs, "	lev:", lev
 	#	lev = levNotOfs
 	#for lev in levsSortedByTholds[warpUi.parmDic("startLev"):]:
+
+	falseArray = [[False for y in range(res[1])] for x in range(res[0])] 
 	for thold, lev in tholdsAndLevLs[warpUi.parmDic("startLev"):]:
 		tids = warpUi.tidToSids[lev].keys()
 		iTid = 0
@@ -1275,7 +1273,7 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 					maxSize = warpUi.parmDic("maxSize")
 					#print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
 					if relSize[0] <= maxSize and relSize[1] <= maxSize:
-						renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold)
+						renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray)
 		print
 
 
@@ -1291,13 +1289,14 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 			# TEMP save bmp
 			bmpPath = imgPath.replace(".jpg", ".bmp")
 			pygame.image.save(outputs[name][lev], bmpPath)
-			#ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
+			ut.exeCmd("convert -resize 200% " + bmpPath + " " + bmpPath)
 
 	for name in renOutputsOneLev:
 		levDir,imgPath = warpUi.getRenDirAndImg(name)
 		ut.mkDirSafe(levDir)
 		print "Saving", name, " image, path:", imgPath
 		pygame.image.save(outputs[name], imgPath)
+		ut.exeCmd("convert -resize 200% " + imgPath + " " + imgPath)
 
 	print "done renCv for fr", warpUi.parmDic("fr")
 
