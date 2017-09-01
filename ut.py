@@ -111,6 +111,7 @@ class parmDic:
 		self.loadParmLs(parmFile)
 		self.parmLsToDic()
 
+	# This should maybe be in a separate utility script?
 	def __call__(self, parmStr):
 		thisParmDic = self.parmDic[parmStr]
 		strVal = thisParmDic["val"]
@@ -364,23 +365,13 @@ def main():
 		#seqs = glob.glob(dataDir + "/" + pref + "*")
 	else:
 		verDir = renDir + "/"
-	seqs = glob.glob(verDir + pref + "*")
-	seqs.sort(key=os.path.getmtime)
-	#print "seqs"
-	#pprint.pprint(seqs)
-	seqPath = seqs[-1]
-	#seq = seqPath.split("/")[-1]
-	#print "hhhhhhhey - seq:", seq
-	vers = getVersions(seqPath)
+	dirs = glob.glob(verDir + pref + "*")
+	dirs.sort(key=os.path.getmtime)
+	dirPath = dirs[-1]
+	vers = getVersions(dirPath)
 	vers.sort()
-	#print "verDir"
-	#print verDir
-	#print "seqPath"
-	#print seqPath
-	#print "vers"
-	#pprint.pprint(vers)
-	verPath = seqPath + "/" + vers[-1]
-	if verType == "ren":
+	verPath = dirPath + "/" + vers[-1]
+	if verType == "renImg":
 		verPath += "/ren/ALL"
 	print verPath
 	return "fuck"

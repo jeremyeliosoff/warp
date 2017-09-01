@@ -321,7 +321,6 @@ def initJtGrid(img, warpUi):
 	res = img.get_size()
 	nJoints = 0
 	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
-	gridOut = [[(0, 0, 0) for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tholds = [None for lev in range(nLevels)]
 
 	for x in range(res[0]-1):
@@ -331,7 +330,6 @@ def initJtGrid(img, warpUi):
 			thisLev = math.ceil(nLevels*(-ofs/nLevels + intens))
 			vFlt = float(thisLev+ofs)/nLevels
 			hm = heatMap(vFlt, warpUi.parmDic)
-			gridOut[x][y] = ut.multVSc(hm, kSurf)
 			# get neighbours.
 			nbrs = []
 			for yy in range(y, y+2):
@@ -366,20 +364,18 @@ def initJtGrid(img, warpUi):
 	# Write stats
 
 	#warpUi.gridJt = jtGrid[:]
-	warpUi.gridOut = gridOut[:]
 	renPath = warpUi.images["ren"]["path"]
 	renSeqDir = "/".join(renPath.split("/")[:-1])
 	ut.mkDirSafe(renSeqDir)
 	print "SAVING RENDERED IMAGE:", renPath
-	# TODO: maybe use a more general purpose version of setDbImg instead.
-	pygame.image.save(gridToImgV(warpUi.gridOut),  renPath)
 
 
 	return jtGrid, tholds
 
 def setDbImg(name, dbImgDic, lev, nLevels, x, y, val):
 	prevVal = black
-	if lev <= len(dbImgDic[name]): # TODO: Won't this always be true?
+	# TEMP
+	if False and lev <= len(dbImgDic[name]): # TODO: Won't this always be true?
 		res = dbImgDic[name][lev].get_size()
 		if x < res[0] and y < res[1]:
 			#prevVal = dbImgDic[name][lev].get_at((x,y))
@@ -596,7 +592,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
 	# Draw the curve joint to joint - I think this is just for debug.
 
-	drawCurveGrid = [[[0, 0, 0] for y in range(res[1])] for x in range(res[0])] 
 	curveId = 0
 	sidToCvs = [{} for i in range(nLevels)]
 	sidToSurf = [{} for i in range(nLevels)]
@@ -622,7 +617,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 				setDbImg("cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
 				sfClr = intToClr(jt.cv.cid)
 				setDbImg("cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
-				drawCurveGrid[xx][yy] = clrs[cv.cid % len(clrs)]
 				#print "jt", jt, "jt.nx", jt.pv
 				jt = jt.pv
 				if jt == None:
@@ -860,7 +854,7 @@ def genData(warpUi, statsDirDest):
 
 		catchErrors = True
 		if catchErrors:
-			renCvWrapper(warpUi, warpUi.res)
+			renCvWrapper(warpUi)
 			#try:
 			#	renCvWrapper(warpUi, warpUi.res)
 			#except:
@@ -970,7 +964,7 @@ def convertCvDicToDicOLD(cvDic, warpUi):
 	return ret
 	#sidToCvs[lev][sid].append(cv)
 
-def renCvWrapper(warpUi, res):
+def renCvWrapper(warpUi):
 	fr, frameDir = warpUi.makeFramesDataDir()
 	sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
 	tholds = pickleLoad(frameDir + "/tholds")
@@ -980,35 +974,8 @@ def renCvWrapper(warpUi, res):
 		warpUi.setStatus("error", "ERROR: sidToCvDic == None")
 	else:
 		pOut("\nIn renCvWrapper, about to do renCv()...")
-		renCv(warpUi, res, sidToCvDic, tholds)
+		renCv(warpUi, sidToCvDic, tholds)
 
-
-def echoCurve(): # NOTE: Not currently used.
-	# Starburst stuff, slated for fuck it
-	tint = ut.multVSc((1, .98, .95), .5)
-	#tint = (1, 1, 1)
-	kLev = level
-	incSc = 1.0/25
-	incX = kLev*incSc
-	incY = kLev*incSc
-	clrVary = intToClr(tid)
-	fact = 1.5
-	for i in range(0):
-		jx +=  incX
-		incX = int(math.ceil(incX*fact))
-		jy +=  incY
-		incY = int(math.ceil(incY*fact))
-		xys.append((jx,jy))
-		clrVary = ut.multVSc(clrVary, tint)
-		clrs.append(clrVary)
-
-		x,y = xys[i]
-		x = int(x)
-		y = int(y)
-		if x < res[0] and y < res[1] and x > 0 and y > 0:
-			oldClr = dbImgDic["ren"][lev].get_at((x,y))
-			newClr = ut.clampVSc(ut.vAdd(clrs[i], oldClr),0, 255)
-			setDbImg("ren", dbImgDic, lev, nLevels, x, y, newClr)
 
 
 def calcProg(warpUi, sid, level):
@@ -1174,14 +1141,16 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, out
 
 
 
-def renCv(warpUi, res, sidToCvDic, tholds):
+def renCv(warpUi, sidToCvDic, tholds):
 	
 	print "\n\n\n"
 	print "*******************"
 	print "*** DOING renCv ***"
 	print "*******************"
+
 	warpUi.setStatus("busy", "Doing renCv...")
 
+	res = warpUi.res
 	nLevels = warpUi.parmDic("nLevels")
 
 
@@ -1201,12 +1170,11 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 
 	renOutputsOneLev = ["move"]
 	for name in renOutputsOneLev:
-		# TODO are those [:]s necessary?
 		outputs[name] = pygame.Surface(res)
 
 
+	ut.timerStart(warpUi, "moveImg")
 	# Visualize movement
-	#outputs["move"] = srcImgRenCv.copy()
 	circleSizeRel = .1
 	circleSize = circleSizeRel * max(res[0],res[1])
 	for x in range(res[0]):
@@ -1222,6 +1190,7 @@ def renCv(warpUi, res, sidToCvDic, tholds):
 			c[2] = lum
 			newVal = tuple(list(c) + [255])
 			outputs["move"].set_at((x,y), newVal)
+	ut.timerStop(warpUi, "moveImg")
 
 
 

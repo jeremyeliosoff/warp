@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import os, genData, ut, time, datetime, pprint, glob, cProfile
 from Tkinter import *
-import Tkinter
+import Tkinter, ttk
 import PIL
 from PIL import ImageTk, Image
 from tkColorChooser import askcolor			  
@@ -111,6 +111,17 @@ class warpUi():
 	
 	def makeParmUi(self, startRow):
 		row = startRow
+		self.nbExclude = ttk.Frame(self.frameParmAndControls)
+		self.nbExclude.grid(row=1)
+		self.nbParm = ttk.Notebook(self.frameParmAndControls)
+		self.nbParm.grid(row=2)
+		self.nbFrames = {}
+		stages = self.parmDic.parmStages.keys()
+		stages.sort() # Just to get GEN in front of REN
+		for stage in stages:
+			if not stage == "META":
+				self.nbFrames[stage] = ttk.Frame(self.nbParm)
+				self.nbParm.add(self.nbFrames[stage], text=stage)
 		for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
 			thisParmDic = self.parmDic.parmDic[parmName]
 			#print "-------------IN makeParmUi, parmName:", parmName, ", thisParmDic:", thisParmDic
@@ -118,16 +129,25 @@ class warpUi():
 			if "hidden" in thisParmDic.keys() and thisParmDic["hidden"] == "True":
 				print "HIDDEN, skipping..."
 				continue
-			lab = Label(self.frameParm, text=parmName)
+
+			for stage,parmNames in self.parmDic.parmStages.items():
+				if stage == "META":
+					thisFrame = self.nbExclude
+				elif parmName in parmNames:
+					thisFrame = self.nbFrames[stage]
+			#lab = Label(self.frameParm, text=parmName)
+			lab = Label(thisFrame, text=parmName)
 			lab.grid(row=row, column=0, sticky=E)
 
 
 			if thisParmDic["type"] == "clr":
 				clrTuple = self.parmDic(parmName)
 				hx = ut.rgb_to_hex(clrTuple)
-				ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
+				#ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
+				ent = Button(thisFrame, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
 			else:
-				ent = Entry(self.frameParm)
+				#ent = Entry(self.frameParm)
+				ent = Entry(thisFrame)
 			ent.grid(row=row, column=1, sticky=W)
 			thisParmDic["uiElement"] = ent
 
@@ -851,7 +871,7 @@ class warpUi():
 			dud,sortedLables = zip(*toSort)
 
 			with open(destPath, 'a') as f: # 'w' says "file not found" for some reason.
-				f.write("sorted by " + sortBy + ":\n\n")
+				#f.write("sorted by " + sortBy + ":\n\n")
 				for label in sortedLables:
 					f.write(label + " " + str(statsDic[label][sortBy]) + "\n")
 
@@ -893,7 +913,6 @@ class warpUi():
 		self.positionWindow()
 		self.gridJt = None
 		self.gridLevels = None
-		self.gridOut = None
 		self.record = False
 		self.seqEnd = -100
 		self.seqStart = 10000000
@@ -1014,17 +1033,21 @@ class warpUi():
 
 
 		#for verType in self.verUI.keys():
+		self.verFrame = Frame(self.frameParmAndControls)
+		self.verFrame.grid(row=row)
+		row += 1
+		verRow = 0
 		for verType in self.verTypeLs:
 			self.verUI[verType] = {}
-			verLabel = Label(self.frameParm, text=(verType + "Version"))
-			verLabel.grid(row=row, column=0, sticky=E)
+			verLabel = Label(self.verFrame, text=(verType + "Version"))
+			verLabel.grid(row=verRow, column=0, sticky=E)
 
 
-			frameImgVmenu = Frame(self.frameParm)
-			frameImgVmenu.grid(row=row, column=1, sticky=EW)
-			row += 1
-			#frameImgVnew = Frame(self.frameParm)
-			#frameImgVnew.grid(row=row, column=1, sticky=EW)
+			frameImgVmenu = Frame(self.verFrame)
+			frameImgVmenu.grid(row=verRow, column=1, sticky=EW)
+			verRow += 1
+			#frameImgVnew = Frame(self.verFrame)
+			#frameImgVnew.grid(row=verRow, column=1, sticky=EW)
 
 			self.verUI[verType]["menuVar"] = StringVar(frameImgVmenu)
 			self.verUI[verType]["menuVar"].set(self.parmDic(verType + "Ver"))
@@ -1034,15 +1057,15 @@ class warpUi():
 
 			print "\n\nYYYYY setting up OptionMenu for", verType
 			self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda selection, thisVerType=verType : self.menuVChooser(selection, thisVerType))
-			self.verUI[verType]["OptionMenu"].grid(row=row, column=0, sticky=EW)
+			self.verUI[verType]["OptionMenu"].grid(row=verRow, column=0, sticky=EW)
 
-			self.verUI[verType]["sfx"] = Entry(self.frameParm, width=22)
-			self.verUI[verType]["sfx"].grid(row=row, column=1, sticky=W)
+			self.verUI[verType]["sfx"] = Entry(self.verFrame, width=22)
+			self.verUI[verType]["sfx"].grid(row=verRow, column=1, sticky=W)
 
-			verButton = Button(self.frameParm, text="Make New", command=lambda thisVerType=verType : self.butVNew(thisVerType))
-			verButton.grid(row=row, column=0, sticky=W)
+			verButton = Button(self.verFrame, text="Make New", command=lambda thisVerType=verType : self.butVNew(thisVerType))
+			verButton.grid(row=verRow, column=0, sticky=W)
 
-			row +=1
+			verRow +=1
 
 			# Add entry to dic of corresponding types.
 			# TODO: maybe make this if/else thing into a function for initiating/appending lists
@@ -1052,7 +1075,7 @@ class warpUi():
 				self.parmEntries["str"] = [self.verUI[verType]["sfx"]]
 
 			#self.imgVNewLabel.grid(row=0, column=1)
-			row += 1
+			verRow += 1
 
 
 		# Render queue controls - TODO: collapsible, better layout (stack buttons + label)
