@@ -6,6 +6,10 @@ sc=.5
 sfx=""
 movFiles = []
 
+if len(sys.argv) == 1:
+	print "\nUSAGE: juProcessMov.py [sc=scale] [sfx=sfx] mov [mov2, mov3..]\n"
+	sys.exit()
+
 for arg in sys.argv[1:]:
 	if arg[:2] == "sc":
 		sc = float(arg.split("=")[1])

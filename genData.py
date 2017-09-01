@@ -1065,7 +1065,7 @@ def calcXf(warpUi, prog, res, relSize, bbx):
 
 	return tx, ty
 
-def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha):
+def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha):
 	texClr = srcImg.get_at((jx, jy))
 	texClr = list(texClr)[:3]
 	texClr.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
@@ -1073,8 +1073,8 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
 	mixTrip = ut.mix(cTripMin, 1, pow(prog, .5))
 	clr = ut.mixV(texClr, sidRanClr, mixTrip)
 
-	# Adapted from  setDbImg("ren", dbImgDic, lev, nLevels, jx + tx, jy + ty, clr)
-	thisDic = dbImgDic["ren"]
+	# Adapted from  setDbImg("ren", outputs, lev, nLevels, jx + tx, jy + ty, clr)
+	thisDic = outputs["ren"]
 	prevVal = black
 	jxt = jx + tx
 	jyt = jy + ty
@@ -1104,7 +1104,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty
 
 	
 
-def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbImgDic, bbx, bbxSize, relSize, thold, falseArray):
+def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray):
 	#sidRanClr = ut.multVSc(intToClr(sid), levMult*1.0/nLevels)
 	# TODO: Change levMult to levOpac + integrate that.
 	sidRanClr = intToClr(sid)
@@ -1116,8 +1116,6 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
 
 	# TODO: You don't have to include the whole sidToCvDic, just sidToCvDic[lev]
 	cvs = sidToCvDic[lev][sid]["cvs"]
-	#bbx = sidToCvDic[lev][sid]["bbx"]
-	#drawBbx(bbx, "ren", dbImgDic, lev, nLevels, vX255(red))
 	allCoords = []
 
 	# This shouldn't be necessary - inelegant way of removing vertical stripe artifacts
@@ -1147,13 +1145,13 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
 					iJt += 1
 					jx,jy = list(cv[iJt])
 					jtNext = cv[(iJt+1) % len(cv)]
-					setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
 					dirtyPix[jx][jy] = True
 				if jtNext[0] < jx:
 					# If the next x is less than this x -- which I think would only happen if
 					# the above while loop landed us at a back-curving turn - skip this jt.
 					# TODO: must this next line exist?
-					setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
 					dirtyPix[jx][jy] = True
 					iJt += 1
 					continue
@@ -1164,13 +1162,13 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, dbI
 				yy = jy
 				while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
 					if not dirtyPix[jx][yy]:
-						setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
+						setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
 						dirtyPix[jx][yy] = True
 					yy -= 1
 
 
 			# Draw the curve. 
-			setRenCvFromTex(warpUi, prog, srcImg, dbImgDic, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+			setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
 
 			iJt += 1
 
