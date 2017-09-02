@@ -50,6 +50,7 @@ class warpUi():
 		self.pauseSaveUIToParmsAndFile = False
 
 	def saveUIToParmsAndFile(self, parmName, arg):
+		print "<<<<<<< in saveUIToParmsAndFile, self.pauseSaveUIToParmsAndFile =", self.pauseSaveUIToParmsAndFile
 		if isinstance(arg, StringVar):
 			val = arg.get()
 		else:
@@ -68,22 +69,24 @@ class warpUi():
 				for v in val:
 					print "v", v
 					if not v in ints:
-						print "ERROR: bad character entered", v
+						print "saveUIToParmsAndFile(): ERROR: bad character entered", v
 						setVal = False
 						break
 			elif typ == "float":
 				for v in val:
 					if not v in floats:
-						print "ERROR: bad character entered", v
+						print "saveUIToParmsAndFile(): ERROR: bad character entered", v
 						setVal = False
 						break
 
 			if setVal:
-				print "====for", parmName, ": setting thisDic['val'] to", val
+				print "saveUIToParmsAndFile(): for", parmName, ": setting thisDic['val'] to", val
 				thisDic["val"] = val
+				if parmName == "fr":
+					self.setFrAndUpdate(val)
 			else:
 				val = thisDic["val"]
-				print "====+++++++++re setting entry to ", val;
+				print "saveUIToParmsAndFile(): re setting entry to ", val;
 				self.parmDic.parmDic[parmName]["uiElement"].delete(0, END)
 				#print "&&&&& k:", k, " -- inserting", val
 				self.parmDic.parmDic[parmName]["uiElement"].insert(0, str(val))
@@ -358,6 +361,8 @@ class warpUi():
 		else:
 			print "v", key
 			if key == "Escape":
+				print "\nClosing window, destroying the root!  Bye.\n\n"
+				self.rootDestroyed = True
 				self.root.destroy()
 			elif key == "Left":
 				self.setFrAndUpdate(self.parmDic("fr") - 1)
@@ -400,12 +405,15 @@ class warpUi():
 			self.frStartAnim = self.parmDic("fr")
 			self.updateCurImg()
 		else:
-			self.setVal("anim", 0)
+			self.turnAnimOff()
 			self.refreshButtonImages()
 		print "Pressed anim button, anim set to", anim
 
-	def recButCmd(self):
-		self.record = not self.record
+	def recButCmd(self, val=None):
+		if val == None:
+			self.record = not self.record
+		else:
+			self.record = val
 		print "recButCmd; self.record =", self.record
 		self.refreshButtonImages()
 
@@ -421,49 +429,45 @@ class warpUi():
 		print "######### in saveParmDic ######"
 		# TODO Maybe don't hardwire this, user can config it in parmfile
 		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "AOV"])]
-		print "\t", self.seqDataVDir, "for GEN -- ",
+		print "saveParmDic(): ", self.seqDataVDir, "for GEN -- ",
+		# TODO Shouldn't seqDataVDir and seqRenVDir always exist?
 		if os.path.exists(self.seqDataVDir):
 			pathsAndStages.append((self.seqDataVDir + "/parms", ["GEN"]))
 			print "EXISTS"
 		else:
 			print "DOES NOT EXIST"
 
-		print "\t", self.seqRenVDir, "for REN -- ",
+		print "saveParmDic(): ", self.seqRenVDir, "for REN -- ",
 		if os.path.exists(self.seqRenVDir):
-			pathsAndStages.append((self.seqRenVDir + "/parms", ["REN"]))
+			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN"]))
 			print "EXISTS"
 		else:
 			print "DOES NOT EXIST"
 
-		print ">>>>>>>> self.parmDic.parmStages:"
+		print "saveParmDic(): self.parmDic.parmStages:"
 		for k,v in self.parmDic.parmStages.items():
 			print "\t", k, ":", v
 
-		print "\n\nparmLs:"
+		print "\n\nsaveParmDic(): parmLs:"
 		for pm in self.parmDic.parmLs:
 			print pm[0],
 		print
 
 		for path, stages in pathsAndStages:
-			#print "path:", path, "stages", stages
-			print "--path", path, "stages", stages
+			print "saveParmDic(): path", path, "stages", stages
 			with open(path, 'w') as f:
 				for stage in stages:
-					#print "\twriting", stage, "to", path
 					f.write("\n\n\n---" + stage + "---\n\n")
 
 					for parm in self.parmDic.parmStages[stage]:
-						#parm = k[0]
-						#print "\t\t\tparm:", parm
 						f.write(parm + "\n")
 						thisDic = self.parmDic.parmDic[parm]
 						keys = thisDic.keys()
 						keys.sort()
-						if parm == "nLevels": print "\nsaving:", parm, "=", thisDic["val"], "to", path
+						if parm == "saveParmDic(): nLevels": print "\nsaving:", parm, "=", thisDic["val"], "to", path
 						for attr in keys:
 							if not attr in ["uiElement", "stage"]:
 								 f.write(attr + " " + str(thisDic[attr]) + "\n")
-								 #if parm == "nLevels" and attr == "val": print "val:", thisDic[attr]
 						f.write("\n")
 
 
@@ -602,8 +606,8 @@ class warpUi():
 		print "----pre getImg - self.seqRenVDir", self.seqRenVDir
 		self.getImg(selection)
 
-		renVers = self.getSeqVersions("ren")
-		dataVers = self.getSeqVersions("data")
+		renVers = self.parmDic("renVers")
+		dataVers = self.parmDic("dataVers")
 		verss = {"ren":renVers, "data":dataVers}
 
 		self.seqDataVDir = self.seqDataDir + "/" + dataVers[0]
@@ -706,15 +710,13 @@ class warpUi():
 		ut.exeCmd("cp " + verDir + "/" + latestVer + "/parms " + verDir + "/" + nextVer + "/")
 		self.setVal(verType + "Ver", nextVer)
 
-		# This has been removed from most functions cuz it's in trace
-		self.saveUIToParmsAndFile(verType + "Ver", nextVer)
-
 		vers = [nextVer] + vers
 		self.repopulateMenu(verType, vers)
 		self.verUI[verType]["menuVar"].set(nextVer)
 		self.menuVChooser(nextVer, verType)
 
 
+	# TODO: rename to renMode, make it a case of chk_cmd
 	def chk_doRenCv_cmd(self):
 		val = self.chk_doRenCv_var.get()
 		print "Setting doRenCv to:", val
@@ -835,7 +837,8 @@ class warpUi():
 				msg = "Idle"
 			self.status = typ
 			self.labelStatus.configure(text=msg, bg=bgClr[typ], fg=fgClr[typ])
-			Tk.update_idletasks(self.root)
+			if not self.rootDestroyed:
+				Tk.update_idletasks(self.root)
 
 	def addToRenQButCmd(self):
 		ut.printFrameStack()
@@ -854,6 +857,8 @@ class warpUi():
 
 
 	def sortStats(self):
+		print "\n\nsortStats(): BEGIN\n"
+		ut.timerStart(self, "sortStats")
 		if self.parmDic("doRenCv") == 1:
 			destDir = self.seqRenVDir 
 		else:
@@ -886,10 +891,27 @@ class warpUi():
 			toSort.reverse()
 			dud,sortedLables = zip(*toSort)
 
-			with open(destPath, 'a') as f: # 'w' says "file not found" for some reason.
+			print "sortStats(): writing stats to", destPath + ":"
+			if os.path.exists(destPath):
+				# open(destPath, 'w') says "file not found" for some reason, so rm first.
+				os.remove(destPath)
+				mode = 'w'
+			else:
+				mode = 'a'
+			with open(destPath, mode) as f:
 				#f.write("sorted by " + sortBy + ":\n\n")
 				for label in sortedLables:
-					f.write(label + " " + str(statsDic[label][sortBy]) + "\n")
+					toWrite = label + " " + str(statsDic[label][sortBy])
+					print "sortStats():\t", toWrite
+					f.write(toWrite + "\n")
+
+		print "\nsortStats(): END\n\n"
+		ut.timerStop(self, "sortStats")
+
+	def turnAnimOff(self):
+		self.setVal("anim", 0)
+		self.sortStats()
+		self.recButCmd(False)
 
 
 
@@ -926,6 +948,7 @@ class warpUi():
 		self.tholds = None
 		self.root = Tk()
 		self.root.wm_title("WARP")
+		self.rootDestroyed = False
 		self.positionWindow()
 		self.gridJt = None
 		self.gridLevels = None
@@ -1232,7 +1255,7 @@ class warpUi():
 		# Update menu-dependent images to reflect current selection.
 		print "\n ****** doing self.getImg", self.parmDic("image")
 		self.getImg(self.parmDic("image")) 
-		while True:
+		while not self.rootDestroyed:
 			anim = self.parmDic("anim")
 			if anim == 1:
 				frStart = self.parmDic("frStart")
@@ -1247,7 +1270,7 @@ class warpUi():
 				if newFr > fr:		
 					fr = min(fr + 1, newFr)
 					framesPassed = fr - self.frStartAnim
-					secPerFr = secondsPassed/framesPassed
+					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed
 					framesToGo = self.parmDic("frEnd") - fr
 					secondsToGo = secPerFr * framesToGo
 
@@ -1292,7 +1315,6 @@ class warpUi():
 								secondsPassed = time.time() - self.timeStart
 								hmsPassed = ut.secsToHms(secondsPassed)
 								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
-								self.sortStats()
 
 								print "Turning on doRenCv"
 								self.setVal("doRenCv", 1)
@@ -1317,11 +1339,10 @@ class warpUi():
 								# If recording and not - or last - in renQ, stop.
 								self.recButCmd()
 								fr -= 1
-								self.setVal("anim", 0)
+								self.turnAnimOff()
 								secondsPassed = time.time() - self.timeStart
 								hmsPassed = ut.secsToHms(secondsPassed)
 								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
-								self.sortStats()
 						else:
 							# Loop if not recording
 							print "Returning to", self.parmDic("frStart")
@@ -1336,8 +1357,9 @@ class warpUi():
 					#ofs = fr/float(frPerCycle) % 1
 					ofs = self.getOfs() % 1
 				self.setVal("fr", fr)
-			Tk.update_idletasks(self.root)
-			Tk.update(self.root)
+			if not self.rootDestroyed:
+				Tk.update_idletasks(self.root)
+				Tk.update(self.root)
 
 
 profiling = False
@@ -1347,4 +1369,5 @@ if profiling:
 	ut.exeCmd("cp " + statsObjPathSrc + " " + statsDirDest)
 else:
 	warpUi()
+	sys.exit()
 #with open(path, 'w') as f:

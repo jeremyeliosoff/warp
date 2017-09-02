@@ -5,11 +5,11 @@
 
 fr
 type int
-val 1461
+val 2078
 
 fps
 type int
-val 50
+val 52
 
 ofs
 hidden True
@@ -19,7 +19,7 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
@@ -29,7 +29,7 @@ val 1
 image
 hidden True
 type str
-val lzPoemFR
+val lzSmokePt2brighter
 
 dbImg1
 hidden True
@@ -54,15 +54,15 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v002
 
 frStart
 type int
-val 1400
+val 2020
 
 frEnd
 type int
-val 1500
+val 2440
 
 frPerCycle
 type int
@@ -91,15 +91,15 @@ val 1
 
 gamma
 type float
-val 1
+val .2
 
 minThresh
 type float
-val 0.1
+val .15
 
 maxThresh
 type float
-val .8
+val .5
 
 rangeThresh
 type float
@@ -129,11 +129,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v000
+val v002
 
 startLev
 type int
-val 1
+val 0
 
 fallDist
 type float

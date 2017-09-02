@@ -361,15 +361,14 @@ def initJtGrid(img, warpUi):
 					else:
 						jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, texClr, cons[0], nJoints, nbrs)]
 						nJoints += 1
+	# Write stats
 	ut.timerStop(warpUi, "initJtGridXYLoop")
 
-	# Write stats
-
 	#warpUi.gridJt = jtGrid[:]
-	renPath = warpUi.images["ren"]["path"]
-	renSeqDir = "/".join(renPath.split("/")[:-1])
-	ut.mkDirSafe(renSeqDir)
-	print "SAVING RENDERED IMAGE:", renPath
+	#renPath = warpUi.images["ren"]["path"]
+	#renSeqDir = "/".join(renPath.split("/")[:-1])
+	#ut.mkDirSafe(renSeqDir)
+	#print "SAVING RENDERED IMAGE:", renPath
 
 
 	return jtGrid, tholds
