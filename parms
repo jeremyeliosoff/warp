@@ -5,7 +5,7 @@
 
 fr
 type int
-val 9
+val 1496
 
 fps
 type int
@@ -24,12 +24,12 @@ val 1
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
 type str
-val tuktukPt1
+val lzPoemPt2
 
 dbImg1
 hidden True
@@ -54,26 +54,26 @@ val ALL
 renVer
 hidden True
 type str
-val v008testNewUI
+val v002mnP1mxP8nLev8
 
 frStart
 type int
-val 1
+val 1400
 
 frEnd
 type int
-val 10
+val 1600
 
 frPerCycle
 type int
 val 30
 
 doGen
-type int
+type bool
 val 1
 
 doRen
-type int
+type bool
 val 1
 
 
@@ -83,7 +83,7 @@ val 1
 
 nLevels
 type int
-val 4
+val 8
 
 kSurf
 type float
@@ -95,11 +95,11 @@ val 1
 
 minThresh
 type float
-val 0.3
+val 0.1
 
 maxThresh
 type float
-val .6
+val .8
 
 rangeThresh
 type float
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v005testNewUI
+val v002mnMxP1_P8_8lev
 
 startLev
 type int
@@ -137,11 +137,11 @@ val 1
 
 fallDist
 type float
-val .2
+val 1
 
 fallKForBiggest
 type float
-val 1
+val 0
 
 fallUseAsBiggest
 type float
@@ -153,11 +153,11 @@ val .25
 
 fallVecX
 type float
-val .8
+val .5
 
 fallVecY
 type float
-val .5
+val .35
 
 fallMode
 type str
@@ -166,4 +166,17 @@ val orig
 progDur
 type float
 val .6
+
+
+
+
+---AOV---
+
+someAOV
+type bool
+val 1
+
+someAOV2
+type bool
+val 1
 

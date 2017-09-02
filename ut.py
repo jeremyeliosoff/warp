@@ -95,6 +95,7 @@ class parmDic:
 			if k == "nLevels":
 				print "\t", k, v["val"]
 
+		#TODO Maybe make this a list
 		self.parmStages = {}
 		for k,v in self.parmLs:
 			#print "loading parm " + k + ", dic:", v

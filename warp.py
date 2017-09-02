@@ -116,8 +116,10 @@ class warpUi():
 		self.nbParm = ttk.Notebook(self.frameParmAndControls)
 		self.nbParm.grid(row=2)
 		self.nbFrames = {}
-		stages = self.parmDic.parmStages.keys()
-		stages.sort() # Just to get GEN in front of REN
+		#stages = self.parmDic.parmStages.keys()
+		#stages.sort() # Just to get GEN in front of REN
+		#TODO make this dynamically depend on parms file
+		stages = ["META", "GEN", "REN", "AOV"]
 		for stage in stages:
 			if not stage == "META":
 				self.nbFrames[stage] = ttk.Frame(self.nbParm)
@@ -145,6 +147,11 @@ class warpUi():
 				hx = ut.rgb_to_hex(clrTuple)
 				#ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
 				ent = Button(thisFrame, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
+			elif thisParmDic["type"] == "bool":
+				self.chkVars[parmName] = IntVar()
+				self.chkVars[parmName].set(self.parmDic(parmName))
+				ent = Checkbutton(thisFrame, variable=self.chkVars[parmName], command=lambda pn=parmName: self.chk_cmd(pn))
+		#self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Do renCv", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
 			else:
 				#ent = Entry(self.frameParm)
 				ent = Entry(thisFrame)
@@ -160,7 +167,7 @@ class warpUi():
 
 			#print "-------- ent:", ent
 
-			if not thisParmDic["type"] == "clr":
+			if not thisParmDic["type"] in ["clr", "bool"]:
 				sv = StringVar()
 				sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
 
@@ -412,7 +419,8 @@ class warpUi():
 
 	def saveParmDic(self):
 		print "######### in saveParmDic ######"
-		pathsAndStages = [(parmPath, ["META", "GEN", "REN"])]
+		# TODO Maybe don't hardwire this, user can config it in parmfile
+		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "AOV"])]
 		print "\t", self.seqDataVDir, "for GEN -- ",
 		if os.path.exists(self.seqDataVDir):
 			pathsAndStages.append((self.seqDataVDir + "/parms", ["GEN"]))
@@ -711,12 +719,20 @@ class warpUi():
 		val = self.chk_doRenCv_var.get()
 		print "Setting doRenCv to:", val
 		self.setVal("doRenCv", val)
+		self.saveUIToParmsAndFile("doRenCv", val)
+
+	def chk_cmd(self, parmName):
+		val = self.chkVars[parmName].get()
+		print "Setting", parmName, "to:", val
+		self.setVal(parmName, val)
+		self.saveUIToParmsAndFile(parmName, val)
+
 
 	def setVal(self, parmStr, val):
 		self.pauseSaveUIToParmsAndFile = True
 		if "uiElement" in self.parmDic.parmDic[parmStr]:
 			uiElement = self.parmDic.parmDic[parmStr]["uiElement"]
-			if not self.parmDic.parmDic[parmStr]["type"] == "clr":
+			if not self.parmDic.parmDic[parmStr]["type"] in ["clr", "bool"]:
 				uiElement.delete(0, END)
 				uiElement.insert(0, str(val))
 		valStr = str(val)
@@ -918,6 +934,7 @@ class warpUi():
 		self.seqStart = 10000000
 		self.timeStart = time.time()
 		self.animFrStart = self.parmDic("fr")
+		self.chkVars = {}
 
 		sourceImages = os.listdir(ut.imgIn)
 		sourceImages.sort()

@@ -322,7 +322,8 @@ def initJtGrid(img, warpUi):
 	nJoints = 0
 	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tholds = [None for lev in range(nLevels)]
-
+	
+	ut.timerStart(warpUi, "initJtGridXYLoop")
 	for x in range(res[0]-1):
 		for y in range(res[1]-1):
 			# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
@@ -360,6 +361,7 @@ def initJtGrid(img, warpUi):
 					else:
 						jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, texClr, cons[0], nJoints, nbrs)]
 						nJoints += 1
+	ut.timerStop(warpUi, "initJtGridXYLoop")
 
 	# Write stats
 
@@ -1035,9 +1037,10 @@ def calcXf(warpUi, prog, res, relSize, bbx):
 def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha):
 	texClr = srcImg.get_at((jx, jy))
 	texClr = list(texClr)[:3]
-	texClr.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
-	cTripMin = .3
-	mixTrip = ut.mix(cTripMin, 1, pow(prog, .5))
+	cTripMin = .1
+	cTripMax = .5
+	cTripPow = 1
+	mixTrip = ut.mix(cTripMin, cTripMax, pow(prog, cTripPow))
 	clr = ut.mixV(texClr, sidRanClr, mixTrip)
 
 	# Adapted from  setDbImg("ren", outputs, lev, nLevels, jx + tx, jy + ty, clr)
@@ -1058,7 +1061,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 			g = warpUi.parmDic("cMid")
 			b = warpUi.parmDic("cLight")
 			#print "rgb", r, g, b
-			newVal = toClrSpace(r, g, b, newVal)
+			#newVal = toClrSpace(r, g, b, newVal)
 			newValLs = []
 			for v in newVal:
 				newValLs.append(int(v))
@@ -1173,24 +1176,26 @@ def renCv(warpUi, sidToCvDic, tholds):
 		outputs[name] = pygame.Surface(res)
 
 
-	ut.timerStart(warpUi, "moveImg")
-	# Visualize movement
-	circleSizeRel = .1
-	circleSize = circleSizeRel * max(res[0],res[1])
-	for x in range(res[0]):
-		for y in range(res[1]):
-			c = srcImgRenCv.get_at((x, y))
-			c = list(c)[:3]
-			c.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
-			lum = int(ut.vAvg(c))
-			origin = (res[0]*warpUi.parmDic("fallVecX"), res[1]*warpUi.parmDic("fallVecY"))
-			dist = ut.vDist(origin, (x,y))
-			c[0] = 0 if dist > circleSize else 255
-			c[1] = lum
-			c[2] = lum
-			newVal = tuple(list(c) + [255])
-			outputs["move"].set_at((x,y), newVal)
-	ut.timerStop(warpUi, "moveImg")
+	renMov = False #TODO: make this a parm obv
+	if renMov:
+		ut.timerStart(warpUi, "moveImg")
+		# Visualize movement
+		circleSizeRel = .1
+		circleSize = circleSizeRel * max(res[0],res[1])
+		for x in range(res[0]):
+			for y in range(res[1]):
+				c = srcImgRenCv.get_at((x, y))
+				c = list(c)[:3]
+				c.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
+				lum = int(ut.vAvg(c))
+				origin = (res[0]*warpUi.parmDic("fallVecX"), res[1]*warpUi.parmDic("fallVecY"))
+				dist = ut.vDist(origin, (x,y))
+				c[0] = 0 if dist > circleSize else 255
+				c[1] = lum
+				c[2] = lum
+				newVal = tuple(list(c) + [255])
+				outputs["move"].set_at((x,y), newVal)
+		ut.timerStop(warpUi, "moveImg")
 
 
 
@@ -1254,9 +1259,9 @@ def renCv(warpUi, sidToCvDic, tholds):
 			print "Saving", name, " image, path:", imgPath
 			pygame.image.save(outputs[name][lev], imgPath)
 			# TEMP save bmp
-			bmpPath = imgPath.replace(".jpg", ".bmp")
-			pygame.image.save(outputs[name][lev], bmpPath)
-			ut.exeCmd("convert -resize 200% " + bmpPath + " " + bmpPath)
+			#bmpPath = imgPath.replace(".jpg", ".bmp")
+			#pygame.image.save(outputs[name][lev], bmpPath)
+			#ut.exeCmd("convert -resize 200% " + bmpPath + " " + bmpPath)
 
 	for name in renOutputsOneLev:
 		levDir,imgPath = warpUi.getRenDirAndImg(name)
