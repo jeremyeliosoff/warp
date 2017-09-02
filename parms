@@ -5,7 +5,7 @@
 
 fr
 type int
-val 1496
+val 1461
 
 fps
 type int
@@ -29,7 +29,7 @@ val 1
 image
 hidden True
 type str
-val lzPoemPt2
+val lzPoemFR
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v002mnP1mxP8nLev8
+val v000
 
 frStart
 type int
@@ -62,18 +62,18 @@ val 1400
 
 frEnd
 type int
-val 1600
+val 1500
 
 frPerCycle
 type int
 val 30
 
 doGen
-type bool
+type int
 val 1
 
 doRen
-type bool
+type int
 val 1
 
 
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v002mnMxP1_P8_8lev
+val v000
 
 startLev
 type int
