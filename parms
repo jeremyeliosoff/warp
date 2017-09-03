@@ -5,7 +5,7 @@
 
 fr
 type int
-val 2244
+val 1
 
 fps
 type int
@@ -24,12 +24,12 @@ val 0
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
 type str
-val lzSmokeFULL
+val tuktukPt1
 
 dbImg1
 hidden True
@@ -54,15 +54,15 @@ val ALL
 renVer
 hidden True
 type str
-val v000
+val v022testAOVs
 
 frStart
 type int
-val 2020
+val 1
 
 frEnd
 type int
-val 2440
+val 2
 
 frPerCycle
 type int
@@ -83,7 +83,7 @@ val 1
 
 nLevels
 type int
-val 10
+val 4
 
 kSurf
 type float
@@ -91,15 +91,15 @@ val 1
 
 gamma
 type float
-val .2
+val 1
 
 minThresh
 type float
-val .12
+val 0.3
 
 maxThresh
 type float
-val 1
+val .6
 
 rangeThresh
 type float
@@ -129,11 +129,11 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v046_300fr
+val v006noAOV
 
 startLev
 type int
-val 0
+val 1
 
 fallDist
 type float

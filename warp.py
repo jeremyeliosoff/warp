@@ -319,6 +319,24 @@ class warpUi():
 		Tk.update_idletasks(self.root)
 		
 
+	def ctlReturnCmd(self):
+		focused = self.frameMaster.focus_get()
+		print "_returnCmd(): focused:", focused
+		print "_returnCmd(): self.verUI[ren][sfx]:", self.verUI["ren"]["sfx"]
+		if focused == self.verUI["ren"]["sfx"]:
+			print "_returnCmd(): \tIT'S REN!!!!!!!!"
+			self.butVNew("ren")
+		elif focused == self.verUI["data"]["sfx"]:
+			print "_returnCmd(): \tIT'S DATA!!!!!!!!"
+			self.butVNew("data")
+			self.verUI["ren"]["sfx"].delete(0, END)
+			text = self.verUI["data"]["sfx"].get()
+			self.verUI["ren"]["sfx"].insert(0, text)
+			self.butVNew("ren")
+		else:
+			print "_returnCmd(): \tIT'S NEITHER!!!!!!!!"
+		self.frameMaster.focus_set()
+
 	def returnCmd(self):
 		self.frameMaster.focus_set()
 
@@ -437,7 +455,8 @@ class warpUi():
 
 					for parm in self.parmDic.parmStages[stage]:
 						# fr and image only go in the top level, shared parm file
-						if stage == "META" or not parm in ["fr", "image"]:
+						if ((stage == "META" and path == parmPath)
+								or not parm in ["fr", "image"]):
 							f.write(parm + "\n")
 							thisDic = self.parmDic.parmDic[parm]
 							keys = thisDic.keys()
@@ -632,6 +651,7 @@ class warpUi():
 		self.updateDebugImg()
 		self.refreshButtonImages()
 		self.putParmDicInUI()
+		self.saveUIToParmsAndFile("image", selection)
 		print "_menuImgChooser(): END - self.images[source][path]:", self.images["source"]["path"]
 		
 
@@ -948,6 +968,7 @@ class warpUi():
 
 		# TODO e needed?
 		self.root.bind('<Return>', lambda e: self.returnCmd())
+		self.root.bind('<Control-Return>', lambda e: self.ctlReturnCmd())
 		#self.root.bind('<KeyPress>', self.keyPress)
 		for kk in ["Left", "Right", "Escape", "Control-Left", "Control-Right", "space", "c", "r", "x"]:
 			self.root.bind('<' + kk + '>', self.execHotkey)
