@@ -358,7 +358,7 @@ def main():
 	verPath = dirPath + "/" + vers[-1]
 	if verType == "renImg":
 		verPath += "/ren/ALL"
-	print "ut.py main(): verPath:", verPath
+	print verPath # Don't pad this with "ut.py():", it's used by clr, cld, etc.
 	return "fuck"
 
 if __name__ == "__main__":

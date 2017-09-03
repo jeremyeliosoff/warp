@@ -780,7 +780,7 @@ class warpUi():
 			if res[0] > maxXres:
 				y = int(res[1] * float(maxXres)/res[0])
 				res = (maxXres, y)
-			self.res = res
+			self.displayRes = res
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
 			img = ImageTk.PhotoImage(loadedImg)
 			print "_safeLoad(): success!"

@@ -5,7 +5,7 @@
 
 fr
 type int
-val 2194
+val 2223
 
 fps
 type int
@@ -19,12 +19,12 @@ val 0.6
 anim
 hidden True
 type int
-val 0
+val 1
 
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True
