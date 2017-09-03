@@ -115,7 +115,7 @@ class parmDic:
 		thisParmDic = self.parmDic[parmStr]
 		strVal = thisParmDic["val"]
 		typ = thisParmDic["type"]
-		if typ == "int":
+		if typ in ["int", "bool"]:
 			return int(strVal)
 		elif typ == "float":
 			return float(strVal)

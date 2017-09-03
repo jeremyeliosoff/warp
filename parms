@@ -5,7 +5,7 @@
 
 fr
 type int
-val 360
+val 2263
 
 fps
 type int
@@ -58,7 +58,7 @@ val v000
 
 frStart
 type int
-val 2020
+val 2220
 
 frEnd
 type int
@@ -177,6 +177,34 @@ type bool
 val 0
 
 aov_surfsAndHoles
+type bool
+val 0
+
+aov_cid
+type bool
+val 0
+
+aov_sid
+type bool
+val 0
+
+aov_inPrev
+type bool
+val 0
+
+aov_cvSid
+type bool
+val 0
+
+aov_cidPost
+type bool
+val 0
+
+aov_sidPost
+type bool
+val 1
+
+aov_tid
 type bool
 val 0
 

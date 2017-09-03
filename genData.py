@@ -373,10 +373,13 @@ def initJtGrid(img, warpUi):
 
 	return jtGrid, tholds
 
-def setDbImg(name, dbImgDic, lev, nLevels, x, y, val):
+def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
 	prevVal = black
-	# TEMP
-	if False and lev <= len(dbImgDic[name]): # TODO: Won't this always be true?
+	aovParmName = "aov_" + name	
+	#print ("_setAOV: aovParmName", aovParmName, ", aovParmName in keys:", aovParmName in warpUi.parmDic.parmDic.keys(), ", warpUi.parmDic(aovParmName):", warpUi.parmDic(aovParmName))
+	#print "_setAOV: lev <= len(dbImgDic[name])", lev <= len(dbImgDic[name])
+	if aovParmName in warpUi.parmDic.parmDic.keys() and warpUi.parmDic(aovParmName) == 1 and lev <= len(dbImgDic[name]): # TODO: Won't last cond always be true?
+		#print ("_setAOV: DOING", aovParmName)
 		res = dbImgDic[name][lev].get_size()
 		if x < res[0] and y < res[1]:
 			#prevVal = dbImgDic[name][lev].get_at((x,y))
@@ -389,19 +392,19 @@ def intToClr(i):
 	return vX255(clrs[i%len(clrs)])
 
 
-def drawBbx(bbx, dbName, dbImgDic, lev, nLevels, clr):
+def drawBbx(warpUi, bbx, dbName, dbImgDic, lev, nLevels, clr):
 	# Draw cvBbx
 	xmn, ymn = bbx[0]
 	xmx, ymx = bbx[1]
 	#print "\n\n\n=========== }}}}}}}}}} cv.bbx", cv.bbx
 	# Vertical lines
 	for xx in range(xmn, xmx):
-		setDbImg(dbName, dbImgDic, lev, nLevels, xx, ymn, clr)
-		setDbImg(dbName, dbImgDic, lev, nLevels, xx, ymx, clr)
+		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xx, ymn, clr)
+		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xx, ymx, clr)
 	# Horizontal lines
 	for yy in range(ymn, ymx):
-		setDbImg(dbName, dbImgDic, lev, nLevels, xmn, yy, clr)
-		setDbImg(dbName, dbImgDic, lev, nLevels, xmx, yy, clr)
+		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xmn, yy, clr)
+		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xmx, yy, clr)
 	
 
 def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
@@ -452,7 +455,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 				if inSurfNow[lev]:
 					sid = inSurfs[lev][-1].cid
 					inSurfNowVal = vX255(clrs[sid%len(clrs)])
-					setDbImg("inSurfNow", dbImgDic, lev, nLevels, x, y, inSurfNowVal)
+					setAOV(warpUi, "inSurfNow", dbImgDic, lev, nLevels, x, y, inSurfNowVal)
 					
 				val = (0, 0, 0)
 				if len(inSurfs[lev]) > 0:
@@ -462,7 +465,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 				if not val == (0, 0, 0):
 					val = ut.multVSc(val, .5)
 					val = ut.clampVSc(val, 0, 255)
-					setDbImg("surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
+					setAOV(warpUi, "surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
 
 
 			# Initiate curve growth for any joints in this cell of jtGrid.
@@ -487,7 +490,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 							xTot += xx
 							yTot += yy
 							nJoints += 1
-							setDbImg("cid", dbImgDic, lev, nLevels, xx, yy, cvClr)
+							setAOV(warpUi, "cid", dbImgDic, lev, nLevels, xx, yy, cvClr)
 							thisJt.cv = jt.cv
 							jt.cv.add(thisJt)
 							xx += thisJt.cons[1][0]
@@ -551,7 +554,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 				if inSurfNow[lev]:
 					currentSid = inSurfs[lev][-1].surf.sid
 					sidClr = intToClr(currentSid)
-					setDbImg("sid", dbImgDic, lev, nLevels, x, y, sidClr)
+					setAOV(warpUi, "sid", dbImgDic, lev, nLevels, x, y, sidClr)
 					inPrevClr = green
 					inSurfGrid[lev][x][y] = currentSid
 					if (inSurfGridPrev == None or
@@ -588,7 +591,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 								curToPrevSidDic[lev][currentSid] = [inSurfPrev]
 
 				if inPrevClr:
-					setDbImg("inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
+					setAOV(warpUi, "inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
 
 
 	# Draw the curve joint to joint - I think this is just for debug.
@@ -615,16 +618,16 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 			sfClr = intToClr(jt.cv.surf.sid)
 			while True:
 				xx, yy = jt.xy
-				setDbImg("cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
+				setAOV(warpUi, "cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
 				sfClr = intToClr(jt.cv.cid)
-				setDbImg("cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
+				setAOV(warpUi, "cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
 				#print "jt", jt, "jt.nx", jt.pv
 				jt = jt.pv
 				if jt == None:
 					break
 
 			# Draw cvBbx
-			drawBbx(cv.bbx, "cidPost", dbImgDic, lev, nLevels, sfClr)
+			drawBbx(warpUi, cv.bbx, "cidPost", dbImgDic, lev, nLevels, sfClr)
 
 
 	# Sort out which sids need to be merged (and eventually split):
@@ -770,16 +773,16 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 						inSurfGrid[lev][x][y] = sidNew
 					else:
 						sidNew = sidOld
-					setDbImg("sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
+					setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
 		for sid in sidToCvs[lev].keys():
-			drawBbx(sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(sid))
+			drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(sid))
 		for tid, turfData in warpUi.tidToSids[lev].items():
 			#print "\n\ntid", tid
 			#print "turfData"
 			#pprint.pprint(turfData)
 			#print '\n'
 			if "bbx" in turfData.keys(): # TODO should bbx always be in turfData.keys()?
-				drawBbx(turfData["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(tid))
+				drawBbx(warpUi, turfData["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(tid))
 						#sidToCvs[lev][sidToMergeTo]["cvs"] += sidToCvs[lev][sid]["cvs"]
 
 
@@ -812,7 +815,7 @@ def writeTidImg(warpUi, inSurfGrid):
 					if sid in warpUi.sidToTid[lev].keys():
 						tid = warpUi.sidToTid[lev][sid]
 						if lev == 0: allTids.add(tid)
-						setDbImg("tid", dbImgDic, lev, nLevels, x, y, intToClr(tid))
+						setAOV(warpUi, "tid", dbImgDic, lev, nLevels, x, y, intToClr(tid))
 	allTidsLs = list(allTids)
 	allTidsLs.sort()
 	#pOut("writeTidImg, allTids", allTidsLs)
@@ -1042,7 +1045,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 	mixTrip = ut.mix(cTripMin, cTripMax, pow(prog, cTripPow))
 	clr = ut.mixV(texClr, sidRanClr, mixTrip)
 
-	# Adapted from  setDbImg("ren", outputs, lev, nLevels, jx + tx, jy + ty, clr)
+	# Adapted from  setAOV(warpUi, "ren", outputs, lev, nLevels, jx + tx, jy + ty, clr)
 	thisDic = outputs["ren"]
 	prevVal = black
 	jxt = jx + tx

@@ -69,28 +69,28 @@ class warpUi():
 				for v in val:
 					print "v", v
 					if not v in ints:
-						print "saveUIToParmsAndFile(): ERROR: bad character entered", v
+						print "_saveUIToParmsAndFile(): ERROR: bad character entered", v
 						setVal = False
 						break
 			elif typ == "float":
 				for v in val:
 					if not v in floats:
-						print "saveUIToParmsAndFile(): ERROR: bad character entered", v
+						print "_saveUIToParmsAndFile(): ERROR: bad character entered", v
 						setVal = False
 						break
 
 			if setVal:
-				print "saveUIToParmsAndFile(): for", parmName, ": setting thisDic['val'] to", val
+				print "_saveUIToParmsAndFile(): for", parmName, ": setting thisDic['val'] to", val
 				thisDic["val"] = val
 				if parmName == "fr":
 					self.setFrAndUpdate(val)
 			else:
 				val = thisDic["val"]
-				print "saveUIToParmsAndFile(): re setting entry to ", val;
+				print "_saveUIToParmsAndFile(): re setting entry to ", val;
 				self.parmDic.parmDic[parmName]["uiElement"].delete(0, END)
 				#print "&&&&& k:", k, " -- inserting", val
 				self.parmDic.parmDic[parmName]["uiElement"].insert(0, str(val))
-			print "\n\nending saveUIToParmsAndFile, about to do saveParmDic"
+			print "\n\nending _saveUIToParmsAndFile, about to do saveParmDic"
 			self.saveParmDic()
 
 
@@ -135,12 +135,19 @@ class warpUi():
 				print "HIDDEN, skipping..."
 				continue
 
-			for stage,parmNames in self.parmDic.parmStages.items():
-				if stage == "META":
-					thisFrame = self.nbExclude
-				elif parmName in parmNames:
-					thisFrame = self.nbFrames[stage]
+			#for stage,parmNames in self.parmDic.parmStages.items():
+			#	if stage == "META":
+			#		thisFrame = self.nbExclude
+			#	elif parmName in parmNames:
+			#		thisFrame = self.nbFrames[stage]
 			#lab = Label(self.frameParm, text=parmName)
+			thisStage = thisParmDic["stage"]
+			print "makeParmUi(): \t thisStage:", thisStage
+			if thisStage == "META":
+				thisFrame = self.nbExclude
+			else:
+				thisFrame = self.nbFrames[thisStage]
+
 			lab = Label(thisFrame, text=parmName)
 			lab.grid(row=row, column=0, sticky=E)
 
