@@ -5,7 +5,7 @@
 
 fr
 type int
-val 2263
+val 2194
 
 fps
 type int
@@ -24,7 +24,7 @@ val 0
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
@@ -58,7 +58,7 @@ val v000
 
 frStart
 type int
-val 2220
+val 2151
 
 frEnd
 type int
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v000
+val v001cpFrom1
 
 startLev
 type int
@@ -202,7 +202,7 @@ val 0
 
 aov_sidPost
 type bool
-val 1
+val 0
 
 aov_tid
 type bool

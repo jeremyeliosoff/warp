@@ -30,10 +30,7 @@ class parmDic:
 	def loadParmLs(self, parmFile=None):
 		if parmFile == None:
 			parmFile = self.parmFile
-		#print "\n\n\n"
-		for i in range(5):
-			print "------------------------------"
-		print "\n\nloadParmLs(): parmFile:", parmFile
+		print "\n\n_loadParmLs(): parmFile:", parmFile
 		#self.parmLs = []
 		thisParmDic = {}
 		alreadyInList = False
@@ -43,7 +40,7 @@ class parmDic:
 		with open(parmFile) as f:
 			for line in f.readlines():
 				stripped = line.strip()
-				print "loadParmLs():\tline (stripped):", stripped
+				print "_loadParmLs():\tline (stripped):", stripped
 				if stripped == "":
 					nextIsParm = True
 				else:
@@ -63,7 +60,7 @@ class parmDic:
 								self.parmLs.append([thisParmName, thisParmDic])
 
 						thisParmName = stripped
-						print "loadParmLs():\t\tthisParmName:", thisParmName
+						print "_loadParmLs():\t\tthisParmName:", thisParmName
 						if thisParmName in self.parmDic.keys():
 							# Add "stage" attr to this parm if it exists in dic...
 							thisParmDic = self.parmDic[thisParmName]
@@ -76,27 +73,17 @@ class parmDic:
 						thisParmDic[k] = v
 						
 					nextIsParm = False
-				#print "-----------"
-				#print "line:", line
-				#print "stripped:", stripped
-				#print "nextIsParm:", nextIsParm
 
 		if not alreadyInList:
 			self.parmLs.append([thisParmName, thisParmDic])
-		#print "\n\n\nparmLs"
-		#print self.parmLs
 
 	def parmLsToDic(self):
 		#self.parmDic = {}
-		print "\n\n XXXXXXXXXXXXXXX self.parmLs first items"
-		for k,v in self.parmLs:
-			if k == "nLevels":
-				print "\t", k, v["val"]
+		#print "\n\n_parmLsToDic BEGIN"
 
 		#TODO Maybe make this a list
 		self.parmStages = {}
 		for k,v in self.parmLs:
-			#print "loading parm " + k + ", dic:", v
 			self.parmDic[k] = v
 			if "stage" in v.keys(): # Should always be true
 				stage = v["stage"]
@@ -342,7 +329,6 @@ def writeTime(warpUi, label, time):
 
 	toWrite = label + " " + str(time)
 	destPath = destDir + "/statsPrintout"
-	#print "\nwriting \"" + toWrite + "\" to " + destPath
 	with open(destPath, 'a') as f:
 		f.write(toWrite + "\n")
 
@@ -372,7 +358,7 @@ def main():
 	verPath = dirPath + "/" + vers[-1]
 	if verType == "renImg":
 		verPath += "/ren/ALL"
-	print verPath
+	print "ut.py main(): verPath:", verPath
 	return "fuck"
 
 if __name__ == "__main__":

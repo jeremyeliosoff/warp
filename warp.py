@@ -14,43 +14,41 @@ statsDirDest=""
 
 class warpUi():
 	def rebuildUI(self):
-		print "reloading........"
+		print "\n_rebuildUI(): Reloading........"
 		self.saveParmDic()
 		ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
 		
 	def saveDics(self):
-		print "Saving dics..."
+		print "\n_saveDics(): Saving dics..."
 		genData.pickleDump(self.seqDataVDir + "/tidToSids", self.tidToSids)
 		genData.pickleDump(self.seqDataVDir + "/sidToTid", self.sidToTid)
 
 	def delDics(self):
-		print "Deleting dics..."
+		print "\n_delDics(): Deleting dics..."
 		ut.exeCmd("rm " + self.seqDataVDir + "/tidToSids")
 		ut.exeCmd("rm " + self.seqDataVDir + "/sidToTid")
 		
 	def flushDics(self):
-		print "Flushing dics"
+		print "\n_flushDics(): Flushing dics"
 		self.tidToSids = None
 		self.sidToTid = None
 		self.nextSid = 0
 		
 	def putParmDicInUI(self):
 		self.pauseSaveUIToParmsAndFile = True
-		print "\n\n\n===>>>>>> self.parmDic.parmDic.keys():", self.parmDic.parmDic.keys()
+		print "\n\n_putParmDicInUI(): self.parmDic.parmDic.keys():", self.parmDic.parmDic.keys()
 		for k,thisDic in self.parmDic.parmDic.items():
-			if k in ["nLevels", "frEnd"]: print "\t%%% k", k, "; thisDic", thisDic
 			if "uiElement" in thisDic.keys() and not thisDic["type"] in ["clr", "bool"]:
 				uiElement = thisDic["uiElement"]
 				uiElement.delete(0, END)
 				#val = self.parmDic(k)
 				val = thisDic["val"]
-				if k in ["nLevels", "frEnd"]: print "&&&&& k:", k, " -- inserting", val
 				uiElement.insert(0, str(val))
 
 		self.pauseSaveUIToParmsAndFile = False
 
 	def saveUIToParmsAndFile(self, parmName, arg):
-		print "<<<<<<< in saveUIToParmsAndFile, self.pauseSaveUIToParmsAndFile =", self.pauseSaveUIToParmsAndFile
+		print "\n_saveUIToParmsAndFile(): self.pauseSaveUIToParmsAndFile =", self.pauseSaveUIToParmsAndFile
 		if isinstance(arg, StringVar):
 			val = arg.get()
 		else:
@@ -67,7 +65,7 @@ class warpUi():
 			typ = thisDic["type"]
 			if typ == "int":
 				for v in val:
-					print "v", v
+					print "_saveUIToParmsAndFile(): v", v
 					if not v in ints:
 						print "_saveUIToParmsAndFile(): ERROR: bad character entered", v
 						setVal = False
@@ -88,28 +86,27 @@ class warpUi():
 				val = thisDic["val"]
 				print "_saveUIToParmsAndFile(): re setting entry to ", val;
 				self.parmDic.parmDic[parmName]["uiElement"].delete(0, END)
-				#print "&&&&& k:", k, " -- inserting", val
 				self.parmDic.parmDic[parmName]["uiElement"].insert(0, str(val))
-			print "\n\nending _saveUIToParmsAndFile, about to do saveParmDic"
+			print "\n\n_saveUIToParmsAndFile(): END, about to do saveParmDic"
 			self.saveParmDic()
 
 
 	def btn_getColor(self, args):
 		k,c = args
-		print "ZZZZZZZZZZZ in btn_getColor-- k:", k, ", c:", c
+		print "\n_btn_getColor(): k:", k, ", c:", c
 		c = self.parmDic(k)
 		hx = ut.rgb_to_hex(c)
-		print "c:", c
-		print "hx:", hx
+		print "_btn_getColor(): c:", c
+		print "_btn_getColor(): hx:", hx
 		color = askcolor(color=hx) 
-		print "color", color
+		print "_btn_getColor(): color", color
 		if color:
 			clrInt = color[0]
 			clrDec = ut.rgb_int_to_dec(clrInt)
-			print "clrDec", clrDec
+			print "_btn_getColor(): clrDec", clrDec
 			self.setVal(k, clrDec)
 			postC = self.parmDic(k)
-			print "postC", postC
+			print "_btn_getColor(): postC", postC
 			self.parmDic.parmDic[k]["uiElement"].configure(bg=color[1])
 	
 	def makeParmUi(self, startRow):
@@ -129,10 +126,10 @@ class warpUi():
 				self.nbParm.add(self.nbFrames[stage], text=stage)
 		for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
 			thisParmDic = self.parmDic.parmDic[parmName]
-			print "makeParmUi(): parmName:", parmName, ", thisParmDic:", thisParmDic
+			print "_makeParmUi(): parmName:", parmName, ", thisParmDic:", thisParmDic
 			
 			if "hidden" in thisParmDic.keys() and thisParmDic["hidden"] == "True":
-				print "HIDDEN, skipping..."
+				print "_makeParmUi(): HIDDEN, skipping..."
 				continue
 
 			#for stage,parmNames in self.parmDic.parmStages.items():
@@ -142,7 +139,7 @@ class warpUi():
 			#		thisFrame = self.nbFrames[stage]
 			#lab = Label(self.frameParm, text=parmName)
 			thisStage = thisParmDic["stage"]
-			print "makeParmUi(): \t thisStage:", thisStage
+			print "_makeParmUi(): \t thisStage:", thisStage
 			if thisStage == "META":
 				thisFrame = self.nbExclude
 			else:
@@ -174,9 +171,6 @@ class warpUi():
 			else:
 				self.parmEntries[thisParmDic["type"]] = [ent]
 
-
-			#print "-------- ent:", ent
-
 			if not thisParmDic["type"] in ["clr", "bool"]:
 				sv = StringVar()
 				sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
@@ -185,10 +179,10 @@ class warpUi():
 				thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
 			row += 1
-		print "\n\n===========================\n======================= parmDic"
+		print "\n\n_makeParmUi(): parmDic"
 		for k,v in self.parmDic.parmDic.items():
-			print "\t", k, v["val"]
-		print "\n\nparmLs:", self.parmDic.parmLs
+			print "_makeParmUi(): \t", k, v["val"]
+		print "\n\n_makeParmUi(): parmLs:", self.parmDic.parmLs
 		return row
 		
 
@@ -211,16 +205,13 @@ class warpUi():
 		self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
 
-	def loadImagesBak(self):
-		print "ya"
-		
 	def getDbImgParmNames(self):
 		dbImgNames = []
 		root = "dbImg"
 		for k in self.parmDic.parmDic.keys():
 			if k[:len(root)] == root:
 				dbImgNames.append(k)
-		print "\n\n XXXXXX dbImgNames:", dbImgNames
+		print "\n_getDbImgParmNames() dbImgNames:", dbImgNames
 		dbImgNames.sort()
 		return dbImgNames
 
@@ -232,7 +223,7 @@ class warpUi():
 		for k in self.getDbImgParmNames():
 			lev = self.parmDic("lev_" + k)
 			path = self.getDebugDirAndImg(self.parmDic(k), lev)[1]
-			print "BBBBBBb k:", k, ", path", path
+			print "\n_loadImages(): k:", k, ", path", path
 			self.images[k]= {"path":path}
 
 
@@ -244,15 +235,14 @@ class warpUi():
 		self.images["rec"] = {"pImg":self.staticImages["recOff"]}
 		#self.images["rew"] = {"path":self.images["rew"]["path"]}
 
-		print "images:"
+		print "_loadImages(): images:"
 		for i,k in self.images.items():
 			print i, k
 
 		for img in self.images.keys():
 			if not img in (self.staticImageNames + self.varyingStaticImageNames):
 				path = self.images[img]["path"]
-				#print "000000000 img:", img
-				print "Checking existence of", path
+				print "_loadImages(): Checking existence of", path
 				#if os.path.exists(path):
 				self.images[img]["pImg"] = self.safeLoad(path)
 				#else:
@@ -267,19 +257,12 @@ class warpUi():
 		errorImg = errorImg.resize((self.res[0], self.res[1]), Image.ANTIALIAS)
 		self.staticImages["error"] = ImageTk.PhotoImage(errorImg)
 
-		#print "\n\nVVVVVVVVVVv self.images:"
-		#for k,v in self.images.items():
-		#	print k, v
-
-
-
 
 	def refreshPhotoImages(self):
 		# TODO you shouldn't have to reload ALL images eg. play, pause - maybe
 		# keep those images "on hand" as PhotoImages that you switch between
 		for k,thisDic in self.images.items():
 			if not k in (self.staticImageNames + self.varyingStaticImageNames):
-				#print "IN refreshPhotoImages: loading", thisDic["path"]
 				pImg = self.safeLoad(thisDic["path"])
 				if k in self.images.keys():
 					self.images[k]["pImg"] = pImg
@@ -287,21 +270,8 @@ class warpUi():
 					self.images[k]= {"pImg":pImg}
 
 
-	# TEMP!!!
-	def makeMoveImgButton(self, name, frameParent):
-		print "name: ", name
-		levDir,imgPath = self.getRenDirAndImg("move")
-		#pImg = pygame.image.load(imgPath)
-		pImgMove = self.safeLoad(imgPath)
-		print "\n\n ********* move imgPath:", imgPath
-		thisButton = Button(frameParent, image=pImgMove, command=lambda:self.imgButCmd())
-		pImg = self.images[name]["pImg"]
-		dudButton = Button(frameParent, image=pImg, command=lambda:self.imgButCmd())
-		self.images[name]["button"] = dudButton
-		return thisButton
-
 	def makeImgButton(self, name, frameParent):
-		print "name: ", name
+		print "\n_makeImgButton(): name: ", name
 		pImg = self.images[name]["pImg"]
 		thisButton = Button(frameParent, image=pImg, command=lambda:self.imgButCmd())
 		self.images[name]["button"] = thisButton
@@ -312,7 +282,6 @@ class warpUi():
 		self.refreshPhotoImages()
 
 		for butName,butDic in self.images.items():
-			#print "butName", butName, "butDic:", butDic
 			if "button" in butDic.keys():
 				butDic["button"].configure(image=butDic["pImg"])
 
@@ -332,15 +301,12 @@ class warpUi():
 		self.updateDebugImg()
 
 	def keyPress(self, event):
-		print "event.keysym", event.keysym
+		print "_keyPress(): event.keysym", event.keysym
 		focused = self.frameMaster.focus_get()
-		#print "\ndata widget typ:", type(focused) 
-		#print "\ndata widget typ.__name__:", type(focused).__class__.__name__
-		#print "\tfocused.get():", focused.get()
 		dataType = None
 		for typ,ents in self.parmEntries.items():
 			if focused in ents:
-				print "\tdata typ:", typ
+				print "_keyPress(): \tdata typ:", typ
 				dataType = typ
 				break
 
@@ -363,7 +329,7 @@ class warpUi():
 		dataType = None
 		for typ,ents in self.parmEntries.items():
 			if focused in ents:
-				print "\tdata typ:", typ
+				print "_execHotkey():\tdata typ:", typ
 				dataType = typ
 				break
 		key = v.keysym
@@ -371,7 +337,7 @@ class warpUi():
 			if key == "Escape":
 				self.returnCmd()
 		else:
-			print "v", key
+			print "_execHotkey():\tkey:", key
 			if key == "Escape":
 				print "\nClosing window, destroying the root!  Bye.\n\n"
 				self.rootDestroyed = True
@@ -419,14 +385,14 @@ class warpUi():
 		else:
 			self.turnAnimOff()
 			self.refreshButtonImages()
-		print "Pressed anim button, anim set to", anim
+		print "_animButCmd(): Pressed anim button, anim set to", anim
 
 	def recButCmd(self, val=None):
 		if val == None:
 			self.record = not self.record
 		else:
 			self.record = val
-		print "recButCmd; self.record =", self.record
+		print "_recButCmd(): self.record =", self.record
 		self.refreshButtonImages()
 
 	def toggleDoRenCv(self):
@@ -438,10 +404,10 @@ class warpUi():
 		self.setVal("doRenCv", val)
 
 	def saveParmDic(self):
-		print "######### in saveParmDic ######"
+		print "_saveParmDic(): BEGIN"
 		# TODO Maybe don't hardwire this, user can config it in parmfile
 		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "AOV"])]
-		print "saveParmDic(): ", self.seqDataVDir, "for GEN -- ",
+		print "_saveParmDic(): self.seqDataVDir:", self.seqDataVDir, "for GEN -- ",
 		# TODO Shouldn't seqDataVDir and seqRenVDir always exist?
 		if os.path.exists(self.seqDataVDir):
 			pathsAndStages.append((self.seqDataVDir + "/parms", ["GEN"]))
@@ -449,14 +415,14 @@ class warpUi():
 		else:
 			print "DOES NOT EXIST"
 
-		print "saveParmDic(): ", self.seqRenVDir, "for REN -- ",
+		print "_saveParmDic(): self.seqRenVDir:", self.seqRenVDir, "for REN -- ",
 		if os.path.exists(self.seqRenVDir):
 			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN"]))
 			print "EXISTS"
 		else:
 			print "DOES NOT EXIST"
 
-		print "saveParmDic(): self.parmDic.parmStages:"
+		print "_saveParmDic(): self.parmDic.parmStages:"
 		for k,v in self.parmDic.parmStages.items():
 			print "\t", k, ":", v
 
@@ -466,7 +432,7 @@ class warpUi():
 		print
 
 		for path, stages in pathsAndStages:
-			print "saveParmDic(): path", path, "stages", stages
+			print "_saveParmDic(): path", path, "stages", stages
 			with open(path, 'w') as f:
 				for stage in stages:
 					f.write("\n\n\n---" + stage + "---\n\n")
@@ -478,7 +444,6 @@ class warpUi():
 							thisDic = self.parmDic.parmDic[parm]
 							keys = thisDic.keys()
 							keys.sort()
-							if parm == "saveParmDic(): nLevels": print "\nsaving:", parm, "=", thisDic["val"], "to", path
 							for attr in keys:
 								if not attr in ["uiElement", "stage"]:
 									 f.write(attr + " " + str(thisDic[attr]) + "\n")
@@ -486,14 +451,14 @@ class warpUi():
 
 
 	def updateDebugImg(self):
-		#print " -- IN updateDebugImg"
+		print "\n_updateDebugImg(): BEGIN"
 		for i in range(2):
 			img = self.parmDic("dbImg" + str(i+1))
 			lev = self.parmDic("lev_dbImg" + str(i+1))
 			dbImgPath = self.getDebugDirAndImg(img, lev)[1]
 			self.images["dbImg" + str(i+1)]["path"] = dbImgPath
 			self.setVal("dbImg" + str(i+1), img)
-			#print "dbImgPath", dbImgPath
+			print "_updateDebugImg(): dbImgPath", dbImgPath
 		self.refreshButtonImages()
 
 	# TODO: I sense that this is done too much ie. every frame, need only do when img is selected.
@@ -507,7 +472,6 @@ class warpUi():
 		for img in seqImages:
 			if img == "bak" or not "." in img:
 				continue
-			#print "--------img", img
 			imgSplit = img.split(".")
 			thisFr = int(imgSplit[-2])
 			if thisFr < mn:
@@ -529,7 +493,7 @@ class warpUi():
 		renLevDir,renImgPath = self.getRenDirAndImg("ren", "ALL")
 
 		self.images["ren"]["path"] = renImgPath
-		print "\n\n self.record", self.record
+		print "\n_updateCurImg(): self.record", self.record
 
 		ut.exeCmd("rm " + genData.outFile)
 		genData.pOut("\nPRE genData")
@@ -543,14 +507,14 @@ class warpUi():
 				prevFr, prevFrameDir = self.makeFramesDataDir(self.parmDic("fr") - 1)
 				prevFrInSurfGrid = prevFrameDir + "/inSurfGrid" 
 				if os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
-					print "\n\n LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
+					print "\n\n_updateCurImg(): LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
 					self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
 
 			ut.timerStart(self, "genData")
 			genData.genData(self, self.seqRenVDir)
 			ut.timerStop(self, "genData")
 
-			print "\nDone genData\n\n"
+			print "\n_updateCurImg(): Done genData\n\n"
 			self.setStatus("idle")
 		else:
 			genData.pOut("skipping genData")
@@ -561,9 +525,7 @@ class warpUi():
 		self.refreshButtonImages()
 		image = self.images["source"]["pImg"]
 		self.res = (image.width(), image.height())
-		print "--------XXX PRE setStatus"
 		self.setStatus("idle")
-		print "--------XXX POSt setStatus"
 
 
 	# This is a horrendous mess - must be a cleaner way to get debug num + lev num
@@ -586,7 +548,7 @@ class warpUi():
 
 
 	def getImg(self, selection, debugNum=None, debugNumLev=None):
-		print "\n\n --getImg: selection:",  selection, ", debugNum:", debugNum
+		print "\n\n_getImg(): selection:",  selection, ", debugNum:", debugNum
 		thisImg = selection
 		if debugNum:
 			self.setVal("dbImg" + str(debugNum), selection)
@@ -597,7 +559,7 @@ class warpUi():
 			self.updateRenAndDataDirs()
 			self.updateDebugImg()
 		else:
-			print "################ setting selection:", selection
+			print "_getImg(): ################ setting selection:", selection
 			if self.record:
 				# Turn off recording so you don't render right away.
 				self.recButCmd()
@@ -614,10 +576,11 @@ class warpUi():
 			menu.add_command(label=s, command=lambda value=s: self.verUI[verType]["menuVar"].set(value))
 
 	def menuImgChooser(self, selection):
-		print "----pre getImg - self.seqDataDir", self.seqDataDir
-		print "----pre getImg - self.seqDataVDir", self.seqDataVDir
-		print "----pre getImg - self.seqRenDir", self.seqRenDir
-		print "----pre getImg - self.seqRenVDir", self.seqRenVDir
+		print "\n_menuImgChooser(): pre getImg"
+		print "_menuImgChooser(): self.seqDataDir", self.seqDataDir
+		print "_menuImgChooser(): self.seqDataVDir", self.seqDataVDir
+		print "_menuImgChooser(): self.seqRenDir", self.seqRenDir
+		print "_menuImgChooser(): self.seqRenVDir", self.seqRenVDir
 		self.getImg(selection)
 
 		renVers = self.parmDic("renVers")
@@ -626,15 +589,16 @@ class warpUi():
 
 		self.seqDataVDir = self.seqDataDir + "/" + dataVers[0]
 		self.seqRenVDir = self.seqRenDir + "/" + renVers[0]
-		print "----pos getImg - self.seqDataDir", self.seqDataDir
-		print "----pos getImg - self.seqDataVDir", self.seqDataVDir
-		print "----pos getImg - self.seqRenDir", self.seqRenDir
-		print "----pos getImg - self.seqRenVDir", self.seqRenVDir
+		print "\n_menuImgChooser(): post getImg"
+		print "_menuImgChooser(): self.seqDataDir", self.seqDataDir
+		print "_menuImgChooser(): self.seqDataVDir", self.seqDataVDir
+		print "_menuImgChooser(): self.seqRenDir", self.seqRenDir
+		print "_menuImgChooser(): self.seqRenVDir", self.seqRenVDir
 		print "\n\n"
 
 		verDic = {}
 
-		print "\n\n\n self.verUI"
+		print "\n\n_menuImgChooser(): self.verUI"
 		pprint.pprint(self.verUI)
 		for verType in ["ren", "data"]:
 			self.repopulateMenu(verType, verss[verType])
@@ -642,7 +606,7 @@ class warpUi():
 
 		#if True or not self.verUI["data"]["menuVar"].get() in dataVers:
 			latestVer = verss[verType][0]
-			print "\tresetting  latestVer to ", latestVer
+			print "_menuImgChooser():\tresetting  latestVer to ", latestVer
 			self.verUI[verType]["menuVar"].set(latestVer)
 			self.setVal(verType + "Ver", latestVer)
 
@@ -652,17 +616,17 @@ class warpUi():
 
 		renParmPath = self.seqRenDir + "/" + renVers[0] + "/parms"
 		if os.path.exists(renParmPath):
-			print "VVV loading parms from", renParmPath, "..."
+			print "_menuImgChooser(): loading parms from", renParmPath, "..."
 			self.parmDic.loadParms(renParmPath)
 		else:
-			print "^^^", renParmPath, "not found"
+			print "_menuImgChooser(): ^^^", renParmPath, "not found"
 
 		dataParmPath = self.seqDataDir + "/" + dataVers[0] + "/parms"
 		if os.path.exists(dataParmPath):
-			print "VVV loading parms from", dataParmPath, "..."
+			print "_menuImgChooser(): loading parms from", dataParmPath, "..."
 			self.parmDic.loadParms(dataParmPath)
 		else:
-			print "^^^", dataParmPath, "not found"
+			print "_menuImgChooser(); ^^^", dataParmPath, "not found"
 
 		self.updateCurImg()
 		self.updateDebugImg()
@@ -671,29 +635,26 @@ class warpUi():
 		
 
 	def menuVChooser(self, selection, verType):
-		print "\nNNNNNNN menuVChooser: selection", selection, "verType", verType
-		print "\n\n\n self.verUI"
+		print "\n_menuVChooser(): selection", selection, "verType", verType
+		print "\n\n_menuVChooser(): self.verUI"
 		pprint.pprint(self.verUI)
-		#print "\nNNNNNNN menuVChooser:\n\tthisVerType", thisVerType, "\n\tverType", verType, "\n\t*extr", extr
 		verNum = selection
-		print "in menuVChooser OLD:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
+		print "_menuVChooser(): OLD:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
 		if verType == "data":
 			self.seqDataVDir = self.seqDataDir + "/" + verNum
 			parmPath = self.seqDataVDir + "/parms"
 		else:
 			self.seqRenVDir = self.seqRenDir + "/" + verNum
 			parmPath = self.seqRenVDir + "/parms"
-		print "in menuVChooser NEW:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
+		print "_menuVChooser(): NEW:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
 
 		if os.path.exists(parmPath):
-			print "\n\n!!! loading parms from", parmPath, "..."
-			print "\n\n AAAAAA \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
+			print "\n_menuVChooser(): !!! loading parms from", parmPath, "..."
 			self.parmDic.loadParms(parmPath)
 			self.putParmDicInUI()
-			print "\n\n BBBBBB \nfrEnd:", self.parmDic("frEnd"), "\nnLevels:", self.parmDic("nLevels"), "\n"
 		else:
-			print "???", parmPath, "not found"
-		print "menuVChooser: setting " + verType + "Ver to", verNum
+			print "_menuVChooser(): ???", parmPath, "not found"
+		print "_menuVChooser(): setting " + verType + "Ver to", verNum
 		self.setVal(verType + "Ver", verNum)
 		self.updateRenAndDataDirs() #TODO: I don't think this is necessary, it's done above - useful for menuImgChooser
 		self.updateCurImg()
@@ -703,18 +664,18 @@ class warpUi():
 
 
 	def butVNew(self, verType):
-		print "\n\n\nXXXXXxxX verType\n\n", verType
+		print "\n\n\n_butVNew(): verType\n\n", verType
 		#verType = "ren"
 		vers = self.getSeqVersions(verType)
 		vers.sort()
 		vers.reverse()
 		latestVer = vers[0]
-		print verType + "Vers"
-		print vers
-		print verType + "Vers[-1]", vers[0]
-		print verType + "Vers[-1][1:4]", vers[0][1:4]
+		print "_butVNew():", verType + "Vers"
+		print "_butVNew():", vers
+		print "_butVNew():", verType + "Vers[-1]", vers[0]
+		print "_butVNew():", verType + "Vers[-1][1:4]", vers[0][1:4]
 		nextVerInt = int(latestVer[1:4]) + 1
-		print "\n\n\n self.verUI"
+		print "\n\n_butVNew(): self.verUI"
 		pprint.pprint(self.verUI)
 		nextVer = ("v%03d" % nextVerInt) + self.verUI[verType]["sfx"].get()
 
@@ -733,13 +694,13 @@ class warpUi():
 	# TODO: rename to renMode, make it a case of chk_cmd
 	def chk_doRenCv_cmd(self):
 		val = self.chk_doRenCv_var.get()
-		print "Setting doRenCv to:", val
+		print "_chk_doRenCv_var(): Setting doRenCv to:", val
 		self.setVal("doRenCv", val)
 		self.saveUIToParmsAndFile("doRenCv", val)
 
 	def chk_cmd(self, parmName):
 		val = self.chkVars[parmName].get()
-		print "Setting", parmName, "to:", val
+		print "_chk_doRenCv_var(): Setting", parmName, "to:", val
 		self.setVal(parmName, val)
 		self.saveUIToParmsAndFile(parmName, val)
 
@@ -752,11 +713,9 @@ class warpUi():
 				uiElement.delete(0, END)
 				uiElement.insert(0, str(val))
 		valStr = str(val)
-		#print "valStr pre", valStr
 		if type(val) in [type(()), type([])]:
 			valStr = valStr[1:-1].replace(' ','')
-		#print "valStr pos", valStr
-		print "setVal: setting parmDic[" + parmStr + "] to", valStr
+		print "_setVal(): setting parmDic[" + parmStr + "] to", valStr
 		self.parmDic.parmDic[parmStr]["val"] = valStr
 		self.pauseSaveUIToParmsAndFile = False
 
@@ -783,7 +742,7 @@ class warpUi():
 
 	def updateRenAndDataDirs(self):
 		ut.printFrameStack()
-		print "OLD:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
+		print "_updateRenAndDataDirs(): OLD:\n_updateRenAndDataDirs(): \tseqDataDir:", self.seqDataDir, "\n_updateRenAndDataDirs():\tseqDataVDir:", self.seqDataVDir, "\n_updateRenAndDataDirs():\tseqRenDir", self.seqRenDir, "\n_updateRenAndDataDirs():\tseqRenVDir", self.seqRenVDir
 		self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
 		ut.mkDirSafe(self.seqDataDir)
 		self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
@@ -792,7 +751,7 @@ class warpUi():
 		self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
 		ut.mkDirSafe(self.seqRenDir)
 		self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
-		print "NEW:\n\tseqDataDir:", self.seqDataDir, "\n\tseqDataVDir:", self.seqDataVDir, "\n\tseqRenDir", self.seqRenDir, "\n\tseqRenVDir", self.seqRenVDir
+		print "\n_updateRenAndDataDirs(): NEW:\n_updateRenAndDataDirs():\tseqDataDir:", self.seqDataDir, "\n_updateRenAndDataDirs():\tseqDataVDir:", self.seqDataVDir, "\n_updateRenAndDataDirs():\tseqRenDir", self.seqRenDir, "\n_updateRenAndDataDirs():\tseqRenVDir", self.seqRenVDir
 
 	def getDebugDirAndImg(self, debugInfo, lev):
 		fr = self.parmDic("fr")
@@ -812,17 +771,22 @@ class warpUi():
 
 	def safeLoad(self, path):
 		#ut.printFrameStack()
-		print "Attempting to load", path, "...",
+		print "_safeLoad(): Attempting to load", path, "...",
 		if os.path.exists(path):
 			loadedImg = Image.open(path)
 			res = loadedImg.size
 			sc = 2 # TODO: Make this a parm
+			maxXres = 200
+			if res[0] > maxXres:
+				y = int(res[1] * float(maxXres)/res[0])
+				res = (maxXres, y)
+			self.res = res
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
 			img = ImageTk.PhotoImage(loadedImg)
-			print "success!"
+			print "_safeLoad(): success!"
 		else:
 			img = self.staticImages["error"]
-			print " ********** FAIL! **********"
+			print "_safeLoad(): ********** FAIL! **********"
 		return img
 
 	def getOfs(self, fr=None):
@@ -857,21 +821,21 @@ class warpUi():
 	def addToRenQButCmd(self):
 		ut.printFrameStack()
 		chosenImg = self.imgChooserVar.get()
-		print "\n\n chosenImg:", chosenImg
+		print "\n\n_addToRenQButCmd(): chosenImg:", chosenImg
 		self.renQListbox.insert(END, chosenImg)
 		self.renQLs = self.renQListbox.get(0, END)
-		print "self.renQLs:", self.renQLs
+		print "_addToRenQButCmd(): self.renQLs:", self.renQLs
 
 	def rmFromRenQButCmd(self):
 		ut.printFrameStack()
 		curSelInt = self.renQListbox.curselection()
 		curSelStr = None if curSelInt == "" else self.renQListbox.get(curSelInt)
-		print "\n\n deleting curSelStr:", curSelStr
+		print "\n\n_rmFromRenQButCmd(): deleting curSelStr:", curSelStr
 		self.renQListbox.delete(curSelInt)
 
 
 	def sortStats(self):
-		print "\n\nsortStats(): BEGIN\n"
+		print "\n\n_sortStats(): BEGIN\n"
 		ut.timerStart(self, "sortStats")
 		if self.parmDic("doRenCv") == 1:
 			destDir = self.seqRenVDir 
@@ -905,7 +869,7 @@ class warpUi():
 			toSort.reverse()
 			dud,sortedLables = zip(*toSort)
 
-			print "sortStats(): writing stats to", destPath + ":"
+			print "_sortStats(): writing stats to", destPath + ":"
 			if os.path.exists(destPath):
 				# open(destPath, 'w') says "file not found" for some reason, so rm first.
 				os.remove(destPath)
@@ -916,10 +880,10 @@ class warpUi():
 				#f.write("sorted by " + sortBy + ":\n\n")
 				for label in sortedLables:
 					toWrite = label + " " + str(statsDic[label][sortBy])
-					print "sortStats():\t", toWrite
+					print "_sortStats():\t", toWrite
 					f.write(toWrite + "\n")
 
-		print "\nsortStats(): END\n\n"
+		print "\n_sortStats(): END\n\n"
 		ut.timerStop(self, "sortStats")
 
 	def turnAnimOff(self):
@@ -939,7 +903,7 @@ class warpUi():
 				"lev":[self.getLevDebug1, self.getLevDebug2]
 		}
 		self.parmDic = ut.parmDic(parmPath)
-		print "\n\n\n********** parmDic2"
+		print "\n\n\n__init__():********** parmDic2"
 		print self.parmDic
 		self.pauseSaveUIToParmsAndFile = False
 		self.parmEntries = {}
@@ -994,7 +958,7 @@ class warpUi():
 		self.errorImgPath = base + "error.jpg"
 		for name in self.staticImageNames:
 			loadedImg = Image.open(base + name + ".jpg")
-			print "loadedImg", loadedImg
+			print "__init__(): loadedImg", loadedImg
 			#res = loadedImg.size
 			#sc = 2
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
@@ -1106,11 +1070,11 @@ class warpUi():
 
 			self.verUI[verType]["menuVar"] = StringVar(frameImgVmenu)
 			self.verUI[verType]["menuVar"].set(self.parmDic(verType + "Ver"))
-			print "--- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
+			print "__init__(): --- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
 			vers = self.getSeqVersions(verType)
-			print "\n" + verType + " vers:", vers
+			print "\n__init__(): " + verType + " vers:", vers
 
-			print "\n\nYYYYY setting up OptionMenu for", verType
+			print "\n\n__init__(): YYYYY setting up OptionMenu for", verType
 			self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda selection, thisVerType=verType : self.menuVChooser(selection, thisVerType))
 			self.verUI[verType]["OptionMenu"].grid(row=verRow, column=0, sticky=EW)
 
@@ -1229,7 +1193,7 @@ class warpUi():
 
 		# Debug images.
 		path = self.seqDataVDir + "/debugImg"
-		print "=========== PATH", path
+		print "__init__(): =========== PATH", path
 		if os.path.exists(path):
 			sourceImages = os.listdir(path)
 		else:
@@ -1242,7 +1206,7 @@ class warpUi():
 		self.dbMenus = {}
 		col = 0
 		for dbImgName in self.getDbImgParmNames():
-			print "\\\\\\\\\\\\ col", col, "dbImgName", dbImgName
+			print "__init__(): \\\\\\\\\\\\ col", col, "dbImgName", dbImgName
 			frameDbParm = Frame(self.frameImg)
 			thisButton = self.makeImgButton(dbImgName, frameDbParm)
 			thisButton.grid()
@@ -1268,7 +1232,7 @@ class warpUi():
 
 
 		# Update menu-dependent images to reflect current selection.
-		print "\n ****** doing self.getImg", self.parmDic("image")
+		print "\n__init__():  ****** doing self.getImg", self.parmDic("image")
 		self.getImg(self.parmDic("image")) 
 		while not self.rootDestroyed:
 			anim = self.parmDic("anim")
@@ -1281,7 +1245,6 @@ class warpUi():
 				secondsPassed = time.time() - self.timeStart
 
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
-				#print "frStartAnim:", self.frStartAnim, ", secondsPassed:", secondsPassed, "\tfr", fr, "\tnewFr = ", newFr
 				if newFr > fr:		
 					fr = min(fr + 1, newFr)
 					framesPassed = fr - self.frStartAnim
@@ -1313,7 +1276,7 @@ class warpUi():
 
 """
 
-					print "statsMsg:", statsMsg
+					print "__init__(): statsMsg:", statsMsg
 					with open(self.seqRenVDir + "/stats", 'w') as f:
 						f.write(statsMsg)
 
@@ -1331,10 +1294,10 @@ class warpUi():
 								hmsPassed = ut.secsToHms(secondsPassed)
 								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
 
-								print "Turning on doRenCv"
+								print "__init__(): Turning on doRenCv"
 								self.setVal("doRenCv", 1)
 								self.chk_doRenCv_var.set(1)
-								print "Returning to", self.parmDic("frStart")
+								print "__init__(): Returning to", self.parmDic("frStart")
 								fr = self.parmDic("frStart")
 							elif self.parmDic("image") in self.renQLs and not self.parmDic("image") == self.renQLs[-1]:
 								# If recording and in renQ but not last,
@@ -1360,7 +1323,7 @@ class warpUi():
 								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
 						else:
 							# Loop if not recording
-							print "Returning to", self.parmDic("frStart")
+							print "__init__(): Returning to", self.parmDic("frStart")
 							fr = self.parmDic("frStart")
 							self.timeStart = time.time()
 							#self.animFrStart = fr
