@@ -24,7 +24,7 @@ val 0
 doRenCv
 hidden True
 type int
-val 0
+val 1
 
 image
 hidden True

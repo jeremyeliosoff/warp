@@ -1198,7 +1198,7 @@ def renCv(warpUi, sidToCvDic, tholds):
 	for name in renOutputsMultiLev:
 		for lev in range(nLevels+1):
 			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-			levDir,imgPath = warpUi.getRenDirAndImg(name, levStr)
+			levDir,imgPath = warpUi.getRenImgPath(name, levStr)
 			ut.mkDirSafe(levDir)
 			print "_renCv(): Saving", name, " image, path:", imgPath
 			pygame.image.save(outputs[name][lev], imgPath)
@@ -1208,7 +1208,7 @@ def renCv(warpUi, sidToCvDic, tholds):
 			#ut.exeCmd("convert -resize 200% " + bmpPath + " " + bmpPath)
 
 	for name in renOutputsOneLev:
-		levDir,imgPath = warpUi.getRenDirAndImg(name)
+		levDir,imgPath = warpUi.getRenImgPath(name)
 		ut.mkDirSafe(levDir)
 		print "_renCv(): Saving", name, " image, path:", imgPath
 		pygame.image.save(outputs[name], imgPath)
