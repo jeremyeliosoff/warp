@@ -39,7 +39,7 @@ class warpUi():
 		print "\n\n\n===>>>>>> self.parmDic.parmDic.keys():", self.parmDic.parmDic.keys()
 		for k,thisDic in self.parmDic.parmDic.items():
 			if k in ["nLevels", "frEnd"]: print "\t%%% k", k, "; thisDic", thisDic
-			if "uiElement" in thisDic.keys() and not thisDic["type"] == "clr":
+			if "uiElement" in thisDic.keys() and not thisDic["type"] in ["clr", "bool"]:
 				uiElement = thisDic["uiElement"]
 				uiElement.delete(0, END)
 				#val = self.parmDic(k)
@@ -129,7 +129,7 @@ class warpUi():
 				self.nbParm.add(self.nbFrames[stage], text=stage)
 		for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
 			thisParmDic = self.parmDic.parmDic[parmName]
-			#print "-------------IN makeParmUi, parmName:", parmName, ", thisParmDic:", thisParmDic
+			print "makeParmUi(): parmName:", parmName, ", thisParmDic:", thisParmDic
 			
 			if "hidden" in thisParmDic.keys() and thisParmDic["hidden"] == "True":
 				print "HIDDEN, skipping..."
@@ -254,6 +254,11 @@ class warpUi():
 
 		image = self.images["source"]["pImg"]
 		self.res = (image.width(), image.height())
+		
+
+		errorImg = Image.open(self.errorImgPath)
+		errorImg = errorImg.resize((self.res[0], self.res[1]), Image.ANTIALIAS)
+		self.staticImages["error"] = ImageTk.PhotoImage(errorImg)
 
 		#print "\n\nVVVVVVVVVVv self.images:"
 		#for k,v in self.images.items():
@@ -460,15 +465,17 @@ class warpUi():
 					f.write("\n\n\n---" + stage + "---\n\n")
 
 					for parm in self.parmDic.parmStages[stage]:
-						f.write(parm + "\n")
-						thisDic = self.parmDic.parmDic[parm]
-						keys = thisDic.keys()
-						keys.sort()
-						if parm == "saveParmDic(): nLevels": print "\nsaving:", parm, "=", thisDic["val"], "to", path
-						for attr in keys:
-							if not attr in ["uiElement", "stage"]:
-								 f.write(attr + " " + str(thisDic[attr]) + "\n")
-						f.write("\n")
+						# fr only goes in the top level, shared parm file
+						if stage == "META" or not parm == "fr":
+							f.write(parm + "\n")
+							thisDic = self.parmDic.parmDic[parm]
+							keys = thisDic.keys()
+							keys.sort()
+							if parm == "saveParmDic(): nLevels": print "\nsaving:", parm, "=", thisDic["val"], "to", path
+							for attr in keys:
+								if not attr in ["uiElement", "stage"]:
+									 f.write(attr + " " + str(thisDic[attr]) + "\n")
+							f.write("\n")
 
 
 	def updateDebugImg(self):
@@ -977,11 +984,12 @@ class warpUi():
 		self.varyingStaticImageNames = ["anim", "rec"]
 		self.staticImages = {}
 		base = ut.imgDir + "/controls/"
+		self.errorImgPath = base + "error.jpg"
 		for name in self.staticImageNames:
 			loadedImg = Image.open(base + name + ".jpg")
 			print "loadedImg", loadedImg
-			res = loadedImg.size
-			sc = 2
+			#res = loadedImg.size
+			#sc = 2
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
 			self.staticImages[name] = ImageTk.PhotoImage(loadedImg)
 		self.images = {}

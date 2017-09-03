@@ -5,7 +5,7 @@
 
 fr
 type int
-val 2078
+val 360
 
 fps
 type int
@@ -29,7 +29,7 @@ val 1
 image
 hidden True
 type str
-val lzSmokePt2brighter
+val lzSmokeFULL
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v002
+val v000
 
 frStart
 type int
@@ -83,7 +83,7 @@ val 1
 
 nLevels
 type int
-val 8
+val 10
 
 kSurf
 type float
@@ -95,11 +95,11 @@ val .2
 
 minThresh
 type float
-val .15
+val .12
 
 maxThresh
 type float
-val .5
+val 1
 
 rangeThresh
 type float
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v002
+val v000
 
 startLev
 type int
@@ -172,11 +172,11 @@ val .6
 
 ---AOV---
 
-someAOV
+aov_inSurfNow
 type bool
-val 1
+val 0
 
-someAOV2
+aov_surfsAndHoles
 type bool
-val 1
+val 0
 

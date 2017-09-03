@@ -33,7 +33,7 @@ class parmDic:
 		#print "\n\n\n"
 		for i in range(5):
 			print "------------------------------"
-		print "\n\n\n INSIDE loadParmLs, parmFile:", parmFile
+		print "\n\nloadParmLs(): parmFile:", parmFile
 		#self.parmLs = []
 		thisParmDic = {}
 		alreadyInList = False
@@ -43,6 +43,7 @@ class parmDic:
 		with open(parmFile) as f:
 			for line in f.readlines():
 				stripped = line.strip()
+				print "loadParmLs():\tline (stripped):", stripped
 				if stripped == "":
 					nextIsParm = True
 				else:
@@ -52,10 +53,6 @@ class parmDic:
 							continue
 
 						if not thisParmName == "":
-							# This isn't the beginnig of file/stage; store previously collected attrs.
-							if thisParmName == "nLevels":
-								print "--loading nLevels=", thisParmDic["val"]
-
 							# TODO: Why would the parm already be in list?
 							alreadyInList = False
 							for i,nameAndDic in enumerate(self.parmLs):
@@ -66,6 +63,7 @@ class parmDic:
 								self.parmLs.append([thisParmName, thisParmDic])
 
 						thisParmName = stripped
+						print "loadParmLs():\t\tthisParmName:", thisParmName
 						if thisParmName in self.parmDic.keys():
 							# Add "stage" attr to this parm if it exists in dic...
 							thisParmDic = self.parmDic[thisParmName]

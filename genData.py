@@ -365,9 +365,9 @@ def initJtGrid(img, warpUi):
 	ut.timerStop(warpUi, "initJtGridXYLoop")
 
 	#warpUi.gridJt = jtGrid[:]
-	#renPath = warpUi.images["ren"]["path"]
-	#renSeqDir = "/".join(renPath.split("/")[:-1])
-	#ut.mkDirSafe(renSeqDir)
+	renPath = warpUi.images["ren"]["path"]
+	renSeqDir = "/".join(renPath.split("/")[:-1])
+	ut.mkDirSafe(renSeqDir)
 	#print "SAVING RENDERED IMAGE:", renPath
 
 
