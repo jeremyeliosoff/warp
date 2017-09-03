@@ -490,7 +490,7 @@ class warpUi():
 		print "_updateCurImg(): self.parmDic(image)", self.parmDic("image")
 		self.images["source"]["path"] = self.getSourceImgPath()
 		print "_updateCurImg(): self.images[source][path]:", self.images["source"]["path"]
-		renImgPath = self.getRenImgPath("ren", "ALL")
+		dud, renImgPath = self.getRenDirAndImgPath("ren", "ALL")
 
 		self.images["ren"]["path"] = renImgPath
 		print "\n_updateCurImg(): self.record", self.record
@@ -760,7 +760,7 @@ class warpUi():
 		imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
 		return levDir,imgPath
 
-	def getRenImgPath(self, outputName, lev=None):
+	def getRenDirAndImgPath(self, outputName, lev=None):
 		fr = self.parmDic("fr")
 		if lev == None:
 			levDir = self.seqRenVDir + "/" + outputName
@@ -768,7 +768,7 @@ class warpUi():
 		else:
 			levDir = self.seqRenVDir + "/" + outputName + "/" + lev
 			imgPath = levDir + ("/" + outputName + "." + lev + ".%05d.jpg" % fr)
-		return imgPath
+		return levDir, imgPath
 
 	def loadImgAndSetRes(self, path):
 		#ut.printFrameStack()
