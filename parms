@@ -5,7 +5,7 @@
 
 fr
 type int
-val 2223
+val 2244
 
 fps
 type int
@@ -19,12 +19,12 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
 type int
-val 1
+val 0
 
 image
 hidden True
@@ -58,7 +58,7 @@ val v000
 
 frStart
 type int
-val 2151
+val 2020
 
 frEnd
 type int
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v001cpFrom1
+val v046_300fr
 
 startLev
 type int
@@ -137,11 +137,11 @@ val 0
 
 fallDist
 type float
-val 1
+val .2
 
 fallKForBiggest
 type float
-val 0
+val 1
 
 fallUseAsBiggest
 type float
@@ -153,11 +153,11 @@ val .25
 
 fallVecX
 type float
-val .5
+val .8
 
 fallVecY
 type float
-val .35
+val .5
 
 fallMode
 type str

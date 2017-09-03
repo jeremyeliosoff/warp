@@ -214,6 +214,12 @@ class warpUi():
 		print "\n_getDbImgParmNames() dbImgNames:", dbImgNames
 		dbImgNames.sort()
 		return dbImgNames
+	
+	def reloadErrorImg(self):
+		errorImg = Image.open(self.errorImgPath)
+		errorImg = errorImg.resize((self.displayRes[0], self.displayRes[1]), Image.ANTIALIAS)
+		self.staticImages["error"] = ImageTk.PhotoImage(errorImg)
+
 
 
 	def loadImages(self):
@@ -243,27 +249,19 @@ class warpUi():
 			if not img in (self.staticImageNames + self.varyingStaticImageNames):
 				path = self.images[img]["path"]
 				print "_loadImages(): Checking existence of", path
-				#if os.path.exists(path):
-				self.images[img]["pImg"] = self.safeLoad(path)
-				#else:
-				#	# this is a dud/placeholder image.
-				#	self.images[img]["pImg"] = self.safeLoad(self.staticImages["play"])
+				self.images[img]["pImg"] = self.loadImgAndSetRes(path)
 
 		image = self.images["source"]["pImg"]
-		self.res = (image.width(), image.height())
+		#self.res = (image.width(), image.height())
 		
-
-		errorImg = Image.open(self.errorImgPath)
-		errorImg = errorImg.resize((self.res[0], self.res[1]), Image.ANTIALIAS)
-		self.staticImages["error"] = ImageTk.PhotoImage(errorImg)
-
+		self.reloadErrorImg()
 
 	def refreshPhotoImages(self):
 		# TODO you shouldn't have to reload ALL images eg. play, pause - maybe
 		# keep those images "on hand" as PhotoImages that you switch between
 		for k,thisDic in self.images.items():
 			if not k in (self.staticImageNames + self.varyingStaticImageNames):
-				pImg = self.safeLoad(thisDic["path"])
+				pImg = self.loadImgAndSetRes(thisDic["path"])
 				if k in self.images.keys():
 					self.images[k]["pImg"] = pImg
 				else:
@@ -438,8 +436,8 @@ class warpUi():
 					f.write("\n\n\n---" + stage + "---\n\n")
 
 					for parm in self.parmDic.parmStages[stage]:
-						# fr only goes in the top level, shared parm file
-						if stage == "META" or not parm == "fr":
+						# fr and image only go in the top level, shared parm file
+						if stage == "META" or not parm in ["fr", "image"]:
 							f.write(parm + "\n")
 							thisDic = self.parmDic.parmDic[parm]
 							keys = thisDic.keys()
@@ -489,8 +487,10 @@ class warpUi():
 		return ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
 
 	def updateCurImg(self, forceRecord=False):
+		print "_updateCurImg(): self.parmDic(image)", self.parmDic("image")
 		self.images["source"]["path"] = self.getSourceImgPath()
-		renLevDir,renImgPath = self.getRenDirAndImg("ren", "ALL")
+		print "_updateCurImg(): self.images[source][path]:", self.images["source"]["path"]
+		renImgPath = self.getRenImgPath("ren", "ALL")
 
 		self.images["ren"]["path"] = renImgPath
 		print "\n_updateCurImg(): self.record", self.record
@@ -524,7 +524,7 @@ class warpUi():
 
 		self.refreshButtonImages()
 		image = self.images["source"]["pImg"]
-		self.res = (image.width(), image.height())
+		#self.res = (image.width(), image.height())
 		self.setStatus("idle")
 
 
@@ -583,8 +583,8 @@ class warpUi():
 		print "_menuImgChooser(): self.seqRenVDir", self.seqRenVDir
 		self.getImg(selection)
 
-		renVers = self.parmDic("renVers")
-		dataVers = self.parmDic("dataVers")
+		renVers = self.getSeqVersions("ren")
+		dataVers = self.getSeqVersions("data")
 		verss = {"ren":renVers, "data":dataVers}
 
 		self.seqDataVDir = self.seqDataDir + "/" + dataVers[0]
@@ -602,15 +602,14 @@ class warpUi():
 		pprint.pprint(self.verUI)
 		for verType in ["ren", "data"]:
 			self.repopulateMenu(verType, verss[verType])
-
-
-		#if True or not self.verUI["data"]["menuVar"].get() in dataVers:
 			latestVer = verss[verType][0]
 			print "_menuImgChooser():\tresetting  latestVer to ", latestVer
 			self.verUI[verType]["menuVar"].set(latestVer)
 			self.setVal(verType + "Ver", latestVer)
 
-		self.setVal("frStart", self.seqStart) #TODO remove these lines
+
+		#TODO remove these lines, replace with parm assignment
+		self.setVal("frStart", self.seqStart)
 		self.setVal("frEnd", self.seqEnd)
 
 
@@ -620,6 +619,7 @@ class warpUi():
 			self.parmDic.loadParms(renParmPath)
 		else:
 			print "_menuImgChooser(): ^^^", renParmPath, "not found"
+
 
 		dataParmPath = self.seqDataDir + "/" + dataVers[0] + "/parms"
 		if os.path.exists(dataParmPath):
@@ -632,6 +632,7 @@ class warpUi():
 		self.updateDebugImg()
 		self.refreshButtonImages()
 		self.putParmDicInUI()
+		print "_menuImgChooser(): END - self.images[source][path]:", self.images["source"]["path"]
 		
 
 	def menuVChooser(self, selection, verType):
@@ -759,7 +760,7 @@ class warpUi():
 		imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
 		return levDir,imgPath
 
-	def getRenDirAndImg(self, outputName, lev=None):
+	def getRenImgPath(self, outputName, lev=None):
 		fr = self.parmDic("fr")
 		if lev == None:
 			levDir = self.seqRenVDir + "/" + outputName
@@ -767,21 +768,24 @@ class warpUi():
 		else:
 			levDir = self.seqRenVDir + "/" + outputName + "/" + lev
 			imgPath = levDir + ("/" + outputName + "." + lev + ".%05d.jpg" % fr)
-		return levDir,imgPath
+		return imgPath
 
-	def safeLoad(self, path):
+	def loadImgAndSetRes(self, path):
 		#ut.printFrameStack()
 		print "_safeLoad(): Attempting to load", path, "...",
 		if os.path.exists(path):
 			loadedImg = Image.open(path)
 			res = loadedImg.size
-			sc = 2 # TODO: Make this a parm
-			maxXres = 200
+			self.res = res
+			sc = 2 # TODO: Make this a parm?
+			maxXres = 520
 			if res[0] > maxXres:
 				y = int(res[1] * float(maxXres)/res[0])
 				res = (maxXres, y)
 			self.displayRes = res
+			self.reloadErrorImg()
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
+			loadedImg = loadedImg.resize((res[0], res[1]), Image.ANTIALIAS)
 			img = ImageTk.PhotoImage(loadedImg)
 			print "_safeLoad(): success!"
 		else:
@@ -933,6 +937,7 @@ class warpUi():
 		self.record = False
 		self.seqEnd = -100
 		self.seqStart = 10000000
+		self.frStartAnim = 0
 		self.timeStart = time.time()
 		self.animFrStart = self.parmDic("fr")
 		self.chkVars = {}

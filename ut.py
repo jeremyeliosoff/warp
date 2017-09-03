@@ -70,9 +70,13 @@ class parmDic:
 							thisParmDic = {"stage":thisStage}
 					else:
 						k,v = stripped.split()
+						# Force animation off when loaded (should normally already be so)
+						if thisParmName == "anim" and k == "val":
+							v = "0"
 						thisParmDic[k] = v
 						
 					nextIsParm = False
+
 
 		if not alreadyInList:
 			self.parmLs.append([thisParmName, thisParmDic])
