@@ -5,7 +5,7 @@
 
 fr
 type int
-val 0
+val 60
 
 fps
 type int
@@ -54,7 +54,7 @@ val lev03
 renVer
 hidden True
 type str
-val v003mnP1
+val v011cyc30
 
 frStart
 type int
@@ -62,11 +62,11 @@ val 1
 
 frEnd
 type int
-val 30
+val 60
 
 frPerCycle
 type int
-val 10
+val 30
 
 doGen
 type int
@@ -83,7 +83,7 @@ val 1
 
 nLevels
 type int
-val 4
+val 3
 
 kSurf
 type float
@@ -95,7 +95,7 @@ val 1
 
 minThresh
 type float
-val 0.1
+val 0.5
 
 maxThresh
 type float
@@ -129,15 +129,15 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v002mnP1
+val v005cyc30
 
 startLev
 type int
-val 1
+val 0
 
 fallDist
 type float
-val 0
+val .2
 
 fallKForBiggest
 type float
@@ -161,7 +161,7 @@ val .5
 
 fallMode
 type str
-val orig
+val fall
 
 progDur
 type float
@@ -174,7 +174,7 @@ val .6
 
 aov_inSurfNow
 type bool
-val 1
+val 0
 
 aov_surfsAndHoles
 type bool
@@ -194,7 +194,7 @@ val 0
 
 aov_cvSid
 type bool
-val 1
+val 0
 
 aov_cidPost
 type bool
@@ -202,7 +202,7 @@ val 0
 
 aov_sidPost
 type bool
-val 1
+val 0
 
 aov_tid
 type bool

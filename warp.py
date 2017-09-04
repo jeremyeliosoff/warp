@@ -723,16 +723,20 @@ class warpUi():
 		self.updateCurImg()
 		#self.refreshPhotoImages()
 
-	# TODO: rename to renMode, make it a case of chk_cmd
+	def setRenCvUIClr(self):
+		defaultBg = self.root.cget('bg')
+		if self.chk_doRenCv_var.get() == 0:
+			self.chk_doRenCv.configure(bg=defaultBg)
+		else:
+			self.chk_doRenCv.configure(bg="grey")
+		
+
+	# TODO: rename to renMode, make it a case of chk_cmd - maybe eventually
 	def chk_doRenCv_cmd(self):
 		val = self.chk_doRenCv_var.get()
 		print "_chk_doRenCv_var(): Setting doRenCv to:", val
 		self.setVal("doRenCv", val)
-		defaultBg = self.root.cget('bg')
-		if val == 0:
-			self.chk_doRenCv.configure(bg=defaultBg)
-		else:
-			self.chk_doRenCv.configure(bg="grey")
+		self.setRenCvUIClr()
 		self.saveUIToParmsAndFile("doRenCv", val)
 
 	def chk_cmd(self, parmName):
@@ -1072,12 +1076,8 @@ class warpUi():
 
 		self.chk_doRenCv_var = IntVar()
 		self.chk_doRenCv_var.set(self.parmDic("doRenCv"))
-		defaultBg = self.root.cget('bg')
-		if self.parmDic("doRenCv") == 0:
-			bgClr = defaultBg
-		else:
-			bgClr = "grey"
-		self.chk_doRenCv = Checkbutton(self.frameTopControls, bg=bgClr, text="Ren Mode", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
+		self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Ren Mode", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
+		self.setRenCvUIClr()
 		self.chk_doRenCv.grid(row=row, column=0, sticky=W)
 		row +=1
 
@@ -1359,6 +1359,7 @@ class warpUi():
 								print "__init__(): Turning on doRenCv"
 								self.setVal("doRenCv", 1)
 								self.chk_doRenCv_var.set(1)
+								self.setRenCvUIClr()
 								print "__init__(): Returning to", self.parmDic("frStart")
 								fr = self.parmDic("frStart")
 							elif self.parmDic("image") in self.renQLs and not self.parmDic("image") == self.renQLs[-1]:

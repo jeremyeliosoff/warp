@@ -969,7 +969,7 @@ def calcXf(warpUi, prog, res, relSize, bbx):
 
 	return tx, ty
 
-def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha):
+def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, alpha, iJt=None):
 	texClr = srcImg.get_at((jx, jy))
 	texClr = list(texClr)[:3]
 	cTripMin = .1
@@ -989,17 +989,26 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 			newVal = tuple(list(clr) + [255])
 			thisDic[lev].set_at((jxt,jyt), newVal)
 
-			# Comp for ALL level
-			prevVal = thisDic[nLevels].get_at((jxt,jyt))
-			newVal = ut.mixV(prevVal, newVal, alpha)
-			r = warpUi.parmDic("cDark")
-			g = warpUi.parmDic("cMid")
-			b = warpUi.parmDic("cLight")
-			newValLs = []
-			for v in newVal:
-				newValLs.append(int(v))
-			newVal = tuple(newValLs)
-			newVal = ut.clampVSc(newVal, 0, 255)
+			db = False
+			if not db or iJt == None:
+				# Comp for ALL level
+				prevVal = thisDic[nLevels].get_at((jxt,jyt))
+				newVal = ut.mixV(prevVal, newVal, alpha)
+				r = warpUi.parmDic("cDark")
+				g = warpUi.parmDic("cMid")
+				b = warpUi.parmDic("cLight")
+				newValLs = []
+				for v in newVal:
+					newValLs.append(int(v))
+				newVal = tuple(newValLs)
+				newVal = ut.clampVSc(newVal, 0, 255)
+			else:
+				# Show curve prog for debug
+				cProg = float(iJt % 20)/19*255
+				newVal = (255-cProg,cProg, 0, 255)
+				if iJt < 4:
+					newVal = (255-cProg,cProg, 255, 255)
+
 			thisDic[nLevels].set_at((jxt,jyt), newVal)
 
 
@@ -1020,10 +1029,6 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levelAlph, res, sidToCvDic,
 	cvs = sidToCvDic[lev][sid]["cvs"]
 	allCoords = []
 
-	# This shouldn't be necessary - inelegant way of removing vertical stripe artifacts
-	dirtyPix = list(falseArray)
-	#dirtyPix = [[False for y in range(res[1])] for x in range(res[0])] 
-	
 	for cv in cvs: # TODO: Delete this, and "False" part below
 		allCoords += cv
 
@@ -1035,28 +1040,32 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levelAlph, res, sidToCvDic,
 			jtPrev = cv[(iJt-1) % len(cv)]
 			jx,jy = list(jt)
 
-			surfAlpha = levelAlph * (1-prog)
-			fade = .1
-			#surfAlpha = levelAlph * ut.smoothpulse(0, fade, 1-fade, 1, prog)
-			surfAlpha = min(1.0, 3*surfAlpha)
-			#surfAlpha = 1
-			curveAlpha = min(1.0, 3*surfAlpha)
+			#surfAlpha = levelAlph * (1-prog)
+			sfFdIn = .3
+			sfFdOut = .5
+			sfK = .5
+			surfAlpha = sfK * levelAlph * ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, prog)
+			cvFdIn = .1
+			cvFdOut = .3
+			curveAlpha = levelAlph * ut.smoothpulse(0, cvFdIn, 1-cvFdOut, 1, prog)
 
-			if jx < jtNext[0] or jx > jtPrev[0]:
+
+			if jx > jtPrev[0]:
 				# Skip to the top (lowest #) of a vertical line
 				while (jtNext[0] == jx	# next x is same - vertical line
 						and jtNext[1] < jy):   # next y is lower
 					iJt += 1
 					jx,jy = list(cv[iJt])
 					jtNext = cv[(iJt+1) % len(cv)]
-					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
-					dirtyPix[jx][jy] = True
+					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev,
+						nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha, iJt)
 				if jtNext[0] < jx:
-					# If the next x is less than this x -- which I think would only happen if
-					# the above while loop landed us at a back-curving turn - skip this jt.
+					# If the next x is less than this x -- which I think 
+					# would only happen if the above while loop landed us
+					# at a back-curving turn - skip this jt.
 					# TODO: must this next line exist?
-					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
-					dirtyPix[jx][jy] = True
+					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev,
+						nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha, iJt)
 					iJt += 1
 					continue
 
@@ -1065,14 +1074,12 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, levelAlph, res, sidToCvDic,
 				# MAIN FILLING - Draw vertical line up to next curve in this sid.
 				yy = jy
 				while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
-					if not dirtyPix[jx][yy]:
-						setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
-						dirtyPix[jx][yy] = True
+					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, yy, tx, ty, sidRanClr, surfAlpha)
 					yy -= 1
 
 
 			# Draw the curve. 
-			setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha)
+			setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, sidRanClr, curveAlpha, iJt)
 
 			iJt += 1
 
@@ -1199,10 +1206,11 @@ def renCv(warpUi, sidToCvDic, tholds):
 			else:
 				print "_renCv(): Saving", name, " image, path:", imgPath
 			pygame.image.save(outputs[name][lev], imgPath)
-			# TEMP save bmp
-			#bmpPath = imgPath.replace(".jpg", ".bmp")
-			#pygame.image.save(outputs[name][lev], bmpPath)
-			#ut.exeCmd("convert -resize 200% " + bmpPath + " " + bmpPath)
+			# Save bmp
+			if False:
+				bmpPath = imgPath.replace(".jpg", ".bmp")
+				pygame.image.save(outputs[name][lev], bmpPath)
+				ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
 	for name in renOutputsOneLev:
 		levDir,imgPath = warpUi.getRenDirAndImgPath(name)
