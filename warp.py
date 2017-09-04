@@ -326,13 +326,16 @@ class warpUi():
 		if focused == self.verUI["ren"]["sfx"]:
 			print "_returnCmd(): \tIT'S REN!!!!!!!!"
 			self.butVNew("ren")
+			self.saveUIToParmsAndFile("renVer", self.parmDic("renVer"))
 		elif focused == self.verUI["data"]["sfx"]:
 			print "_returnCmd(): \tIT'S DATA!!!!!!!!"
 			self.butVNew("data")
+			self.saveUIToParmsAndFile("dataVer", self.parmDic("dataVer"))
 			self.verUI["ren"]["sfx"].delete(0, END)
 			text = self.verUI["data"]["sfx"].get()
 			self.verUI["ren"]["sfx"].insert(0, text)
 			self.butVNew("ren")
+			self.saveUIToParmsAndFile("renVer", self.parmDic("renVer"))
 		else:
 			print "_returnCmd(): \tIT'S NEITHER!!!!!!!!"
 		self.frameMaster.focus_set()
@@ -412,12 +415,13 @@ class warpUi():
 		self.refreshButtonImages()
 
 	def toggleDoRenCv(self):
+		print "\n\n_toggleDoRenCv(): BEGIN"
 		if self.chk_doRenCv_var.get() == 1:
 			val = 0
 		else:
 			val = 1
 		self.chk_doRenCv_var.set(val)
-		self.setVal("doRenCv", val)
+		self.chk_doRenCv_cmd()
 
 	def saveParmDic(self):
 		print "_saveParmDic(): BEGIN"
@@ -712,11 +716,23 @@ class warpUi():
 		self.menuVChooser(nextVer, verType)
 
 
+	def chk_naturalRes_cmd(self):
+		val = self.chk_naturalRes_var.get()
+		print "_chk_naturalRes_cmd(): Setting self.displayNaturalRes to:", val
+		self.displayNaturalRes = val
+		self.updateCurImg()
+		#self.refreshPhotoImages()
+
 	# TODO: rename to renMode, make it a case of chk_cmd
 	def chk_doRenCv_cmd(self):
 		val = self.chk_doRenCv_var.get()
 		print "_chk_doRenCv_var(): Setting doRenCv to:", val
 		self.setVal("doRenCv", val)
+		defaultBg = self.root.cget('bg')
+		if val == 0:
+			self.chk_doRenCv.configure(bg=defaultBg)
+		else:
+			self.chk_doRenCv.configure(bg="grey")
 		self.saveUIToParmsAndFile("doRenCv", val)
 
 	def chk_cmd(self, parmName):
@@ -799,9 +815,14 @@ class warpUi():
 			self.res = res
 			sc = 2 # TODO: Make this a parm?
 			maxXres = 520
-			if res[0] > maxXres:
+			maxYres = 400
+			if res[0] > maxXres or self.displayNaturalRes == 0:
 				y = int(res[1] * float(maxXres)/res[0])
-				res = (maxXres, y)
+				x = maxXres
+				if y > maxYres:
+					x = int(x*float(maxYres)/y)
+					y = maxYres
+				res = (x, y)
 			self.displayRes = res
 			self.reloadErrorImg()
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
@@ -961,6 +982,7 @@ class warpUi():
 		self.timeStart = time.time()
 		self.animFrStart = self.parmDic("fr")
 		self.chkVars = {}
+		self.displayNaturalRes = 0
 
 		sourceImages = os.listdir(ut.imgIn)
 		sourceImages.sort()
@@ -1039,9 +1061,23 @@ class warpUi():
 
 		# Do renCv checkbox
 
+		self.chk_naturalRes_var = IntVar()
+		self.chk_naturalRes_var.set(self.displayNaturalRes)
+		self.chk_naturalRes = Checkbutton(self.frameTopControls, text="Natural Res", variable=self.chk_naturalRes_var, command=self.chk_naturalRes_cmd)
+		self.chk_naturalRes.grid(row=row, column=0, sticky=W)
+		row +=1
+
+
+		# Do renCv checkbox
+
 		self.chk_doRenCv_var = IntVar()
 		self.chk_doRenCv_var.set(self.parmDic("doRenCv"))
-		self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Do renCv", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
+		defaultBg = self.root.cget('bg')
+		if self.parmDic("doRenCv") == 0:
+			bgClr = defaultBg
+		else:
+			bgClr = "grey"
+		self.chk_doRenCv = Checkbutton(self.frameTopControls, bg=bgClr, text="Ren Mode", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
 		self.chk_doRenCv.grid(row=row, column=0, sticky=W)
 		row +=1
 

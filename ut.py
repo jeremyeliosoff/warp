@@ -73,6 +73,10 @@ class parmDic:
 						# Force animation off when loaded (should normally already be so)
 						if thisParmName == "anim" and k == "val":
 							v = "0"
+
+						# Force type changes, kinda backward compatibility
+						if thisParmName == "doRenCv" and k == "type":
+							v = "bool"
 						thisParmDic[k] = v
 						
 					nextIsParm = False
@@ -273,6 +277,9 @@ def smoothstep(edge0, edge1, x):
 		# Evaluate polynomial
 		ret = x*x*(3 - 2*x);
 	return ret
+
+def smoothpulse(in0, in1, out0, out1, x):
+	return smoothstep(in0, in1, x) - smoothstep(out0, out1, x)
 
 def ranClr(seed):
 	random.seed(seed)

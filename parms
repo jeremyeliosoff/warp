@@ -5,7 +5,7 @@
 
 fr
 type int
-val 1
+val 0
 
 fps
 type int
@@ -23,13 +23,13 @@ val 0
 
 doRenCv
 hidden True
-type int
-val 0
+type bool
+val 1
 
 image
 hidden True
 type str
-val tuktukPt1
+val testRamp
 
 dbImg1
 hidden True
@@ -44,17 +44,17 @@ val ALL
 dbImg2
 hidden True
 type str
-val cvSid
+val sidPost
 
 lev_dbImg2
 hidden True
 type str
-val ALL
+val lev03
 
 renVer
 hidden True
 type str
-val v022testAOVs
+val v003mnP1
 
 frStart
 type int
@@ -62,11 +62,11 @@ val 1
 
 frEnd
 type int
-val 2
+val 30
 
 frPerCycle
 type int
-val 30
+val 10
 
 doGen
 type int
@@ -95,11 +95,11 @@ val 1
 
 minThresh
 type float
-val 0.3
+val 0.1
 
 maxThresh
 type float
-val .6
+val .9
 
 rangeThresh
 type float
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v006noAOV
+val v002mnP1
 
 startLev
 type int
@@ -137,7 +137,7 @@ val 1
 
 fallDist
 type float
-val .2
+val 0
 
 fallKForBiggest
 type float
@@ -174,7 +174,7 @@ val .6
 
 aov_inSurfNow
 type bool
-val 0
+val 1
 
 aov_surfsAndHoles
 type bool
@@ -194,7 +194,7 @@ val 0
 
 aov_cvSid
 type bool
-val 0
+val 1
 
 aov_cidPost
 type bool
@@ -202,7 +202,7 @@ val 0
 
 aov_sidPost
 type bool
-val 0
+val 1
 
 aov_tid
 type bool

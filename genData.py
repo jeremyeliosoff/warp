@@ -261,18 +261,6 @@ def vBy255(v):
 	return ret
 
 
-def gridToImgV(grid):
-	res = (len(grid), len(grid[0]))
-	ret = pygame.Surface(res)
-	for x in range(res[0]):
-		for y in range(res[1]):
-			v = ut.multVSc(grid[x][y], 255)
-			v = ut.clampVSc(v, 0, 255)
-			ret.set_at((x, y), (v[0], v[1], v[2], 255))
-	return ret
-
-
-
 def heatMap(v, parmDic):
 	cDark = parmDic("cDark")
 	cMid = parmDic("cMid")
@@ -1018,7 +1006,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 
 	
 
-def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray):
+def renSid(warpUi, srcImg, sid, nLevels, lev, level, levelAlph, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray):
 	#sidRanClr = ut.multVSc(intToClr(sid), levMult*1.0/nLevels)
 	# TODO: Change levMult to levOpac + integrate that.
 	sidRanClr = intToClr(sid)
@@ -1047,7 +1035,9 @@ def renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, out
 			jtPrev = cv[(iJt-1) % len(cv)]
 			jx,jy = list(jt)
 
-			surfAlpha = alpha * (1-prog)
+			surfAlpha = levelAlph * (1-prog)
+			fade = .1
+			#surfAlpha = levelAlph * ut.smoothpulse(0, fade, 1-fade, 1, prog)
 			surfAlpha = min(1.0, 3*surfAlpha)
 			#surfAlpha = 1
 			curveAlpha = min(1.0, 3*surfAlpha)
@@ -1173,8 +1163,10 @@ def renCv(warpUi, sidToCvDic, tholds):
 			level = warpUi.getOfsWLev(lev) % 1.0
 
 			# Fade in and out - TODO: Improve this
-			alpha = level* (1-level)**2
-			alpha = min(level*1.5*pow(thold,.5), 1)
+			levelAlph = level* (1-level)**2
+			levelAlph = min(level*1.5*pow(thold,.5), 1)
+			#levelAlph = float(lev)/nLevels-1)
+			levelAlph = 1 #level**.1
 
 			iSid = 0
 			for sid in sids:
@@ -1189,7 +1181,7 @@ def renCv(warpUi, sidToCvDic, tholds):
 					maxSize = warpUi.parmDic("maxSize")
 					#print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
 					if relSize[0] <= maxSize and relSize[1] <= maxSize:
-						renSid(warpUi, srcImg, sid, nLevels, lev, level, alpha, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray)
+						renSid(warpUi, srcImg, sid, nLevels, lev, level, levelAlph, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray)
 		print
 
 
@@ -1200,7 +1192,12 @@ def renCv(warpUi, sidToCvDic, tholds):
 			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
 			levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
 			ut.mkDirSafe(levDir)
-			print "_renCv(): Saving", name, " image, path:", imgPath
+			if name == "ren" and lev == nLevels:
+				print "\n\n**********************************************"
+				print "\n\n_renCv(): ***** Saving", name, " image, path:", imgPath, "\n\n"
+				print "**********************************************\n\n"
+			else:
+				print "_renCv(): Saving", name, " image, path:", imgPath
 			pygame.image.save(outputs[name][lev], imgPath)
 			# TEMP save bmp
 			#bmpPath = imgPath.replace(".jpg", ".bmp")
