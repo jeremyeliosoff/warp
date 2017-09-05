@@ -5,7 +5,7 @@
 
 fr
 type int
-val 60
+val 2052
 
 fps
 type int
@@ -24,12 +24,12 @@ val 0
 doRenCv
 hidden True
 type bool
-val 1
+val 0
 
 image
 hidden True
 type str
-val testRamp
+val lzSmokeFULL
 
 dbImg1
 hidden True
@@ -44,25 +44,25 @@ val ALL
 dbImg2
 hidden True
 type str
-val sidPost
+val cvSid
 
 lev_dbImg2
 hidden True
 type str
-val lev03
+val ALL
 
 renVer
 hidden True
 type str
-val v011cyc30
+val v004interwvMin0
 
 frStart
 type int
-val 1
+val 2050
 
 frEnd
 type int
-val 60
+val 2440
 
 frPerCycle
 type int
@@ -83,7 +83,7 @@ val 1
 
 nLevels
 type int
-val 3
+val 10
 
 kSurf
 type float
@@ -91,15 +91,15 @@ val 1
 
 gamma
 type float
-val 1
+val .2
 
 minThresh
 type float
-val 0.5
+val 0
 
 maxThresh
 type float
-val .9
+val 1
 
 rangeThresh
 type float
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v005cyc30
+val v003interweave
 
 startLev
 type int
@@ -141,7 +141,7 @@ val .2
 
 fallKForBiggest
 type float
-val 1
+val 0
 
 fallUseAsBiggest
 type float
@@ -153,15 +153,15 @@ val .25
 
 fallVecX
 type float
-val .8
+val .5
 
 fallVecY
 type float
-val .5
+val .3
 
 fallMode
 type str
-val fall
+val orig
 
 progDur
 type float
@@ -171,6 +171,10 @@ val .6
 
 
 ---AOV---
+
+aov_perLev
+type bool
+val 1
 
 aov_inSurfNow
 type bool
@@ -202,7 +206,7 @@ val 0
 
 aov_sidPost
 type bool
-val 0
+val 1
 
 aov_tid
 type bool

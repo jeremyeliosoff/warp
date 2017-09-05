@@ -844,7 +844,9 @@ class warpUi():
 		return fr/float(self.parmDic("frPerCycle"))
 
 	def getOfsWLev(self, lev, fr=None):
-		return self.getOfs(fr) + float(lev)/self.parmDic("nLevels")
+		ofsWLev = self.getOfs(fr) + float(lev)/self.parmDic("nLevels")
+		# For interweaving
+		return ofsWLev + (lev % 2) * .5
 
 	def setStatus(self, typ, msg=""):
 
@@ -1394,9 +1396,6 @@ class warpUi():
 					# This forces each frame to process, ie. ACTUALLY GENERATES THE DATA.  TODO: maybe add forceFps
 					self.setFrAndUpdate(fr)
 
-					# For ofs anim.
-					#ofs = fr/float(frPerCycle) % 1
-					ofs = self.getOfs() % 1
 				self.setVal("fr", fr)
 			if not self.rootDestroyed:
 				Tk.update_idletasks(self.root)
