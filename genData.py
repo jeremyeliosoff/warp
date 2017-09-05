@@ -980,6 +980,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 			if not db or iJt == None:
 				# Comp for ALL level
 				prevVal = thisDic[nLevels].get_at((jxt,jyt))
+				newVal = ut.mixV(prevVal, newVal, alpha)
 				newValLs = []
 				for v in newVal:
 					newValLs.append(int(v))
@@ -1149,8 +1150,8 @@ def renCv(warpUi, sidToCvDic, tholds):
 			# Fade in and out - TODO: Improve this
 			levelAlph = levProg* (1-levProg)**2
 			levelAlph = min(levProg*1.5*pow(thold,.5), 1)
-			#levelAlph = float(lev)/nLevels-1)
-			levelAlph = 1 #levProg**.1
+			levelAlph = float(lev)/(nLevels-1)
+			levelAlph = levelAlph**.1
 
 			iSid = 0
 			for sid in sids:
