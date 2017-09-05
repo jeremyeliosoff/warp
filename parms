@@ -5,7 +5,7 @@
 
 fr
 type int
-val 2101
+val 1574
 
 fps
 type int
@@ -19,7 +19,7 @@ val 0.6
 anim
 hidden True
 type int
-val 1
+val 0
 
 doRenCv
 hidden True
@@ -29,7 +29,7 @@ val 1
 image
 hidden True
 type str
-val lzSmokeFULL
+val lzPoemPt2
 
 dbImg1
 hidden True
@@ -54,15 +54,15 @@ val ALL
 renVer
 hidden True
 type str
-val v004interwvMin0
+val v005mn0
 
 frStart
 type int
-val 2050
+val 1400
 
 frEnd
 type int
-val 2440
+val 1600
 
 frPerCycle
 type int
@@ -91,7 +91,7 @@ val 1
 
 gamma
 type float
-val .2
+val 1
 
 minThresh
 type float
@@ -99,7 +99,7 @@ val 0
 
 maxThresh
 type float
-val 1
+val .8
 
 rangeThresh
 type float
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v003interweave
+val v005mn0
 
 startLev
 type int
@@ -137,7 +137,7 @@ val 0
 
 fallDist
 type float
-val .2
+val 1
 
 fallKForBiggest
 type float
@@ -157,7 +157,7 @@ val .5
 
 fallVecY
 type float
-val .3
+val .4
 
 fallMode
 type str
@@ -166,6 +166,30 @@ val orig
 progDur
 type float
 val .6
+
+sfA
+type float
+val .5
+
+sfK
+type float
+val 1.2
+
+cvA
+type float
+val .8
+
+cvK
+type float
+val .8
+
+mixClrSob
+type float
+val 0
+
+mixClrTrp
+type float
+val 0.5
 
 
 

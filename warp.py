@@ -375,6 +375,8 @@ class warpUi():
 				self.recButCmd()
 			elif key == "c":
 				self.toggleDoRenCv()
+			elif key == "g":
+				self.toggleGenRen1fr()
 			elif key == "x":
 				self.imgButCmd()
 
@@ -413,6 +415,15 @@ class warpUi():
 			self.record = val
 		print "_recButCmd(): self.record =", self.record
 		self.refreshButtonImages()
+
+	def toggleGenRen1fr(self):
+		print "\n\n_toggleGenRen1fr(): BEGIN"
+		if self.chk_genRen1fr_var.get() == 1:
+			val = 0
+		else:
+			val = 1
+		self.chk_genRen1fr_var.set(val)
+		self.chk_genRen1fr_cmd()
 
 	def toggleDoRenCv(self):
 		print "\n\n_toggleDoRenCv(): BEGIN"
@@ -529,7 +540,7 @@ class warpUi():
 			if self.inSurfGridPrev == None:
 				prevFr, prevFrameDir = self.makeFramesDataDir(self.parmDic("fr") - 1)
 				prevFrInSurfGrid = prevFrameDir + "/inSurfGrid" 
-				if os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
+				if self.genRen1fr == 0 and os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
 					print "\n\n_updateCurImg(): LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
 					self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
 
@@ -716,12 +727,17 @@ class warpUi():
 		self.menuVChooser(nextVer, verType)
 
 
+	def chk_genRen1fr_cmd(self):
+		val = self.chk_genRen1fr_var.get()
+		print "_chk_genRen1fr_cmd(): Setting self.displayNaturalRes to:", val
+		self.genRen1fr = val
+		self.updateCurImg()
+
 	def chk_naturalRes_cmd(self):
 		val = self.chk_naturalRes_var.get()
 		print "_chk_naturalRes_cmd(): Setting self.displayNaturalRes to:", val
 		self.displayNaturalRes = val
 		self.updateCurImg()
-		#self.refreshPhotoImages()
 
 	def setRenCvUIClr(self):
 		defaultBg = self.root.cget('bg')
@@ -989,6 +1005,7 @@ class warpUi():
 		self.animFrStart = self.parmDic("fr")
 		self.chkVars = {}
 		self.displayNaturalRes = 0
+		self.genRen1fr = 0
 
 		sourceImages = os.listdir(ut.imgIn)
 		sourceImages.sort()
@@ -998,10 +1015,11 @@ class warpUi():
 		self.root.bind('<Return>', lambda e: self.returnCmd())
 		self.root.bind('<Control-Return>', lambda e: self.ctlReturnCmd())
 		#self.root.bind('<KeyPress>', self.keyPress)
-		for kk in ["Left", "Right", "Escape", "Control-Left", "Control-Right", "space", "c", "r", "x"]:
+		for kk in ["Left", "Right", "Escape", "Control-Left", "Control-Right", "space", "c", "r", "x", "g"]:
 			self.root.bind('<' + kk + '>', self.execHotkey)
 		self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
 		self.root.bind('<Control-Right>', lambda e: self.ffwButCmd())
+		self.root.bind('<Alt-Return>', lambda e: self.imgButCmd())
 
 		#self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
 		# Load images.
@@ -1065,17 +1083,27 @@ class warpUi():
 		self.but_saveDics.grid(row=0, column=2, sticky=W)
 
 
-		# Do renCv checkbox
+		# Natural res checkbox
+		self.chk_genRen1fr_var = IntVar()
+		self.chk_genRen1fr_var.set(self.displayNaturalRes)
+		self.chk_genRen1fr = Checkbutton(self.frameTopControls,
+			text="Gen Ren 1 fr", variable=self.chk_genRen1fr_var,
+			command=self.chk_genRen1fr_cmd)
+		self.chk_genRen1fr.grid(row=row, column=0, sticky=W)
+		row +=1
 
+
+		# Natural res checkbox
 		self.chk_naturalRes_var = IntVar()
 		self.chk_naturalRes_var.set(self.displayNaturalRes)
-		self.chk_naturalRes = Checkbutton(self.frameTopControls, text="Natural Res", variable=self.chk_naturalRes_var, command=self.chk_naturalRes_cmd)
+		self.chk_naturalRes = Checkbutton(self.frameTopControls,
+			text="Natural Res", variable=self.chk_naturalRes_var,
+			command=self.chk_naturalRes_cmd)
 		self.chk_naturalRes.grid(row=row, column=0, sticky=W)
 		row +=1
 
 
 		# Do renCv checkbox
-
 		self.chk_doRenCv_var = IntVar()
 		self.chk_doRenCv_var.set(self.parmDic("doRenCv"))
 		self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Ren Mode", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
@@ -1366,7 +1394,7 @@ class warpUi():
 								fr = self.parmDic("frStart")
 							elif self.parmDic("image") in self.renQLs and not self.parmDic("image") == self.renQLs[-1]:
 								# If recording and in renQ but not last,
-								# turn off doRenCv, restart, and got to next img.
+								# turn off doRenCv, restart, and go to next img.
 								# TODO: Make stats work for multiple seq
 								nextImg = self.renQLs[self.renQLs.index(self.parmDic("image")) + 1]
 								self.setVal("image", nextImg)

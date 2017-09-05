@@ -652,6 +652,7 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 		print "_growCurves(): lev:", lev, "sids to be merged:", mergeKeySidToValSid[lev].keys()
 		# Merge branches.
 		for sid in set(allPrevs[lev] + sidToSurf[lev].keys()):
+			print("_growCurves(): len(warpUi.sidToTid):", len(warpUi.sidToTid), "; lev:", lev)
 			if sid in mergeKeySidToValSid[lev].keys():
 				# This sid will be merged.
 				sidToMergeTo = mergeKeySidToValSid[lev][sid]
@@ -770,6 +771,49 @@ def writeTidImg(warpUi, inSurfGrid):
 		print "_writeTidImg(): imgPath", imgPath
 		pygame.image.save(dbImgDic["tid"][lev], imgPath)
 
+def genDataWrapper(warpUi):
+	img = pygame.image.load(warpUi.images["source"]["path"])
+	border(img)
+
+	# Make required dirs.
+	fr, frameDir = warpUi.makeFramesDataDir()
+
+	# Load prev inSurfGrid.
+	inSurfGridPrev = None
+	frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
+
+	jtGrid, tholds = initJtGrid(img, warpUi)
+
+	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
+	# TODO: TEMP - this should be done in warp.py when genData is stopped.
+	print "\n\n_genData(): ----- doing pickleDump(" + frameDir + "/inSurfGrid"
+	pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
+
+	frameDirLs = frameDir.split("/")
+	prevFr = int(frameDirLs[-1]) - 1
+	frameDirLs[-1] = "%05d" % prevFr
+	prevFrInSurfGrid = "/".join(frameDirLs) + "/inSurfGrid"
+	print "\n\n\n_genData(): prevFrInSurfGrid:", prevFrInSurfGrid, "\n\n"
+	if os.path.exists(prevFrInSurfGrid):
+		ut.exeCmd("rm " + prevFrInSurfGrid)
+
+	warpUi.inSurfGridPrev = inSurfGrid[:]
+
+
+	# Save inSurfGrid
+	sidToCvDic = convertCvDicToDic(sidToCvs, warpUi)
+	pickleDump(frameDir + "/sidToCvDic", sidToCvDic)
+	pickleDump(frameDir + "/tholds", tholds)
+
+	# Save sidToCvs for this frame.
+	pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
+
+	tidToSidsBackupEvery = 20
+	if fr % tidToSidsBackupEvery == 0:
+		print "_genData(): BACKING UP tidToSids:"
+		ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
+
+	pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
 
 
 def genData(warpUi, statsDirDest):
@@ -779,77 +823,18 @@ def genData(warpUi, statsDirDest):
 	print "_genData(): ### DOING genData ###"
 	print "_genData(): #####################"
 
-	#os.system("rm " + outFile)
-	nLevels = warpUi.parmDic("nLevels")
-	img = pygame.image.load(warpUi.images["source"]["path"])
-	border(img)
-
-	# Make required dirs.
-	fr, frameDir = warpUi.makeFramesDataDir()
 
 	sidToCvs = {}
 
-	if warpUi.parmDic("doRenCv") == 1:
-		if warpUi.tidToSids == None:
-			warpUi.tidToSids = pickleLoad(warpUi.seqDataVDir  + "/tidToSids")
-		if warpUi.sidToTid == None:
-			warpUi.sidToTid = pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
-
-		catchErrors = True
-		if catchErrors:
-			renCvWrapper(warpUi)
-			#try:
-			#	renCvWrapper(warpUi, warpUi.res)
-			#except:
-			#	if warpUi.parmDic("anim") == 1:
-			#		warpUi.animButCmd()
-			#	print "\nERROR: could not perform renCvWrapper; unknown error."
-			#	err = sys.exc_info()
-			#	warpUi.setStatus("error", ("ERROR:" + str(err)))
-			#	print "ERROR:"
-			#	print err
-		else:
-			renCvWrapper(warpUi, warpUi.res)
-		print "_genData(): Post renCvWrapper"
+	if warpUi.genRen1fr == 1:
+		warpUi.flushDics()
+		genDataWrapper(warpUi)
+		renCvWrapper(warpUi)
+	elif warpUi.parmDic("doRenCv") == 1:
+		renCvWrapper(warpUi)
 	else:
-		# Load prev inSurfGrid.
-		inSurfGridPrev = None
-		frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
+		genDataWrapper(warpUi)
 
-		jtGrid, tholds = initJtGrid(img, warpUi)
-
-		inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
-		# TODO: TEMP - this should be done in warp.py when genData is stopped.
-		print "\n\n_genData(): ----- doing pickleDump(" + frameDir + "/inSurfGrid"
-		pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
-
-		frameDirLs = frameDir.split("/")
-		prevFr = int(frameDirLs[-1]) - 1
-		frameDirLs[-1] = "%05d" % prevFr
-		prevFrInSurfGrid = "/".join(frameDirLs) + "/inSurfGrid"
-		print "\n\n\n_genData(): prevFrInSurfGrid:", prevFrInSurfGrid, "\n\n"
-		if os.path.exists(prevFrInSurfGrid):
-			ut.exeCmd("rm " + prevFrInSurfGrid)
-
-		warpUi.inSurfGridPrev = inSurfGrid[:]
-
-	
-		# Save inSurfGrid
-		sidToCvDic = convertCvDicToDic(sidToCvs, warpUi)
-		pickleDump(frameDir + "/sidToCvDic", sidToCvDic)
-		pickleDump(frameDir + "/tholds", tholds)
-
-		# Save sidToCvs for this frame.
-		pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
-
-		tidToSidsBackupEvery = 20
-		if fr % tidToSidsBackupEvery == 0:
-			print "_genData(): BACKING UP tidToSids:"
-			ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
-
-		pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
-
-	print "_genData(): Post renCvWrapper block"
 	ut.timerStop(warpUi, "genData")
 
 def convertCvToLs(cv):
@@ -885,6 +870,11 @@ def convertCvDicToDic(cvDic, warpUi):
 
 
 def renCvWrapper(warpUi):
+	print "_renCvWrapper(): BEGIN"
+	if warpUi.tidToSids == None:
+		warpUi.tidToSids = pickleLoad(warpUi.seqDataVDir  + "/tidToSids")
+	if warpUi.sidToTid == None:
+		warpUi.sidToTid = pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
 	fr, frameDir = warpUi.makeFramesDataDir()
 	sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
 	tholds = pickleLoad(frameDir + "/tholds")
@@ -894,6 +884,7 @@ def renCvWrapper(warpUi):
 		warpUi.setStatus("error", "ERROR: sidToCvDic == None")
 	else:
 		renCv(warpUi, sidToCvDic, tholds)
+	print "_renCvWrapper(): END"
 
 
 
@@ -902,8 +893,9 @@ def calcProg(warpUi, sid, level):
 	progDur = warpUi.parmDic("progDur")
 	progStartMin = .2
 	progStart = ut.mix(progStartMin, 1-progDur, random.random())
+	#progStart = ut.mix(progStartMin, 1-progDur*(1-progStartMin), random.random())
 	#progEnd = min(1.0, progStart+warpUi.parmDic("progDur"))
-	progEnd = progStart + progDur*2
+	progEnd = progStart + progDur
 	#progEnd = progStart + progDur
 	#return ut.smoothstep(progStart, progEnd, level)
 	return min(1, 2*ut.smoothstep(progStart, progEnd, level))
@@ -950,14 +942,14 @@ def calcXf(warpUi, prog, res, relSize, bbx):
 
 	return tx, ty
 
-def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, tidRanClr, alpha, iJt=None):
+def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, tidRanClr, k, alpha, iJt=None):
 	texClr = srcImg.get_at((jx, jy))
 	texClr = list(texClr)[:3]
-	cTripMin = .1
-	cTripMax = .5
 	cTripPow = 1
-	mixTrip = ut.mix(cTripMin, cTripMax, pow(prog, cTripPow))
-	clr = ut.mixV(texClr, tidRanClr, mixTrip)
+	mixClr = ut.mix(warpUi.parmDic("mixClrSob"),
+		warpUi.parmDic("mixClrTrp"), pow(prog, cTripPow))
+	clr = ut.mixV(texClr, tidRanClr, mixClr)
+	clr = ut.multVSc(clr, k)
 
 	# Adapted from  setAOV(warpUi, "ren", outputs, lev, nLevels, jx + tx, jy + ty, clr)
 	thisDic = outputs["ren"]
@@ -1026,12 +1018,14 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 			#surfAlpha = levelAlph * (1-prog)
 			sfFdIn = .3
 			sfFdOut = .5
-			sfK = .5
-			surfAlpha = sfK * levelAlph * ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, prog)
+			sfA = warpUi.parmDic("sfA")
+			sfK = warpUi.parmDic("sfK")
+			surfAlpha = sfA * levelAlph * ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, prog)
 			cvFdIn = .1
 			cvFdOut = .3
-			cvK = .8
-			curveAlpha = cvK * levelAlph * ut.smoothpulse(0, cvFdIn, 1-cvFdOut, 1, prog)
+			cvA = warpUi.parmDic("cvA")
+			cvK = warpUi.parmDic("cvK")
+			curveAlpha = cvA * levelAlph * ut.smoothpulse(0, cvFdIn, 1-cvFdOut, 1, prog)
 
 
 			if jx > jtPrev[0]:
@@ -1042,14 +1036,14 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 					jx,jy = list(cv[iJt])
 					jtNext = cv[(iJt+1) % len(cv)]
 					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev,
-						nLevels, jx, jy, tx, ty, tidRanClr, curveAlpha, iJt)
+						nLevels, jx, jy, tx, ty, tidRanClr, cvK, curveAlpha, iJt)
 				if jtNext[0] < jx:
 					# If the next x is less than this x -- which I think 
 					# would only happen if the above while loop landed us
 					# at a back-curving turn - skip this jt.
 					# TODO: must this next line exist?
 					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev,
-						nLevels, jx, jy, tx, ty, tidRanClr, curveAlpha, iJt)
+						nLevels, jx, jy, tx, ty, tidRanClr, cvK, curveAlpha, iJt)
 					iJt += 1
 					continue
 
@@ -1058,12 +1052,12 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 				# MAIN FILLING - Draw vertical line up to next curve in this sid.
 				yy = jy
 				while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
-					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, yy, tx, ty, tidRanClr, surfAlpha)
+					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, yy, tx, ty, tidRanClr, sfK, surfAlpha)
 					yy -= 1
 
 
 			# Draw the curve. 
-			setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, tidRanClr, curveAlpha, iJt)
+			setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, tidRanClr, cvK, curveAlpha, iJt)
 
 			iJt += 1
 
@@ -1152,6 +1146,7 @@ def renCv(warpUi, sidToCvDic, tholds):
 			levelAlph = min(levProg*1.5*pow(thold,.5), 1)
 			levelAlph = float(lev)/(nLevels-1)
 			levelAlph = levelAlph**.1
+			levelAlph = 1 #TEMP?
 
 			iSid = 0
 			for sid in sids:
