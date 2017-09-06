@@ -298,28 +298,78 @@ def initJtGrid(img, warpUi):
 	ut.timerStart(warpUi, "initJtGridXYLoop")
 
 	
-	imgArray = pygame.surfarray.array3d(img)
+	#imgArray = np.array(pygame.surfarray.array3d(img))
+	imgArray = np.array(list(pygame.surfarray.array3d(img)))
+	print "NNNNNNNN imgArray"
+	print imgArray
+	#imgArray = np.array([[range(3) for j in range(res[0])] for i in range(res[1])])
+	imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+	cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
+	
 	print "_initJtGrid(): jtGridOut"
-	jtGridOut = np.empty(imgArray.shape, dtype=np.int32)
-	jtGridOut.fill(0)
-	for x in jtGridOut:
-		for y in x:
-			print y
-		print
+	jtLevels = np.empty(imgArray.shape, dtype=np.uint8)
+	jtLevels.fill(0)
+	jtLevels_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtLevels.nbytes)
+
+	jtCons = np.empty(imgArray.shape, dtype=np.uint8)
+	jtCons.fill(0)
+	jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
+	#for x in imgArray:
+	#	for y in x:
+	#		print y,
+	#	print
 	
 	kernel = """
-__kernel void initJtC(__global int* imgGrid* num2,__global int* xy,__global int* outChar) 
+__kernel void initJtC(
+			__global uchar* imgArray,
+			__global uchar* jtLevels) 
 {
-    int i = get_global_id(0);
-    out[i] = num1[i]*num1[i]+ num2[i]*num2[i];
-	int ind = i*4;
-    outChar[ind] = 0;
-    outChar[ind+1] = 1;
-    outChar[ind+2] = -1;
-    outChar[ind+3] = 2;
-}
-	"""
+    int row = get_global_id(0);
+    int col = get_global_id(1);
 
+	int cols = %d;
+	int npix = 3;
+	int i = row * cols * npix + col * npix;
+	jtLevels[i] = row;
+	jtLevels[i+1] = col;
+	jtLevels[i+2] = i;
+
+    //out[i] = num1[i]*num1[i]+ num2[i]*num2[i];
+	//int ind = i*4;
+    //outChar[ind] = 0;
+    //outChar[ind+1] = 1;
+    //outChar[ind+2] = -1;
+    //outChar[ind+3] = 2;
+}
+	""" % res[1]
+	#int index = rowid * ncols * npix + colid * npix;
+	# build the Kernel
+	bld = cl.Program(cntxt, kernel).build()
+	launch = bld.initJtC(
+			queue,
+			imgArray.shape,
+			None,
+			imgArray_buf,
+			jtLevels_buf)
+	launch.wait()
+
+	if True:
+
+		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
+		cl.enqueue_read_buffer(queue, jtLevels_buf, jtLevels).wait()
+
+	#	print "VVVVVVVVVV jtCons"
+	#	for x in jtCons:
+	#		for y in x:
+	#			print y,
+	#		print
+		
+		print "VVVVVVVVVV jtLevels"
+		for x in jtLevels:
+			for y in x:
+				print y,
+			print
+	
 	for x in range(res[0]-1):
 		if (x+1) % (res[0]/10) == 0:
 			print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
