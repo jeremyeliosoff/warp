@@ -232,6 +232,10 @@ aov_cvSid
 type bool
 val 0
 
+aov_sidPost
+type bool
+val 0
+
 aov_cidPost
 type bool
 val 0

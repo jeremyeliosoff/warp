@@ -41,8 +41,8 @@ class parmDic:
 		with open(parmPath) as f:
 			for line in f.readlines():
 				stripped = line.strip()
-				#print "_loadParmLs(): parmPath:" + parmFileTail + \
-				#	", stage:" + thisStage + ", line:", stripped
+				print "_loadParmLs(): parmPath:" + parmFileTail + \
+					", stage:" + thisStage + ", line:", stripped
 				if stripped == "":
 					nextIsParmOrDivider = True
 				else:
@@ -89,6 +89,10 @@ class parmDic:
 						thisParmDic[k] = v
 						
 					nextIsParmOrDivider = False
+
+		# Needed for last parm, I think.
+		if not alreadyInList:
+			self.parmLs.append([thisParmName, thisParmDic])
 
 		print "\n\n_loadParmLs(): self.parmLs:"
 

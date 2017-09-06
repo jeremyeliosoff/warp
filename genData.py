@@ -1,5 +1,13 @@
 #!/usr/bin/python
 import pygame, math, ut, pickle, os, pprint, sys, random, time
+# OpenCl stuff!
+import pyopencl as cl
+import numpy as np
+
+#this line would create a context
+cntxt = cl.create_some_context()
+#now create a command queue in the context
+queue = cl.CommandQueue(cntxt)
 
 outFile = "/tmp/out"
 
@@ -135,19 +143,14 @@ class joint:
 	level = None
 	texClr = None
 	cons = None
-	nbrs = None
-	jid = None
 	nx = None
 	pv = None
 	cv = None
 
-	def __init__(self, xy, level, texClr, cons, jid, nbrs=None):
+	def __init__(self, xy, level, cons):
 		self.xy = xy
 		self.level = level
-		self.texClr = texClr
 		self.cons = cons
-		self.jid = jid
-		self.nbrs = nbrs
 
 class surf:
 	inSurf = None # TODO: FFS rename this - outerCurve
@@ -293,6 +296,30 @@ def initJtGrid(img, warpUi):
 	tholds = [None for lev in range(nLevels)]
 	
 	ut.timerStart(warpUi, "initJtGridXYLoop")
+
+	
+	imgArray = pygame.surfarray.array3d(img)
+	print "_initJtGrid(): jtGridOut"
+	jtGridOut = np.empty(imgArray.shape, dtype=np.int32)
+	jtGridOut.fill(0)
+	for x in jtGridOut:
+		for y in x:
+			print y
+		print
+	
+	kernel = """
+__kernel void initJtC(__global int* imgGrid* num2,__global int* xy,__global int* outChar) 
+{
+    int i = get_global_id(0);
+    out[i] = num1[i]*num1[i]+ num2[i]*num2[i];
+	int ind = i*4;
+    outChar[ind] = 0;
+    outChar[ind+1] = 1;
+    outChar[ind+2] = -1;
+    outChar[ind+3] = 2;
+}
+	"""
+
 	for x in range(res[0]-1):
 		if (x+1) % (res[0]/10) == 0:
 			print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
@@ -303,8 +330,6 @@ def initJtGrid(img, warpUi):
 			for yy in range(y, y+2):
 				for xx in range(x, x+2):
 					nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
-
-
 
 			for lev in range(nLevels):
 				levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
@@ -322,11 +347,11 @@ def initJtGrid(img, warpUi):
 					texClr = img.get_at((x,y))
 					if len(cons) > 1:
 						# TODO: I think all these levThresh's, should be levThreshRemap's
-						jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, texClr, cons[0], nJoints, nbrs),
-											   joint((x,y), levThreshRemap, texClr, cons[1], nJoints + 1, nbrs),]
+						jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
+											   joint((x,y), levThreshRemap, cons[1])]
 						nJoints += 2
 					else:
-						jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, texClr, cons[0], nJoints, nbrs)]
+						jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
 						nJoints += 1
 	# Write stats
 	ut.timerStop(warpUi, "initJtGridXYLoop")
@@ -432,14 +457,18 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
 			# Initiate curve growth for any joints in this cell of jtGrid.
 
+			# GPUtrans jtGrid (effectively) becomes jtCons - maybe list, not dic
 			for lev,jts in jtGrid[x][y].items():
 				for jt in jts:
+					# GPUtrans: I think this can become "if cvGrid[x][y][lev] == None"
 					if jt.cv == None:
+						# GPUtrans: cvGrid[x][y][lev] = curve(...)
 						jt.cv = curve(jt, nCurves, inSurfNow[lev])
 						nCurves += 1
 						xx = x + jt.cons[1][0]
 						yy = y + jt.cons[1][1]
 						for jtt in jtGrid[xx][yy][lev]:
+							# GPUtrans: [1][0] may become [2], etc.
 							if jtt.cons[0][0] == -jt.cons[1][0] and jtt.cons[0][1] == -jt.cons[1][1]:
 								thisJt = jtt
 						nJoints = 0
@@ -577,7 +606,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 
 			# TODO: next line - I thought a sid could have > 1 surfs??? It appears surf is never used, just key.
 			sidToSurf[lev][sid] = cv.surf
-			headId = cv.head.jid
 			jt = cv.head
 			sfClr = intToClr(jt.cv.surf.sid)
 			while True:

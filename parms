@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3
+val 7
 
 fps
 val 52
@@ -13,10 +13,10 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
-val 1
+val 0
 
 image
 val testSeq
@@ -151,7 +151,7 @@ val .6
 ---AOV---
 
 aov_perLev
-val 1
+val 0
 
 aov_inSurfNow
 val 0
@@ -169,5 +169,11 @@ aov_inPrev
 val 0
 
 aov_cvSid
+val 0
+
+aov_sidPost
+val 1
+
+aov_cidPost
 val 0
 
