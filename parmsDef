@@ -4,51 +4,76 @@
 ---META---
 
 fr
-val 3
+type int
+val 8
 
 fps
+type int
 val 52
 
 ofs
+hidden True
+type float
 val 0.6
 
 anim
-val 1
+hidden True
+type int
+val 0
 
 doRenCv
+hidden True
+type bool
 val 1
 
 image
+hidden True
+type str
 val testSeq
 
 dbImg1
+hidden True
+type str
 val sidPost
 
 lev_dbImg1
+hidden True
+type str
 val ALL
 
 dbImg2
+hidden True
+type str
 val sidPost
 
 lev_dbImg2
+hidden True
+type str
 val lev03
 
 renVer
-val v027
+hidden True
+type str
+val v025testNewParms
 
 frStart
+type int
 val 1
 
 frEnd
-val 8
+type int
+val 2
 
 frPerCycle
+type int
 val 30
 
 doGen
+type int
 val 1
 
 doRen
+type int
 val 1
 
 
@@ -57,33 +82,43 @@ val 1
 ---GEN---
 
 nLevels
+type int
 val 8
 
 kSurf
+type float
 val 1
 
 gamma
+type float
 val 1
 
 minThresh
+type float
 val 0.5
 
 maxThresh
+type float
 val .9
 
 rangeThresh
+type float
 val .1
 
 maxSize
+type float
 val 1
 
 cDark
+type clr
 val 0.07450980392156863,0.18823529411764706,0.13725490196078433
 
 cMid
+type clr
 val 0.10980392156862745,0.3058823529411765,0.6392156862745098
 
 cLight
+type clr
 val 1.0,0.8941176470588236,0.9137254901960784
 
 
@@ -92,57 +127,76 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v034
+hidden True
+type str
+val v031testGenRen
 
 startLev
+type int
 val 0
 
 fallDist
+type float
 val 0
 
 fallKForBiggest
+type float
 val 1
 
 fallUseAsBiggest
+type float
 val 1
 
 fallBiggestPow
+type float
 val .25
 
 fallVecX
+type float
 val .8
 
 fallVecY
+type float
 val .5
 
 fallMode
+type str
 val fall
 
 progDurBot
+type float
 val 1
 
 progDurTop
+type float
 val .5
 
 sfA
+type float
 val .5
 
 sfK
+type float
 val .2
 
 cvA
+type float
 val .8
 
 cvK
+type float
 val .8
 
 mixClrSob
+type float
 val 0
 
 mixClrTrp
+type float
 val 0.8
 
 progDur
+type float
 val .6
 
 
@@ -151,23 +205,34 @@ val .6
 ---AOV---
 
 aov_perLev
+type bool
 val 1
 
 aov_inSurfNow
+type bool
 val 0
 
 aov_surfsAndHoles
+type bool
 val 0
 
 aov_cid
+type bool
 val 0
 
 aov_sid
+type bool
 val 0
 
 aov_inPrev
+type bool
 val 0
 
 aov_cvSid
+type bool
+val 0
+
+aov_cidPost
+type bool
 val 0
 

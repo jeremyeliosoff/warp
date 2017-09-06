@@ -6,6 +6,8 @@ projDir = "/home/jeremy/dev/warp"
 dataDir = projDir + "/data"
 renDir = projDir + "/ren"
 framesDir = dataDir + "/frames"
+parmsPath = projDir + "/parms"
+parmsDefPath = projDir + "/parmsDef"
 
 seqDir = projDir + "/seq"
 
@@ -22,29 +24,29 @@ staticImgPaths = {
 
 # CLASSES
 class parmDic:
-	parmFile = None
+	parmPath = None
 	parmDic = {}
 	parmStages = {}
 	parmLs = []
 
-	def loadParmLs(self, parmFile=None):
-		if parmFile == None:
-			parmFile = self.parmFile
-		print "\n\n_loadParmLs(): parmFile:", parmFile
+	def loadParmLs(self, parmPath=None):
+		print "\n\n_loadParmLs(): BEGIN: parmPath:", parmPath
 		#self.parmLs = []
 		thisParmDic = {}
 		alreadyInList = False
 		thisParmName = ""
 		thisStage = "META"
-		nextIsParm = True # nextIsParmOrDivider, really
-		with open(parmFile) as f:
+		nextIsParmOrDivider = True
+		parmFileTail = parmPath[-10:]
+		with open(parmPath) as f:
 			for line in f.readlines():
 				stripped = line.strip()
-				print "_loadParmLs():\tline (stripped):", stripped
+				#print "_loadParmLs(): parmPath:" + parmFileTail + \
+				#	", stage:" + thisStage + ", line:", stripped
 				if stripped == "":
-					nextIsParm = True
+					nextIsParmOrDivider = True
 				else:
-					if nextIsParm:
+					if nextIsParmOrDivider:
 						if stripped[:3] == "---" and stripped[-3:] == "---":
 							thisStage = stripped[3:-3]
 							continue
@@ -52,19 +54,26 @@ class parmDic:
 						if not thisParmName == "":
 							# TODO: Why would the parm already be in list?
 							alreadyInList = False
+							#print "_loadParmLs(): adding dic for parm:", thisParmName+":"
+							#print "_loadParmLs():\t", thisParmDic
 							for i,nameAndDic in enumerate(self.parmLs):
 								if nameAndDic[0] == thisParmName:
-									self.parmLs[i] = [thisParmName, thisParmDic]
+									self.parmLs[i][1] = thisParmDic
 									alreadyInList = True
+									#print "_loadParmLs():\t", thisParmName, \
+									#	"alreadyInList! Setting to", thisParmDic
+
 							if not alreadyInList:
 								self.parmLs.append([thisParmName, thisParmDic])
 
 						thisParmName = stripped
-						print "_loadParmLs():\t\tthisParmName:", thisParmName
+						#print "_loadParmLs():\t\tthisParmName:", thisParmName
 						if thisParmName in self.parmDic.keys():
 							# Add "stage" attr to this parm if it exists in dic...
 							thisParmDic = self.parmDic[thisParmName]
-							thisParmDic["stage"] = thisStage
+							# Stage is determined by first (default) list.
+							if not alreadyInList:
+								thisParmDic["stage"] = thisStage
 						else:
 							#...else init dictionary with just stage attr
 							thisParmDic = {"stage":thisStage}
@@ -79,11 +88,15 @@ class parmDic:
 							v = "bool"
 						thisParmDic[k] = v
 						
-					nextIsParm = False
+					nextIsParmOrDivider = False
+
+		print "\n\n_loadParmLs(): self.parmLs:"
+
+		for pm in self.parmLs:
+			print "\n\n_loadParmLs():\t", pm
+		print "\n\n_loadParmLs(): END"
 
 
-		if not alreadyInList:
-			self.parmLs.append([thisParmName, thisParmDic])
 
 	def parmLsToDic(self):
 		#self.parmDic = {}
@@ -101,8 +114,8 @@ class parmDic:
 					self.parmStages[stage] = [k]
 
 
-	def loadParms(self, parmFile=None):
-		self.loadParmLs(parmFile)
+	def loadParms(self, parmPath):
+		self.loadParmLs(parmPath)
 		self.parmLsToDic()
 
 	# This should maybe be in a separate utility script?
@@ -119,9 +132,9 @@ class parmDic:
 		else:
 			return strVal
 
-	def __init__(self, parmFile):
-		self.parmFile = parmFile
-		self.loadParms()
+	def __init__(self, parmPath):
+		self.loadParms(parmsDefPath)
+		self.loadParms(parmsPath)
 	
 
 # FUNCTIONS

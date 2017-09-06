@@ -278,20 +278,10 @@ class warpUi():
 
 	def refreshButtonImages(self): 
 		self.refreshPhotoImages()
-
+		dontChange = self.staticImages.keys() + self.varyingStaticImageNames 
 		for butName,butDic in self.images.items():
-			if "button" in butDic.keys():
+			if not butName in dontChange and "button" in butDic.keys():
 				butDic["button"].configure(image=butDic["pImg"])
-
-		if self.parmDic("anim") == 1:
-			self.images["anim"]["button"].configure(image=self.staticImages["pause"])
-		else:
-			self.images["anim"]["button"].configure(image=self.staticImages["play"])
-
-		if self.record:
-			self.images["rec"]["button"].configure(image=self.staticImages["recOn"])
-		else:
-			self.images["rec"]["button"].configure(image=self.staticImages["recOff"])
 
 
 	def imgButCmd(self):
@@ -394,19 +384,32 @@ class warpUi():
 		anim = self.parmDic("anim")
 		if anim == 0:
 			self.setVal("anim", 1)
+			#self.images["anim"]["button"].configure(image=self.staticImages["pause"])
 			# If you're animating and recording and doGen == 0, turn on doRenCv
 			if self.record and self.parmDic("doGen") == 0:
 				self.setVal("doRenCv", 1)
 				self.chk_doRenCv_var.set(1)
 
-			self.refreshButtonImages()
 			self.timeStart = time.time()
 			self.frStartAnim = self.parmDic("fr")
 			self.updateCurImg()
 		else:
 			self.turnAnimOff()
-			self.refreshButtonImages()
+			print "_refreshButtonImages(): self.images:"
+			print "_refreshButtonImages():",  self.images
+			#self.images["anim"]["button"].configure(image=self.staticImages["play"])
+
+		# Update image
+		if self.parmDic("anim") == 1:
+			self.images["anim"]["button"].configure(image=self.staticImages["pause"])
+		else:
+			print "_refreshButtonImages(): self.images:"
+			print "_refreshButtonImages():",  self.images
+			self.images["anim"]["button"].configure(image=self.staticImages["play"])
+
 		print "_animButCmd(): Pressed anim button, anim set to", anim
+
+
 
 	def recButCmd(self, val=None):
 		if val == None:
@@ -414,7 +417,14 @@ class warpUi():
 		else:
 			self.record = val
 		print "_recButCmd(): self.record =", self.record
-		self.refreshButtonImages()
+
+		# Update image
+		if self.record:
+			self.images["rec"]["button"].configure(image=self.staticImages["recOn"])
+		else:
+			self.images["rec"]["button"].configure(image=self.staticImages["recOff"])
+
+
 
 	def toggleGenRen1fr(self):
 		print "\n\n_toggleGenRen1fr(): BEGIN"
@@ -424,6 +434,7 @@ class warpUi():
 			val = 1
 		self.chk_genRen1fr_var.set(val)
 		self.chk_genRen1fr_cmd()
+		print "_toggleGenRen1fr(): END"
 
 	def toggleDoRenCv(self):
 		print "\n\n_toggleDoRenCv(): BEGIN"
@@ -433,8 +444,10 @@ class warpUi():
 			val = 1
 		self.chk_doRenCv_var.set(val)
 		self.chk_doRenCv_cmd()
+		print "_toggleDoRenCv(): BEGIN"
 
 	def saveParmDic(self):
+		# TODO THIS GETS CALLED WAY TOO MUCH
 		print "_saveParmDic(): BEGIN"
 		# TODO Maybe don't hardwire this, user can config it in parmfile
 		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "AOV"])]
@@ -455,15 +468,15 @@ class warpUi():
 
 		print "_saveParmDic(): self.parmDic.parmStages:"
 		for k,v in self.parmDic.parmStages.items():
-			print "\t", k, ":", v
+			print "_saveParmDic():\t", k, ":", v
 
-		print "\n\nsaveParmDic(): parmLs:"
-		for pm in self.parmDic.parmLs:
-			print pm[0],
-		print
+		#print "\n\n_saveParmDic(): parmLs:"
+		#for pm in self.parmDic.parmLs:
+		#	print "_saveParmDic():", pm
+		#print
 
 		for path, stages in pathsAndStages:
-			print "_saveParmDic(): path", path, "stages", stages
+			# print "_saveParmDic(): path", path, "stages", stages
 			with open(path, 'w') as f:
 				for stage in stages:
 					f.write("\n\n\n---" + stage + "---\n\n")
@@ -477,9 +490,10 @@ class warpUi():
 							keys = thisDic.keys()
 							keys.sort()
 							for attr in keys:
-								if not attr in ["uiElement", "stage"]:
+								if not attr in ["uiElement", "stage", "type", "hidden"]:
 									 f.write(attr + " " + str(thisDic[attr]) + "\n")
 							f.write("\n")
+		print "_saveParmDic(): END"
 
 
 	def updateDebugImg(self):
@@ -492,6 +506,7 @@ class warpUi():
 			self.setVal("dbImg" + str(i+1), img)
 			print "_updateDebugImg(): dbImgPath", dbImgPath
 		self.refreshButtonImages()
+		print "_updateDebugImg(): END"
 
 	# TODO: I sense that this is done too much ie. every frame, need only do when img is selected.
 	def getSourceImgPath(self):
@@ -1069,18 +1084,18 @@ class warpUi():
 		row +=1
 
 		# Dics button
-		self.frameDics = Frame(self.frameTopControls)
-		self.frameDics.grid(row=row, sticky=N)
-		row +=1
+		# self.frameDics = Frame(self.frameTopControls)
+		# self.frameDics.grid(row=row, sticky=N)
+		# row +=1
 
-		self.but_flushDics = Button(self.frameDics, text="Flush dics", command=lambda:self.flushDics())
-		self.but_flushDics.grid(row=0, column=0, sticky=W)
+		# self.but_flushDics = Button(self.frameDics, text="Flush dics", command=lambda:self.flushDics())
+		# self.but_flushDics.grid(row=0, column=0, sticky=W)
 
-		self.but_delDics = Button(self.frameDics, text="Delete saved dics", command=lambda:self.delDics())
-		self.but_delDics.grid(row=0, column=1, sticky=W)
+		# self.but_delDics = Button(self.frameDics, text="Delete saved dics", command=lambda:self.delDics())
+		# self.but_delDics.grid(row=0, column=1, sticky=W)
 
-		self.but_saveDics = Button(self.frameDics, text="Save dics", command=lambda:self.saveDics())
-		self.but_saveDics.grid(row=0, column=2, sticky=W)
+		# self.but_saveDics = Button(self.frameDics, text="Save dics", command=lambda:self.saveDics())
+		# self.but_saveDics.grid(row=0, column=2, sticky=W)
 
 
 		# Natural res checkbox
@@ -1090,7 +1105,6 @@ class warpUi():
 			text="Gen Ren 1 fr", variable=self.chk_genRen1fr_var,
 			command=self.chk_genRen1fr_cmd)
 		self.chk_genRen1fr.grid(row=row, column=0, sticky=W)
-		row +=1
 
 
 		# Natural res checkbox
@@ -1099,8 +1113,7 @@ class warpUi():
 		self.chk_naturalRes = Checkbutton(self.frameTopControls,
 			text="Natural Res", variable=self.chk_naturalRes_var,
 			command=self.chk_naturalRes_cmd)
-		self.chk_naturalRes.grid(row=row, column=0, sticky=W)
-		row +=1
+		self.chk_naturalRes.grid(row=row, column=1, sticky=W)
 
 
 		# Do renCv checkbox
@@ -1108,7 +1121,7 @@ class warpUi():
 		self.chk_doRenCv_var.set(self.parmDic("doRenCv"))
 		self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Ren Mode", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
 		self.setRenCvUIClr()
-		self.chk_doRenCv.grid(row=row, column=0, sticky=W)
+		self.chk_doRenCv.grid(row=row, column=2, sticky=W)
 		row +=1
 
 

@@ -337,6 +337,8 @@ def initJtGrid(img, warpUi):
 	ut.mkDirSafe(renSeqDir)
 
 
+	print "\n_initJtGrid(): END"
+	
 	return jtGrid, tholds
 
 def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
@@ -769,6 +771,7 @@ def writeTidImg(warpUi, inSurfGrid):
 		ut.mkDirSafe(levDir)
 		print "_writeTidImg(): imgPath", imgPath
 		pygame.image.save(dbImgDic["tid"][lev], imgPath)
+	print "\n_writeTidImg(): END"
 
 def genDataWrapper(warpUi):
 	img = pygame.image.load(warpUi.images["source"]["path"])
@@ -864,6 +867,7 @@ def convertCvDicToDic(cvDic, warpUi):
 				else:
 					ret[lev][sid][k] = v
 
+	print "\n_convertCvDicToDic: END"
 	return ret
 	#sidToCvs[lev][sid].append(cv)
 
@@ -1181,10 +1185,10 @@ def renCv(warpUi, sidToCvDic, tholds):
 				print "_renCv(): Saving", name, " image, path:", imgPath
 			pygame.image.save(outputs[name][lev], imgPath)
 			# Save bmp
-			if False:
+			if True:
 				bmpPath = imgPath.replace(".jpg", ".bmp")
 				pygame.image.save(outputs[name][lev], bmpPath)
-				ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
+				#ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
 	for name in renOutputsOneLev:
 		levDir,imgPath = warpUi.getRenDirAndImgPath(name)
