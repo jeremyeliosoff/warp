@@ -652,7 +652,6 @@ def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 		print "_growCurves(): lev:", lev, "sids to be merged:", mergeKeySidToValSid[lev].keys()
 		# Merge branches.
 		for sid in set(allPrevs[lev] + sidToSurf[lev].keys()):
-			print("_growCurves(): len(warpUi.sidToTid):", len(warpUi.sidToTid), "; lev:", lev)
 			if sid in mergeKeySidToValSid[lev].keys():
 				# This sid will be merged.
 				sidToMergeTo = mergeKeySidToValSid[lev][sid]
@@ -888,10 +887,11 @@ def renCvWrapper(warpUi):
 
 
 
-def calcProg(warpUi, sid, level):
+def calcProg(warpUi, sid, level, lev):
 	random.seed(sid)
-	progDur = warpUi.parmDic("progDur")
-	progStartMin = .2
+	levRel = float(lev)/(warpUi.parmDic("nLevels")-1)
+	progDur = ut.mix(warpUi.parmDic("progDurBot"), warpUi.parmDic("progDurTop"), levRel)
+	progStartMin = 0
 	progStart = ut.mix(progStartMin, 1-progDur, random.random())
 	#progStart = ut.mix(progStartMin, 1-progDur*(1-progStartMin), random.random())
 	#progEnd = min(1.0, progStart+warpUi.parmDic("progDur"))
@@ -945,7 +945,7 @@ def calcXf(warpUi, prog, res, relSize, bbx):
 def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, tidRanClr, k, alpha, iJt=None):
 	texClr = srcImg.get_at((jx, jy))
 	texClr = list(texClr)[:3]
-	cTripPow = 1
+	cTripPow = 3
 	mixClr = ut.mix(warpUi.parmDic("mixClrSob"),
 		warpUi.parmDic("mixClrTrp"), pow(prog, cTripPow))
 	clr = ut.mixV(texClr, tidRanClr, mixClr)
@@ -963,6 +963,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 			# Write UNPREMULTIPLIED color to this level AOV
 			if warpUi.parmDic("aov_perLev") == 1:
 				newValThisLev = tuple(ut.multVSc(clr, alpha))
+				newValThisLev = ut.clampVSc(newValThisLev, 0, 255)
 				#newValThisLev = tuple(clr)
 				thisDic[lev].set_at((jxt,jyt), newValThisLev)
 
@@ -996,7 +997,7 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 	tidRanClr = intToClr(sid)
 
 
-	prog = calcProg(warpUi, tid, level)
+	prog = calcProg(warpUi, tid, level, lev)
 	tx,ty = calcXf(warpUi, prog, res, relSize, bbx)
 	#tx,ty = (0, 0)
 
@@ -1016,13 +1017,13 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 			jx,jy = list(jt)
 
 			#surfAlpha = levelAlph * (1-prog)
-			sfFdIn = .3
-			sfFdOut = .5
+			sfFdIn = .2
+			sfFdOut = .3
 			sfA = warpUi.parmDic("sfA")
 			sfK = warpUi.parmDic("sfK")
 			surfAlpha = sfA * levelAlph * ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, prog)
 			cvFdIn = .1
-			cvFdOut = .3
+			cvFdOut = .1
 			cvA = warpUi.parmDic("cvA")
 			cvK = warpUi.parmDic("cvK")
 			curveAlpha = cvA * levelAlph * ut.smoothpulse(0, cvFdIn, 1-cvFdOut, 1, prog)

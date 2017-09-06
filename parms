@@ -5,7 +5,7 @@
 
 fr
 type int
-val 1574
+val 1459
 
 fps
 type int
@@ -19,17 +19,17 @@ val 0.6
 anim
 hidden True
 type int
-val 0
+val 1
 
 doRenCv
 hidden True
 type bool
-val 1
+val 0
 
 image
 hidden True
 type str
-val lzPoemPt2
+val lzPoemFR
 
 dbImg1
 hidden True
@@ -54,7 +54,7 @@ val ALL
 renVer
 hidden True
 type str
-val v005mn0
+val v001interweave
 
 frStart
 type int
@@ -129,7 +129,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 dataVer
 hidden True
 type str
-val v005mn0
+val v001interweave
 
 startLev
 type int
@@ -137,7 +137,7 @@ val 0
 
 fallDist
 type float
-val 1
+val .5
 
 fallKForBiggest
 type float
@@ -163,17 +163,21 @@ fallMode
 type str
 val orig
 
-progDur
+progDurBot
 type float
-val .6
+val 1
 
-sfA
+progDurTop
 type float
 val .5
 
+sfA
+type float
+val .8
+
 sfK
 type float
-val 1.2
+val 1
 
 cvA
 type float
@@ -181,7 +185,7 @@ val .8
 
 cvK
 type float
-val .8
+val 1.3
 
 mixClrSob
 type float
@@ -189,7 +193,7 @@ val 0
 
 mixClrTrp
 type float
-val 0.5
+val 0.8
 
 
 
