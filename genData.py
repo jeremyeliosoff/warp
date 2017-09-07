@@ -350,8 +350,8 @@ def initJtGrid(img, warpUi):
 			print "\n--------------------------------\n"
 			for x in jtNCons[iLev]:
 				for y in x:
-					#print "." if y == 0 else chr(y+96),
-					print y,
+					print "." if y == 0 else chr(y+96),
+					#print y,
 				print
 
 		print "LLLLL jtNCons"

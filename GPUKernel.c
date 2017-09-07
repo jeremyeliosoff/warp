@@ -1,8 +1,41 @@
-bool compare4V(int *a, int *b) {
-	bool ret = 0;
-	if ( a[0] == b[0] && a[1] == b[1] && a[2] == b[2] && a[3] == b[3])
-		ret = 1;
-	return ret;
+float gamma(float a, float g) {
+	return pow(a, (1.0/g));
+}
+
+float mixF(float a, float b, float m) {
+	return m*b + (1.0-m)*a;
+}
+
+void getLevThresh(
+	float minThreshMin,
+	float maxThreshMax,
+	float rangeThresh,
+	float gam,
+	int lev,
+	int nLevels,
+	int fr,
+	float *levThreshRemap,
+	int *levThreshInt
+) {
+	float minThreshMax = mixF(minThreshMin, maxThreshMax, 1.0-rangeThresh);
+	float maxThreshMin = mixF(minThreshMin, maxThreshMax, rangeThresh);
+
+	//levThresh = warpUi.getOfsWLev(lev) %% 1.0
+	// From warpUi.getOfsWLev(lev)
+	float ofsWLev = fr + ((float)lev)/nLevels;
+	// For interweaving
+	float levThresh = ofsWLev + (lev %% 2) * .5;
+
+	float ltr = gamma(levThresh, gam);
+
+	float levRel = ((float)lev)/(nLevels-1);
+	float minThreshThisLev = mixF(minThreshMin, minThreshMax, levRel);
+	float maxThreshThisLev = mixF(maxThreshMin, maxThreshMax, levRel);
+
+
+	ltr = mixF(minThreshThisLev, maxThreshThisLev, *levThreshRemap);
+	*levThreshRemap = ltr;
+	*levThreshInt = ((int)(ltr*255));
 }
 
 bool compare4(int v0, v1, v2, v3, int *b) {
@@ -205,7 +238,26 @@ __kernel void initJtC(
 	}
 
 	int lev;
+	float levThreshRemap;
+	int levThreshInt;
+
+	float minThreshMin = 0;
+	float maxThreshMax = 1;
+	float rangeThresh = .5;
+	float gam = 1;
+	int fr;
+	//for (lev = 0; lev < nLevels; lev ++) {
 	for (lev = 0; lev < testNLevs; lev ++) {
+		getLevThresh(
+			minThreshMin,
+			maxThreshMax,
+			rangeThresh,
+			gam,
+			lev,
+			testNLevs,
+			fr,
+			&levThreshRemap,
+			&levThreshInt);
 		int levOfs = lev*xres*yres;
 		if (x < xres-1 && y < yres-1) {
 			int i;
@@ -216,7 +268,8 @@ __kernel void initJtC(
 				int xx = x + i/2;
 				int yy = y + i%%2;
 				uchar avg = getClrAvg(xx, yy, xres, npix, imgArray);
-				int levThreshInt = (float)lev/testNLevs*255; // Adapt from py.
+				//int levThreshInt = (float)lev/testNLevs*255; // Adapt from py.
+				//levThreshInt = (float)lev/testNLevs*255; // Adapt from py.
 				int val = avg > levThreshInt ? 1 : 0;
 				nbrs[i] = val;
 				tot += val;
