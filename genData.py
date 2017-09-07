@@ -304,6 +304,7 @@ def initJtGrid(img, warpUi):
 		imgArray = np.array(list(pygame.surfarray.array3d(img)))
 		print "NNNNNNNN imgArray"
 		print imgArray
+		#imgArray = np.array([[range(3) for j in range(res[0])] for i in range(res[1])])
 		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
@@ -312,14 +313,9 @@ def initJtGrid(img, warpUi):
 		jtLevels.fill(0)
 		jtLevels_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtLevels.nbytes)
 
-		jtCons = np.empty(imgArray.shape, dtype=np.uint8) # TODO zeros
+		jtCons = np.empty(imgArray.shape, dtype=np.uint8)
 		jtCons.fill(0)
 		jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
-		
-		jtNCons = np.empty(res, dtype=np.intc)
-		#jtNCons = np.array([[int(0) for j in range(res[0])] for i in range(res[1])])
-		jtNCons.fill(0)
-		jtNCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtNCons.nbytes)
 		
 		kernelPath = ut.projDir + "/GPUKernel.c"
 		with open(kernelPath) as f:
@@ -333,25 +329,18 @@ def initJtGrid(img, warpUi):
 				imgArray.shape,
 				None,
 				imgArray_buf,
-				jtNCons_buf,
 				jtLevels_buf)
 		launch.wait()
 
 
-		cl.enqueue_read_buffer(queue, jtNCons_buf, jtNCons).wait()
+		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
 		cl.enqueue_read_buffer(queue, jtLevels_buf, jtLevels).wait()
 
-		print "MMMMMMM jtNCons"
-		for x in jtNCons:
-			for y in x:
-				print "." if y == 0 else chr(y+96),
-			print
-
-		print "LLLLL jtNCons"
-		for x in jtNCons:
-			for y in x:
-				print y,
-			print
+	#	print "VVVVVVVVVV jtCons"
+	#	for x in jtCons:
+	#		for y in x:
+	#			print y,
+	#		print
 		
 		print "VVVVVVVVVV jtLevels"
 		for x in jtLevels:

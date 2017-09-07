@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3
+val 1
 
 fps
 val 52
@@ -31,10 +31,10 @@ dbImg2
 val sidPost
 
 lev_dbImg2
-val lev01
+val lev03
 
 renVer
-val v0013lev
+val v000
 
 frStart
 val 1
@@ -57,7 +57,7 @@ val 1
 ---GEN---
 
 nLevels
-val 3
+val 8
 
 kSurf
 val 1
@@ -66,10 +66,10 @@ gamma
 val 1
 
 minThresh
-val 0
+val 0.5
 
 maxThresh
-val 1
+val .9
 
 rangeThresh
 val .1
@@ -92,7 +92,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v0073lev
+val v000
 
 startLev
 val 0
