@@ -5,6 +5,7 @@ devDir="/home/jeremy/dev/warp/test/"
 sc=.5
 sfx=""
 lev=""
+ext="png"
 movFiles = []
 
 if len(sys.argv) == 1:
@@ -18,6 +19,8 @@ for arg in sys.argv[1:]:
 		sfx = arg.split("=")[1]
 	elif arg[:3] == "lev":
 		lev = arg.split("=")[1]
+	elif arg[:3] == "ext":
+		ext = arg.split("=")[1]
 	else:
 		movFiles.append(arg)
 
@@ -45,7 +48,7 @@ for movFile in movFiles:
 		#sysCmd = "ffmpeg -i " + movFile + " -r 60 -vf scale=iw*" + str(sc) + ":ih*" + str(sc) + " -q:v 2 " + seqDir + "/" + branchRoot + ".%04d.jpg"
 		sysCmd = ""
 		thisBranchRoot = branchRoot if lev == "" else branchRootTmp
-		sysCmd += "ffmpeg -i " + movFile + " -vf scale=iw*" + str(sc) + ":ih*" + str(sc) + " -q:v 2 " + seqDir + "/" + thisBranchRoot + ".%05d.jpg"
+		sysCmd += "ffmpeg -i " + movFile + " -vf scale=iw*" + str(sc) + ":ih*" + str(sc) + " -q:v 2 " + seqDir + "/" + thisBranchRoot + ".%05d." + ext
 
 		print "\n###################################"
 		print "running:", sysCmd
@@ -54,25 +57,25 @@ for movFile in movFiles:
 		print
 		
 		if not lev == "":
-			jpgs = os.listdir(seqDir)
-			jpgs.sort()
+			imgs = os.listdir(seqDir)
+			imgs.sort()
 			i = 0
 			# Color correct.
-			for jpg in jpgs:
+			for img in imgs:
 				i += 1
 				mn,mx,gam = lev.split(",")
-				sysCmd = "convert " + seqDir + "/" + jpg + \
+				sysCmd = "convert " + seqDir + "/" + img + \
 					" -level " + mn + "%," + mx + "%," + gam + " " +\
-					seqDir + "/" + jpg.replace(tmpStr, "") +\
-					"; rm " + seqDir + "/" + jpg
-				print i, "of", str(len(jpgs)) + "; running:", sysCmd
+					seqDir + "/" + img.replace(tmpStr, "") +\
+					"; rm " + seqDir + "/" + img
+				print i, "of", str(len(imgs)) + "; running:", sysCmd
 				os.system(sysCmd)
 
 		# Make textures
-		#for jpg in jpgs:
+		#for img in imgs:
 		#	i += 1
-		#	sysCmd = "tdlmake " + seqDir + "/" + jpg + " " + seqDir + "/" + jpg.replace("jpg", "tex")
-		#	print i, "of", str(len(jpgs)) + "; running:", sysCmd
+		#	sysCmd = "tdlmake " + seqDir + "/" + img + " " + seqDir + "/" + img.replace("img", "tex")
+		#	print i, "of", str(len(imgs)) + "; running:", sysCmd
 		#	#os.system(sysCmd)
 
 

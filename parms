@@ -16,7 +16,7 @@ anim
 val 0
 
 doRenCv
-val 1
+val 0
 
 image
 val miniPng

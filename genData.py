@@ -297,61 +297,41 @@ def initJtGrid(img, warpUi):
 	
 	ut.timerStart(warpUi, "initJtGridXYLoop")
 
-	
-	#imgArray = np.array(pygame.surfarray.array3d(img))
-	imgArray = np.array(list(pygame.surfarray.array3d(img)))
-	print "NNNNNNNN imgArray"
-	print imgArray
-	#imgArray = np.array([[range(3) for j in range(res[0])] for i in range(res[1])])
-	imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-	cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
-	
-	print "_initJtGrid(): jtGridOut"
-	jtLevels = np.empty(imgArray.shape, dtype=np.uint8)
-	jtLevels.fill(0)
-	jtLevels_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtLevels.nbytes)
+	tryGPU = True
+	if tryGPU:
+		
+		#imgArray = np.array(pygame.surfarray.array3d(img))
+		imgArray = np.array(list(pygame.surfarray.array3d(img)))
+		print "NNNNNNNN imgArray"
+		print imgArray
+		#imgArray = np.array([[range(3) for j in range(res[0])] for i in range(res[1])])
+		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
+		
+		print "_initJtGrid(): jtGridOut"
+		jtLevels = np.empty(imgArray.shape, dtype=np.uint8)
+		jtLevels.fill(0)
+		jtLevels_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtLevels.nbytes)
 
-	jtCons = np.empty(imgArray.shape, dtype=np.uint8)
-	jtCons.fill(0)
-	jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
-	#for x in imgArray:
-	#	for y in x:
-	#		print y,
-	#	print
-	
-	kernel = """
-__kernel void initJtC(
-			__global uchar* imgArray,
-			__global uchar* jtLevels) 
-{
-    int row = get_global_id(0);
-    int col = get_global_id(1);
+		jtCons = np.empty(imgArray.shape, dtype=np.uint8)
+		jtCons.fill(0)
+		jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
+		
+		kernelPath = ut.projDir + "/GPUKernel.c"
+		with open(kernelPath) as f:
+			kernel = "".join(f.readlines()) % (res[1], res[0])
+		print "XXXX kernel:", kernel
+		#int index = rowid * ncols * npix + colid * npix;
+		# build the Kernel
+		bld = cl.Program(cntxt, kernel).build()
+		launch = bld.initJtC(
+				queue,
+				imgArray.shape,
+				None,
+				imgArray_buf,
+				jtLevels_buf)
+		launch.wait()
 
-	int cols = %d;
-	int npix = 3;
-	int i = row * cols * npix + col * npix;
-	jtLevels[i] = imgArray[i];
-	jtLevels[i+1] = imgArray[i+1];
-	jtLevels[i+2] = imgArray[i+2];
-
-	//jtLevels[i] = row;
-	//jtLevels[i+1] = col;
-	//jtLevels[i+2] = i;
-
-}
-	""" % res[1]
-	#int index = rowid * ncols * npix + colid * npix;
-	# build the Kernel
-	bld = cl.Program(cntxt, kernel).build()
-	launch = bld.initJtC(
-			queue,
-			imgArray.shape,
-			None,
-			imgArray_buf,
-			jtLevels_buf)
-	launch.wait()
-
-	if True:
 
 		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
 		cl.enqueue_read_buffer(queue, jtLevels_buf, jtLevels).wait()
@@ -1261,11 +1241,9 @@ def renCv(warpUi, sidToCvDic, tholds):
 				print "_renCv(): Saving", name, " image, path:", imgPath
 			pygame.image.save(outputs[name][lev], imgPath)
 			# Save bmp
-			if True:
+			if False:
 				bmpPath = imgPath.replace(warpUi.seqImgExt, ".bmp")
 				pygame.image.save(outputs[name][lev], bmpPath)
-				jpgPath = imgPath.replace(warpUi.seqImgExt, ".jpg")
-				pygame.image.save(outputs[name][lev], jpgPath)
 				#ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
 	for name in renOutputsOneLev:

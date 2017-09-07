@@ -1048,7 +1048,7 @@ class warpUi():
 		self.errorImgPath = base + "error" + ut.statImgExt
 		for name in self.staticImageNames:
 			loadedImg = Image.open(base + name + ut.statImgExt)
-			print "__init__(): loadedImg", loadedImg
+			print "__init__(): name:" + name + "; loadedImg", loadedImg
 			#res = loadedImg.size
 			#sc = 2
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
