@@ -150,12 +150,12 @@ void setArrayCell(int x, int y, int xres, int npix,
 	ret[i+2] = val[2];
 }
 
-void setArrayCellInt(int x, int y, int xres, int npix,
+void setArrayCellInt(int x, int y, int levOfs, int xres, int npix,
   int val,
   int __attribute__((address_space(1)))* ret)
 {
 	int i = y * xres + x;
-	ret[i] = val;
+	ret[i+levOfs] = val;
 }
 
 
@@ -184,6 +184,7 @@ void cpClr(int x, int y, int xres, int npix,
 }
 
 __kernel void initJtC(
+			int testNLevs,
 			__global uchar* imgArray,
 			__global int* nconsOut,
 			__global uchar* out)
@@ -196,31 +197,42 @@ __kernel void initJtC(
 	int npix = 3;
 	//cpClr(x, y, xres, npix, imgArray, out);
 
-	if (x < xres-1 && y < yres-1) {
-		int i;
-		int tot = 0;
-		int nbrs[4];
+	uchar ii;
+	int start = y * xres + x;
+	for (ii = 0; ii < testNLevs; ii++) {
+		int levOfs = xres*yres*ii;
+		//nconsOut[start+levOfs] = x + y + ii;
+	}
 
-		for (i = 0; i < 4; i++) {
-			int xx = x + i/2;
-			int yy = y + i%%2;
-			uchar avg = getClrAvg(xx, yy, xres, npix, imgArray);
-			int levThreshInt = 100; // Adapt from py.
-			int val = avg > levThreshInt ? 1 : 0;
-			nbrs[i] = val;
-			tot += val;
+	int lev;
+	for (lev = 0; lev < testNLevs; lev ++) {
+		int levOfs = lev*xres*yres;
+		if (x < xres-1 && y < yres-1) {
+			int i;
+			int tot = 0;
+			int nbrs[4];
+
+			for (i = 0; i < 4; i++) {
+				int xx = x + i/2;
+				int yy = y + i%%2;
+				uchar avg = getClrAvg(xx, yy, xres, npix, imgArray);
+				int levThreshInt = (float)lev/testNLevs*255; // Adapt from py.
+				int val = avg > levThreshInt ? 1 : 0;
+				nbrs[i] = val;
+				tot += val;
+			}
+			//printf("\nnbrs: %%d, %%d, %%d, %%d", nbrs[0], nbrs[1], nbrs[2], nbrs[3]);
+			uchar retClr[3] = {tot, tot, tot};
+			setArrayCell(x, y, xres, npix, retClr, out);
+			int cons[] = {0, 0, 0, 0};
+			int ncons = 0;
+			if (tot > 0 and tot < 4) {
+				ncons = neighboursToConns (nbrs, cons);
+			}
+			//setArrayCell(x, y, xres, 1, tot, nconsOut);
+			setArrayCellInt(x, y, levOfs, xres, 1, ncons, nconsOut);
+		} else { // We should just make nconsOut res smaller, but doesn't work.
+			setArrayCellInt(x, y, levOfs, xres, 1, 0, nconsOut);
 		}
-		//printf("\nnbrs: %%d, %%d, %%d, %%d", nbrs[0], nbrs[1], nbrs[2], nbrs[3]);
-		uchar retClr[3] = {tot, tot, tot};
-		setArrayCell(x, y, xres, npix, retClr, out);
-		int cons[] = {0, 0, 0, 0};
-		int ncons = 0;
-		if (tot > 0 and tot < 4) {
-			ncons = neighboursToConns (nbrs, cons);
-		}
-		//setArrayCell(x, y, xres, 1, tot, nconsOut);
-		setArrayCellInt(x, y, xres, 1, ncons, nconsOut);
-	} else { // We should just make nconsOut res smaller, but doesn't work.
-		setArrayCellInt(x, y, xres, 1, 0, nconsOut);
 	}
 }

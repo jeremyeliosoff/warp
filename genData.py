@@ -316,7 +316,10 @@ def initJtGrid(img, warpUi):
 		jtCons.fill(0)
 		jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
 		
-		jtNCons = np.empty(res, dtype=np.intc)
+		testNLevs = 3
+		#jtNCons = np.empty([res for iLev in range(testNLevs)], dtype=np.intc)
+		#jtNCons = np.empty(res, dtype=np.intc)
+		jtNCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
 		#jtNCons = np.array([[int(0) for j in range(res[0])] for i in range(res[1])])
 		jtNCons.fill(0)
 		jtNCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtNCons.nbytes)
@@ -332,6 +335,7 @@ def initJtGrid(img, warpUi):
 				queue,
 				imgArray.shape,
 				None,
+				np.int32(testNLevs),
 				imgArray_buf,
 				jtNCons_buf,
 				jtLevels_buf)
@@ -342,10 +346,13 @@ def initJtGrid(img, warpUi):
 		cl.enqueue_read_buffer(queue, jtLevels_buf, jtLevels).wait()
 
 		print "MMMMMMM jtNCons"
-		for x in jtNCons:
-			for y in x:
-				print "." if y == 0 else chr(y+96),
-			print
+		for iLev in range(testNLevs):
+			print "\n--------------------------------\n"
+			for x in jtNCons[iLev]:
+				for y in x:
+					#print "." if y == 0 else chr(y+96),
+					print y,
+				print
 
 		print "LLLLL jtNCons"
 		for x in jtNCons:
