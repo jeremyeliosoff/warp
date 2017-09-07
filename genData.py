@@ -330,16 +330,14 @@ __kernel void initJtC(
 	int cols = %d;
 	int npix = 3;
 	int i = row * cols * npix + col * npix;
-	jtLevels[i] = row;
-	jtLevels[i+1] = col;
-	jtLevels[i+2] = i;
+	jtLevels[i] = imgArray[i];
+	jtLevels[i+1] = imgArray[i+1];
+	jtLevels[i+2] = imgArray[i+2];
 
-    //out[i] = num1[i]*num1[i]+ num2[i]*num2[i];
-	//int ind = i*4;
-    //outChar[ind] = 0;
-    //outChar[ind+1] = 1;
-    //outChar[ind+2] = -1;
-    //outChar[ind+3] = 2;
+	//jtLevels[i] = row;
+	//jtLevels[i+1] = col;
+	//jtLevels[i+2] = i;
+
 }
 	""" % res[1]
 	#int index = rowid * ncols * npix + colid * npix;
@@ -1264,8 +1262,10 @@ def renCv(warpUi, sidToCvDic, tholds):
 			pygame.image.save(outputs[name][lev], imgPath)
 			# Save bmp
 			if True:
-				bmpPath = imgPath.replace(".jpg", ".bmp")
+				bmpPath = imgPath.replace(warpUi.seqImgExt, ".bmp")
 				pygame.image.save(outputs[name][lev], bmpPath)
+				jpgPath = imgPath.replace(warpUi.seqImgExt, ".jpg")
+				pygame.image.save(outputs[name][lev], jpgPath)
 				#ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
 
 	for name in renOutputsOneLev:

@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2
+val 1
 
 fps
 val 52
@@ -16,10 +16,10 @@ anim
 val 0
 
 doRenCv
-val 0
+val 1
 
 image
-val mini
+val miniPng
 
 dbImg1
 val sidPost
@@ -40,7 +40,7 @@ frStart
 val 1
 
 frEnd
-val 2
+val 1
 
 frPerCycle
 val 30

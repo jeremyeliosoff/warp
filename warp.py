@@ -828,17 +828,18 @@ class warpUi():
 	def getDebugDirAndImg(self, debugInfo, lev):
 		fr = self.parmDic("fr")
 		levDir = self.seqDataVDir + "/debugImg/" + debugInfo + "/" + lev # TODO: v00
-		imgPath = levDir + ("/" + debugInfo + "." + lev + ".%05d.jpg" % fr)
+		imgPath = levDir + ("/" + debugInfo + "." + lev + (".%05d" + self.seqImgExt) % fr)
 		return levDir,imgPath
 
 	def getRenDirAndImgPath(self, outputName, lev=None):
 		fr = self.parmDic("fr")
 		if lev == None:
 			levDir = self.seqRenVDir + "/" + outputName
-			imgPath = levDir + ("/" + outputName + ".%05d.jpg" % fr)
+			imgPath = levDir + ("/" + outputName + (".%05d" + self.seqImgExt) % fr)
 		else:
 			levDir = self.seqRenVDir + "/" + outputName + "/" + lev
-			imgPath = levDir + ("/" + outputName + "." + lev + ".%05d.jpg" % fr)
+			imgPath = levDir + ("/" + outputName + "." + lev +
+				(".%05d" + self.seqImgExt) % fr)
 		return levDir, imgPath
 
 	def loadImgAndSetRes(self, path):
@@ -976,10 +977,12 @@ class warpUi():
 
 
 	def __init__(self):
+		# TODO: Organize all this crap.
 		# Needed for pickling.
 		lim = sys.getrecursionlimit()
 		sys.setrecursionlimit(lim*1000)
-
+		self.seqImgExt = ".png"
+		
 		self.getImgDebugFunctions = {
 				"name":[self.getImgDebug1, self.getImgDebug2],
 				"lev":[self.getLevDebug1, self.getLevDebug2]
@@ -1042,9 +1045,9 @@ class warpUi():
 		self.varyingStaticImageNames = ["anim", "rec"]
 		self.staticImages = {}
 		base = ut.imgDir + "/controls/"
-		self.errorImgPath = base + "error.jpg"
+		self.errorImgPath = base + "error" + ut.statImgExt
 		for name in self.staticImageNames:
-			loadedImg = Image.open(base + name + ".jpg")
+			loadedImg = Image.open(base + name + ut.statImgExt)
 			print "__init__(): loadedImg", loadedImg
 			#res = loadedImg.size
 			#sc = 2

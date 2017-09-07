@@ -8,6 +8,7 @@ renDir = projDir + "/ren"
 framesDir = dataDir + "/frames"
 parmsPath = projDir + "/parms"
 parmsDefPath = projDir + "/parmsDef"
+statImgExt = ".jpg"
 
 seqDir = projDir + "/seq"
 
@@ -16,10 +17,10 @@ imgIn = imgDir + "/input"
 
 # TODO Why is there anim and play
 staticImgPaths = {
-	"play":imgDir + "/controls/play.jpg",
-	"pause":imgDir + "/controls/pause.jpg",
-	"rew":imgDir + "/controls/rew.jpg",
-	"ffw":imgDir + "/controls/ffw.jpg",
+	"play":imgDir + "/controls/play" + statImgExt,
+	"pause":imgDir + "/controls/pause" + statImgExt,
+	"rew":imgDir + "/controls/rew" + statImgExt,
+	"ffw":imgDir + "/controls/ffw" + statImgExt,
 }
 
 # CLASSES
