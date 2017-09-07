@@ -861,8 +861,7 @@ class warpUi():
 				res = (x, y)
 			self.displayRes = res
 			self.reloadErrorImg()
-			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
-			loadedImg = loadedImg.resize((res[0], res[1]), Image.ANTIALIAS)
+			loadedImg = loadedImg.resize((res[0], res[1]))
 			img = ImageTk.PhotoImage(loadedImg)
 			print "_safeLoad(): success!"
 		else:
