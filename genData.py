@@ -312,6 +312,7 @@ def initJtGrid(img, warpUi):
 			thisLevThreshRemap, thisLevThreshInt = \
 				getLevThresh(warpUi, lev, nLevels)
 			levThreshRemap.append(thisLevThreshRemap)
+			tholds[lev] = thisLevThreshRemap
 			# TODO -> tholds[lev] = thisLevThreshRemap
 			levThreshInt.append(thisLevThreshInt)
 
@@ -560,23 +561,6 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 			print "_growCurves(): %d%%" % pct # in place didn't update enough: print "Progress %d%%\r" % pct,
 			nextPrintout += 10
 		for x in range(res[0]):
-			for lev in range(nLevels):
-				if inSurfNow[lev]:
-					sid = inSurfs[lev][-1].cid
-					inSurfNowVal = vX255(clrs[sid%len(clrs)])
-					setAOV(warpUi, "inSurfNow", dbImgDic, lev, nLevels, x, y, inSurfNowVal)
-					
-				val = (0, 0, 0)
-				if len(inSurfs[lev]) > 0:
-					val = vX255(ut.multVSc(red, len(inSurfs[lev])))
-				if len(inHoles[lev]) > 0:
-					val = ut.vAdd(val, vX255(ut.multVSc(green, len(inHoles[lev]))))
-				if not val == (0, 0, 0):
-					val = ut.multVSc(val, .5)
-					val = ut.clampVSc(val, 0, 255)
-					setAOV(warpUi, "surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
-
-
 			# Initiate curve growth for any joints in this cell of _jtGrid.
 
 			# GPUtrans _jtGrid (effectively) becomes jtCons - maybe list, not dic
@@ -665,31 +649,25 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 			
 			# Work out which prev surf the cur surfs are in.
 
-			ut.timerStart(warpUi, "growC_surfs")
+
+	#ut.timerStart(warpUi, "growC_surfs")
+	#for y in range(res[1]):
+	#	for x in range(res[0]):
 			for lev in range(nLevels):
-				inPrevClr = grey if lev == 0 else None
 				if inSurfNow[lev]:
 					currentSid = inSurfs[lev][-1].surf.sid
-					sidClr = intToClr(currentSid)
-					setAOV(warpUi, "sid", dbImgDic, lev, nLevels, x, y, sidClr)
-					inPrevClr = green
 					inSurfGrid[lev][x][y] = currentSid
-					if (warpUi.inSurfGridPrev == None or
+					if not (warpUi.inSurfGridPrev == None or
 						(not len(warpUi.inSurfGridPrev) == len(inSurfGrid)) or # TODO: add or if floor(ofs) > floor(preOfs)
 						# I THINK below avoids overlapping start of cyc with end of prev
 						(not math.floor(warpUi.getOfsWLev(lev)) ==
-							math.floor(warpUi.getOfsWLev(lev, warpUi.parmDic("fr")-1))) or 
+							math.floor(warpUi.getOfsWLev(lev, warpUi.parmDic("fr")-1))) or
 						(not len(warpUi.inSurfGridPrev[0]) == len(inSurfGrid[0]))) : # NOTE:  this is apparently NOT the same as "if warpUi.inSurfGridPrev:"
-						# There is no prev grid or it is a different res.
-						inPrevClr = red
-					else:
 						# There is a surfGrid file for the previous frame.
 						inSurfPrev = warpUi.inSurfGridPrev[lev][x][y]
 						if inSurfPrev == None:
 							# There are NO surfs at this level at this cell in the previous frame.
-							inPrevClr = red
 							if not currentSid in curToPrevSidDic[lev].keys():
-								inPrevClr = blue
 
 								# There are no prev sids corresponding to the current sid.
 								# If there's nothing in the prev frame here and you haven't
@@ -709,9 +687,7 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 								# There's no list for currentSid, make a new one with just inSurfPrev
 								curToPrevSidDic[lev][currentSid] = [inSurfPrev]
 
-				if inPrevClr:
-					setAOV(warpUi, "inPrev", dbImgDic, lev, nLevels, x, y, vX255(inPrevClr))
-			ut.timerStop(warpUi, "growC_surfs")
+	#ut.timerStop(warpUi, "growC_surfs")
 
 	ut.timerStop(warpUi, "growC_xyloop")
 
