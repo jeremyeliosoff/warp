@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3
+val 6
 
 fps
 val 52
@@ -19,7 +19,7 @@ doRenCv
 val 0
 
 image
-val miniPng
+val tuktukPt1
 
 dbImg1
 val sidPost
@@ -28,22 +28,22 @@ lev_dbImg1
 val ALL
 
 dbImg2
-val sidPost
+val cvSid
 
 lev_dbImg2
-val lev01
+val ALL
 
 renVer
-val v0013lev
+val v027gpuTestOff
 
 frStart
 val 1
 
 frEnd
-val 1
+val 30
 
 frPerCycle
-val 30
+val 10
 
 doGen
 val 1
@@ -57,7 +57,7 @@ val 1
 ---GEN---
 
 nLevels
-val 3
+val 4
 
 kSurf
 val 1
@@ -66,10 +66,10 @@ gamma
 val 1
 
 minThresh
-val 0
+val 0.3
 
 maxThresh
-val 1
+val .6
 
 rangeThresh
 val .1
@@ -92,13 +92,13 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v0073lev
+val v010gpuTestOff
 
 startLev
-val 0
+val 1
 
 fallDist
-val 0
+val .2
 
 fallKForBiggest
 val 1
@@ -116,34 +116,34 @@ fallVecY
 val .5
 
 fallMode
-val fall
+val orig
 
 progDurBot
 val 1
 
 progDurTop
-val 1
+val .5
 
 sfA
-val 0
+val .8
 
 sfK
-val .2
+val 1
 
 cvA
 val .8
 
 cvK
-val .8
+val 1.3
 
 mixClrSob
-val 1
+val 0
 
 mixClrTrp
-val 1
+val 0.8
 
 progDur
-val .1
+val .6
 
 
 

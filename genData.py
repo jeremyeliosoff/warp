@@ -153,6 +153,11 @@ class joint:
 		self.level = level
 		self.cons = cons
 
+	def __str__(self):
+		return "<joint> xy: " + str(self.xy) + "; level: " + str(self.level) +  \
+			"\n\tcons:" + str(self.cons)
+
+
 class surf:
 	inSurf = None # TODO: FFS rename this - outerCurve
 	inHoles = []
@@ -293,7 +298,7 @@ def initJtGrid(img, warpUi):
 	kSurf = warpUi.parmDic("kSurf")
 	res = img.get_size()
 	nJoints = 0
-	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
+	#jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tholds = [None for lev in range(nLevels)]
 	
 	ut.timerStart(warpUi, "initJtGridXYLoop")
@@ -350,71 +355,72 @@ def initJtGrid(img, warpUi):
 
 		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
 
-		for iLev in range(testNLevs):
-			print "MMMMMMM jtCons", iLev
-			for x in jtCons[iLev]:
-				for y in x:
-					print "." if y == 0 else chr(y+97),
-					#print y,
-				print
+		#for iLev in range(testNLevs):
+		#	print "MMMMMMM jtCons", iLev
+		#	for x in jtCons[iLev]:
+		#		for y in x:
+		#			print "." if y == 0 else chr(y+97),
+		#			#print y,
+		#		print
 
-		print "LLLLL jtCons"
-		for x in jtCons:
-			for y in x:
-				print y,
-			print
+		#print "LLLLL jtCons"
+		#for x in jtCons:
+		#	for y in x:
+		#		print y,
+		#	print
 		
-	for x in range(res[0]-1):
-		if (x+1) % (res[0]/10) == 0:
-			print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
-		for y in range(res[1]-1):
-			# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
-			# get neighbours.
-			nbrs = []
-			for yy in range(y, y+2):
-				for xx in range(x, x+2):
-					nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
-
-			for lev in range(nLevels):
-				levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
-				tholds[lev] = levThreshRemap
-
-				isHigher = []
-				tot = 0
-				for nbr in nbrs:
-					higher = 1 if nbr > levThreshInt else 0
-					tot += higher
-					isHigher.append(higher)
-				# Only add joint if different.
-				if tot > 0 and tot < 4:
-					cons = neighboursToConns[tuple(isHigher)]
-					texClr = img.get_at((x,y))
-					if len(cons) > 1:
-						# TODO: I think all these levThresh's, should be levThreshRemap's
-						jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
-											   joint((x,y), levThreshRemap, cons[1])]
-						nJoints += 2
-					else:
-						jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
-						nJoints += 1
-	for lev in range(nLevels):
-		print "MMMMM jtGrid", lev
+	if False:
 		for x in range(res[0]-1):
+			if (x+1) % (res[0]/10) == 0:
+				print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
 			for y in range(res[1]-1):
-				if lev in jtGrid[x][y].keys():
-					jts = jtGrid[x][y][lev]
-					cons = []
-					for jt in jts:
-						cons.append(jt.cons)
-					#print "CCCC encodeCons", encodeCons
-					#print "CCCC cons", cons
-					#print "CCCC tuple(cons)", tuple(cons)
-					#print
-					key = encodeCons[tuple(cons)]
-				else:
-					key = 0
-				print "." if key == 0 else chr(key+97),
-			print
+				# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
+				# get neighbours.
+				nbrs = []
+				for yy in range(y, y+2):
+					for xx in range(x, x+2):
+						nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
+
+				for lev in range(nLevels):
+					levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
+					tholds[lev] = levThreshRemap
+
+					isHigher = []
+					tot = 0
+					for nbr in nbrs:
+						higher = 1 if nbr > levThreshInt else 0
+						tot += higher
+						isHigher.append(higher)
+					# Only add joint if different.
+					if tot > 0 and tot < 4:
+						cons = neighboursToConns[tuple(isHigher)]
+						texClr = img.get_at((x,y))
+						if len(cons) > 1:
+							# TODO: I think all these levThresh's, should be levThreshRemap's
+							jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
+												   joint((x,y), levThreshRemap, cons[1])]
+							nJoints += 2
+						else:
+							jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
+							nJoints += 1
+		for lev in range(nLevels):
+			print "MMMMM jtGrid", lev
+			for x in range(res[0]-1):
+				for y in range(res[1]-1):
+					if lev in jtGrid[x][y].keys():
+						jts = jtGrid[x][y][lev]
+						cons = []
+						for jt in jts:
+							cons.append(jt.cons)
+						#print "CCCC encodeCons", encodeCons
+						#print "CCCC cons", cons
+						#print "CCCC tuple(cons)", tuple(cons)
+						#print
+						key = encodeCons[tuple(cons)]
+					else:
+						key = 0
+					print "." if key == 0 else chr(key+97),
+				print
 	# Write stats
 	ut.timerStop(warpUi, "initJtGridXYLoop")
 
@@ -426,7 +432,32 @@ def initJtGrid(img, warpUi):
 
 	print "\n_initJtGrid(): END"
 	
-	return jtGrid, tholds, jtCons
+	jtGridGpu = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
+	for lev in range(nLevels):
+		levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
+		for x in range(res[0]-1):
+			for y in range(res[1]-1):
+				jtConsKey = jtCons[lev][x][y]
+				if jtConsKey >= len(decodeCons) or jtConsKey < 0:
+					#print "SSS jtConsKey", jtConsKey
+					#print "SSS decodeCons", decodeCons
+					gpuCons = []
+				else:
+					gpuCons = decodeCons[jtConsKey]
+				if len(gpuCons) > 0:
+					jtLs = []
+					for gpuCon in gpuCons:
+						jtLs.append(joint((x,y), levThreshRemap, gpuCon))
+					jtGridGpu[x][y][lev] = jtLs
+					#print "III noGPU"
+					#for jj in jtGridGpu[x][y][lev]:
+					#	print jj
+					#print "III yaGPU"
+					#for jj in jtGrid[x][y][lev]:
+					#	print jj
+					#print
+
+	return jtGridGpu, tholds, jtCons
 
 def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
 	prevVal = black
@@ -565,18 +596,18 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 			for lev,jts in jtGrid[x][y].items():
 				jtConsKey = jtCons[lev][x][y]
 				gpuCons = decodeCons[jtConsKey]
-				print "\n YYY gpuCons:",
-				for gpuCon in gpuCons:
-					print gpuCon,
-				print
-				print " YYY jtsCons:", 
-				jtLs = []
-				for jt in jts:
-					jtLs.append(jt.cons)
-					print jt.cons,
-				print
-				print " YYY same?", jtLs == gpuCons, "key:", jtConsKey
-				print " YYY len(jtsCons):", len(jts)
+				#print "\n YYY gpuCons:",
+				#for gpuCon in gpuCons:
+				#	print gpuCon,
+				#print
+				#print " YYY jtsCons:", 
+				#jtLs = []
+				#for jt in jts:
+				#	jtLs.append(jt.cons)
+				#	print jt.cons,
+				#print
+				#print " YYY same?", jtLs == gpuCons, "key:", jtConsKey
+				#print " YYY len(jtsCons):", len(jts)
 				for jt in jts:
 					# GPUtrans: I think this can become "if cvGrid[x][y][lev] == None"
 					if jt.cv == None:
@@ -585,10 +616,11 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 						nCurves += 1
 						xx = x + jt.cons[1][0]
 						yy = y + jt.cons[1][1]
-						for jtt in jtGrid[xx][yy][lev]:
-							# GPUtrans: [1][0] may become [2], etc.
-							if jtt.cons[0][0] == -jt.cons[1][0] and jtt.cons[0][1] == -jt.cons[1][1]:
-								thisJt = jtt
+						if lev in  jtGrid[xx][yy].keys():
+							for jtt in jtGrid[xx][yy][lev]:
+								# GPUtrans: [1][0] may become [2], etc.
+								if jtt.cons[0][0] == -jt.cons[1][0] and jtt.cons[0][1] == -jt.cons[1][1]:
+									thisJt = jtt
 						nJoints = 0
 						xTot = 0
 						yTot = 0
@@ -605,11 +637,12 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 							xx += thisJt.cons[1][0]
 							yy += thisJt.cons[1][1]
 
-							for jtt in jtGrid[xx][yy][lev]:
-								if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
-									thisJt = jtt
+							if lev in  jtGrid[xx][yy].keys():
+								for jtt in jtGrid[xx][yy][lev]:
+									if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
+										thisJt = jtt
 						jt.cv.nJoints = nJoints
-						jt.cv.avgXy = (float(xx)/nJoints, float(xx)/nJoints)
+						#jt.cv.avgXy = (float(xx)/nJoints, float(xx)/nJoints)
 						curves[lev] = curves[lev][:] + [jt.cv]
 
 

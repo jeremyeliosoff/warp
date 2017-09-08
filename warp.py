@@ -287,6 +287,7 @@ class warpUi():
 	def imgButCmd(self):
 		self.updateCurImg(forceRecord=True)
 		self.updateDebugImg()
+		self.sortStats()
 
 	def keyPress(self, event):
 		print "_keyPress(): event.keysym", event.keysym
