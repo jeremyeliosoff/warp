@@ -21,51 +21,53 @@ int neighboursToConns (int* nbrs, int* cons) {
 	// For some F'ED UP reason, removing all elseifs
 	// makes this satisfied if any nbrs == 1.
 	if		  (compare4(0, 0,
+						0, 0, nbrs)) {
+		ret = 'a';
+	} else if (compare4(0, 0,
 						0, 1, nbrs)) {
-		//assign4(0, 1, 1, 0, cons);
-		ret = 1;
+		ret = 'b';
 	} else if (compare4(0, 0,
 						1, 0, nbrs)) {
-		ret = 2;
+		ret = 'c';
 	} else if (compare4(0, 0,
 						1, 1, nbrs)) {
-		ret = 3;
+		ret = 'd';
+	} else if (compare4(0, 1,
+						0, 0, nbrs)) {
+		ret = 'e';
 	} else if (compare4(0, 1,
 						0, 1, nbrs)) {
-		ret = 4;
+		ret = 'f';
 	} else if (compare4(0, 1,
 						1, 0, nbrs)) {
-		ret = 5;
+		ret = 'g';
 	} else if (compare4(0, 1,
 						1, 1, nbrs)) {
-		ret = 6;
+		ret = 'h';
 	} else if (compare4(1, 0,
 						0, 0, nbrs)) {
-		ret = 7;
+		ret = 'i';
 	} else if (compare4(1, 0,
 						0, 1, nbrs)) {
-		ret = 8;
+		ret = 'j';
 	} else if (compare4(1, 0,
 						1, 0, nbrs)) {
-		ret = 9;
+		ret = 'k';
 	} else if (compare4(1, 0,
 						1, 1, nbrs)) {
-		ret = 10;
+		ret = 'l';
 	} else if (compare4(1, 1,
 						0, 0, nbrs)) {
-		ret = 10;
+		ret = 'm';
 	} else if (compare4(1, 1,
 						0, 1, nbrs)) {
-		ret = 11;
+		ret = 'n';
 	} else if (compare4(1, 1,
 						1, 0, nbrs)) {
-		ret = 12;
+		ret = 'o';
 	} else if (compare4(1, 1,
 						1, 1, nbrs)) {
-		ret = 13;
-	} else if (compare4(0, 0,
-						0, 0, nbrs)) {
-		ret = 14;
+		ret = 'p';
 	}
 
 	return ret;
@@ -179,7 +181,10 @@ void cpClr(int x, int y, int xres, int npix,
 __kernel void initJtC(
 			int testNLevs,
 			__global uchar* imgArray,
-			__global uchar* levThreshArray,
+			__global int* levThreshArray,
+			int lt0,
+			int lt1,
+			int lt2,
 			__global int* nconsOut)
 {
 	int x = get_global_id(1);
@@ -188,13 +193,13 @@ __kernel void initJtC(
 	int xres = %d;
 	int yres = %d;
 	int npix = 3;
-	//cpClr(x, y, xres, npix, imgArray, out);
 
 	int lev;
 	int levThreshInt;
 
 	for (lev = 0; lev < testNLevs; lev ++) {
 		levThreshInt = levThreshArray[lev];	
+		//levThreshInt = lev == 0 ? lt0 : lev == 1 ? lt1 : lt2;
 
 		int levOfs = lev*xres*yres;
 		if (x < xres-1 && y < yres-1) {
@@ -216,7 +221,7 @@ __kernel void initJtC(
 			int cons[] = {0, 0, 0, 0};
 			int ncons = 0;
 			if (tot > 0 and tot < 4) {
-				ncons = neighboursToConns (nbrs, cons);
+				ncons = neighboursToConns (nbrs, cons) - 97;
 			}
 			//setArrayCell(x, y, xres, 1, tot, nconsOut);
 			setArrayCellInt(x, y, levOfs, xres, 1, ncons, nconsOut);

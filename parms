@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 4
+val 3
 
 fps
 val 52
@@ -122,10 +122,10 @@ progDurBot
 val 1
 
 progDurTop
-val .5
+val 1
 
 sfA
-val .5
+val 0
 
 sfK
 val .2
@@ -137,13 +137,13 @@ cvK
 val .8
 
 mixClrSob
-val 0
+val 1
 
 mixClrTrp
-val 0.8
+val 1
 
 progDur
-val .6
+val .1
 
 
 
