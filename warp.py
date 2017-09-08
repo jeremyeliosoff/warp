@@ -48,7 +48,7 @@ class warpUi():
 		self.pauseSaveUIToParmsAndFile = False
 
 	def saveUIToParmsAndFile(self, parmName, arg):
-		print "\n_saveUIToParmsAndFile(): self.pauseSaveUIToParmsAndFile =", self.pauseSaveUIToParmsAndFile
+		#print "\n_saveUIToParmsAndFile(): self.pauseSaveUIToParmsAndFile =", self.pauseSaveUIToParmsAndFile
 		if isinstance(arg, StringVar):
 			val = arg.get()
 		else:

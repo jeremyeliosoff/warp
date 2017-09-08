@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 6
+val 4
 
 fps
 val 52
@@ -19,7 +19,7 @@ doRenCv
 val 0
 
 image
-val tuktukPt1
+val tuktuk
 
 dbImg1
 val sidPost
@@ -34,16 +34,16 @@ lev_dbImg2
 val ALL
 
 renVer
-val v027gpuTestOff
+val v095moreTimers
 
 frStart
 val 1
 
 frEnd
-val 30
+val 2440
 
 frPerCycle
-val 10
+val 30
 
 doGen
 val 1
@@ -92,10 +92,10 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v010gpuTestOff
+val v050moreTimers
 
 startLev
-val 1
+val 0
 
 fallDist
 val .2
