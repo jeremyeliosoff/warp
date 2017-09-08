@@ -299,19 +299,23 @@ def initJtGrid(img, warpUi):
 
 	tryGPU = True
 	if tryGPU:
+
+		levThreshRemap = []
+		levThreshInt = []
+		for lev in range(nLevels):
+			thisLevThreshRemap, thisLevThreshInt = \
+				getLevThresh(warpUi, lev, nLevels)
+			levThreshRemap.append(thisLevThreshRemap)
+			levThreshInt.append(thisLevThreshInt)
+
+		levThreshArray = np.array(levThreshInt)
+		levThreshArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
 		
-		#imgArray = np.array(pygame.surfarray.array3d(img))
 		imgArray = np.array(list(pygame.surfarray.array3d(img)))
-		print "NNNNNNNN imgArray"
-		print imgArray
 		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
-		print "_initJtGrid(): jtGridOut"
-		jtLevels = np.empty(imgArray.shape, dtype=np.uint8)
-		jtLevels.fill(0)
-		jtLevels_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtLevels.nbytes)
-
 		jtCons = np.empty(imgArray.shape, dtype=np.uint8) # TODO zeros
 		jtCons.fill(0)
 		jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
@@ -337,13 +341,12 @@ def initJtGrid(img, warpUi):
 				None,
 				np.int32(testNLevs),
 				imgArray_buf,
-				jtNCons_buf,
-				jtLevels_buf)
+				levThreshArray_buf,
+				jtNCons_buf)
 		launch.wait()
 
 
 		cl.enqueue_read_buffer(queue, jtNCons_buf, jtNCons).wait()
-		cl.enqueue_read_buffer(queue, jtLevels_buf, jtLevels).wait()
 
 		print "MMMMMMM jtNCons"
 		for iLev in range(testNLevs):
@@ -360,12 +363,6 @@ def initJtGrid(img, warpUi):
 				print y,
 			print
 		
-		print "VVVVVVVVVV jtLevels"
-		for x in jtLevels:
-			for y in x:
-				print y,
-			print
-	
 	for x in range(res[0]-1):
 		if (x+1) % (res[0]/10) == 0:
 			print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
@@ -1051,7 +1048,12 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 			if not db or iJt == None:
 				# Comp for ALL level
 				prevVal = thisDic[nLevels].get_at((jxt,jyt))
-				newVal = ut.mixV(prevVal, newVal, alpha)
+				occludePrev = .75 # TODO Parm?
+				prevVal = ut.mixV(prevVal,
+					ut.multVSc(prevVal, (1-alpha)), occludePrev)
+
+
+				newVal = ut.vAdd(prevVal, ut.multVSc(newVal, alpha))
 				newValLs = []
 				for v in newVal:
 					newValLs.append(int(v))

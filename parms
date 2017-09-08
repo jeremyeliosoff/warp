@@ -31,10 +31,10 @@ dbImg2
 val sidPost
 
 lev_dbImg2
-val lev03
+val lev01
 
 renVer
-val v000
+val v0013lev
 
 frStart
 val 1
@@ -66,10 +66,10 @@ gamma
 val 1
 
 minThresh
-val 0.5
+val 0
 
 maxThresh
-val .9
+val 1
 
 rangeThresh
 val .1
@@ -92,7 +92,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v000
+val v0073lev
 
 startLev
 val 0
@@ -151,7 +151,7 @@ val .6
 ---AOV---
 
 aov_perLev
-val 0
+val 1
 
 aov_inSurfNow
 val 0
