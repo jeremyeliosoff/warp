@@ -61,52 +61,51 @@ lMagenta # 19
 ]
 
 neighboursToConns = {
-	# a
 	(0, 0,\
 	 0, 0):[],
-	# b
+
 	(0, 0,\
 	 0, 1):[((0, 1), (1, 0))],
-	# c
+
 	(0, 0,\
 	 1, 0):[((-1, 0), (0, 1))],
-	# d
+
 	(0, 0,\
 	 1, 1):[((-1, 0), (1, 0))],
-	# e
+
 	(0, 1,\
 	 0, 0):[((1, 0), (0, -1))],
-	# f
+
 	(0, 1,\
 	 0, 1):[((0, 1), (0, -1))],
-	# g
+
 	(0, 1,\
 	 1, 0):[((-1, 0), (0, 1)), ((1, 0), (0, -1))],
-	# h
+
 	(0, 1,\
 	 1, 1):[((-1, 0), (0, -1))],
-	# i
+
 	(1, 0,\
 	 0, 0):[((0, -1), (-1, 0))],
-	# j
+
 	(1, 0,\
 	 0, 1):[((0, 1), (1, 0)), ((0, -1), (-1, 0))],
-	# k
+
 	(1, 0,\
 	 1, 0):[((0, -1), (0, 1))],
-	# l
+
 	(1, 0,\
 	 1, 1):[((0, -1), (1, 0))],
-	# m
+
 	(1, 1,\
 	 0, 0):[((1, 0), (-1, 0))],
-	# n
+
 	(1, 1,\
 	 0, 1):[((0, 1), (-1, 0))],
-	# o
+
 	(1, 1,\
 	 1, 0):[((1, 0), (0, 1))],
-	# p
+
 	(1, 1,\
 	 1, 1):[]}
 
@@ -152,11 +151,6 @@ class joint:
 		self.xy = xy
 		self.level = level
 		self.cons = cons
-
-	def __str__(self):
-		return "<joint> xy: " + str(self.xy) + "; level: " + str(self.level) +  \
-			"\n\tcons:" + str(self.cons)
-
 
 class surf:
 	inSurf = None # TODO: FFS rename this - outerCurve
@@ -298,39 +292,37 @@ def initJtGrid(img, warpUi):
 	kSurf = warpUi.parmDic("kSurf")
 	res = img.get_size()
 	nJoints = 0
-	#jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
+	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tholds = [None for lev in range(nLevels)]
 	
 	ut.timerStart(warpUi, "initJtGridXYLoop")
 
-	tryGPU = True
+	tryGPU = False
 	if tryGPU:
-
-		levThreshRemap = []
-		levThreshInt = []
-		for lev in range(nLevels):
-			thisLevThreshRemap, thisLevThreshInt = \
-				getLevThresh(warpUi, lev, nLevels)
-			levThreshRemap.append(thisLevThreshRemap)
-			# TODO -> tholds[lev] = thisLevThreshRemap
-			levThreshInt.append(thisLevThreshInt)
-
-		levThreshArray = np.array(levThreshInt, dtype=np.intc)
-		print "QQQQ levThreshArray", levThreshArray
-		levThreshArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
 		
+		#imgArray = np.array(pygame.surfarray.array3d(img))
 		imgArray = np.array(list(pygame.surfarray.array3d(img)))
+		print "NNNNNNNN imgArray"
+		print imgArray
 		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
-		testNLevs = 3
-		#jtCons = np.empty([res for iLev in range(testNLevs)], dtype=np.intc)
-		#jtCons = np.empty(res, dtype=np.intc)
-		jtCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
-		#jtCons = np.array([[int(0) for j in range(res[0])] for i in range(res[1])])
+		print "_initJtGrid(): jtGridOut"
+		jtLevels = np.empty(imgArray.shape, dtype=np.uint8)
+		jtLevels.fill(0)
+		jtLevels_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtLevels.nbytes)
+
+		jtCons = np.empty(imgArray.shape, dtype=np.uint8) # TODO zeros
 		jtCons.fill(0)
 		jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
+		
+		testNLevs = 3
+		#jtNCons = np.empty([res for iLev in range(testNLevs)], dtype=np.intc)
+		#jtNCons = np.empty(res, dtype=np.intc)
+		jtNCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
+		#jtNCons = np.array([[int(0) for j in range(res[0])] for i in range(res[1])])
+		jtNCons.fill(0)
+		jtNCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtNCons.nbytes)
 		
 		kernelPath = ut.projDir + "/GPUKernel.c"
 		with open(kernelPath) as f:
@@ -345,82 +337,68 @@ def initJtGrid(img, warpUi):
 				None,
 				np.int32(testNLevs),
 				imgArray_buf,
-				levThreshArray_buf,
-				np.int32(levThreshArray[0]),
-				np.int32(levThreshArray[1]),
-				np.int32(levThreshArray[2]),
-				jtCons_buf)
+				jtNCons_buf,
+				jtLevels_buf)
 		launch.wait()
 
 
-		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
+		cl.enqueue_read_buffer(queue, jtNCons_buf, jtNCons).wait()
+		cl.enqueue_read_buffer(queue, jtLevels_buf, jtLevels).wait()
 
-		#for iLev in range(testNLevs):
-		#	print "MMMMMMM jtCons", iLev
-		#	for x in jtCons[iLev]:
-		#		for y in x:
-		#			print "." if y == 0 else chr(y+97),
-		#			#print y,
-		#		print
-
-		#print "LLLLL jtCons"
-		#for x in jtCons:
-		#	for y in x:
-		#		print y,
-		#	print
-		
-	if False:
-		for x in range(res[0]-1):
-			if (x+1) % (res[0]/10) == 0:
-				print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
-			for y in range(res[1]-1):
-				# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
-				# get neighbours.
-				nbrs = []
-				for yy in range(y, y+2):
-					for xx in range(x, x+2):
-						nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
-
-				for lev in range(nLevels):
-					levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
-					tholds[lev] = levThreshRemap
-
-					isHigher = []
-					tot = 0
-					for nbr in nbrs:
-						higher = 1 if nbr > levThreshInt else 0
-						tot += higher
-						isHigher.append(higher)
-					# Only add joint if different.
-					if tot > 0 and tot < 4:
-						cons = neighboursToConns[tuple(isHigher)]
-						texClr = img.get_at((x,y))
-						if len(cons) > 1:
-							# TODO: I think all these levThresh's, should be levThreshRemap's
-							jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
-												   joint((x,y), levThreshRemap, cons[1])]
-							nJoints += 2
-						else:
-							jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
-							nJoints += 1
-		for lev in range(nLevels):
-			print "MMMMM jtGrid", lev
-			for x in range(res[0]-1):
-				for y in range(res[1]-1):
-					if lev in jtGrid[x][y].keys():
-						jts = jtGrid[x][y][lev]
-						cons = []
-						for jt in jts:
-							cons.append(jt.cons)
-						#print "CCCC encodeCons", encodeCons
-						#print "CCCC cons", cons
-						#print "CCCC tuple(cons)", tuple(cons)
-						#print
-						key = encodeCons[tuple(cons)]
-					else:
-						key = 0
-					print "." if key == 0 else chr(key+97),
+		print "MMMMMMM jtNCons"
+		for iLev in range(testNLevs):
+			print "\n--------------------------------\n"
+			for x in jtNCons[iLev]:
+				for y in x:
+					print "." if y == 0 else chr(y+96),
+					#print y,
 				print
+
+		print "LLLLL jtNCons"
+		for x in jtNCons:
+			for y in x:
+				print y,
+			print
+		
+		print "VVVVVVVVVV jtLevels"
+		for x in jtLevels:
+			for y in x:
+				print y,
+			print
+	
+	for x in range(res[0]-1):
+		if (x+1) % (res[0]/10) == 0:
+			print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
+		for y in range(res[1]-1):
+			# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
+			# get neighbours.
+			nbrs = []
+			for yy in range(y, y+2):
+				for xx in range(x, x+2):
+					nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
+
+			for lev in range(nLevels):
+				levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
+				tholds[lev] = levThreshRemap
+
+				isHigher = []
+				tot = 0
+				for nbr in nbrs:
+					higher = 1 if nbr > levThreshInt else 0
+					tot += higher
+					isHigher.append(higher)
+				# Only add joint if different.
+				if tot > 0 and tot < 4:
+					cons = neighboursToConns[tuple(isHigher)]
+					texClr = img.get_at((x,y))
+					if len(cons) > 1:
+						# TODO: I think all these levThresh's, should be levThreshRemap's
+						jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
+											   joint((x,y), levThreshRemap, cons[1])]
+						nJoints += 2
+					else:
+						jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
+						nJoints += 1
 	# Write stats
 	ut.timerStop(warpUi, "initJtGridXYLoop")
 
@@ -432,32 +410,7 @@ def initJtGrid(img, warpUi):
 
 	print "\n_initJtGrid(): END"
 	
-	jtGridGpu = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
-	for lev in range(nLevels):
-		levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
-		for x in range(res[0]-1):
-			for y in range(res[1]-1):
-				jtConsKey = jtCons[lev][x][y]
-				if jtConsKey >= len(decodeCons) or jtConsKey < 0:
-					#print "SSS jtConsKey", jtConsKey
-					#print "SSS decodeCons", decodeCons
-					gpuCons = []
-				else:
-					gpuCons = decodeCons[jtConsKey]
-				if len(gpuCons) > 0:
-					jtLs = []
-					for gpuCon in gpuCons:
-						jtLs.append(joint((x,y), levThreshRemap, gpuCon))
-					jtGridGpu[x][y][lev] = jtLs
-					#print "III noGPU"
-					#for jj in jtGridGpu[x][y][lev]:
-					#	print jj
-					#print "III yaGPU"
-					#for jj in jtGrid[x][y][lev]:
-					#	print jj
-					#print
-
-	return jtGridGpu, tholds, jtCons
+	return jtGrid, tholds
 
 def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
 	prevVal = black
@@ -488,50 +441,8 @@ def drawBbx(warpUi, bbx, dbName, dbImgDic, lev, nLevels, clr):
 		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xmn, yy, clr)
 		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xmx, yy, clr)
 	
-# From neighboursToConns:
-decodeCons = ((),
-	(((0, 1), (1, 0)),),
-	(((-1, 0), (0, 1)),),
-	(((-1, 0), (1, 0)),),
-	(((1, 0), (0, -1)),),
-	(((0, 1), (0, -1)),),
-	(((-1, 0), (0, 1)), ((1, 0), (0, -1)),),
-	(((-1, 0), (0, -1)),),
-	(((0, -1), (-1, 0)),),
-	(((0, 1), (1, 0)), ((0, -1), (-1, 0)),),
-	(((0, -1), (0, 1)),),
-	(((0, -1), (1, 0)),),
-	(((1, 0), (-1, 0)),),
-	(((0, 1), (-1, 0)),),
-	(((1, 0), (0, 1)),),
-	())
 
-
-
-encodeCons = {}
-for i,cons in enumerate(decodeCons):
-	encodeCons[cons] = i
-
-#[
-#	()
-#	((0, 0), ( 0, 1)),
-#	((0, 0), ( 1, 0)),
-#	((0, 0), ( 1, 1)),
-#	((0, 1), ( 0, 1)),
-#	((0, 1), ( 1, 0)),
-#	((0, 1), ( 1, 1)),
-#	((1, 0), ( 0, 0)),
-#	((1, 0), ( 0, 1)),
-#	((1, 0), ( 1, 0)),
-#	((1, 0), ( 1, 1)),
-#	((1, 1), ( 0, 0)),
-#	((1, 1), ( 0, 1)),
-#	((1, 1), ( 1, 0)),
-#	((1, 1), ( 1, 1)),
-#	((0, 0), ( 0, 0))]
-
-
-def growCurves(warpUi, jtGrid, jtCons, frameDir):
+def growCurves(warpUi, jtGrid, inSurfGridPrev, frameDir):
 	print "\n_growCurves(): growing curves for", frameDir
 	nLevels = warpUi.parmDic("nLevels")
 	nCurves = 0
@@ -563,7 +474,7 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 
 
 
-	# Grow curves following the con(nection)s in _jtGrid
+	# Grow curves following the con(nection)s in jtGrid
 
 	nextPrintout = 10
 	for y in range(res[1]):
@@ -590,24 +501,10 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 					setAOV(warpUi, "surfsAndHoles", dbImgDic, lev, nLevels, x, y, val)
 
 
-			# Initiate curve growth for any joints in this cell of _jtGrid.
+			# Initiate curve growth for any joints in this cell of jtGrid.
 
-			# GPUtrans _jtGrid (effectively) becomes jtCons - maybe list, not dic
+			# GPUtrans jtGrid (effectively) becomes jtCons - maybe list, not dic
 			for lev,jts in jtGrid[x][y].items():
-				jtConsKey = jtCons[lev][x][y]
-				gpuCons = decodeCons[jtConsKey]
-				#print "\n YYY gpuCons:",
-				#for gpuCon in gpuCons:
-				#	print gpuCon,
-				#print
-				#print " YYY jtsCons:", 
-				#jtLs = []
-				#for jt in jts:
-				#	jtLs.append(jt.cons)
-				#	print jt.cons,
-				#print
-				#print " YYY same?", jtLs == gpuCons, "key:", jtConsKey
-				#print " YYY len(jtsCons):", len(jts)
 				for jt in jts:
 					# GPUtrans: I think this can become "if cvGrid[x][y][lev] == None"
 					if jt.cv == None:
@@ -616,11 +513,10 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 						nCurves += 1
 						xx = x + jt.cons[1][0]
 						yy = y + jt.cons[1][1]
-						if lev in  jtGrid[xx][yy].keys():
-							for jtt in jtGrid[xx][yy][lev]:
-								# GPUtrans: [1][0] may become [2], etc.
-								if jtt.cons[0][0] == -jt.cons[1][0] and jtt.cons[0][1] == -jt.cons[1][1]:
-									thisJt = jtt
+						for jtt in jtGrid[xx][yy][lev]:
+							# GPUtrans: [1][0] may become [2], etc.
+							if jtt.cons[0][0] == -jt.cons[1][0] and jtt.cons[0][1] == -jt.cons[1][1]:
+								thisJt = jtt
 						nJoints = 0
 						xTot = 0
 						yTot = 0
@@ -637,12 +533,11 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 							xx += thisJt.cons[1][0]
 							yy += thisJt.cons[1][1]
 
-							if lev in  jtGrid[xx][yy].keys():
-								for jtt in jtGrid[xx][yy][lev]:
-									if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
-										thisJt = jtt
+							for jtt in jtGrid[xx][yy][lev]:
+								if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
+									thisJt = jtt
 						jt.cv.nJoints = nJoints
-						#jt.cv.avgXy = (float(xx)/nJoints, float(xx)/nJoints)
+						jt.cv.avgXy = (float(xx)/nJoints, float(xx)/nJoints)
 						curves[lev] = curves[lev][:] + [jt.cv]
 
 
@@ -699,17 +594,17 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 					setAOV(warpUi, "sid", dbImgDic, lev, nLevels, x, y, sidClr)
 					inPrevClr = green
 					inSurfGrid[lev][x][y] = currentSid
-					if (warpUi.inSurfGridPrev == None or
-						(not len(warpUi.inSurfGridPrev) == len(inSurfGrid)) or # TODO: add or if floor(ofs) > floor(preOfs)
+					if (inSurfGridPrev == None or
+						(not len(inSurfGridPrev) == len(inSurfGrid)) or # TODO: add or if floor(ofs) > floor(preOfs)
 						# I THINK below avoids overlapping start of cyc with end of prev
 						(not math.floor(warpUi.getOfsWLev(lev)) ==
 							math.floor(warpUi.getOfsWLev(lev, warpUi.parmDic("fr")-1))) or 
-						(not len(warpUi.inSurfGridPrev[0]) == len(inSurfGrid[0]))) : # NOTE:  this is apparently NOT the same as "if warpUi.inSurfGridPrev:"
+						(not len(inSurfGridPrev[0]) == len(inSurfGrid[0]))) : # NOTE:  this is apparently NOT the same as "if inSurfGridPrev:"
 						# There is no prev grid or it is a different res.
 						inPrevClr = red
 					else:
 						# There is a surfGrid file for the previous frame.
-						inSurfPrev = warpUi.inSurfGridPrev[lev][x][y]
+						inSurfPrev = inSurfGridPrev[lev][x][y]
 						if inSurfPrev == None:
 							# There are NO surfs at this level at this cell in the previous frame.
 							inPrevClr = red
@@ -921,7 +816,7 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 
 	return inSurfGrid, sidToCvs
 
-	#-- END OF growCurves(warpUi, jtGrid, frameDir):
+	#-- END OF growCurves(warpUi, jtGrid, inSurfGridPrev):
 
 
 def writeTidImg(warpUi, inSurfGrid):
@@ -963,9 +858,9 @@ def genDataWrapper(warpUi):
 	inSurfGridPrev = None
 	frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
 
-	jtGrid, tholds, jtCons = initJtGrid(img, warpUi)
+	jtGrid, tholds = initJtGrid(img, warpUi)
 
-	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, jtCons, frameDir)
+	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, warpUi.inSurfGridPrev, frameDir)
 	# TODO: TEMP - this should be done in warp.py when genData is stopped.
 	print "\n\n_genData(): ----- doing pickleDump(" + frameDir + "/inSurfGrid"
 	pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
