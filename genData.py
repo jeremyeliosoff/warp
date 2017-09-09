@@ -298,7 +298,6 @@ def initJtGrid(img, warpUi):
 	kSurf = warpUi.parmDic("kSurf")
 	res = img.get_size()
 	nJoints = 0
-	#jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tholds = [None for lev in range(nLevels)]
 	
 	ut.timerStart(warpUi, "initJtGridXYLoop")
@@ -355,68 +354,8 @@ def initJtGrid(img, warpUi):
 
 		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
 
-		#for iLev in range(testNLevs):
-		#	print "MMMMMMM jtCons", iLev
-		#	for x in jtCons[iLev]:
-		#		for y in x:
-		#			print "." if y == 0 else chr(y+97),
-		#			#print y,
-		#		print
-
-		#print "LLLLL jtCons"
-		#for x in jtCons:
-		#	for y in x:
-		#		print y,
-		#	print
-		
-	if False:
-		for x in range(res[0]-1):
-			if (x+1) % (res[0]/10) == 0:
-				print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
-			for y in range(res[1]-1):
-				# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
-				# get neighbours.
-				nbrs = []
-				for yy in range(y, y+2):
-					for xx in range(x, x+2):
-						nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
-
-				for lev in range(nLevels):
-					levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
-					tholds[lev] = levThreshRemap
-
-					isHigher = []
-					tot = 0
-					for nbr in nbrs:
-						higher = 1 if nbr > levThreshInt else 0
-						tot += higher
-						isHigher.append(higher)
-					# Only add joint if different.
-					if tot > 0 and tot < 4:
-						cons = neighboursToConns[tuple(isHigher)]
-						texClr = img.get_at((x,y))
-						if len(cons) > 1:
-							# TODO: I think all these levThresh's, should be levThreshRemap's
-							jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
-												   joint((x,y), levThreshRemap, cons[1])]
-							nJoints += 2
-						else:
-							jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
-							nJoints += 1
-		for lev in range(nLevels):
-			print "MMMMM jtGrid", lev
-			for x in range(res[0]-1):
-				for y in range(res[1]-1):
-					jts = jtGrid[x][y][lev]
-					cons = []
-					for jt in jts:
-						cons.append(jt.cons)
-					key = encodeCons[tuple(cons)]
-					print "." if key == 0 else chr(key+97),
-				print
 	# Write stats
 
-	#warpUi.gridJt = jtGrid[:]
 	renPath = warpUi.images["ren"]["path"]
 	renSeqDir = "/".join(renPath.split("/")[:-1])
 	ut.mkDirSafe(renSeqDir)
@@ -649,24 +588,18 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 			
 			# Work out which prev surf the cur surfs are in.
 
-
-	#ut.timerStart(warpUi, "growC_surfs")
-	#for y in range(res[1]):
-	#	for x in range(res[0]):
 			for lev in range(nLevels):
 				if inSurfNow[lev]:
 					currentSid = inSurfs[lev][-1].surf.sid
 					inSurfGrid[lev][x][y] = currentSid
 					if not (warpUi.inSurfGridPrev == None or
-						(not len(warpUi.inSurfGridPrev) == len(inSurfGrid)) or # TODO: add or if floor(ofs) > floor(preOfs)
 						# I THINK below avoids overlapping start of cyc with end of prev
 						(not math.floor(warpUi.getOfsWLev(lev)) ==
-							math.floor(warpUi.getOfsWLev(lev, warpUi.parmDic("fr")-1))) or
-						(not len(warpUi.inSurfGridPrev[0]) == len(inSurfGrid[0]))) : # NOTE:  this is apparently NOT the same as "if warpUi.inSurfGridPrev:"
+							math.floor(warpUi.getOfsWLev(lev, warpUi.parmDic("fr")-1)))) : # NOTE:  this is apparently NOT the same as "if warpUi.inSurfGridPrev:"
 						# There is a surfGrid file for the previous frame.
 						inSurfPrev = warpUi.inSurfGridPrev[lev][x][y]
 						if inSurfPrev == None:
-							# There are NO surfs at this level at this cell in the previous frame.
+							# There are NO surfs at this level at this pxl in the previous frame.
 							if not currentSid in curToPrevSidDic[lev].keys():
 
 								# There are no prev sids corresponding to the current sid.
@@ -676,15 +609,17 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 								# MAYBE TRY A *SET*!
 								curToPrevSidDic[lev][currentSid] = []
 						else:
-							# There ARE surfs in this cell in the previous frame.
+							# There ARE surfs in this pxl in the previous frame.
 							if currentSid in curToPrevSidDic[lev].keys():
-								# There is already a list for currentSid in curToPrevSidDic,
-								# append inSurfPrev to that list.
-
+								# There is already a dict for currentSid in
+								# curToPrevSidDic
 								if not inSurfPrev in curToPrevSidDic[lev][currentSid]:
+									# ...which doesn't' include inSurfPrev; append it
+									# ie. JOIN inSurfPrev to currentSid
 									curToPrevSidDic[lev][currentSid].append(inSurfPrev)
 							else:
-								# There's no list for currentSid, make a new one with just inSurfPrev
+								# There's no list for currentSid,
+								# make a new one with just inSurfPrev
 								curToPrevSidDic[lev][currentSid] = [inSurfPrev]
 
 	#ut.timerStop(warpUi, "growC_surfs")
@@ -802,8 +737,8 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 				if sid in sidToCvs[lev].keys():
 					#cvsToAdd = sidToCvs[lev][sid]["cvs"]
 					if sidToMergeTo in sidToCvs[lev].keys():
+						# Combine cvs - TODO might ren faster if curves kept separate
 						sidToCvs[lev][sidToMergeTo]["cvs"] += sidToCvs[lev][sid]["cvs"]
-						#sidToCvs[lev][sidNew]["cvs"] += sidToCvs[lev][sidOld]["cvs"]
 						sidToCvs[lev][sidToMergeTo]["bbx"] = bbxUnion(sidToCvs[lev][sid]["bbx"], sidToCvs[lev][sidToMergeTo]["bbx"])
 					else:
 						sidToCvs[lev][sidToMergeTo] = sidToCvs[lev][sid]
