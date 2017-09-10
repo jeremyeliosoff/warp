@@ -30,7 +30,7 @@ class warpUi():
 		
 	def flushDics(self):
 		print "\n_flushDics(): Flushing dics"
-		self.tidToSids = None
+		#self.tidToSids = None
 		self.sidToTid = None
 		self.nextSid = 0
 		
@@ -793,11 +793,12 @@ class warpUi():
 		self.parmDic.parmDic[parmStr]["val"] = valStr
 		self.pauseSaveUIToParmsAndFile = False
 
-	def makeFramesDataDir(self, fr=None):
+	def makeFramesDataDir(self, fr=None, doMake=True):
 		if not fr:
 			fr = self.parmDic("fr")
 		frameDir = self.framesDataDir + ("/%05d" % fr)
-		ut.mkDirSafe(frameDir)
+		if doMake:
+			ut.mkDirSafe(frameDir)
 		return fr, frameDir
 
 	def getSeqVersions(self, verType):
@@ -1394,8 +1395,14 @@ class warpUi():
 						if self.record:
 							# Global varable needed for final stats
 							statsDirDest = self.seqRenVDir 
+
+							if self.parmDic("doRenCv") == 0:
+								# Back up tidToSids for final frame
+								print "__init__(): BACKING UP tidToSids for final fr", fr
+								dud, frameDir = self.makeFramesDataDir()
+								genData.pickleDump(frameDir + "/tidToSids", self.tidToSids)
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
-							# Both doRenCv and doRen is redundant!!!
+							# You're set to do recording, but doRenCv is 0 (not yet done).
 							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
 								# Restart and do renCv
 

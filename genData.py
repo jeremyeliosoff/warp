@@ -12,6 +12,8 @@ queue = cl.CommandQueue(cntxt)
 
 outFile = "/tmp/out"
 
+tidToSidsBackupEvery = 5
+
 black = (0, 0, 0)
 grey = (.3, .3, .3)
 white = (1, 1, 1)
@@ -924,12 +926,12 @@ def genDataWrapper(warpUi):
 	pickleDump(frameDir + "/tholds", tholds)
 
 	# Save sidToCvs for this frame.
-	pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
+	#pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
 
-	tidToSidsBackupEvery = 5
 	if fr % tidToSidsBackupEvery == 0:
-		print "_genData(): BACKING UP tidToSids and inSurfGrid:"
-		shutil.copy2(warpUi.seqDataVDir + "/tidToSids", frameDir)
+		print "_genData(): BACKING UP tidToSids:"
+		#shutil.copy2(warpUi.seqDataVDir + "/tidToSids", frameDir)
+		pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
 		#ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
 	if fr % tidToSidsBackupEvery == 1:
 		print "_genData(): NOT deleting", prevFrInSurfGrid
@@ -1004,11 +1006,29 @@ def convertCvDicToDic(cvDic, warpUi):
 
 def renCvWrapper(warpUi):
 	print "_renCvWrapper(): BEGIN"
+	fr, frameDir = warpUi.makeFramesDataDir()
+	framesDir = warpUi.seqDataVDir + "/frames"
 	if warpUi.tidToSids == None:
-		warpUi.tidToSids = pickleLoad(warpUi.seqDataVDir  + "/tidToSids")
+		print "_renCvWrapper(): finding last tidToSidsFile; finding frameDirs in", framesDir
+		frameDirs = os.listdir(framesDir)
+		frameDirs.sort()
+		print "_renCvWrapper(): frameDirs:", frameDirs
+		tidToSidsFile = warpUi.framesDataDir + "/" + frameDirs[-1] + "/tidToSids"
+		print "_renCvWrapper(): tidToSidsFile:", tidToSidsFile
+		warpUi.tidToSids = pickleLoad(tidToSidsFile)
+	# MAY USE LATER # if warpUi.tidToSids == None or frForTid % tidToSidsBackupEvery == 1:
+
+	# MAY USE LATER #	frForTid = fr + warpUi.parmDic("frPerCycle")
+	# MAY USE LATER #	# Get the checkpoint after fr + frPerCycle.
+	# MAY USE LATER #	tidToSidsFr = tidToSidsBackupEvery*(1 + frForTid/tidToSidsBackupEvery)
+	# MAY USE LATER #	dud, tidToSidsDir = warpUi.makeFramesDataDir(tidToSidsFr, False)
+	# MAY USE LATER #	# Get next checkpoint backup.
+	# MAY USE LATER #	tidToSidsFile = tidToSidsDir + "/tidToSids"
+	# MAY USE LATER #	print "_renCvWrapper(): checking for", tidToSidsFile
+	# MAY USE LATER #	if not os.path.exists(tidToSidsFile):
+			
 	if warpUi.sidToTid == None:
 		warpUi.sidToTid = pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
-	fr, frameDir = warpUi.makeFramesDataDir()
 	sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
 	tholds = pickleLoad(frameDir + "/tholds")
 	if sidToCvDic == None:
