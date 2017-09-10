@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 271
+val 301
 
 fps
 val 52
@@ -13,13 +13,13 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
 
 image
-val lzSmokeShortp2pngGm1p3
+val lzSmokeShortFRpng
 
 dbImg1
 val sidPost
@@ -34,13 +34,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v002
+val v004gpu
 
 frStart
 val 270
 
 frEnd
-val 600
+val 500
 
 frPerCycle
 val 30
@@ -92,7 +92,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v003
+val v004from3from2
 
 startLev
 val 0

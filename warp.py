@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut, time, datetime, pprint, glob, cProfile
+import os, genData, ut, time, datetime, pprint, glob, cProfile, shutil
 from Tkinter import *
 import Tkinter, ttk
 import PIL
@@ -25,8 +25,8 @@ class warpUi():
 
 	def delDics(self):
 		print "\n_delDics(): Deleting dics..."
-		ut.exeCmd("rm " + self.seqDataVDir + "/tidToSids")
-		ut.exeCmd("rm " + self.seqDataVDir + "/sidToTid")
+		ut.safeRemove(self.seqDataVDir + "/tidToSids")
+		ut.safeRemove(self.seqDataVDir + "/sidToTid")
 		
 	def flushDics(self):
 		print "\n_flushDics(): Flushing dics"
@@ -545,7 +545,7 @@ class warpUi():
 		self.images["ren"]["path"] = renImgPath
 		print "\n_updateCurImg(): self.record", self.record
 
-		ut.exeCmd("rm " + genData.outFile)
+		ut.safeRemove(genData.outFile)
 		genData.pOut("\nPRE genData")
 
 		######## THIS IS WHERE DATA GETS GENERATED ########
@@ -734,7 +734,8 @@ class warpUi():
 		verDir = self.seqRenDir if verType == "ren" else self.seqDataDir
 		ut.mkDirSafe(verDir + "/" + nextVer)
 		# Copy parms
-		ut.exeCmd("cp " + verDir + "/" + latestVer + "/parms " + verDir + "/" + nextVer + "/")
+		shutil.copy2(self.seqDataVDir + "/parms", verDir + "/" + nextVer)
+
 		self.setVal(verType + "Ver", nextVer)
 
 		vers = [nextVer] + vers
@@ -955,7 +956,7 @@ class warpUi():
 			print "_sortStats(): writing stats to", destPath + ":"
 			if os.path.exists(destPath):
 				# open(destPath, 'w') says "file not found" for some reason, so rm first.
-				os.remove(destPath)
+				ut.safeRemove(destPath)
 				mode = 'w'
 			else:
 				mode = 'a'
@@ -1394,6 +1395,7 @@ class warpUi():
 							# Global varable needed for final stats
 							statsDirDest = self.seqRenVDir 
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
+							# Both doRenCv and doRen is redundant!!!
 							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
 								# Restart and do renCv
 
@@ -1450,7 +1452,7 @@ profiling = False
 
 if profiling:
 	cProfile.run('warpUi()', statsObjPathSrc)
-	ut.exeCmd("cp " + statsObjPathSrc + " " + statsDirDest)
+	shutil.copy2(statsObjPathSrc, statsDirDest)
 else:
 	warpUi()
 	sys.exit()

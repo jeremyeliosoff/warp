@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, os, random, re, glob, pprint, inspect, math, time
+import sys, os, random, re, glob, pprint, inspect, math, time, psutil
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
@@ -145,6 +145,12 @@ class parmDic:
 # FUNCTIONS
 
 # os
+
+def safeRemove(path):
+	if os.path.exists(path):
+		os.remove(path)
+
+
 def exeCmd(cmd):
 	print "executing", cmd
 	os.system(cmd)
@@ -366,6 +372,10 @@ def timerStart(warpUi, label):
 
 def timerStop(warpUi, label):
 	writeTime(warpUi, label, time.time() - warpUi.timerStarts[label])
+
+def recordMemUsage(path):
+	process = psutil.Process(os.getpid())
+	return process.memory_percent()
 	
 
 

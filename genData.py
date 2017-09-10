@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import pygame, math, ut, pickle, os, pprint, sys, random, time
+import pygame, math, ut, os, pprint, sys, random, time, shutil
+import cPickle as pickle
 # OpenCl stuff!
 import pyopencl as cl
 import numpy as np
@@ -223,7 +224,7 @@ def pOut(*ss):
 
 def pickleDump(filePath, data):
 	print "_pickleDump(): filePath", filePath, "..."
-	with open(filePath, 'w') as dataFile:
+	with open(filePath, 'wb') as dataFile:
 		pickle.dump(data, dataFile)
 	print "_pickleDump(): \tDone pickle dumping", filePath
 
@@ -231,7 +232,7 @@ def pickleLoad(filePath):
 	print "_pickleLoad(): Pickle loading", filePath, "..."
 	
 	if os.path.exists(filePath):
-		with open(filePath, 'r') as dataFile:
+		with open(filePath, 'rb') as dataFile:
 			ret = pickle.load(dataFile)
 	else:
 		print "_pickleLoad() ERROR: file not found!"
@@ -302,6 +303,7 @@ def initJtGrid(img, warpUi):
 	
 	ut.timerStart(warpUi, "initJtGridXYLoop")
 
+	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tryGPU = True
 	if tryGPU:
 
@@ -354,37 +356,75 @@ def initJtGrid(img, warpUi):
 
 		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
 
+		# This sez I should release - help mem leak?
+		# https://stackoverflow.com/questions/44197206/how-to-release-gpu-memory-use-same-buffer-for-different-array-in-pyopencl
+		levThreshArray_buf.release()
+		imgArray_buf.release()
+		jtCons_buf.release()
+
+
+	
+		for lev in range(nLevels):
+			levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
+			for x in range(res[0]-1):
+				for y in range(res[1]-1):
+					jtConsKey = jtCons[lev][x][y]
+					gpuCons = decodeCons[jtConsKey]
+					if len(gpuCons) > 0:
+						jtLs = []
+						for gpuCon in gpuCons:
+							jtLs.append(joint((x,y), levThreshRemap, gpuCon))
+						jtGrid[x][y][lev] = jtLs
+						#print "III noGPU"
+						#for jj in jtGridGpu[x][y][lev]:
+						#	print jj
+						#print "III yaGPU"
+						#for jj in jtGrid[x][y][lev]:
+						#	print jj
+						#print
+	else:
+		for x in range(res[0]-1):
+			if (x+1) % (res[0]/10) == 0:
+				print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
+			for y in range(res[1]-1):
+				# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
+				# get neighbours.
+				nbrs = []
+				for yy in range(y, y+2):
+					for xx in range(x, x+2):
+						nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
+
+				for lev in range(nLevels):
+					levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
+					tholds[lev] = levThreshRemap
+
+					isHigher = []
+					tot = 0
+					for nbr in nbrs:
+						higher = 1 if nbr > levThreshInt else 0
+						tot += higher
+						isHigher.append(higher)
+					# Only add joint if different.
+					if tot > 0 and tot < 4:
+						cons = neighboursToConns[tuple(isHigher)]
+						texClr = img.get_at((x,y))
+						if len(cons) > 1:
+							# TODO: I think all these levThresh's, should be levThreshRemap's
+							jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
+												   joint((x,y), levThreshRemap, cons[1])]
+							nJoints += 2
+						else:
+							jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
+							nJoints += 1
 	# Write stats
 
 	renPath = warpUi.images["ren"]["path"]
 	renSeqDir = "/".join(renPath.split("/")[:-1])
 	ut.mkDirSafe(renSeqDir)
 
-
-	print "\n_initJtGrid(): END"
-	
-	jtGridGpu = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
-	for lev in range(nLevels):
-		levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
-		for x in range(res[0]-1):
-			for y in range(res[1]-1):
-				jtConsKey = jtCons[lev][x][y]
-				gpuCons = decodeCons[jtConsKey]
-				if len(gpuCons) > 0:
-					jtLs = []
-					for gpuCon in gpuCons:
-						jtLs.append(joint((x,y), levThreshRemap, gpuCon))
-					jtGridGpu[x][y][lev] = jtLs
-					#print "III noGPU"
-					#for jj in jtGridGpu[x][y][lev]:
-					#	print jj
-					#print "III yaGPU"
-					#for jj in jtGrid[x][y][lev]:
-					#	print jj
-					#print
 	ut.timerStop(warpUi, "initJtGridXYLoop")
 
-	return jtGridGpu, tholds, jtCons
+	return jtGrid, tholds
 
 def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
 	prevVal = black
@@ -458,7 +498,7 @@ for i,cons in enumerate(decodeCons):
 #	((0, 0), ( 0, 0))]
 
 
-def growCurves(warpUi, jtGrid, jtCons, frameDir):
+def growCurves(warpUi, jtGrid, frameDir):
 	print "\n_growCurves(): growing curves for", frameDir
 	nLevels = warpUi.parmDic("nLevels")
 	nCurves = 0
@@ -505,8 +545,6 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 			# GPUtrans _jtGrid (effectively) becomes jtCons - maybe list, not dic
 			ut.timerStart(warpUi, "growC_curves")
 			for lev,jts in jtGrid[x][y].items():
-				jtConsKey = jtCons[lev][x][y]
-				gpuCons = decodeCons[jtConsKey]
 				for jt in jts:
 					# GPUtrans: I think this can become "if cvGrid[x][y][lev] == None"
 					if jt.cv == None:
@@ -757,7 +795,10 @@ def growCurves(warpUi, jtGrid, jtCons, frameDir):
 				else:
 					warpUi.tidToSids[lev][sid] = {"sids" : set([sid])}
 
-		# Translate tidToSids to sidToTid. # TODO: Is this really what this does?
+		# Translate tidToSids to sidToTid.
+		# TODO: Is this really what this does?
+		# TODO: When you do checkpointing, this is where you del tids > frPerCycle old
+
 		for tid,sidData in warpUi.tidToSids[lev].items():
 			sids = sidData["sids"]
 			sidsThisFr = sidToCvs[lev].keys()
@@ -850,6 +891,7 @@ def writeTidImg(warpUi, inSurfGrid):
 	print "\n_writeTidImg(): END"
 
 def genDataWrapper(warpUi):
+	genDataStartTime = time.time()
 	img = pygame.image.load(warpUi.images["source"]["path"])
 	border(img)
 
@@ -860,10 +902,10 @@ def genDataWrapper(warpUi):
 	inSurfGridPrev = None
 	frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
 
-	jtGrid, tholds, jtCons = initJtGrid(img, warpUi)
+	jtGrid, tholds = initJtGrid(img, warpUi)
 
 	ut.timerStart(warpUi, "growCurves")
-	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, jtCons, frameDir)
+	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, frameDir)
 	ut.timerStop(warpUi, "growCurves")
 	# TODO: TEMP - this should be done in warp.py when genData is stopped.
 	print "\n\n_genData(): ----- doing pickleDump(" + frameDir + "/inSurfGrid"
@@ -875,7 +917,7 @@ def genDataWrapper(warpUi):
 	prevFrInSurfGrid = "/".join(frameDirLs) + "/inSurfGrid"
 	print "\n\n\n_genData(): prevFrInSurfGrid:", prevFrInSurfGrid, "\n\n"
 	if os.path.exists(prevFrInSurfGrid):
-		ut.exeCmd("rm " + prevFrInSurfGrid)
+		ut.safeRemove(prevFrInSurfGrid)
 
 	warpUi.inSurfGridPrev = inSurfGrid[:]
 
@@ -891,9 +933,18 @@ def genDataWrapper(warpUi):
 	tidToSidsBackupEvery = 20
 	if fr % tidToSidsBackupEvery == 0:
 		print "_genData(): BACKING UP tidToSids:"
-		ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
+		shutil.copy2(warpUi.seqDataVDir + "/tidToSids", frameDir)
+		#ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
 
 	pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
+
+	# Record stats
+	genDataStopTime = time.time() - genDataStartTime
+	memUsage = ut.recordMemUsage(frameDir + "/memUsage")
+
+	statStr = "Time: %.2f seconds\nMemory: %.2f%%\n" % (genDataStopTime, memUsage)
+	with open(frameDir + "/stats", 'w') as f:
+		f.write(statStr)
 
 
 def genData(warpUi, statsDirDest):
