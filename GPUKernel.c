@@ -180,6 +180,7 @@ void cpClr(int x, int y, int xres, int npix,
 
 __kernel void initJtC(
 			int testNLevs,
+			int lev,
 			__global uchar* imgArray,
 			__global uchar* levThreshArray,
 			__global int* nconsOut)
@@ -191,13 +192,13 @@ __kernel void initJtC(
 	int yres = %d;
 	int npix = 3;
 
-	int lev;
+	//int lev;
 	uchar levThreshInt;
 
-	for (lev = 0; lev < testNLevs; lev ++) {
+	//for (lev = 0; lev < testNLevs; lev ++) {
 		levThreshInt = levThreshArray[lev];	
 
-		int levOfs = lev*xres*yres;
+		int levOfs = 0;//lev*xres*yres;
 		if (x < xres-1 && y < yres-1) {
 			int i;
 			int tot = 0;
@@ -222,5 +223,5 @@ __kernel void initJtC(
 		} else { // We should just make nconsOut res smaller, but doesn't work.
 			setArrayCellInt(x, y, levOfs, xres, 1, 0, nconsOut);
 		}
-	}
+	//}
 }

@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 270
+val 376
 
 fps
 val 52
@@ -13,7 +13,7 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 0
@@ -34,7 +34,7 @@ lev_dbImg2
 val ALL
 
 renVer
-val v005pleaseRender
+val v007gpuPerLev
 
 frStart
 val 270
@@ -92,7 +92,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v005pleaseRender
+val v008gpuPerLev
 
 startLev
 val 0

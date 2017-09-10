@@ -1399,7 +1399,7 @@ class warpUi():
 							if self.parmDic("doRenCv") == 0:
 								# Back up tidToSids for final frame
 								print "__init__(): BACKING UP tidToSids for final fr", fr
-								dud, frameDir = self.makeFramesDataDir()
+								frameDir = getLastFrameDirPath(self)
 								genData.pickleDump(frameDir + "/tidToSids", self.tidToSids)
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
 							# You're set to do recording, but doRenCv is 0 (not yet done).

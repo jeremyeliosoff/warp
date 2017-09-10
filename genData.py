@@ -328,32 +328,37 @@ def initJtGrid(img, warpUi):
 		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
-		testNLevs = 3
-		#jtCons = np.empty([res for iLev in range(testNLevs)], dtype=np.intc)
-		#jtCons = np.empty(res, dtype=np.intc)
 		jtCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
-		#jtCons = np.array([[int(0) for j in range(res[0])] for i in range(res[1])])
 		jtCons.fill(0)
 		jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
+
+		jtConsThisLev = np.empty((res[0], res[1]), dtype=np.intc)
+		jtConsThisLev.fill(0)
+		jtConsThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtConsThisLev.nbytes)
+		
 		
 		kernelPath = ut.projDir + "/GPUKernel.c"
 		with open(kernelPath) as f:
 			kernel = "".join(f.readlines()) % (res[1], res[0])
 		#int index = rowid * ncols * npix + colid * npix;
 		# build the Kernel
-		bld = cl.Program(cntxt, kernel).build()
-		launch = bld.initJtC(
-				queue,
-				imgArray.shape,
-				None,
-				np.int32(warpUi.parmDic("nLevels")),
-				imgArray_buf,
-				levThreshArray_buf,
-				jtCons_buf)
-		launch.wait()
+		for lev in range(nLevels):
+			bld = cl.Program(cntxt, kernel).build()
+			launch = bld.initJtC(
+					queue,
+					imgArray.shape,
+					None,
+					np.int32(warpUi.parmDic("nLevels")),
+					np.int32(lev),
+					imgArray_buf,
+					levThreshArray_buf,
+					jtConsThisLev_buf)
+			launch.wait()
 
 
-		cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
+			#cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
+			cl.enqueue_read_buffer(queue, jtConsThisLev_buf, jtConsThisLev).wait()
+			jtCons[lev] = jtConsThisLev
 
 		# This sez I should release - help mem leak?
 		# https://stackoverflow.com/questions/44197206/how-to-release-gpu-memory-use-same-buffer-for-different-array-in-pyopencl
@@ -368,6 +373,8 @@ def initJtGrid(img, warpUi):
 			for x in range(res[0]-1):
 				for y in range(res[1]-1):
 					jtConsKey = jtCons[lev][x][y]
+					#jtConsKey = jtConsThisLev[x][y]
+					#print "HHHHHH jtConsKey", jtConsKey
 					gpuCons = decodeCons[jtConsKey]
 					if len(gpuCons) > 0:
 						jtLs = []
@@ -496,6 +503,17 @@ for i,cons in enumerate(decodeCons):
 #	((1, 1), ( 1, 1)),
 #	((0, 0), ( 0, 0))]
 
+def loadLatestTidToSids(warpUi):
+	lastFramePath = getLastFrameDirPath(warpUi)
+	tidToSidsPath = lastFramePath + "/tidToSids"
+	print "_loadLatestTidToSids(): attempting to load", tidToSidsPath, "..."
+	if os.path.exists(tidToSidsPath):
+		print "_loadLatestTidToSids(): Found, pickleLoad-ing..."
+	if os.path.exists(tidToSidsPath):
+		warpUi.tidToSids = pickleLoad(tidToSidsPath)
+	else:
+		print "_loadLatestTidToSids(): Not found, setting to None."
+		warpUi.tidToSids = None
 
 def growCurves(warpUi, jtGrid, frameDir):
 	print "\n_growCurves(): growing curves for", frameDir
@@ -504,7 +522,9 @@ def growCurves(warpUi, jtGrid, frameDir):
 	res = (len(jtGrid), len(jtGrid[0]))
 	
 	if warpUi.tidToSids == None:
-		warpUi.tidToSids = [{} for i in range(nLevels)]
+		loadLatestTidToSids(warpUi)
+		if warpUi.tidToSids == None:
+			warpUi.tidToSids = [{} for i in range(nLevels)]
 	if warpUi.sidToTid == None:
 		warpUi.sidToTid = [{} for i in range(nLevels)]
 
@@ -644,7 +664,8 @@ def growCurves(warpUi, jtGrid, frameDir):
 								# recorded anything in curToPrevSidDic, record an empty list.
 								# TODO: Do you really need above conditional?  Just repeately re-set it?
 								# MAYBE TRY A *SET*!
-								curToPrevSidDic[lev][currentSid] = []
+								#curToPrevSidDic[lev][currentSid] = []
+								curToPrevSidDic[lev][currentSid] = set([])
 						else:
 							# There ARE surfs in this pxl in the previous frame.
 							if currentSid in curToPrevSidDic[lev].keys():
@@ -653,11 +674,12 @@ def growCurves(warpUi, jtGrid, frameDir):
 								if not inSurfPrev in curToPrevSidDic[lev][currentSid]:
 									# ...which doesn't' include inSurfPrev; append it
 									# ie. JOIN inSurfPrev to currentSid
-									curToPrevSidDic[lev][currentSid].append(inSurfPrev)
+									#curToPrevSidDic[lev][currentSid].append(inSurfPrev)
+									curToPrevSidDic[lev][currentSid].add(inSurfPrev)
 							else:
 								# There's no list for currentSid,
 								# make a new one with just inSurfPrev
-								curToPrevSidDic[lev][currentSid] = [inSurfPrev]
+								curToPrevSidDic[lev][currentSid] = {inSurfPrev}
 
 	#ut.timerStop(warpUi, "growC_surfs")
 
@@ -724,22 +746,23 @@ def growCurves(warpUi, jtGrid, frameDir):
 			if len(prevs) == 0:
 				births[lev].append(sidOld) # NOT YET USED
 			else:
-				prevs.sort()
-				sidNew = prevs[0]
+				prevsLs = list(prevs)
+				prevsLs.sort()
+				sidNew = prevsLs[0]
 				if sidOld in allPrevs[lev] and sidNew in sidToCvs[lev].keys():
 					# Another sid has the same prev, ie. this is a SPLIT.
 					sidToCvs[lev][sidNew]["cvs"] += sidToCvs[lev][sidOld]["cvs"][:] # TODO: why [:]?
 					sidToCvs[lev][sidNew]["bbx"] = bbxUnion(sidToCvs[lev][sidNew]["bbx"], sidToCvs[lev][sidOld]["bbx"])
 					
-				allPrevs[lev] += prevs
+				allPrevs[lev] += prevsLs
 				if len(prevs) > 1:
 					# Register the merge; elements after the first will merge to the first.
-					for prev in prevs[1:]:
+					for prev in prevsLs[1:]:
 						mergeKeySidToValSid[lev][prev] = sidNew
 				if sidNew in curToPrevSidDic[lev].keys():
 					# TODO: Avoid this by assigning new sids based on largest sid
 					# in prev frame, ie. keep track of nSurfs accross frames.
-					print "\n_growCurves(): ---------ERROR, sid already exists! sidNew=", sidNew, "curToPrevSidDic[lev][sidNew]:", curToPrevSidDic[lev][sidNew]
+					print "\n_growCurves(): ---------ERROR, sid already exists! sidNew=", sidNew, "_curToPrevSidDic[lev][sidNew]:", curToPrevSidDic[lev][sidNew]
 					continue
 				if not sidNew == sidOld:
 					# Splitting: add sidOld's cv's to sidNew, then delete sidOld.
@@ -825,8 +848,9 @@ def growCurves(warpUi, jtGrid, frameDir):
 	ut.timerStop(warpUi, "growC_doMerge")
 	
 
-	# Save db image with new sids.
 
+	# TODO gpu this shit - it takes like 20% of the time!!
+	print "_growCurves(): drawing debug images, NO bbox, yes sidPost..."
 	ut.timerStart(warpUi, "growC_save")
 	for lev in range(nLevels):
 		for y in range(res[1]):
@@ -839,14 +863,15 @@ def growCurves(warpUi, jtGrid, frameDir):
 					else:
 						sidNew = sidOld
 					setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
-		for sid in sidToCvs[lev].keys():
-			drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(sid))
-		for tid, turfData in warpUi.tidToSids[lev].items():
-			if "bbx" in turfData.keys(): # TODO should bbx always be in turfData.keys()?
-				drawBbx(warpUi, turfData["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(tid))
-						#sidToCvs[lev][sidToMergeTo]["cvs"] += sidToCvs[lev][sid]["cvs"]
+		#for sid in sidToCvs[lev].keys():
+		#	drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(sid))
+		#for tid, turfData in warpUi.tidToSids[lev].items():
+		#	if "bbx" in turfData.keys(): # TODO should bbx always be in turfData.keys()?
+		#		drawBbx(warpUi, turfData["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(tid))
+		#				#sidToCvs[lev][sidToMergeTo]["cvs"] += sidToCvs[lev][sid]["cvs"]
 
 
+	# Save db image with new sids.
 	print "_growCurves(): Saving debug images", dbImgDic.keys()
 	for debugInfo,imgs in dbImgDic.items():
 		for lev in range(nLevels+1):
@@ -891,6 +916,7 @@ def writeTidImg(warpUi, inSurfGrid):
 
 def genDataWrapper(warpUi):
 	genDataStartTime = time.time()
+
 	img = pygame.image.load(warpUi.images["source"]["path"])
 	border(img)
 
@@ -964,10 +990,14 @@ def genData(warpUi, statsDirDest):
 		warpUi.flushDics()
 		genDataWrapper(warpUi)
 		renCvWrapper(warpUi)
+		frameDir = getLastFrameDirPath(warpUi)
+		pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
 	elif warpUi.parmDic("doRenCv") == 1:
 		renCvWrapper(warpUi)
 	else:
 		genDataWrapper(warpUi)
+		frameDir = getLastFrameDirPath(warpUi)
+		pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
 
 	ut.timerStop(warpUi, "genData")
 
@@ -1003,19 +1033,23 @@ def convertCvDicToDic(cvDic, warpUi):
 	return ret
 	#sidToCvs[lev][sid].append(cv)
 
+def getLastFrameDirPath(warpUi, fr=None):
+	framesDir = warpUi.seqDataVDir + "/frames"
+	if fr == None:
+		frameDirs = os.listdir(warpUi.framesDataDir)
+		frameDirs.sort()
+		frameDir = frameDirs[-1]
+	else:
+		frameDir = warpUi.framesDataDir + ("/%05d" % fr)
+	return warpUi.framesDataDir + "/" + frameDir
 
 def renCvWrapper(warpUi):
 	print "_renCvWrapper(): BEGIN"
 	fr, frameDir = warpUi.makeFramesDataDir()
-	framesDir = warpUi.seqDataVDir + "/frames"
 	if warpUi.tidToSids == None:
+		framesDir = warpUi.seqDataVDir + "/frames"
 		print "_renCvWrapper(): finding last tidToSidsFile; finding frameDirs in", framesDir
-		frameDirs = os.listdir(framesDir)
-		frameDirs.sort()
-		print "_renCvWrapper(): frameDirs:", frameDirs
-		tidToSidsFile = warpUi.framesDataDir + "/" + frameDirs[-1] + "/tidToSids"
-		print "_renCvWrapper(): tidToSidsFile:", tidToSidsFile
-		warpUi.tidToSids = pickleLoad(tidToSidsFile)
+		loadLatestTidToSids(warpUi)
 	# MAY USE LATER # if warpUi.tidToSids == None or frForTid % tidToSidsBackupEvery == 1:
 
 	# MAY USE LATER #	frForTid = fr + warpUi.parmDic("frPerCycle")
