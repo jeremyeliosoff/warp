@@ -181,10 +181,7 @@ void cpClr(int x, int y, int xres, int npix,
 __kernel void initJtC(
 			int testNLevs,
 			__global uchar* imgArray,
-			__global int* levThreshArray,
-			int lt0,
-			int lt1,
-			int lt2,
+			__global uchar* levThreshArray,
 			__global int* nconsOut)
 {
 	int x = get_global_id(1);
@@ -195,11 +192,10 @@ __kernel void initJtC(
 	int npix = 3;
 
 	int lev;
-	int levThreshInt;
+	uchar levThreshInt;
 
 	for (lev = 0; lev < testNLevs; lev ++) {
 		levThreshInt = levThreshArray[lev];	
-		//levThreshInt = lev == 0 ? lt0 : lev == 1 ? lt1 : lt2;
 
 		int levOfs = lev*xres*yres;
 		if (x < xres-1 && y < yres-1) {
@@ -211,8 +207,6 @@ __kernel void initJtC(
 				int xx = x + i/2;
 				int yy = y + i%%2;
 				uchar avg = getClrAvg(xx, yy, xres, npix, imgArray);
-				//int levThreshInt = (float)lev/testNLevs*255; // Adapt from py.
-				//levThreshInt = (float)lev/testNLevs*255; // Adapt from py.
 				int val = avg > levThreshInt ? 1 : 0;
 				nbrs[i] = val;
 				tot += val;

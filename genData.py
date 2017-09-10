@@ -317,7 +317,7 @@ def initJtGrid(img, warpUi):
 			# TODO -> tholds[lev] = thisLevThreshRemap
 			levThreshInt.append(thisLevThreshInt)
 
-		levThreshArray = np.array(levThreshInt, dtype=np.intc)
+		levThreshArray = np.array(levThreshInt, dtype=np.uint8)
 		print "QQQQ levThreshArray", levThreshArray
 		levThreshArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
@@ -347,9 +347,6 @@ def initJtGrid(img, warpUi):
 				np.int32(warpUi.parmDic("nLevels")),
 				imgArray_buf,
 				levThreshArray_buf,
-				np.int32(levThreshArray[0]),
-				np.int32(levThreshArray[1]),
-				np.int32(levThreshArray[2]),
 				jtCons_buf)
 		launch.wait()
 
@@ -916,8 +913,7 @@ def genDataWrapper(warpUi):
 	frameDirLs[-1] = "%05d" % prevFr
 	prevFrInSurfGrid = "/".join(frameDirLs) + "/inSurfGrid"
 	print "\n\n\n_genData(): prevFrInSurfGrid:", prevFrInSurfGrid, "\n\n"
-	if os.path.exists(prevFrInSurfGrid):
-		ut.safeRemove(prevFrInSurfGrid)
+
 
 	warpUi.inSurfGridPrev = inSurfGrid[:]
 
@@ -930,11 +926,16 @@ def genDataWrapper(warpUi):
 	# Save sidToCvs for this frame.
 	pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
 
-	tidToSidsBackupEvery = 20
+	tidToSidsBackupEvery = 5
 	if fr % tidToSidsBackupEvery == 0:
-		print "_genData(): BACKING UP tidToSids:"
+		print "_genData(): BACKING UP tidToSids and inSurfGrid:"
 		shutil.copy2(warpUi.seqDataVDir + "/tidToSids", frameDir)
 		#ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
+	if fr % tidToSidsBackupEvery == 1:
+		print "_genData(): NOT deleting", prevFrInSurfGrid
+	else:
+		print "_genData(): deleting", prevFrInSurfGrid
+		ut.safeRemove(prevFrInSurfGrid)
 
 	pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
 
