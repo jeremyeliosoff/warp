@@ -499,6 +499,7 @@ for i,cons in enumerate(decodeCons):
 #	((0, 0), ( 0, 0))]
 
 def loadLatestTidToSids(warpUi):
+	print "_loadLatestTidToSids(): BEGIN - finding last tidToSidsFile."
 	lastFramePath = getLastFrameDirPath(warpUi)
 	tidToSidsPath = lastFramePath + "/tidToSids"
 	print "_loadLatestTidToSids(): attempting to load", tidToSidsPath, "..."
@@ -959,7 +960,7 @@ def genDataWrapper(warpUi):
 	#	print "_genData(): deleting", prevFrInSurfGrid
 	#	ut.safeRemove(prevFrInSurfGrid)
 
-	pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
+	#pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid) search->MARK_A!!!
 
 	# Record stats
 	genDataStopTime = time.time() - genDataStartTime
@@ -1055,11 +1056,31 @@ def getLastFrameDirPath(warpUi, fr=None):
 
 def renCvWrapper(warpUi):
 	print "_renCvWrapper(): BEGIN"
-	fr, frameDir = warpUi.makeFramesDataDir()
+	fr, frameDir = warpUi.makeFramesDataDir(doMake=False)
+	frPerCycle = warpUi.parmDic("frPerCycle")
+	backupDataEvery = warpUi.parmDic("backupDataEvery")
+	# Load tidToSids when you don't have one, or every frPerCycle frames.
 	if warpUi.tidToSids == None:
+		print "_renCvWrapper(): warpUi.tidToSids == None"
+	else:
+		print "_renCvWrapper(): warpUi.tidToSids NOT == None"
+	if warpUi.tidToSids == None or fr == warpUi.parmDic("frStart") \
+			or fr % backupDataEvery == 0:
+		print "_renCvWrapper(): Updating tidToSids"
 		framesDir = warpUi.seqDataVDir + "/frames"
-		print "_renCvWrapper(): finding last tidToSidsFile; finding frameDirs in", framesDir
-		loadLatestTidToSids(warpUi)
+		nextSafeTidFr = fr + frPerCycle * 2 # *2 to ensure all tids have been merged.
+		frToLoad = backupDataEvery*int(math.ceil(
+			float(nextSafeTidFr)/backupDataEvery)) # next fr that has backup.
+		dicPathToLoad = warpUi.seqDataVDir + ("/frames/%05d/tidToSids" % frToLoad)
+
+		if os.path.exists(dicPathToLoad):
+			print "_renCvWrapper(): loading dicPathToLoad..."
+			warpUi.tidToSids = pickleLoad(dicPathToLoad)
+		else:
+			print "_renCvWrapper(): dicPathToLoad not found, attempting to load latest..."
+			loadLatestTidToSids(warpUi)
+	#else:
+	#	loadLatestTidToSids(warpUi)
 	# MAY USE LATER # if warpUi.tidToSids == None or frForTid % backupDataEvery == 1:
 
 	# MAY USE LATER #	frForTid = fr + warpUi.parmDic("frPerCycle")
@@ -1071,8 +1092,9 @@ def renCvWrapper(warpUi):
 	# MAY USE LATER #	print "_renCvWrapper(): checking for", tidToSidsFile
 	# MAY USE LATER #	if not os.path.exists(tidToSidsFile):
 			
-	if warpUi.sidToTid == None:
-		warpUi.sidToTid = pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
+	# TODO is below necessary?  Why was it ever un-commented?  As well as MARK_A
+	#if warpUi.sidToTid == None:
+	#	warpUi.sidToTid = pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
 	sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
 	tholds = pickleLoad(frameDir + "/tholds")
 	if sidToCvDic == None:

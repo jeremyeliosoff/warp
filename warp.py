@@ -1458,7 +1458,7 @@ class warpUi():
 								self.setVal("fr", frEnd)
 								# Back up tidToSids for final frame, if not already done.
 								print "__init__(): BACKING UP tidToSids for final fr", fr
-								if not frEnd % self.parm("backupDataEvery") == 0:
+								if not frEnd % self.parmDic("backupDataEvery") == 0:
 									genData.saveTidToSids(self)
 
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
