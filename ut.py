@@ -147,8 +147,16 @@ class parmDic:
 # os
 
 def safeRemove(path):
+	print "_safeRemove(): path =", path
 	if os.path.exists(path):
+		print "_safeRemove(): exists, removing..."
 		os.remove(path)
+
+def safeMakeEmptyFile(path):
+	print "_safeMakeEmptyFile(): path =", path
+	if not os.path.exists(path):
+		print "_safeMakeEmptyFile(): doesn't exist, making..."
+		os.mknod(path)
 
 
 def exeCmd(cmd):
@@ -357,21 +365,24 @@ def printFrameStack():
 
 
 def writeTime(warpUi, label, time):
-	if warpUi.parmDic("doRenCv") == 1:
-		destDir = warpUi.seqRenVDir 
-	else:
-		destDir = warpUi.seqDataVDir
+	if warpUi.writeTimerStats:
+		if warpUi.parmDic("doRenCv") == 1:
+			destDir = warpUi.seqRenVDir 
+		else:
+			destDir = warpUi.seqDataVDir
 
-	toWrite = label + " " + str(time)
-	destPath = destDir + "/statsPrintout"
-	with open(destPath, 'a') as f:
-		f.write(toWrite + "\n")
+		toWrite = label + " " + str(time)
+		destPath = destDir + "/statsPrintout"
+		with open(destPath, 'a') as f:
+			f.write(toWrite + "\n")
 
 def timerStart(warpUi, label):
-	warpUi.timerStarts[label] = time.time()
+	if warpUi.writeTimerStats:
+		warpUi.timerStarts[label] = time.time()
 
 def timerStop(warpUi, label):
-	writeTime(warpUi, label, time.time() - warpUi.timerStarts[label])
+	if warpUi.writeTimerStats:
+		writeTime(warpUi, label, time.time() - warpUi.timerStarts[label])
 
 def recordMemUsage(path):
 	process = psutil.Process(os.getpid())

@@ -11,6 +11,11 @@ fps
 type int
 val 52
 
+backupDataEvery
+hidden True
+type int
+val 5
+
 ofs
 hidden True
 type float

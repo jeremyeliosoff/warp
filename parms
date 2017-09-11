@@ -4,22 +4,25 @@
 ---META---
 
 fr
-val 376
+val 8
 
 fps
 val 52
+
+backupDataEvery
+val 5
 
 ofs
 val 0.6
 
 anim
-val 1
-
-doRenCv
 val 0
 
+doRenCv
+val 1
+
 image
-val lzSmokeShortFRpng
+val testSeq
 
 dbImg1
 val sidPost
@@ -28,19 +31,19 @@ lev_dbImg1
 val ALL
 
 dbImg2
-val cvSid
+val sidPost
 
 lev_dbImg2
-val ALL
+val lev03
 
 renVer
-val v007gpuPerLev
+val v028testRestart
 
 frStart
-val 270
+val 1
 
 frEnd
-val 500
+val 8
 
 frPerCycle
 val 30
@@ -57,19 +60,19 @@ val 1
 ---GEN---
 
 nLevels
-val 10
+val 8
 
 kSurf
 val 1
 
 gamma
-val .2
+val 1
 
 minThresh
-val 0
+val 0.5
 
 maxThresh
-val 1
+val .9
 
 rangeThresh
 val .1
@@ -92,16 +95,16 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v008gpuPerLev
+val v035testRestart
 
 startLev
 val 0
 
 fallDist
-val .5
+val 0
 
 fallKForBiggest
-val 0
+val 1
 
 fallUseAsBiggest
 val 1
@@ -110,13 +113,13 @@ fallBiggestPow
 val .25
 
 fallVecX
-val .5
+val .8
 
 fallVecY
-val .3
+val .5
 
 fallMode
-val orig
+val fall
 
 progDurBot
 val 1
@@ -125,16 +128,16 @@ progDurTop
 val .5
 
 sfA
-val .6
+val .5
 
 sfK
-val 1.1
+val .2
 
 cvA
 val .8
 
 cvK
-val 1.4
+val .8
 
 mixClrSob
 val 0
@@ -151,7 +154,7 @@ val .6
 ---AOV---
 
 aov_perLev
-val 1
+val 0
 
 aov_inSurfNow
 val 0

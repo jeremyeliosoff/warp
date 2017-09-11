@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pygame, math, ut, os, pprint, sys, random, time, shutil
+import pygame, math, ut, os, pprint, sys, random, time, shutil, glob
 import cPickle as pickle
 # OpenCl stuff!
 import pyopencl as cl
@@ -11,8 +11,6 @@ cntxt = cl.create_some_context()
 queue = cl.CommandQueue(cntxt)
 
 outFile = "/tmp/out"
-
-tidToSidsBackupEvery = 5
 
 black = (0, 0, 0)
 grey = (.3, .3, .3)
@@ -330,7 +328,6 @@ def initJtGrid(img, warpUi):
 		
 		jtCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
 		jtCons.fill(0)
-		jtCons_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtCons.nbytes)
 
 		jtConsThisLev = np.empty((res[0], res[1]), dtype=np.intc)
 		jtConsThisLev.fill(0)
@@ -356,7 +353,6 @@ def initJtGrid(img, warpUi):
 			launch.wait()
 
 
-			#cl.enqueue_read_buffer(queue, jtCons_buf, jtCons).wait()
 			cl.enqueue_read_buffer(queue, jtConsThisLev_buf, jtConsThisLev).wait()
 			jtCons[lev] = jtConsThisLev
 
@@ -364,7 +360,6 @@ def initJtGrid(img, warpUi):
 		# https://stackoverflow.com/questions/44197206/how-to-release-gpu-memory-use-same-buffer-for-different-array-in-pyopencl
 		levThreshArray_buf.release()
 		imgArray_buf.release()
-		jtCons_buf.release()
 
 
 	
@@ -952,18 +947,17 @@ def genDataWrapper(warpUi):
 	pickleDump(frameDir + "/tholds", tholds)
 
 	# Save sidToCvs for this frame.
-	#pickleDump(warpUi.seqDataVDir + "/tidToSids", warpUi.tidToSids)
 
-	if fr % tidToSidsBackupEvery == 0:
+	if fr % warpUi.parmDic("backupDataEvery") == 0:
 		print "_genData(): BACKING UP tidToSids:"
 		#shutil.copy2(warpUi.seqDataVDir + "/tidToSids", frameDir)
-		pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
+		#pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
 		#ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
-	if fr % tidToSidsBackupEvery == 1:
-		print "_genData(): NOT deleting", prevFrInSurfGrid
-	else:
-		print "_genData(): deleting", prevFrInSurfGrid
-		ut.safeRemove(prevFrInSurfGrid)
+	#if fr % backupDataEvery == 1:
+	#	print "_genData(): NOT deleting", prevFrInSurfGrid
+	#else:
+	#	print "_genData(): deleting", prevFrInSurfGrid
+	#	ut.safeRemove(prevFrInSurfGrid)
 
 	pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid)
 
@@ -974,6 +968,20 @@ def genDataWrapper(warpUi):
 	statStr = "Time: %.2f seconds\nMemory: %.2f%%\n" % (genDataStopTime, memUsage)
 	with open(frameDir + "/stats", 'w') as f:
 		f.write(statStr)
+
+def saveTidToSids(warpUi):
+	frameDir = getLastFrameDirPath(warpUi)
+	fr = warpUi.parmDic("fr")
+	picklingIndicator = warpUi.seqDataVDir + ("/pickleInProgress_%05d" % fr)
+	dirtyIndicator = ut.projDir + "/dirty"
+	cleanIndicator = ut.projDir + "/clean"
+	ut.safeMakeEmptyFile(picklingIndicator)
+	ut.safeMakeEmptyFile(dirtyIndicator)
+	ut.safeRemove(cleanIndicator)
+	pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
+	ut.safeRemove(picklingIndicator)
+	ut.safeRemove(dirtyIndicator)
+	ut.safeMakeEmptyFile(cleanIndicator)
 
 
 def genData(warpUi, statsDirDest):
@@ -991,13 +999,14 @@ def genData(warpUi, statsDirDest):
 		genDataWrapper(warpUi)
 		renCvWrapper(warpUi)
 		frameDir = getLastFrameDirPath(warpUi)
-		pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
+		saveTidToSids(warpUi)
 	elif warpUi.parmDic("doRenCv") == 1:
 		renCvWrapper(warpUi)
 	else:
 		genDataWrapper(warpUi)
-		frameDir = getLastFrameDirPath(warpUi)
-		pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
+		if warpUi.parmDic("fr") % warpUi.parmDic("backupDataEvery") == 0:
+			saveTidToSids(warpUi)
+		#pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
 
 	ut.timerStop(warpUi, "genData")
 
@@ -1036,12 +1045,13 @@ def convertCvDicToDic(cvDic, warpUi):
 def getLastFrameDirPath(warpUi, fr=None):
 	framesDir = warpUi.seqDataVDir + "/frames"
 	if fr == None:
-		frameDirs = os.listdir(warpUi.framesDataDir)
+		#frameDirs = os.listdir(warpUi.framesDataDir)
+		frameDirs = glob.glob(warpUi.framesDataDir + "/[0-9][0-9][0-9][0-9][0-9]")
 		frameDirs.sort()
 		frameDir = frameDirs[-1]
 	else:
 		frameDir = warpUi.framesDataDir + ("/%05d" % fr)
-	return warpUi.framesDataDir + "/" + frameDir
+	return frameDir
 
 def renCvWrapper(warpUi):
 	print "_renCvWrapper(): BEGIN"
@@ -1050,11 +1060,11 @@ def renCvWrapper(warpUi):
 		framesDir = warpUi.seqDataVDir + "/frames"
 		print "_renCvWrapper(): finding last tidToSidsFile; finding frameDirs in", framesDir
 		loadLatestTidToSids(warpUi)
-	# MAY USE LATER # if warpUi.tidToSids == None or frForTid % tidToSidsBackupEvery == 1:
+	# MAY USE LATER # if warpUi.tidToSids == None or frForTid % backupDataEvery == 1:
 
 	# MAY USE LATER #	frForTid = fr + warpUi.parmDic("frPerCycle")
 	# MAY USE LATER #	# Get the checkpoint after fr + frPerCycle.
-	# MAY USE LATER #	tidToSidsFr = tidToSidsBackupEvery*(1 + frForTid/tidToSidsBackupEvery)
+	# MAY USE LATER #	tidToSidsFr = backupDataEvery*(1 + frForTid/backupDataEvery)
 	# MAY USE LATER #	dud, tidToSidsDir = warpUi.makeFramesDataDir(tidToSidsFr, False)
 	# MAY USE LATER #	# Get next checkpoint backup.
 	# MAY USE LATER #	tidToSidsFile = tidToSidsDir + "/tidToSids"

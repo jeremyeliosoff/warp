@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut, time, datetime, pprint, glob, cProfile, shutil
+import os, genData, ut, time, datetime, pprint, cProfile, shutil, glob
 from Tkinter import *
 import Tkinter, ttk
 import PIL
@@ -610,14 +610,17 @@ class warpUi():
 			self.updateDebugImg()
 		else:
 			print "_getImg(): ################ setting selection:", selection
-			if self.record:
-				# Turn off recording so you don't render right away.
-				self.recButCmd()
+			#if self.record:
+			#	# Turn off recording so you don't render right away.
+			#	self.recButCmd()
+			initRecordVal = self.record
+			self.record = False
 			self.setVal("image", selection) #TODO: Rename image to maybe seqName?
 			self.flushDics()
 			self.updateRenAndDataDirs()
 			self.updateCurImg()
 			self.updateDebugImg()
+			self.record = initRecordVal
 
 	def repopulateMenu(self, verType, vers):
 		menu = self.verUI[verType]["OptionMenu"]["menu"]
@@ -920,56 +923,57 @@ class warpUi():
 
 
 	def sortStats(self):
-		print "\n\n_sortStats(): BEGIN\n"
-		ut.timerStart(self, "sortStats")
-		if self.parmDic("doRenCv") == 1:
-			destDir = self.seqRenVDir 
-		else:
-			destDir = self.seqDataVDir
-		srcPath = destDir + "/statsPrintout"
-		destPath = destDir + "/statsSummary"
-
-		statsDic = {}
-		with open(srcPath) as f:
-			for line in f.readlines():
-				line = line.strip()
-				label, secs = line.split(" ")
-				if label == "totalTimeOfAnim":
-					continue
-				if label in statsDic.keys():
-					statsDic[label]["vals"].append(float(secs))
-				else:
-					statsDic[label]= {"vals":[float(secs)]}
-
-		if len(statsDic.keys()) > 0:
-			sortBy = "avg"
-			toSort = []
-			for label,data in statsDic.items():
-				data["total"] = sum(data["vals"])
-				data["avg"] = data["total"]/len(data["vals"])
-				toSort.append((data[sortBy], label))
-
-
-			toSort.sort()
-			toSort.reverse()
-			dud,sortedLables = zip(*toSort)
-
-			print "_sortStats(): writing stats to", destPath + ":"
-			if os.path.exists(destPath):
-				# open(destPath, 'w') says "file not found" for some reason, so rm first.
-				ut.safeRemove(destPath)
-				mode = 'w'
+		if self.writeTimerStats:
+			print "\n\n_sortStats(): BEGIN\n"
+			ut.timerStart(self, "sortStats")
+			if self.parmDic("doRenCv") == 1:
+				destDir = self.seqRenVDir 
 			else:
-				mode = 'a'
-			with open(destPath, mode) as f:
-				#f.write("sorted by " + sortBy + ":\n\n")
-				for label in sortedLables:
-					toWrite = label + " " + str(statsDic[label][sortBy])
-					print "_sortStats():\t", toWrite
-					f.write(toWrite + "\n")
+				destDir = self.seqDataVDir
+			srcPath = destDir + "/statsPrintout"
+			destPath = destDir + "/statsSummary"
 
-		print "\n_sortStats(): END\n\n"
-		ut.timerStop(self, "sortStats")
+			statsDic = {}
+			with open(srcPath) as f:
+				for line in f.readlines():
+					line = line.strip()
+					label, secs = line.split(" ")
+					if label == "totalTimeOfAnim":
+						continue
+					if label in statsDic.keys():
+						statsDic[label]["vals"].append(float(secs))
+					else:
+						statsDic[label]= {"vals":[float(secs)]}
+
+			if len(statsDic.keys()) > 0:
+				sortBy = "avg"
+				toSort = []
+				for label,data in statsDic.items():
+					data["total"] = sum(data["vals"])
+					data["avg"] = data["total"]/len(data["vals"])
+					toSort.append((data[sortBy], label))
+
+
+				toSort.sort()
+				toSort.reverse()
+				dud,sortedLables = zip(*toSort)
+
+				print "_sortStats(): writing stats to", destPath + ":"
+				if os.path.exists(destPath):
+					# open(destPath, 'w') says "file not found" for some reason, so rm first.
+					ut.safeRemove(destPath)
+					mode = 'w'
+				else:
+					mode = 'a'
+				with open(destPath, mode) as f:
+					#f.write("sorted by " + sortBy + ":\n\n")
+					for label in sortedLables:
+						toWrite = label + " " + str(statsDic[label][sortBy])
+						print "_sortStats():\t", toWrite
+						f.write(toWrite + "\n")
+
+			print "\n_sortStats(): END\n\n"
+			ut.timerStop(self, "sortStats")
 
 	def turnAnimOff(self):
 		self.setVal("anim", 0)
@@ -977,8 +981,51 @@ class warpUi():
 		self.recButCmd(False)
 
 
+	def setupResumeMode(self):
+		print "_setupResumeMode(): BEGIN"
+		picklingIndicators = glob.glob(self.seqDataVDir + "/pickleInProgress_*")
+		if len(picklingIndicators) > 0:
+			picklingIndicatorPath = picklingIndicators[-1]
+			print "_setupResumeMode(): picklingIndicatorPath =", picklingIndicatorPath
+			pickleFailFrame = int(picklingIndicatorPath[-5:])
+			c = self.parmDic("backupDataEvery")
+			lastGoodPickleFr = c*((pickleFailFrame - 1)/c)
+			print "_setupResumeMode(): lastGoodPickleFr =", lastGoodPickleFr
+			framesDir = self.seqDataVDir + "/frames"
+			lastGoodDicPath = framesDir + ("/%05d/tidToSids"
+				% lastGoodPickleFr)
+			print "_setupResumeMode(): lastGoodDicPath =", lastGoodDicPath
+			if os.path.exists(lastGoodDicPath):
+				print "_setupResumeMode(): Exists!  Backing up junk frames..."
+				timeSfx = time.strftime("%m_%d_%H_%M", time.gmtime())
+				bakDir = framesDir + "/bak_" + timeSfx
+				for ffr in range(lastGoodPickleFr+1, pickleFailFrame+1):
+					base = ("/%05d" % ffr)
+					src = framesDir + base
+					print "_setupResumeMode(): Moving", src, "to", bakDir + base
+					shutil.move(src, bakDir + base)
 
-	def __init__(self):
+				print "_setupResumeMode(): Setting fr =", \
+					lastGoodPickleFr, "anim = 1, record = True"
+				self.setVal("fr", lastGoodPickleFr + 1)
+				self.setVal("anim", 1)
+				self.record = True
+			else:
+				print "_setupResumeMode(): Doesn't exist!  Uh oh..."
+		
+		# picklingIndicator = warpUi.seqDataVDir + \
+		# 	("/pickleInProgress_%05d" % fr)
+		
+
+
+
+	def __init__(self, resumeMode=False):
+		print "__init__(): resumeMode =", resumeMode
+
+		# Not currently dirty
+		dirtyIndicator = ut.projDir + "/dirty"
+		ut.safeRemove(dirtyIndicator)
+
 		# TODO: Organize all this crap.
 		# Needed for pickling.
 		lim = sys.getrecursionlimit()
@@ -989,8 +1036,13 @@ class warpUi():
 				"name":[self.getImgDebug1, self.getImgDebug2],
 				"lev":[self.getLevDebug1, self.getLevDebug2]
 		}
+
+		# THIS IS WHERE PARMS ARE INITIALLY LOADED
 		self.parmDic = ut.parmDic(parmPath)
-		print "\n\n\n__init__():********** parmDic2"
+
+
+
+		print "\n\n\n__init__():********** parmDic"
 		print self.parmDic
 		self.pauseSaveUIToParmsAndFile = False
 		self.parmEntries = {}
@@ -1000,7 +1052,9 @@ class warpUi():
 		self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
 		self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
 
+
 		self.timerStarts = {}
+		self.writeTimerStats = False
 		global statsDirDest # for cProfile
 		statsDirDest = self.seqRenVDir 
 		self.inSurfGridPrev = None
@@ -1029,6 +1083,9 @@ class warpUi():
 
 		sourceImages = os.listdir(ut.imgIn)
 		sourceImages.sort()
+
+		if resumeMode:
+			self.setupResumeMode()
 
 
 		# TODO e needed?
@@ -1391,19 +1448,22 @@ class warpUi():
 						f.write(statsMsg)
 
 
-					if fr > self.parmDic("frEnd"):
+					frEnd = self.parmDic("frEnd")
+					if fr > frEnd:
 						if self.record:
 							# Global varable needed for final stats
 							statsDirDest = self.seqRenVDir 
 
 							if self.parmDic("doRenCv") == 0:
-								# Back up tidToSids for final frame
+								self.setVal("fr", frEnd)
+								# Back up tidToSids for final frame, if not already done.
 								print "__init__(): BACKING UP tidToSids for final fr", fr
-								frameDir = getLastFrameDirPath(self)
-								genData.pickleDump(frameDir + "/tidToSids", self.tidToSids)
+								if not frEnd % self.parm("backupDataEvery") == 0:
+									genData.saveTidToSids(self)
+
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
-							# You're set to do recording, but doRenCv is 0 (not yet done).
 							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
+								# You're set to do render, but doRenCv is 0 (not yet done).
 								# Restart and do renCv
 
 								# Write stats
@@ -1457,10 +1517,15 @@ class warpUi():
 
 profiling = False
 
+resumeMode = False
+if len(sys.argv) > 1 and sys.argv[1] == "-r":
+	resumeMode = True
+
+
 if profiling:
 	cProfile.run('warpUi()', statsObjPathSrc)
 	shutil.copy2(statsObjPathSrc, statsDirDest)
 else:
-	warpUi()
+	warpUi(resumeMode=resumeMode)
 	sys.exit()
 #with open(path, 'w') as f:
