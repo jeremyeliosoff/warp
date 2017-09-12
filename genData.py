@@ -326,13 +326,10 @@ def initJtGrid(img, warpUi):
 			levThreshInt.append(thisLevThreshInt)
 
 		levThreshArray = np.array(levThreshInt, dtype=np.uint8)
-		print "QQQQ levThreshArray", levThreshArray
 		levThreshArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
 		
 		imgArray = np.array(list(pygame.surfarray.array3d(img)))
-		print "GGGG imgArray.shape", imgArray.shape
-		print imgArray
 		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
@@ -855,8 +852,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 	
 
 
-	# TODO gpu this shit - it takes like 20% of the time!!
-	print "_growCurves(): drawing debug images, NO bbox, yes sidPost..."
+	print "_growCurves(): updating sids to merged..."
 	ut.timerStart(warpUi, "growC_save")
 	for lev in range(nLevels):
 		for y in range(res[1]):
@@ -871,6 +867,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 					#setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
 	
 	# Set sidPost AOV
+	print "_growCurves(): drawing sidPost AOV..."
 	
 	kernel = """
 void setArrayCell(int x, int y, int xres,
@@ -878,13 +875,13 @@ void setArrayCell(int x, int y, int xres,
   uchar __attribute__((address_space(1)))* ret)
 {
 	int i = y * xres * 3 + x * 3;
-	ret[i] = val;
-	ret[i+1] = val;
-	ret[i+2] = val;
+	ret[i] = val[0];
+	ret[i+1] = val[1];
+	ret[i+2] = val[2];
 }
 
-uchar getCellScalar(int x, int y, int xres,
-  uchar __attribute__((address_space(1)))* inSurfGrid)
+int getCellScalar(int x, int y, int xres,
+  int __attribute__((address_space(1)))* inSurfGrid)
 {
 	int i = y * xres + x;
 	return inSurfGrid[i];
@@ -895,30 +892,55 @@ __kernel void setSidPostAr(
 			int nClrs,
 			__global int* inSurfGrid,
 			__global uchar* clrsInt,
-			__global uchar* sidPostAr)
+			__global uchar* sidPostThisAr,
+			__global uchar* sidPostALL)
 {
 	int x = get_global_id(1);
 	int y = get_global_id(0);
 
 	int sid = getCellScalar(x, y, xres, inSurfGrid);
-	int val = (sid % 2)*255;
-	setArrayCell(x, y, xres, val, sidPostAr);
+	//int val = (sid % 2)*255;
+	//uchar val = sid > -1 ? (uchar) (100 + 35 * (sid % 4)) : 0;
+	//uchar val = sid > -1 ? (uchar) sid : 0;
+	int clrInd = sid % nClrs;
+	uchar val[] = {0, 0, 0};
+	if (sid > -1) {
+		val[0] = clrsInt[clrInd * 3];
+		val[1] = clrsInt[clrInd * 3+1];
+		val[2] = clrsInt[clrInd * 3+2];
+		setArrayCell(x, y, xres, val, sidPostALL);
+		setArrayCell(x, y, xres, val, sidPostThisAr);
+	} else {
+		// Strange: if you don't do this, it accumulates levs.
+		setArrayCell(x, y, xres, val, sidPostThisAr);
+	}
 }
 """
+
+
+
+	sidPostImgs = []
+
 	for lev in range(nLevels):
-		inSurfGridNoNone = [[0 if inSurfGrid[lev][xx][yy] == None else inSurfGrid[lev][xx][yy] for yy in range(res[1])] for xx in range(res[0])]
+
+		inSurfGridNoNone = [[-1 if inSurfGrid[lev][xx][yy] == None else inSurfGrid[lev][xx][yy] for yy in range(res[1])] for xx in range(res[0])]
 		#inSurfGridAr = np.array(inSurfGridNoNone[lev], dtype=np.intc)
-		inSurfGridAr = np.array(inSurfGridNoNone, dtype=np.uint8)
+		inSurfGridAr = np.array(inSurfGridNoNone, dtype=np.intc)
 		inSurfGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=inSurfGridAr)
+
+		if lev == 0:
+			sidPostALL = np.zeros(inSurfGridAr.shape + (3,), dtype=np.uint8)
+			sidPostALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
+				cl.mem_flags.COPY_HOST_PTR,hostbuf=sidPostALL)
 
 		clrsIntAr = np.array(clrsInt, dtype=np.uint8)
 		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
 
-		sidPostAr = np.zeros(inSurfGridAr.shape + (3,), dtype=np.uint8)
-		sidPostAr_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
-			sidPostAr.nbytes)
+		sidPostThisLev = np.zeros(inSurfGridAr.shape + (3,), dtype=np.uint8)
+		sidPostThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
+			sidPostThisLev.nbytes)
 
 		bld = cl.Program(cntxt, kernel).build()
 		launch = bld.setSidPostAr(
@@ -929,27 +951,24 @@ __kernel void setSidPostAr(
 				np.int32(len(clrsInt)),
 				inSurfGridAr_buf,
 				clrsIntAr_buf,
-				sidPostAr_buf)
+				sidPostThisLev_buf,
+				sidPostALL_buf)
 		launch.wait()
 
-		cl.enqueue_read_buffer(queue, sidPostAr_buf, sidPostAr).wait()
+		cl.enqueue_read_buffer(queue, sidPostThisLev_buf, sidPostThisLev).wait()
+		cl.enqueue_read_buffer(queue, sidPostALL_buf, sidPostALL).wait()
 
-		print "ZZZZ sidPostAr.shape", sidPostAr.shape
-		print "sidPostAr"
-		print sidPostAr
-		#sidPostAr.fill(255)
-		sidPostImg = Image.fromarray(sidPostAr, 'RGB')
+		sidPostImgs.append(Image.fromarray(np.swapaxes(sidPostThisLev, 0, 1), 'RGB'))
+		sidPostImgs[lev].save("/tmp/img." + str(lev) + ".png")
+	sidPostImgs.append(Image.fromarray(np.swapaxes(sidPostALL, 0, 1), 'RGB'))
+
+	for lev in range(nLevels + 1):
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
 		levDir,imgPath = warpUi.getDebugDirAndImg("sidPost", levStr)
 		ut.mkDirSafe(levDir)
-		print "WWWWWWW saving", imgPath
-		if lev == 1:
-			imgPath = "/tmp/test.png"
-		sidPostImg.save(imgPath)
+		print "_growCurves(): saving", imgPath
+		sidPostImgs[lev].save(imgPath)
 
-		#dbImgDic["sidPost"][lev].set_at((x,y), newVal)
-		#dbImgDic["sidPost"][nLevels].set_at((x,y), newVal)
-		
 
 		#for sid in sidToCvs[lev].keys():
 		#	drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(sid))
@@ -962,11 +981,12 @@ __kernel void setSidPostAr(
 	# Save db image with new sids.
 	print "_growCurves(): Saving debug images", dbImgDic.keys()
 	for debugInfo,imgs in dbImgDic.items():
-		for lev in range(nLevels+1):
-			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-			levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, levStr)
-			ut.mkDirSafe(levDir)
-			pygame.image.save(imgs[lev], imgPath)
+		if not debugInfo == "sidPost":
+			for lev in range(nLevels+1):
+				levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+				levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, levStr)
+				ut.mkDirSafe(levDir)
+				pygame.image.save(imgs[lev], imgPath)
 
 	ut.timerStop(warpUi, "growC_save")
 	return inSurfGrid, sidToCvs
@@ -1141,7 +1161,10 @@ def getLastFrameDirPath(warpUi, fr=None):
 		#frameDirs = os.listdir(warpUi.framesDataDir)
 		frameDirs = glob.glob(warpUi.framesDataDir + "/[0-9][0-9][0-9][0-9][0-9]")
 		frameDirs.sort()
-		frameDir = frameDirs[-1]
+		if len(frameDirs) == 0:
+			dud, frameDir = warpUi.makeFramesDataDir()
+		else:
+			frameDir = frameDirs[-1]
 	else:
 		frameDir = warpUi.framesDataDir + ("/%05d" % fr)
 	return frameDir

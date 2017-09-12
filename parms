@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1
+val 270
 
 fps
 val 52
@@ -19,10 +19,10 @@ anim
 val 0
 
 doRenCv
-val 0
+val 1
 
 image
-val miniPng
+val lzSmokeShortp2pngGm1p3
 
 dbImg1
 val sidPost
@@ -31,19 +31,19 @@ lev_dbImg1
 val ALL
 
 dbImg2
-val sidPost
+val cvSid
 
 lev_dbImg2
-val lev01
+val ALL
 
 renVer
-val v012again
+val v034tryGPUsidPost2
 
 frStart
-val 1
+val 270
 
 frEnd
-val 4
+val 1270
 
 frPerCycle
 val 30
@@ -60,13 +60,13 @@ val 1
 ---GEN---
 
 nLevels
-val 3
+val 10
 
 kSurf
 val 1
 
 gamma
-val 1
+val .2
 
 minThresh
 val 0
@@ -95,16 +95,16 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v023again
+val v035tryGPUsidPost2
 
 startLev
 val 0
 
 fallDist
-val 0
+val .5
 
 fallKForBiggest
-val 1
+val 0
 
 fallUseAsBiggest
 val 1
@@ -113,40 +113,40 @@ fallBiggestPow
 val .25
 
 fallVecX
-val .8
-
-fallVecY
 val .5
 
+fallVecY
+val .3
+
 fallMode
-val fall
+val orig
 
 progDurBot
 val 1
 
 progDurTop
-val 1
+val .5
 
 sfA
-val 0
+val .6
 
 sfK
-val .2
+val 1.1
 
 cvA
 val .8
 
 cvK
-val .8
+val 1.4
 
 mixClrSob
-val 1
+val 0
 
 mixClrTrp
-val 1
+val 0.8
 
 progDur
-val .1
+val .6
 
 
 
