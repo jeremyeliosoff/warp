@@ -4,6 +4,7 @@ import cPickle as pickle
 # OpenCl stuff!
 import pyopencl as cl
 import numpy as np
+from PIL import Image
 
 #this line would create a context
 cntxt = cl.create_some_context()
@@ -60,6 +61,13 @@ lYellow, # 17
 lCyan,   # 18
 lMagenta # 19
 ]
+
+clrsInt = []
+for clr in clrs:
+	clrInt = []
+	for f in clr:
+		clrInt.append(int(255*f))
+	clrsInt.append(clrInt)
 
 neighboursToConns = {
 	# a
@@ -323,6 +331,8 @@ def initJtGrid(img, warpUi):
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
 		
 		imgArray = np.array(list(pygame.surfarray.array3d(img)))
+		print "GGGG imgArray.shape", imgArray.shape
+		print imgArray
 		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
@@ -858,7 +868,89 @@ def growCurves(warpUi, jtGrid, frameDir):
 						inSurfGrid[lev][x][y] = sidNew
 					else:
 						sidNew = sidOld
-					setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
+					#setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
+	
+	# Set sidPost AOV
+	
+	kernel = """
+void setArrayCell(int x, int y, int xres,
+  uchar* val,
+  uchar __attribute__((address_space(1)))* ret)
+{
+	int i = y * xres * 3 + x * 3;
+	ret[i] = val;
+	ret[i+1] = val;
+	ret[i+2] = val;
+}
+
+uchar getCellScalar(int x, int y, int xres,
+  uchar __attribute__((address_space(1)))* inSurfGrid)
+{
+	int i = y * xres + x;
+	return inSurfGrid[i];
+}
+
+__kernel void setSidPostAr(
+			int xres,
+			int nClrs,
+			__global int* inSurfGrid,
+			__global uchar* clrsInt,
+			__global uchar* sidPostAr)
+{
+	int x = get_global_id(1);
+	int y = get_global_id(0);
+
+	int sid = getCellScalar(x, y, xres, inSurfGrid);
+	int val = (sid % 2)*255;
+	setArrayCell(x, y, xres, val, sidPostAr);
+}
+"""
+	for lev in range(nLevels):
+		inSurfGridNoNone = [[0 if inSurfGrid[lev][xx][yy] == None else inSurfGrid[lev][xx][yy] for yy in range(res[1])] for xx in range(res[0])]
+		#inSurfGridAr = np.array(inSurfGridNoNone[lev], dtype=np.intc)
+		inSurfGridAr = np.array(inSurfGridNoNone, dtype=np.uint8)
+		inSurfGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=inSurfGridAr)
+
+		clrsIntAr = np.array(clrsInt, dtype=np.uint8)
+		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
+
+		sidPostAr = np.zeros(inSurfGridAr.shape + (3,), dtype=np.uint8)
+		sidPostAr_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
+			sidPostAr.nbytes)
+
+		bld = cl.Program(cntxt, kernel).build()
+		launch = bld.setSidPostAr(
+				queue,
+				inSurfGridAr.shape,
+				None,
+				np.int32(res[1]),
+				np.int32(len(clrsInt)),
+				inSurfGridAr_buf,
+				clrsIntAr_buf,
+				sidPostAr_buf)
+		launch.wait()
+
+		cl.enqueue_read_buffer(queue, sidPostAr_buf, sidPostAr).wait()
+
+		print "ZZZZ sidPostAr.shape", sidPostAr.shape
+		print "sidPostAr"
+		print sidPostAr
+		#sidPostAr.fill(255)
+		sidPostImg = Image.fromarray(sidPostAr, 'RGB')
+		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+		levDir,imgPath = warpUi.getDebugDirAndImg("sidPost", levStr)
+		ut.mkDirSafe(levDir)
+		print "WWWWWWW saving", imgPath
+		if lev == 1:
+			imgPath = "/tmp/test.png"
+		sidPostImg.save(imgPath)
+
+		#dbImgDic["sidPost"][lev].set_at((x,y), newVal)
+		#dbImgDic["sidPost"][nLevels].set_at((x,y), newVal)
+		
+
 		#for sid in sidToCvs[lev].keys():
 		#	drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(sid))
 		#for tid, turfData in warpUi.tidToSids[lev].items():
@@ -1068,7 +1160,7 @@ def renCvWrapper(warpUi):
 			or fr % backupDataEvery == 0:
 		print "_renCvWrapper(): Updating tidToSids"
 		framesDir = warpUi.seqDataVDir + "/frames"
-		nextSafeTidFr = fr + frPerCycle * 2 # *2 to ensure all tids have been merged.
+		nextSafeTidFr = fr + frPerCycle # ensure all tids have been merged.
 		frToLoad = backupDataEvery*int(math.ceil(
 			float(nextSafeTidFr)/backupDataEvery)) # next fr that has backup.
 		dicPathToLoad = warpUi.seqDataVDir + ("/frames/%05d/tidToSids" % frToLoad)
