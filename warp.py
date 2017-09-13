@@ -18,16 +18,6 @@ class warpUi():
 		self.saveParmDic()
 		ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
 		
-	def saveDics(self):
-		print "\n_saveDics(): Saving dics..."
-		genData.pickleDump(self.seqDataVDir + "/tidToSids", self.tidToSids)
-		genData.pickleDump(self.seqDataVDir + "/sidToTid", self.sidToTid)
-
-	def delDics(self):
-		print "\n_delDics(): Deleting dics..."
-		ut.safeRemove(self.seqDataVDir + "/tidToSids")
-		ut.safeRemove(self.seqDataVDir + "/sidToTid")
-		
 	def flushDics(self):
 		print "\n_flushDics(): Flushing dics"
 		#self.tidToSids = None
@@ -553,12 +543,12 @@ class warpUi():
 			genData.pOut("doing genData")
 			reload(genData)
 			self.setStatus("busy", "Doing genData...")
-			if self.inSurfGridPrev == None:
-				prevFr, prevFrameDir = self.makeFramesDataDir(self.parmDic("fr") - 1)
-				prevFrInSurfGrid = prevFrameDir + "/inSurfGrid" 
-				if self.genRen1fr == 0 and os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
-					print "\n\n_updateCurImg(): LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
-					self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
+			#if self.inSurfGridPrev == None:
+			#	prevFr, prevFrameDir = self.makeFramesDataDir(self.parmDic("fr") - 1)
+			#	prevFrInSurfGrid = prevFrameDir + "/inSurfGrid" 
+			#	if self.genRen1fr == 0 and os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
+			#		print "\n\n_updateCurImg(): LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
+			#		self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
 
 			ut.timerStart(self, "genData")
 			genData.genData(self, self.seqRenVDir)
@@ -1149,20 +1139,6 @@ class warpUi():
 		self.but_rebuildUi.grid(row=row, column=0, sticky=EW)
 		row +=1
 
-		# Dics button
-		# self.frameDics = Frame(self.frameTopControls)
-		# self.frameDics.grid(row=row, sticky=N)
-		# row +=1
-
-		# self.but_flushDics = Button(self.frameDics, text="Flush dics", command=lambda:self.flushDics())
-		# self.but_flushDics.grid(row=0, column=0, sticky=W)
-
-		# self.but_delDics = Button(self.frameDics, text="Delete saved dics", command=lambda:self.delDics())
-		# self.but_delDics.grid(row=0, column=1, sticky=W)
-
-		# self.but_saveDics = Button(self.frameDics, text="Save dics", command=lambda:self.saveDics())
-		# self.but_saveDics.grid(row=0, column=2, sticky=W)
-
 
 		# Natural res checkbox
 		self.chk_genRen1fr_var = IntVar()
@@ -1461,9 +1437,9 @@ class warpUi():
 							if self.parmDic("doRenCv") == 0:
 								self.setVal("fr", frEnd)
 								# Back up tidToSids for final frame, if not already done.
-								print "__init__(): BACKING UP tidToSids for final fr", fr
 								if not frEnd % self.parmDic("backupDataEvery") == 0:
-									genData.saveTidToSids(self)
+									print "__init__(): BACKING UP tidToSids for final fr", fr
+									genData.saveTidToSid(self)
 
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
 							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:

@@ -500,14 +500,34 @@ for i,cons in enumerate(decodeCons):
 #	((1, 1), ( 1, 1)),
 #	((0, 0), ( 0, 0))]
 
+def loadPrevFrData(warpUi):
+	print "_loadPrevFrData BEGIN"
+	fr = warpUi.parmDic("fr")
+	prevInSurfGridPath = warpUi.framesDataDir + ("/%05d/inSurfGrid" % (fr-1))
+	if warpUi.inSurfGridPrev == None:
+		if os.path.exists(prevInSurfGridPath):
+			print "_loadPrevFrData(): inSurfGridPrev == None and prev one found, loading..."
+			warpUi.inSurfGridPrev = pickleLoad(prevInSurfGridPath)
+		else:
+			print "_loadPrevFrData(): prevInSurfGridPath not found!!", prevInSurfGridPath
+
+	prevSidToTidPath = warpUi.framesDataDir + ("/%05d/sidToTid" % (fr-1))
+	if warpUi.sidToTid == None:
+		if os.path.exists(prevSidToTidPath):
+			print "_loadPrevFrData(): sidToTid == None and prev one found, loading..."
+			warpUi.sidToTid = pickleLoad(prevSidToTidPath)
+		else:
+			print "_loadPrevFrData(): prevSidToTidPath not found!!", prevSidToTidPath
+	print "_loadPrevFrData END"
+
+
 def loadLatestTidToSids(warpUi):
 	print "_loadLatestTidToSids(): BEGIN - finding last tidToSidsFile."
 	lastFramePath = getLastFrameDirPath(warpUi)
 	tidToSidsPath = lastFramePath + "/tidToSids"
 	print "_loadLatestTidToSids(): attempting to load", tidToSidsPath, "..."
 	if os.path.exists(tidToSidsPath):
-		print "_loadLatestTidToSids(): Found, pickleLoad-ing..."
-	if os.path.exists(tidToSidsPath):
+		print "_loadLatestTidToSids(): Found, _pickleLoad-ing..."
 		warpUi.tidToSids = pickleLoad(tidToSidsPath)
 	else:
 		print "_loadLatestTidToSids(): Not found, setting to None."
@@ -522,6 +542,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 	
 	if warpUi.tidToSids == None:
 		loadLatestTidToSids(warpUi)
+		loadPrevFrData(warpUi)
 		if warpUi.tidToSids == None:
 			warpUi.tidToSids = [{} for i in range(nLevels)]
 	if warpUi.sidToTid == None:
@@ -1034,48 +1055,27 @@ def genDataWrapper(warpUi):
 	# Make required dirs.
 	fr, frameDir = warpUi.makeFramesDataDir()
 
-	# Load prev inSurfGrid.
-	inSurfGridPrev = None
-	frameDirPrev = warpUi.framesDataDir + ("/%05d" % (fr-1))
-
 	jtGrid, tholds = initJtGrid(img, warpUi)
 
 	ut.timerStart(warpUi, "growCurves")
 	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, frameDir)
 	ut.timerStop(warpUi, "growCurves")
-	# TODO: TEMP - this should be done in warp.py when genData is stopped...?
-	print "\n\n_genData(): ----- doing pickleDump(" + frameDir + "/inSurfGrid"
-	pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
-
-	frameDirLs = frameDir.split("/")
-	prevFr = int(frameDirLs[-1]) - 1
-	frameDirLs[-1] = "%05d" % prevFr
-	prevFrInSurfGrid = "/".join(frameDirLs) + "/inSurfGrid"
-	print "\n\n\n_genData(): prevFrInSurfGrid:", prevFrInSurfGrid, "\n\n"
-
-
-	warpUi.inSurfGridPrev = inSurfGrid[:]
 
 
 	# Save inSurfGrid
+	pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
 	sidToCvDic = convertCvDicToDic(sidToCvs, warpUi)
+	pickleDump(frameDir + "/sidToTid", warpUi.sidToTid)
+	print "_genData(): warpUi.sidToTid:", warpUi.sidToTid
 	pickleDump(frameDir + "/sidToCvDic", sidToCvDic)
 	pickleDump(frameDir + "/tholds", tholds)
 
-	# Save sidToCvs for this frame.
-
+	# Save tidToSids every backupDataEvery frames
 	if fr % warpUi.parmDic("backupDataEvery") == 0:
-		print "_genData(): BACKING UP tidToSids:"
-		#shutil.copy2(warpUi.seqDataVDir + "/tidToSids", frameDir)
-		#pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
-		#ut.exeCmd("cp " + warpUi.seqDataVDir + "/tidToSids " + frameDir)
-	#if fr % backupDataEvery == 1:
-	#	print "_genData(): NOT deleting", prevFrInSurfGrid
-	#else:
-	#	print "_genData(): deleting", prevFrInSurfGrid
-	#	ut.safeRemove(prevFrInSurfGrid)
+		print "_genData(): BACKING UP tidToSids and sidToTid:"
+		saveTidToSid(warpUi)
 
-	#pickleDump(warpUi.seqDataVDir + "/sidToTid", warpUi.sidToTid) search->MARK_A!!!
+	warpUi.inSurfGridPrev = inSurfGrid[:]
 
 	# Record stats
 	genDataStopTime = time.time() - genDataStartTime
@@ -1086,7 +1086,7 @@ def genDataWrapper(warpUi):
 		f.write(statStr)
 
 
-def saveTidToSids(warpUi):
+def saveTidToSid(warpUi):
 	frameDir = getLastFrameDirPath(warpUi)
 	picklingIndicator = "pickleInProgress_%05d" % warpUi.parmDic("fr")
 	ut.indicateProjDirtyAs(warpUi, True, picklingIndicator)
@@ -1116,14 +1116,11 @@ def genData(warpUi, statsDirDest):
 		genDataWrapper(warpUi)
 		renCvWrapper(warpUi)
 		frameDir = getLastFrameDirPath(warpUi)
-		saveTidToSids(warpUi)
+		saveTidToSid(warpUi)
 	elif warpUi.parmDic("doRenCv") == 1:
 		renCvWrapper(warpUi)
 	else:
 		genDataWrapper(warpUi)
-		if warpUi.parmDic("fr") % warpUi.parmDic("backupDataEvery") == 0:
-			saveTidToSids(warpUi)
-		#pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
 
 	ut.timerStop(warpUi, "genData")
 
@@ -1198,22 +1195,10 @@ def renCvWrapper(warpUi):
 		else:
 			print "_renCvWrapper(): dicPathToLoad not found, attempting to load latest..."
 			loadLatestTidToSids(warpUi)
-	#else:
-	#	loadLatestTidToSids(warpUi)
-	# MAY USE LATER # if warpUi.tidToSids == None or frForTid % backupDataEvery == 1:
 
-	# MAY USE LATER #	frForTid = fr + warpUi.parmDic("frPerCycle")
-	# MAY USE LATER #	# Get the checkpoint after fr + frPerCycle.
-	# MAY USE LATER #	tidToSidsFr = backupDataEvery*(1 + frForTid/backupDataEvery)
-	# MAY USE LATER #	dud, tidToSidsDir = warpUi.makeFramesDataDir(tidToSidsFr, False)
-	# MAY USE LATER #	# Get next checkpoint backup.
-	# MAY USE LATER #	tidToSidsFile = tidToSidsDir + "/tidToSids"
-	# MAY USE LATER #	print "_renCvWrapper(): checking for", tidToSidsFile
-	# MAY USE LATER #	if not os.path.exists(tidToSidsFile):
-			
 	# TODO is below necessary?  Why was it ever un-commented?  As well as MARK_A
 	#if warpUi.sidToTid == None:
-	#	warpUi.sidToTid = pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
+	#	warpUi.sidToTid = _pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
 	sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
 	tholds = pickleLoad(frameDir + "/tholds")
 	if sidToCvDic == None:

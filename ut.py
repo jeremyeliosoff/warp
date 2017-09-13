@@ -42,8 +42,8 @@ class parmDic:
 		with open(parmPath) as f:
 			for line in f.readlines():
 				stripped = line.strip()
-				print "_loadParmLs(): parmPath:" + parmFileTail + \
-					", stage:" + thisStage + ", line:", stripped
+				#print "_loadParmLs(): parmPath:" + parmFileTail + \
+				#	", stage:" + thisStage + ", line:", stripped
 				if stripped == "":
 					nextIsParmOrDivider = True
 				else:
@@ -95,10 +95,10 @@ class parmDic:
 		if not alreadyInList:
 			self.parmLs.append([thisParmName, thisParmDic])
 
-		print "\n\n_loadParmLs(): self.parmLs:"
+		#print "\n\n_loadParmLs(): self.parmLs:"
 
-		for pm in self.parmLs:
-			print "\n\n_loadParmLs():\t", pm
+		#for pm in self.parmLs:
+		#	print "\n\n_loadParmLs():\t", pm
 		print "\n\n_loadParmLs(): END"
 
 
@@ -155,6 +155,8 @@ def safeRemove(path):
 def safeMakeEmptyFile(path):
 	print "_safeMakeEmptyFile(): path =", path
 	if not os.path.exists(path):
+		dirPath = "/".join(path.split("/")[:-1])
+		mkDirSafe(dirPath)
 		print "_safeMakeEmptyFile(): doesn't exist, making..."
 		os.mknod(path)
 
