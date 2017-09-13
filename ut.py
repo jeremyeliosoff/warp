@@ -389,23 +389,24 @@ def recordMemUsage(path):
 	return process.memory_percent()
 	
 
-def indicateProjDirtyAs(isDirty, indicatorName=None):
+def indicateProjDirtyAs(warpUi, isDirty, indicatorName=None):
 	print "_indicateProjDirtyAs(): isDirty =", isDirty, \
 		", indicatorName =", indicatorName
 	dirtyIndicator = projDir + "/dirty"
 	cleanIndicator = projDir + "/clean"
-	indicatorPath = warpUi.seqDataVDir + "/" + indicatorName
+	if not indicatorName == None:
+		indicatorPath = warpUi.seqDataVDir + "/" + indicatorName
 	if isDirty:
 		safeMakeEmptyFile(dirtyIndicator)
 		safeRemove(cleanIndicator)
 		if not indicatorName == None:
-			safeMakeEmptyFile(indicatorFile)
+			safeMakeEmptyFile(indicatorPath)
 	else:
 		safeRemove(dirtyIndicator)
 		safeMakeEmptyFile(cleanIndicator)
 
 		if not indicatorName == None:
-			safeRemove(indicatorFile)
+			safeRemove(indicatorPath)
 
 
 def main():

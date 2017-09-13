@@ -315,7 +315,7 @@ def initJtGrid(img, warpUi):
 	tryGPU = True
 	if tryGPU:
 		# Mark dirty before GPU ops in case of crash.
-		ut.indicateProjDirtyAs(True, "initJtGridGPU_inProgress")
+		ut.indicateProjDirtyAs(warpUi, True, "initJtGridGPU_inProgress")
 
 		levThreshRemap = []
 		levThreshInt = []
@@ -387,7 +387,7 @@ def initJtGrid(img, warpUi):
 						jtGrid[x][y][lev] = jtLs
 
 		# Mark clean after GPU ops.
-		ut.indicateProjDirtyAs(False, "initJtGridGPU_inProgress")
+		ut.indicateProjDirtyAs(warpUi, False, "initJtGridGPU_inProgress")
 
 	else:
 		for x in range(res[0]-1):
@@ -868,7 +868,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 	# Set sidPost AOV using GPU
 	print "_growCurves(): drawing sidPost AOV using GPU..."
 	# Mark dirty before GPU ops in case of crash.
-	ut.indicateProjDirtyAs(True, "saveSidPostGPU_inProgress")
+	ut.indicateProjDirtyAs(warpUi, True, "saveSidPostGPU_inProgress")
 	
 	kernel = """
 void setArrayCell(int x, int y, int xres,
@@ -964,7 +964,7 @@ __kernel void setSidPostAr(
 	sidPostImgs.append(Image.fromarray(np.swapaxes(sidPostALL, 0, 1), 'RGB'))
 
 	# Mark clean after GPU ops.
-	ut.indicateProjDirtyAs(False, "saveSidPostGPU_inProgress")
+	ut.indicateProjDirtyAs(warpUi, False, "saveSidPostGPU_inProgress")
 
 	for lev in range(nLevels + 1):
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
@@ -1044,7 +1044,7 @@ def genDataWrapper(warpUi):
 	ut.timerStart(warpUi, "growCurves")
 	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, frameDir)
 	ut.timerStop(warpUi, "growCurves")
-	# TODO: TEMP - this should be done in warp.py when genData is stopped.
+	# TODO: TEMP - this should be done in warp.py when genData is stopped...?
 	print "\n\n_genData(): ----- doing pickleDump(" + frameDir + "/inSurfGrid"
 	pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
 
@@ -1089,10 +1089,10 @@ def genDataWrapper(warpUi):
 
 def saveTidToSids(warpUi):
 	frameDir = getLastFrameDirPath(warpUi)
-	picklingIndicator = ()
-	ut.indicateProjDirtyAs(True, "pickleInProgress_%05d" % fr)
+	picklingIndicator = "pickleInProgress_%05d" % warpUi.parmDic("fr")
+	ut.indicateProjDirtyAs(warpUi, True, picklingIndicator)
 	pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
-	ut.indicateProjDirtyAs(False, picklingIndicator)
+	ut.indicateProjDirtyAs(warpUi, False, picklingIndicator)
 
 
 def genData(warpUi, statsDirDest):
