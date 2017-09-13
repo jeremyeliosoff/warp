@@ -6,10 +6,6 @@ import pyopencl as cl
 import numpy as np
 from PIL import Image
 
-#this line would create a context
-cntxt = cl.create_some_context()
-#now create a command queue in the context
-queue = cl.CommandQueue(cntxt)
 
 outFile = "/tmp/out"
 
@@ -328,11 +324,11 @@ def initJtGrid(img, warpUi):
 			levThreshInt.append(thisLevThreshInt)
 
 		levThreshArray = np.array(levThreshInt, dtype=np.uint8)
-		levThreshArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		levThreshArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
 		
 		imgArray = np.array(list(pygame.surfarray.array3d(img)))
-		imgArray_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		imgArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
 		jtCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
@@ -340,7 +336,7 @@ def initJtGrid(img, warpUi):
 
 		jtConsThisLev = np.empty((res[0], res[1]), dtype=np.intc)
 		jtConsThisLev.fill(0)
-		jtConsThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, jtConsThisLev.nbytes)
+		jtConsThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY, jtConsThisLev.nbytes)
 		
 		
 		kernelPath = ut.projDir + "/GPUKernel.c"
@@ -349,9 +345,9 @@ def initJtGrid(img, warpUi):
 		#int index = rowid * ncols * npix + colid * npix;
 		# build the Kernel
 		for lev in range(nLevels):
-			bld = cl.Program(cntxt, kernel).build()
+			bld = cl.Program(warpUi.cntxt, kernel).build()
 			launch = bld.initJtC(
-					queue,
+					warpUi.queue,
 					imgArray.shape,
 					None,
 					np.int32(warpUi.parmDic("nLevels")),
@@ -362,7 +358,7 @@ def initJtGrid(img, warpUi):
 			launch.wait()
 
 
-			cl.enqueue_read_buffer(queue, jtConsThisLev_buf, jtConsThisLev).wait()
+			cl.enqueue_read_buffer(warpUi.queue, jtConsThisLev_buf, jtConsThisLev).wait()
 			jtCons[lev] = jtConsThisLev
 
 		# This sez I should release - help mem leak?
@@ -521,6 +517,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 	print "\n_growCurves(): growing curves for", frameDir
 	nLevels = warpUi.parmDic("nLevels")
 	nCurves = 0
+	fr = warpUi.parmDic("fr")
 	res = (len(jtGrid), len(jtGrid[0]))
 	
 	if warpUi.tidToSids == None:
@@ -654,7 +651,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 					if not (warpUi.inSurfGridPrev == None or
 						# I THINK below avoids overlapping start of cyc with end of prev
 						(not math.floor(warpUi.getOfsWLev(lev)) ==
-							math.floor(warpUi.getOfsWLev(lev, warpUi.parmDic("fr")-1)))) : # NOTE:  this is apparently NOT the same as "if warpUi.inSurfGridPrev:"
+							math.floor(warpUi.getOfsWLev(lev, fr-1)))) : # NOTE:  this is apparently NOT the same as "if warpUi.inSurfGridPrev:"
 						# There is a surfGrid file for the previous frame.
 						inSurfPrev = warpUi.inSurfGridPrev[lev][x][y]
 						if inSurfPrev == None:
@@ -795,7 +792,8 @@ def growCurves(warpUi, jtGrid, frameDir):
 				if sidToMergeTo in warpUi.tidToSids[lev].keys():
 					warpUi.tidToSids[lev][sidToMergeTo]["sids"].add(sid)
 				else:
-					warpUi.tidToSids[lev][sidToMergeTo] = {"sids":set([sid])}
+					warpUi.tidToSids[lev][sidToMergeTo] = \
+						{"birthFr": fr, "sids":set([sid])}
 				if sid in sidToCvs[lev].keys():
 					#cvsToAdd = sidToCvs[lev][sid]["cvs"]
 					if sidToMergeTo in sidToCvs[lev].keys():
@@ -817,7 +815,8 @@ def growCurves(warpUi, jtGrid, frameDir):
 				if sid in warpUi.tidToSids[lev].keys():
 					warpUi.tidToSids[lev][sid]["sids"].add(sid)
 				else:
-					warpUi.tidToSids[lev][sid] = {"sids" : set([sid])}
+					warpUi.tidToSids[lev][sid] = \
+						{"birthFr" : fr, "sids" : set([sid])}
 
 		# Translate tidToSids to sidToTid.
 		# TODO: Is this really what this does?
@@ -927,25 +926,25 @@ __kernel void setSidPostAr(
 		inSurfGridNoNone = [[-1 if inSurfGrid[lev][xx][yy] == None else inSurfGrid[lev][xx][yy] for yy in range(res[1])] for xx in range(res[0])]
 		#inSurfGridAr = np.array(inSurfGridNoNone[lev], dtype=np.intc)
 		inSurfGridAr = np.array(inSurfGridNoNone, dtype=np.intc)
-		inSurfGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		inSurfGridAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=inSurfGridAr)
 
 		if lev == 0:
 			sidPostALL = np.zeros(inSurfGridAr.shape + (3,), dtype=np.uint8)
-			sidPostALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
+			sidPostALL_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
 				cl.mem_flags.COPY_HOST_PTR,hostbuf=sidPostALL)
 
 		clrsIntAr = np.array(clrsInt, dtype=np.uint8)
-		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		clrsIntAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
 
 		sidPostThisLev = np.zeros(inSurfGridAr.shape + (3,), dtype=np.uint8)
-		sidPostThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
+		sidPostThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY,
 			sidPostThisLev.nbytes)
 
-		bld = cl.Program(cntxt, kernel).build()
+		bld = cl.Program(warpUi.cntxt, kernel).build()
 		launch = bld.setSidPostAr(
-				queue,
+				warpUi.queue,
 				inSurfGridAr.shape,
 				None,
 				np.int32(res[1]),
@@ -956,8 +955,8 @@ __kernel void setSidPostAr(
 				sidPostALL_buf)
 		launch.wait()
 
-		cl.enqueue_read_buffer(queue, sidPostThisLev_buf, sidPostThisLev).wait()
-		cl.enqueue_read_buffer(queue, sidPostALL_buf, sidPostALL).wait()
+		cl.enqueue_read_buffer(warpUi.queue, sidPostThisLev_buf, sidPostThisLev).wait()
+		cl.enqueue_read_buffer(warpUi.queue, sidPostALL_buf, sidPostALL).wait()
 
 		sidPostImgs.append(Image.fromarray(np.swapaxes(sidPostThisLev, 0, 1), 'RGB'))
 		sidPostImgs[lev].save("/tmp/img." + str(lev) + ".png")
@@ -1102,6 +1101,13 @@ def genData(warpUi, statsDirDest):
 	print "_genData(): ### DOING genData ###"
 	print "_genData(): #####################"
 
+	# Initialize GPU stuff.
+	#this line would create a context
+	ut.indicateProjDirtyAs(warpUi, True, "createContextAndQueue_inProgress")
+	warpUi.cntxt = cl.create_some_context()
+	#now create a command queue in the context
+	warpUi.queue = cl.CommandQueue(warpUi.cntxt)
+	ut.indicateProjDirtyAs(warpUi, False, "createContextAndQueue_inProgress")
 
 	sidToCvs = {}
 
