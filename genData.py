@@ -314,6 +314,8 @@ def initJtGrid(img, warpUi):
 	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
 	tryGPU = True
 	if tryGPU:
+		# Mark dirty before GPU ops in case of crash.
+		ut.indicateProjDirtyAs(True, "initJtGridGPU_inProgress")
 
 		levThreshRemap = []
 		levThreshInt = []
@@ -383,13 +385,10 @@ def initJtGrid(img, warpUi):
 						for gpuCon in gpuCons:
 							jtLs.append(joint((x,y), levThreshRemap, gpuCon))
 						jtGrid[x][y][lev] = jtLs
-						#print "III noGPU"
-						#for jj in jtGridGpu[x][y][lev]:
-						#	print jj
-						#print "III yaGPU"
-						#for jj in jtGrid[x][y][lev]:
-						#	print jj
-						#print
+
+		# Mark clean after GPU ops.
+		ut.indicateProjDirtyAs(False, "initJtGridGPU_inProgress")
+
 	else:
 		for x in range(res[0]-1):
 			if (x+1) % (res[0]/10) == 0:
@@ -866,8 +865,10 @@ def growCurves(warpUi, jtGrid, frameDir):
 						sidNew = sidOld
 					#setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
 	
-	# Set sidPost AOV
-	print "_growCurves(): drawing sidPost AOV..."
+	# Set sidPost AOV using GPU
+	print "_growCurves(): drawing sidPost AOV using GPU..."
+	# Mark dirty before GPU ops in case of crash.
+	ut.indicateProjDirtyAs(True, "saveSidPostGPU_inProgress")
 	
 	kernel = """
 void setArrayCell(int x, int y, int xres,
@@ -961,6 +962,9 @@ __kernel void setSidPostAr(
 		sidPostImgs.append(Image.fromarray(np.swapaxes(sidPostThisLev, 0, 1), 'RGB'))
 		sidPostImgs[lev].save("/tmp/img." + str(lev) + ".png")
 	sidPostImgs.append(Image.fromarray(np.swapaxes(sidPostALL, 0, 1), 'RGB'))
+
+	# Mark clean after GPU ops.
+	ut.indicateProjDirtyAs(False, "saveSidPostGPU_inProgress")
 
 	for lev in range(nLevels + 1):
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
@@ -1082,19 +1086,13 @@ def genDataWrapper(warpUi):
 	with open(frameDir + "/stats", 'w') as f:
 		f.write(statStr)
 
+
 def saveTidToSids(warpUi):
 	frameDir = getLastFrameDirPath(warpUi)
-	fr = warpUi.parmDic("fr")
-	picklingIndicator = warpUi.seqDataVDir + ("/pickleInProgress_%05d" % fr)
-	dirtyIndicator = ut.projDir + "/dirty"
-	cleanIndicator = ut.projDir + "/clean"
-	ut.safeMakeEmptyFile(picklingIndicator)
-	ut.safeMakeEmptyFile(dirtyIndicator)
-	ut.safeRemove(cleanIndicator)
+	picklingIndicator = ()
+	ut.indicateProjDirtyAs(True, "pickleInProgress_%05d" % fr)
 	pickleDump(frameDir + "/tidToSids", warpUi.tidToSids)
-	ut.safeRemove(picklingIndicator)
-	ut.safeRemove(dirtyIndicator)
-	ut.safeMakeEmptyFile(cleanIndicator)
+	ut.indicateProjDirtyAs(False, picklingIndicator)
 
 
 def genData(warpUi, statsDirDest):

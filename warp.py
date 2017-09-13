@@ -985,8 +985,11 @@ class warpUi():
 		print "_setupResumeMode(): BEGIN"
 		picklingIndicators = glob.glob(self.seqDataVDir + "/pickleInProgress_*")
 		if len(picklingIndicators) > 0:
+			# Pickling failed; rewind to prev checkpoint after backing up frames.
 			picklingIndicatorPath = picklingIndicators[-1]
 			print "_setupResumeMode(): picklingIndicatorPath =", picklingIndicatorPath
+			# TODO: I think picklingIndicatorPath stuff could all be skipped,
+			# simply pickleFailFrame = fr (from last crash)
 			pickleFailFrame = int(picklingIndicatorPath[-5:])
 			c = self.parmDic("backupDataEvery")
 			lastGoodPickleFr = c*((pickleFailFrame - 1)/c)
@@ -1013,9 +1016,10 @@ class warpUi():
 			else:
 				print "_setupResumeMode(): Doesn't exist!  Uh oh..."
 		
-		# picklingIndicator = warpUi.seqDataVDir + \
-		# 	("/pickleInProgress_%05d" % fr)
-		
+		else:
+			# Some non-pickle crash eg. GPU; resume from this fr.
+			self.setVal("anim", 1)
+			self.record = True
 
 
 

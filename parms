@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 270
+val 417
 
 fps
 val 52
@@ -95,7 +95,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v035tryGPUsidPost2
+val v034tryGPUsidPost
 
 startLev
 val 0

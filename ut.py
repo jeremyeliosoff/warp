@@ -389,6 +389,16 @@ def recordMemUsage(path):
 	return process.memory_percent()
 	
 
+def indicateProjDirtyAs(isDirty, indicatorName=None):
+	dirtyIndicator = projDir + "/dirty"
+	cleanIndicator = projDir + "/clean"
+	if isDirty:
+		safeMakeEmptyFile(dirtyIndicator)
+		safeRemove(cleanIndicator)
+	else:
+		safeRemove(dirtyIndicator)
+		safeMakeEmptyFile(cleanIndicator)
+
 
 def main():
 	verType = sys.argv[1]
