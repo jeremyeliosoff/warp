@@ -291,10 +291,11 @@ class warpUi():
 
 
 	def setFrAndUpdate(self, fr):
+		# This is what generates data/renders for each fr.
 		self.setStatus("busy")
 		self.setVal("fr", fr)
 		self.saveParmDic()
-		self.updateRenAndDataDirs()
+		self.updateRenAndDataDirs() # TODO - must this be here?
 		self.updateCurImg()
 		self.updateDebugImg()
 		Tk.update_idletasks(self.root)
@@ -372,10 +373,8 @@ class warpUi():
 
 
 	def animButCmd(self):
-		anim = self.parmDic("anim")
-		if anim == 0:
+		if self.parmDic("anim") == 0:
 			self.setVal("anim", 1)
-			#self.images["anim"]["button"].configure(image=self.staticImages["pause"])
 			# If you're animating and recording and doGen == 0, turn on doRenCv
 			if self.record and self.parmDic("doGen") == 0:
 				self.setVal("doRenCv", 1)
@@ -398,7 +397,7 @@ class warpUi():
 			print "_refreshButtonImages():",  self.images
 			self.images["anim"]["button"].configure(image=self.staticImages["play"])
 
-		print "_animButCmd(): Pressed anim button, anim set to", anim
+		print "_animButCmd(): Pressed anim button, anim set to", self.parmDic("anim")
 
 
 
@@ -531,40 +530,31 @@ class warpUi():
 		self.images["source"]["path"] = self.getSourceImgPath()
 		print "_updateCurImg(): self.images[source][path]:", self.images["source"]["path"]
 		dud, renImgPath = self.getRenDirAndImgPath("ren", "ALL")
-
 		self.images["ren"]["path"] = renImgPath
+
 		print "\n_updateCurImg(): self.record", self.record
 
 		ut.safeRemove(genData.outFile)
 		genData.pOut("\nPRE genData")
 
-		######## THIS IS WHERE DATA GETS GENERATED ########
 		if self.record or forceRecord:
 			genData.pOut("doing genData")
 			reload(genData)
 			self.setStatus("busy", "Doing genData...")
-			#if self.inSurfGridPrev == None:
-			#	prevFr, prevFrameDir = self.makeFramesDataDir(self.parmDic("fr") - 1)
-			#	prevFrInSurfGrid = prevFrameDir + "/inSurfGrid" 
-			#	if self.genRen1fr == 0 and os.path.exists(prevFrInSurfGrid): # pickleLoad already checks this but prints error
-			#		print "\n\n_updateCurImg(): LOADING inSurfGrid from ", prevFrInSurfGrid, "\n"
-			#		self.inSurfGridPrev = genData.pickleLoad(prevFrInSurfGrid)
-
 			ut.timerStart(self, "genData")
-			genData.genData(self, self.seqRenVDir)
-			ut.timerStop(self, "genData")
 
+			######## THIS IS WHERE DATA GETS GENERATED ########
+			genData.genData(self, self.seqRenVDir)
+			###################################################
+
+			ut.timerStop(self, "genData")
 			print "\n_updateCurImg(): Done genData\n\n"
 			self.setStatus("idle")
 		else:
 			genData.pOut("skipping genData")
-		###################################################
-		
 
 
 		self.refreshButtonImages()
-		image = self.images["source"]["pImg"]
-		#self.res = (image.width(), image.height())
 		self.setStatus("idle")
 
 
@@ -821,10 +811,10 @@ class warpUi():
 		self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
 		print "\n_updateRenAndDataDirs(): NEW:\n_updateRenAndDataDirs():\tseqDataDir:", self.seqDataDir, "\n_updateRenAndDataDirs():\tseqDataVDir:", self.seqDataVDir, "\n_updateRenAndDataDirs():\tseqRenDir", self.seqRenDir, "\n_updateRenAndDataDirs():\tseqRenVDir", self.seqRenVDir
 
-	def getDebugDirAndImg(self, debugInfo, lev):
+	def getDebugDirAndImg(self, AOVname, lev):
 		fr = self.parmDic("fr")
-		levDir = self.seqDataVDir + "/debugImg/" + debugInfo + "/" + lev # TODO: v00
-		imgPath = levDir + ("/" + debugInfo + "." + lev + (".%05d" + self.seqImgExt) % fr)
+		levDir = self.seqDataVDir + "/debugImg/" + AOVname + "/" + lev # TODO: v00
+		imgPath = levDir + ("/" + AOVname + "." + lev + (".%05d" + self.seqImgExt) % fr)
 		return levDir,imgPath
 
 	def getRenDirAndImgPath(self, outputName, lev=None):
@@ -1430,6 +1420,7 @@ class warpUi():
 
 					frEnd = self.parmDic("frEnd")
 					if fr > frEnd:
+						# What to do when you've reached end of seq.
 						if self.record:
 							# Global varable needed for final stats
 							statsDirDest = self.seqRenVDir 
@@ -1486,7 +1477,8 @@ class warpUi():
 							self.timeStart = time.time()
 							#self.animFrStart = fr
 
-					# This forces each frame to process, ie. ACTUALLY GENERATES THE DATA.  TODO: maybe add forceFps
+					# This forces each fr to process, ie. ACTUALLY GENERATES THE DATA.
+					# TODO: maybe add forceFps
 					self.setFrAndUpdate(fr)
 
 				self.setVal("fr", fr)

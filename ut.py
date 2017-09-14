@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import sys, os, random, re, glob, pprint, inspect, math, time, psutil
+import sys, os, random, re, glob, pprint, inspect, math, time, psutil, pygame
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
@@ -146,6 +146,10 @@ class parmDic:
 
 # os
 
+def exeCmd(cmd):
+	print "executing", cmd
+	os.system(cmd)
+
 def safeRemove(path):
 	print "_safeRemove(): path =", path
 	if os.path.exists(path):
@@ -171,6 +175,101 @@ def mkDirSafe(path):
 		os.makedirs(path)
 
 # Colours, rgb + tex
+
+black = (0, 0, 0)
+grey = (.3, .3, .3)
+white = (1, 1, 1)
+red =	(1, 0, 0)
+green = (0, 1, 0)
+blue =	(0, 0, 1)
+yellow =(1, 1, 0)
+cyan = (0, 1, 1)
+magenta =(1, 0, 1)
+
+rYellow =(1, .5, 0)
+gYellow =(.5, 1, 0)
+gCyan = (0, 1, .5)
+bCyan = (0, .5, 1)
+rMagenta =(1, 0, .5)
+bMagenta =(.5, 0, 1)
+
+lRed =	(1, .5, .5)
+lGreen = (.5, 1, .5)
+lBlue =	(.5, .5, 1)
+lYellow =(1, 1, .5)
+lCyan = (.5, 1, 1)
+lMagenta =(1, .5, 1)
+
+
+clrs = [
+red,	 # 0
+green,   # 1
+blue,	# 2
+yellow,  # 3
+cyan,	# 4
+magenta, # 5
+white,   # 6
+rYellow, # 7
+gYellow, # 8
+gCyan,   # 9
+bCyan,   # 10
+rMagenta,# 11
+bMagenta,# 12
+grey,	# 13
+lRed,	# 14
+lGreen,  # 15
+lBlue,   # 16
+lYellow, # 17
+lCyan,   # 18
+lMagenta # 19
+]
+
+clrsInt = []
+for clr in clrs:
+	clrInt = []
+	for f in clr:
+		clrInt.append(int(255*f))
+	clrsInt.append(clrInt)
+
+def vX255(v):
+	ret = [f*255 for f in v]
+	if type(v) == type(()):
+		ret = tuple(ret)
+	return ret
+
+def intToClr(i):
+	return vX255(clrs[i%len(clrs)]) if i else black
+
+def intGridToImg(grid, path):
+	res = (len(grid), len(grid[0]))
+	img = pygame.Surface(res)
+	for x in range(res[0]):
+		for y in range(res[1]):
+			img.set_at((x,y), intToClr(grid[x][y]))
+	print "_intGridToImg(): saving", path, "..."
+	pygame.image.save(img, path)
+
+
+def gamma(a, g):
+	return pow(a, 1.0/g)
+
+def gammaV(a, g):
+	ret = []
+	for i in range(len(a)):
+		ret.append(gamma(a[i], g[i]))
+	return ret
+
+def gammaVSc(a, g):
+	ret = []
+	for i in range(len(a)):
+		ret.append(gamma(a[i], g))
+	return ret
+
+
+def ranClr(seed):
+	random.seed(seed)
+	return [random.random(), random.random(), random.random()] 
+
 def rgbInt_to_hex(c):
 	"""Return color as #rrggbb for the given color values."""
 	return '#%02x%02x%02x' % tuple(c)
@@ -266,27 +365,8 @@ def multV(a, b):
 		ret.append(a[i] * b[i])
 	return ret
 
-def gamma(a, g):
-	return pow(a, 1.0/g)
-
-def gammaV(a, g):
-	ret = []
-	for i in range(len(a)):
-		ret.append(gamma(a[i], g[i]))
-	return ret
-
-def gammaVSc(a, g):
-	ret = []
-	for i in range(len(a)):
-		ret.append(gamma(a[i], g))
-	return ret
-
 def vNeg(a):
 	return multVSc(a, -1)
-
-def exeCmd(cmd):
-	print "executing", cmd
-	os.system(cmd)
 
 def mix(a, b, m):
 	return a*(1-m) + b*m
@@ -315,9 +395,6 @@ def smoothstep(edge0, edge1, x):
 def smoothpulse(in0, in1, out0, out1, x):
 	return smoothstep(in0, in1, x) - smoothstep(out0, out1, x)
 
-def ranClr(seed):
-	random.seed(seed)
-	return [random.random(), random.random(), random.random()] 
 
 
 # NAVAGATION

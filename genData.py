@@ -9,61 +9,7 @@ from PIL import Image
 
 outFile = "/tmp/out"
 
-black = (0, 0, 0)
-grey = (.3, .3, .3)
-white = (1, 1, 1)
-red =	(1, 0, 0)
-green = (0, 1, 0)
-blue =	(0, 0, 1)
-yellow =(1, 1, 0)
-cyan = (0, 1, 1)
-magenta =(1, 0, 1)
 
-rYellow =(1, .5, 0)
-gYellow =(.5, 1, 0)
-gCyan = (0, 1, .5)
-bCyan = (0, .5, 1)
-rMagenta =(1, 0, .5)
-bMagenta =(.5, 0, 1)
-
-lRed =	(1, .5, .5)
-lGreen = (.5, 1, .5)
-lBlue =	(.5, .5, 1)
-lYellow =(1, 1, .5)
-lCyan = (.5, 1, 1)
-lMagenta =(1, .5, 1)
-
-
-
-clrs = [
-red,	 # 0
-green,   # 1
-blue,	# 2
-yellow,  # 3
-cyan,	# 4
-magenta, # 5
-white,   # 6
-rYellow, # 7
-gYellow, # 8
-gCyan,   # 9
-bCyan,   # 10
-rMagenta,# 11
-bMagenta,# 12
-grey,	# 13
-lRed,	# 14
-lGreen,  # 15
-lBlue,   # 16
-lYellow, # 17
-lCyan,   # 18
-lMagenta # 19
-]
-
-clrsInt = []
-for clr in clrs:
-	clrInt = []
-	for f in clr:
-		clrInt.append(int(255*f))
-	clrsInt.append(clrInt)
 
 neighboursToConns = {
 	# a
@@ -261,12 +207,6 @@ def avgLs(l):
 	return float(tot)/len(l)
 
 
-def vX255(v):
-	ret = [f*255 for f in v]
-	if type(v) == type(()):
-		ret = tuple(ret)
-	return ret
-
 
 def vBy255(v):
 	ret = [float(f)/255 for f in v]
@@ -430,7 +370,7 @@ def initJtGrid(img, warpUi):
 	return jtGrid, tholds
 
 def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
-	prevVal = black
+	prevVal = ut.black
 	aovParmName = "aov_" + name	
 	if aovParmName in warpUi.parmDic.parmDic.keys() and warpUi.parmDic(aovParmName) == 1 and lev <= len(dbImgDic[name]): # TODO: Won't last cond always be true?
 		res = dbImgDic[name][lev].get_size()
@@ -440,9 +380,6 @@ def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
 			newVal = ut.clampVSc(newVal, 0, 255)
 			dbImgDic[name][lev].set_at((x,y), newVal)
 			dbImgDic[name][nLevels].set_at((x,y), newVal)
-
-def intToClr(i):
-	return vX255(clrs[i%len(clrs)])
 
 
 def drawBbx(warpUi, bbx, dbName, dbImgDic, lev, nLevels, clr):
@@ -530,8 +467,23 @@ def loadLatestTidToSids(warpUi):
 		print "_loadLatestTidToSids(): Found, _pickleLoad-ing..."
 		warpUi.tidToSids = pickleLoad(tidToSidsPath)
 	else:
-		print "_loadLatestTidToSids(): Not found, setting to None."
-		warpUi.tidToSids = None
+		print "_loadLatestTidToSids(): Not found, attempting to find last checkpoint..."
+		lastFr = int(lastFramePath.split("/")[-1])
+		print "_loadLatestTidToSids(): \tlastFr", lastFr
+		bde = warpUi.parmDic("backupDataEvery")
+		lastCheckpoint = bde*(lastFr/bde)
+		print "_loadLatestTidToSids(): \tlastCheckpoint", lastCheckpoint
+		lastCheckpointTidToSids = getLastFrameDirPath(warpUi, lastCheckpoint) \
+			+ "/tidToSids"
+		print "_loadLatestTidToSids(): \tlastCheckpointTidToSids", lastCheckpointTidToSids
+		print "_loadLatestTidToSids(): \tChecking existence..."
+		if os.path.exists(lastCheckpointTidToSids):
+			print "_loadLatestTidToSids(): Found! _pickleLoad-ing..."
+			warpUi.tidToSids = pickleLoad(lastCheckpointTidToSids)
+
+		else:
+			print "_loadLatestTidToSids(): Not found - I hope you're starting a new data version?  Setting to None."
+			warpUi.tidToSids = None
 
 def growCurves(warpUi, jtGrid, frameDir):
 	print "\n_growCurves(): growing curves for", frameDir
@@ -560,8 +512,13 @@ def growCurves(warpUi, jtGrid, frameDir):
 
 	inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
 
-	imgJtInOut = pygame.Surface(res)
-	dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid", "sidPost"]
+	# AOVs.
+	#dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid", "sidPost"]
+	dbImgs = []
+	for parmName in warpUi.parmDic.parmDic.keys():
+		if parmName[:4] == "aov_" and warpUi.parmDic(parmName) == 1:
+			dbImgs.append(parmName[4:])
+
 	dbImgDic = {}
 	for dbi in dbImgs:
 		# The last cell - that is, [nLevels] - is reserved for "all"
@@ -601,7 +558,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 						yTot = 0
 						
 						# Grow the actual curve.
-						cvClr = intToClr(jt.cv.cid)
+						cvClr = ut.intToClr(jt.cv.cid)
 						while thisJt.cv == None:
 							xTot += xx
 							yTot += yy
@@ -623,11 +580,6 @@ def growCurves(warpUi, jtGrid, frameDir):
 					# Register when entering or leaving a curve.  By convention, only look at y = -1 direction.
 
 					if jt.cons[0][1] == -1 or jt.cons[1][1] == -1:
-						if jt.cons[0][1] == -1:
-							imgJtInOut.set_at((x, y), (255, 0, 0))
-						else:
-							imgJtInOut.set_at((x, y), (0, 255, 0))
-						imgJtInOut.set_at((x, y), vX255(clrs[jt.cv.cid%len(clrs)]))
 
 						inSurfNow[lev] = not inSurfNow[lev]
 						# NOTE: inHoles and inSurfs are arrays because you can be inside multiple 
@@ -726,11 +678,11 @@ def growCurves(warpUi, jtGrid, frameDir):
 			# TODO: next line - I thought a sid could have > 1 surfs??? It appears surf is never used, just key.
 			sidToSurf[lev][sid] = cv.surf
 			jt = cv.head
-			sfClr = intToClr(jt.cv.surf.sid)
+			sfClr = ut.intToClr(jt.cv.surf.sid)
 			while True:
 				xx, yy = jt.xy
 				setAOV(warpUi, "cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
-				sfClr = intToClr(jt.cv.cid)
+				sfClr = ut.intToClr(jt.cv.cid)
 				setAOV(warpUi, "cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
 				jt = jt.pv
 				if jt == None:
@@ -883,7 +835,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 						inSurfGrid[lev][x][y] = sidNew
 					else:
 						sidNew = sidOld
-					#setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, intToClr(sidNew))
+					#setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, ut.intToClr(sidNew))
 	
 	# Set sidPost AOV using GPU
 	print "_growCurves(): drawing sidPost AOV using GPU..."
@@ -955,7 +907,7 @@ __kernel void setSidPostAr(
 			sidPostALL_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
 				cl.mem_flags.COPY_HOST_PTR,hostbuf=sidPostALL)
 
-		clrsIntAr = np.array(clrsInt, dtype=np.uint8)
+		clrsIntAr = np.array(ut.clrsInt, dtype=np.uint8)
 		clrsIntAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
 
@@ -969,7 +921,7 @@ __kernel void setSidPostAr(
 				inSurfGridAr.shape,
 				None,
 				np.int32(res[1]),
-				np.int32(len(clrsInt)),
+				np.int32(len(ut.clrsInt)),
 				inSurfGridAr_buf,
 				clrsIntAr_buf,
 				sidPostThisLev_buf,
@@ -995,10 +947,10 @@ __kernel void setSidPostAr(
 
 
 		#for sid in sidToCvs[lev].keys():
-		#	drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(sid))
+		#	drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, ut.intToClr(sid))
 		#for tid, turfData in warpUi.tidToSids[lev].items():
 		#	if "bbx" in turfData.keys(): # TODO should bbx always be in turfData.keys()?
-		#		drawBbx(warpUi, turfData["bbx"], "sid", dbImgDic, lev, nLevels, intToClr(tid))
+		#		drawBbx(warpUi, turfData["bbx"], "sid", dbImgDic, lev, nLevels, ut.intToClr(tid))
 		#				#sidToCvs[lev][sidToMergeTo]["cvs"] += sidToCvs[lev][sid]["cvs"]
 
 
@@ -1015,7 +967,7 @@ __kernel void setSidPostAr(
 	ut.timerStop(warpUi, "growC_save")
 	return inSurfGrid, sidToCvs
 
-	#-- END OF growCurves(warpUi, jtGrid, frameDir):
+	#-- END OF _growCurves(warpUi, jtGrid, frameDir):
 
 
 def writeTidImg(warpUi, inSurfGrid):
@@ -1034,7 +986,7 @@ def writeTidImg(warpUi, inSurfGrid):
 					if sid in warpUi.sidToTid[lev].keys():
 						tid = warpUi.sidToTid[lev][sid]
 						if lev == 0: allTids.add(tid)
-						setAOV(warpUi, "tid", dbImgDic, lev, nLevels, x, y, intToClr(tid))
+						setAOV(warpUi, "tid", dbImgDic, lev, nLevels, x, y, ut.intToClr(tid))
 	allTidsLs = list(allTids)
 	allTidsLs.sort()
 
@@ -1057,9 +1009,9 @@ def genDataWrapper(warpUi):
 
 	jtGrid, tholds = initJtGrid(img, warpUi)
 
-	ut.timerStart(warpUi, "growCurves")
+	ut.timerStart(warpUi, "_growCurves")
 	inSurfGrid, sidToCvs = growCurves(warpUi, jtGrid, frameDir)
-	ut.timerStop(warpUi, "growCurves")
+	ut.timerStop(warpUi, "_growCurves")
 
 
 	# Save inSurfGrid
@@ -1074,6 +1026,18 @@ def genDataWrapper(warpUi):
 	if fr % warpUi.parmDic("backupDataEvery") == 0:
 		print "_genData(): BACKING UP tidToSids and sidToTid:"
 		saveTidToSid(warpUi)
+
+	# TEMP - aovs to compare prev + cur inSurfGrids.
+	for lev in range(warpUi.parmDic("nLevels")):
+		if not warpUi.inSurfGridPrev == None:
+			dr, imgPath = warpUi.getDebugDirAndImg("inSurfGridPrev", "lev%02d" % lev)
+			ut.mkDirSafe(dr)
+			ut.intGridToImg(warpUi.inSurfGridPrev[lev], imgPath)
+
+		dr, imgPath = warpUi.getDebugDirAndImg("inSurfGrid", "lev%02d" % lev)
+		ut.mkDirSafe(dr)
+		ut.intGridToImg(inSurfGrid[lev], imgPath)
+
 
 	warpUi.inSurfGridPrev = inSurfGrid[:]
 
@@ -1102,14 +1066,10 @@ def genData(warpUi, statsDirDest):
 	print "_genData(): #####################"
 
 	# Initialize GPU stuff.
-	#this line would create a context
 	ut.indicateProjDirtyAs(warpUi, True, "createContextAndQueue_inProgress")
 	warpUi.cntxt = cl.create_some_context()
-	#now create a command queue in the context
 	warpUi.queue = cl.CommandQueue(warpUi.cntxt)
 	ut.indicateProjDirtyAs(warpUi, False, "createContextAndQueue_inProgress")
-
-	sidToCvs = {}
 
 	if warpUi.genRen1fr == 1:
 		warpUi.flushDics()
@@ -1277,7 +1237,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 
 	# Adapted from  setAOV(warpUi, "ren", outputs, lev, nLevels, jx + tx, jy + ty, clr)
 	thisDic = outputs["ren"]
-	prevVal = black
+	prevVal = ut.black
 	jxt = jx + tx
 	jyt = jy + ty
 	if lev <= len(thisDic): # TODO: Won't this always be true?
@@ -1321,7 +1281,7 @@ def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty,
 	
 
 def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray):
-	tidRanClr = intToClr(sid)
+	tidRanClr = ut.intToClr(sid)
 
 
 	prog = calcProg(warpUi, tid, level, lev)
