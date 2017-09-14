@@ -796,6 +796,11 @@ def growCurves(warpUi, jtGrid, frameDir):
 		# TODO: When you do checkpointing, this is where you del tids > frPerCycle old
 
 		for tid,sidData in warpUi.tidToSids[lev].items():
+			# Delete old tids.
+			if warpUi.tidToSids[lev][tid]["birthFr"] < fr - 1 \
+					- warpUi.parmDic("frPerCycle") - warpUi.parmDic("backupDataEvery"):
+				del(warpUi.tidToSids[lev][tid])
+				continue
 			sids = sidData["sids"]
 			sidsThisFr = sidToCvs[lev].keys()
 			#if not "bbx" in warpUi.tidToSids[lev][tid].keys() and len(sidData["sids"]) > 0:

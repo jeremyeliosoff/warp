@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 11
+val 271
 
 fps
 val 52
@@ -22,7 +22,7 @@ doRenCv
 val 0
 
 image
-val testRamp
+val lzSmokeShortp2pngGm1p3
 
 dbImg1
 val sidPost
@@ -31,22 +31,22 @@ lev_dbImg1
 val ALL
 
 dbImg2
-val sidPost
+val cvSid
 
 lev_dbImg2
-val lev03
+val ALL
 
 renVer
-val v052inSurfGridAOV
+val v039delOldTids
 
 frStart
-val 1
+val 270
 
 frEnd
-val 20
+val 1270
 
 frPerCycle
-val 6
+val 30
 
 doGen
 val 1
@@ -60,19 +60,19 @@ val 1
 ---GEN---
 
 nLevels
-val 4
+val 10
 
 kSurf
 val 1
 
 gamma
-val 1
+val .2
 
 minThresh
-val 0.5
+val 0
 
 maxThresh
-val .9
+val 1
 
 rangeThresh
 val .1
@@ -95,16 +95,16 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v035inSurfGridAOV
+val v039delOldTids
 
 startLev
 val 0
 
 fallDist
-val 0
+val .5
 
 fallKForBiggest
-val 1
+val 0
 
 fallUseAsBiggest
 val 1
@@ -113,13 +113,13 @@ fallBiggestPow
 val .25
 
 fallVecX
-val .8
-
-fallVecY
 val .5
 
+fallVecY
+val .3
+
 fallMode
-val fall
+val orig
 
 progDurBot
 val 1
