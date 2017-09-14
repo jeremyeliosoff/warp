@@ -609,7 +609,7 @@ class warpUi():
 			menu.add_command(label=s, command=lambda value=s: self.verUI[verType]["menuVar"].set(value))
 
 	def menuImgChooser(self, selection):
-		print "\n_menuImgChooser(): pre getImg"
+		print "\n_menuImgChooser(): pre _getImg"
 		print "_menuImgChooser(): self.seqDataDir", self.seqDataDir
 		print "_menuImgChooser(): self.seqDataVDir", self.seqDataVDir
 		print "_menuImgChooser(): self.seqRenDir", self.seqRenDir
@@ -622,7 +622,7 @@ class warpUi():
 
 		self.seqDataVDir = self.seqDataDir + "/" + dataVers[0]
 		self.seqRenVDir = self.seqRenDir + "/" + renVers[0]
-		print "\n_menuImgChooser(): post getImg"
+		print "\n_menuImgChooser(): post _getImg"
 		print "_menuImgChooser(): self.seqDataDir", self.seqDataDir
 		print "_menuImgChooser(): self.seqDataVDir", self.seqDataVDir
 		print "_menuImgChooser(): self.seqRenDir", self.seqRenDir
@@ -1369,7 +1369,7 @@ class warpUi():
 
 
 		# Update menu-dependent images to reflect current selection.
-		print "\n__init__():  ****** doing self.getImg", self.parmDic("image")
+		print "\n__init__():  ****** doing self._getImg", self.parmDic("image")
 		self.getImg(self.parmDic("image")) 
 		while not self.rootDestroyed:
 			anim = self.parmDic("anim")

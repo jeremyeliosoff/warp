@@ -512,6 +512,20 @@ def growCurves(warpUi, jtGrid, frameDir):
 	if warpUi.sidToTid == None:
 		warpUi.sidToTid = [{} for i in range(nLevels)]
 
+	#frDirDebug = open(frameDir + "/debug", 'w')
+	#frDirDebug.write("PRE warpUi.nextSid:" + str(warpUi.nextSid) + "\n\n")
+
+	tidToSidsStr = "PRE warpUi.tidToSids:\n"
+	ks = warpUi.tidToSids[1].keys()
+	ks.sort()
+	for k in ks:
+		kks = warpUi.tidToSids[1][k].keys()
+		kks.sort()
+		for kk in kks:
+			tidToSidsStr += str(k) + ":" + str(kk) + ":" + str(warpUi.tidToSids[1][k][kk]) + "\n"
+		tidToSidsStr += "\n"
+
+	#frDirDebug.write(tidToSidsStr)
 
 	# inHoles delimit holes; inSurfs do not.
 	curToPrevSidDic = [{} for i in range(nLevels)]
@@ -664,6 +678,14 @@ def growCurves(warpUi, jtGrid, frameDir):
 								# There's no list for currentSid,
 								# make a new one with just inSurfPrev
 								curToPrevSidDic[lev][currentSid] = {inSurfPrev}
+	
+	#inSurfGridStr = "MID inSurfGrid:\n"	
+	#for y in range(res[1]):
+	#	for x in range(res[0]):
+	#		inSurfGridStr += str(inSurfGrid[1][x][y]) + " "
+	#	inSurfGridStr += "\n"
+	#inSurfGridStr += "\n\n"
+	#frDirDebug.write(inSurfGridStr)
 
 	#ut.timerStop(warpUi, "growC_surfs")
 
@@ -838,6 +860,10 @@ def growCurves(warpUi, jtGrid, frameDir):
 
 	ut.timerStop(warpUi, "growC_doMerge")
 	
+	#for lev in range(warpUi.parmDic("nLevels")):
+	#	dr, imgPath = warpUi.getDebugDirAndImg("preMrgInSurfGrid", "lev%02d" % lev)
+	#	ut.mkDirSafe(dr)
+	#	ut.intGridToImg(inSurfGrid[lev], imgPath)
 
 
 	print "_growCurves(): updating sids to merged..."
@@ -981,6 +1007,27 @@ __kernel void setSidPostAr(
 				ut.mkDirSafe(levDir)
 				pygame.image.save(imgs[lev], imgPath)
 
+	#inSurfGridStr = "POS inSurfGrid:\n"	
+	#for y in range(res[1]):
+	#	for x in range(res[0]):
+	#		inSurfGridStr += str(inSurfGrid[1][x][y]) + " "
+	#	inSurfGridStr += "\n"
+	#inSurfGridStr += "\n\n"
+	#frDirDebug.write(inSurfGridStr)
+	#frDirDebug.write("POS warpUi.nextSid:" + str(warpUi.nextSid) + "\n\n")
+	#tidToSidsStr = "POS warpUi.tidToSids:\n"
+	#ks = warpUi.tidToSids[1].keys()
+	#ks.sort()
+	#for k in ks:
+	#	kks = warpUi.tidToSids[1][k].keys()
+	#	kks.sort()
+	#	for kk in kks:
+	#		tidToSidsStr += str(k) + ":" + str(kk) + ":" + str(warpUi.tidToSids[1][k][kk]) + "\n"
+	#	tidToSidsStr += "\n"
+
+	#frDirDebug.write(tidToSidsStr)
+	#frDirDebug.close()
+
 	ut.timerStop(warpUi, "growC_save")
 	return inSurfGrid, sidToCvs
 
@@ -1020,15 +1067,15 @@ def genDataWrapper(warpUi):
 		saveTidToSid(warpUi)
 
 	# TEMP - aovs to compare prev + cur inSurfGrids.
-	for lev in range(warpUi.parmDic("nLevels")):
-		if not warpUi.inSurfGridPrev == None:
-			dr, imgPath = warpUi.getDebugDirAndImg("inSurfGridPrev", "lev%02d" % lev)
-			ut.mkDirSafe(dr)
-			ut.intGridToImg(warpUi.inSurfGridPrev[lev], imgPath)
+	#for lev in range(warpUi.parmDic("nLevels")):
+	#	if not warpUi.inSurfGridPrev == None:
+	#		dr, imgPath = warpUi.getDebugDirAndImg("inSurfGridPrev", "lev%02d" % lev)
+	#		ut.mkDirSafe(dr)
+	#		ut.intGridToImg(warpUi.inSurfGridPrev[lev], imgPath)
 
-		dr, imgPath = warpUi.getDebugDirAndImg("inSurfGrid", "lev%02d" % lev)
-		ut.mkDirSafe(dr)
-		ut.intGridToImg(inSurfGrid[lev], imgPath)
+	#	dr, imgPath = warpUi.getDebugDirAndImg("inSurfGrid", "lev%02d" % lev)
+	#	ut.mkDirSafe(dr)
+	#	ut.intGridToImg(inSurfGrid[lev], imgPath)
 
 
 	warpUi.inSurfGridPrev = inSurfGrid[:]
@@ -1067,7 +1114,6 @@ def genData(warpUi, statsDirDest):
 		warpUi.flushDics()
 		genDataWrapper(warpUi)
 		renCvWrapper(warpUi)
-		frameDir = getLastFrameDirPath(warpUi)
 		saveTidToSid(warpUi)
 	elif warpUi.parmDic("doRenCv") == 1:
 		renCvWrapper(warpUi)
