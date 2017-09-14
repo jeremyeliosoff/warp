@@ -448,6 +448,7 @@ def loadPrevFrData(warpUi):
 		else:
 			print "_loadPrevFrData(): prevInSurfGridPath not found!!", prevInSurfGridPath
 
+	# sidToTid is NOT CURRENTLY USED!!
 	prevSidToTidPath = warpUi.framesDataDir + ("/%05d/sidToTid" % (fr-1))
 	if warpUi.sidToTid == None:
 		if os.path.exists(prevSidToTidPath):
@@ -455,6 +456,17 @@ def loadPrevFrData(warpUi):
 			warpUi.sidToTid = pickleLoad(prevSidToTidPath)
 		else:
 			print "_loadPrevFrData(): prevSidToTidPath not found!!", prevSidToTidPath
+
+	# sidToTid is NOT CURRENTLY USED!!
+	prevMetaDataPath = warpUi.framesDataDir + ("/%05d/metaData" % (fr-1))
+	if os.path.exists(prevMetaDataPath):
+		print "_loadPrevFrData(): sidToTid == None and prev one found, loading..."
+		metaData = pickleLoad(prevMetaDataPath)
+		if "nextSid" in metaData.keys():
+			warpUi.nextSid = metaData["nextSid"]
+	else:
+		print "_loadPrevFrData(): prevMetaDataPath not found!!", prevMetaDataPath
+
 	print "_loadPrevFrData END"
 
 
@@ -510,7 +522,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 	curves = [[] for i in range(nLevels)]
 	#sidToCurves = [{}] * nLevels
 
-	inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
+	inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)] # inSurfGridASSIGN!
 
 	# AOVs.
 	#dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid", "sidPost"]
@@ -582,7 +594,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 					if jt.cons[0][1] == -1 or jt.cons[1][1] == -1:
 
 						inSurfNow[lev] = not inSurfNow[lev]
-						# NOTE: inHoles and inSurfs are arrays because you can be inside multiple 
+						# NOTE: inHoles and _inSurfs are arrays because you can be inside multiple 
 						# surfs and mutiple holes at once.
 						if inSurfNow[lev]:
 							#Case 1: closing hole
@@ -620,7 +632,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 			for lev in range(nLevels):
 				if inSurfNow[lev]:
 					currentSid = inSurfs[lev][-1].surf.sid
-					inSurfGrid[lev][x][y] = currentSid
+					inSurfGrid[lev][x][y] = currentSid # inSurfGridASSIGN!
 					if not (warpUi.inSurfGridPrev == None or
 						# I THINK below avoids overlapping start of cyc with end of prev
 						(not math.floor(warpUi.getOfsWLev(lev)) ==
@@ -837,7 +849,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 				if not sidOld == None:
 					if lev <= (len(sidOldToNew) + 1) and sidOld in sidOldToNew[lev].keys():
 						sidNew = sidOldToNew[lev][sidOld]
-						inSurfGrid[lev][x][y] = sidNew
+						inSurfGrid[lev][x][y] = sidNew # inSurfGridASSIGN!
 					else:
 						sidNew = sidOld
 					#setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, ut.intToClr(sidNew))
@@ -859,16 +871,16 @@ void setArrayCell(int x, int y, int xres,
 }
 
 int getCellScalar(int x, int y, int xres,
-  int __attribute__((address_space(1)))* inSurfGrid)
+  int __attribute__((address_space(1)))* _inSurfGrid)
 {
 	int i = y * xres + x;
-	return inSurfGrid[i];
+	return _inSurfGrid[i];
 }
 
 __kernel void setSidPostAr(
 			int xres,
 			int nClrs,
-			__global int* inSurfGrid,
+			__global int* _inSurfGrid,
 			__global uchar* clrsInt,
 			__global uchar* sidPostThisAr,
 			__global uchar* sidPostALL)
@@ -876,7 +888,7 @@ __kernel void setSidPostAr(
 	int x = get_global_id(1);
 	int y = get_global_id(0);
 
-	int sid = getCellScalar(x, y, xres, inSurfGrid);
+	int sid = getCellScalar(x, y, xres, _inSurfGrid);
 	//int val = (sid % 2)*255;
 	//uchar val = sid > -1 ? (uchar) (100 + 35 * (sid % 4)) : 0;
 	//uchar val = sid > -1 ? (uchar) sid : 0;
@@ -975,33 +987,6 @@ __kernel void setSidPostAr(
 	#-- END OF _growCurves(warpUi, jtGrid, frameDir):
 
 
-def writeTidImg(warpUi, inSurfGrid):
-	print "\n_writeTidImg(): BEGIN"
-	res = (len(inSurfGrid[0]), len(inSurfGrid[0][0]))
-	nLevels = warpUi.parmDic("nLevels")
-	dbImgDic = {}
-	dbImgDic["tid"] = [pygame.Surface(res) for i in range(nLevels+1)][:]
-	allTids = set()
-	for y in range(res[1]):
-		print "_writeTidImg(), y=", y
-		for x in range(res[0]):
-			for lev in range(nLevels):
-				sid = inSurfGrid[lev][x][y]
-				if not sid == None:
-					if sid in warpUi.sidToTid[lev].keys():
-						tid = warpUi.sidToTid[lev][sid]
-						if lev == 0: allTids.add(tid)
-						setAOV(warpUi, "tid", dbImgDic, lev, nLevels, x, y, ut.intToClr(tid))
-	allTidsLs = list(allTids)
-	allTidsLs.sort()
-
-	for lev in range(nLevels+1):
-		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-		levDir,imgPath = warpUi.getDebugDirAndImg("tid", levStr)
-		ut.mkDirSafe(levDir)
-		print "_writeTidImg(): imgPath", imgPath
-		pygame.image.save(dbImgDic["tid"][lev], imgPath)
-	print "\n_writeTidImg(): END"
 
 def genDataWrapper(warpUi):
 	genDataStartTime = time.time()
@@ -1023,9 +1008,11 @@ def genDataWrapper(warpUi):
 	pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
 	sidToCvDic = convertCvDicToDic(sidToCvs, warpUi)
 	pickleDump(frameDir + "/sidToTid", warpUi.sidToTid)
-	print "_genData(): warpUi.sidToTid:", warpUi.sidToTid
 	pickleDump(frameDir + "/sidToCvDic", sidToCvDic)
 	pickleDump(frameDir + "/tholds", tholds)
+	
+	metaData = {"nextSid": warpUi.nextSid}
+	pickleDump(frameDir + "/metaData", metaData)
 
 	# Save tidToSids every backupDataEvery frames
 	if fr % warpUi.parmDic("backupDataEvery") == 0:
