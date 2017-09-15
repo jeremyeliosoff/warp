@@ -448,21 +448,22 @@ def loadPrevFrData(warpUi):
 		else:
 			print "_loadPrevFrData(): prevInSurfGridPath not found!!", prevInSurfGridPath
 
-	# sidToTid is NOT CURRENTLY USED!!
-	prevSidToTidPath = warpUi.framesDataDir + ("/%05d/sidToTid" % (fr-1))
-	if warpUi.sidToTid == None:
-		if os.path.exists(prevSidToTidPath):
-			print "_loadPrevFrData(): sidToTid == None and prev one found, loading..."
-			warpUi.sidToTid = pickleLoad(prevSidToTidPath)
-		else:
-			print "_loadPrevFrData(): prevSidToTidPath not found!!", prevSidToTidPath
+	## sidToTid is NOT CURRENTLY USED!!
+	#prevSidToTidPath = warpUi.framesDataDir + ("/%05d/sidToTid" % (fr-1))
+	#if warpUi.sidToTid == None:
+	#	if os.path.exists(prevSidToTidPath):
+	#		print "_loadPrevFrData(): sidToTid == None and prev one found, loading..."
+	#		warpUi.sidToTid = pickleLoad(prevSidToTidPath)
+	#	else:
+	#		print "_loadPrevFrData(): prevSidToTidPath not found!!", prevSidToTidPath
 
-	# sidToTid is NOT CURRENTLY USED!!
 	prevMetaDataPath = warpUi.framesDataDir + ("/%05d/metaData" % (fr-1))
 	if os.path.exists(prevMetaDataPath):
-		print "_loadPrevFrData(): sidToTid == None and prev one found, loading..."
+		print "_loadPrevFrData(): metaData == None and prev one found, loading..."
 		metaData = pickleLoad(prevMetaDataPath)
 		if "nextSid" in metaData.keys():
+			print "_loadPrevFrData(): metaData: setting warpUi.nextSid to", \
+				metaData["nextSid"]
 			warpUi.nextSid = metaData["nextSid"]
 	else:
 		print "_loadPrevFrData(): prevMetaDataPath not found!!", prevMetaDataPath
@@ -509,8 +510,8 @@ def growCurves(warpUi, jtGrid, frameDir):
 		loadPrevFrData(warpUi)
 		if warpUi.tidToSids == None:
 			warpUi.tidToSids = [{} for i in range(nLevels)]
-	if warpUi.sidToTid == None:
-		warpUi.sidToTid = [{} for i in range(nLevels)]
+	#if warpUi.sidToTid == None:
+	#	warpUi.sidToTid = [{} for i in range(nLevels)]
 
 	#frDirDebug = open(frameDir + "/debug", 'w')
 	#frDirDebug.write("PRE warpUi.nextSid:" + str(warpUi.nextSid) + "\n\n")
@@ -817,7 +818,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 				if sid in sidToCvs[lev].keys():
 					print "_growCurves():\t\tdeleting from sidToCvs, sid=", sid
 					del(sidToCvs[lev][sid])
-			elif not sid in warpUi.sidToTid[lev].keys(): # Make sure this sid isn't already in a tid.
+			elif True: # TODO remove thisnot sid in warpUi.sidToTid[lev].keys(): # Make sure this sid isn't already in a tid.
 				# This sid will not be merged, it will be a tid.
 				if sid in warpUi.tidToSids[lev].keys():
 					warpUi.tidToSids[lev][sid]["sids"].add(sid)
@@ -832,7 +833,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 		for tid,sidData in warpUi.tidToSids[lev].items():
 			# Delete old tids.
 			if warpUi.tidToSids[lev][tid]["birthFr"] < fr - 1 \
-					- warpUi.parmDic("frPerCycle") - warpUi.parmDic("backupDataEvery"):
+					- 2*warpUi.parmDic("frPerCycle") - warpUi.parmDic("backupDataEvery"):
 				del(warpUi.tidToSids[lev][tid])
 				continue
 			sids = sidData["sids"]
@@ -1054,7 +1055,7 @@ def genDataWrapper(warpUi):
 	# Save inSurfGrid
 	pickleDump(frameDir + "/inSurfGrid", inSurfGrid)
 	sidToCvDic = convertCvDicToDic(sidToCvs, warpUi)
-	pickleDump(frameDir + "/sidToTid", warpUi.sidToTid)
+	#pickleDump(frameDir + "/sidToTid", warpUi.sidToTid)
 	pickleDump(frameDir + "/sidToCvDic", sidToCvDic)
 	pickleDump(frameDir + "/tholds", tholds)
 	
@@ -1063,7 +1064,8 @@ def genDataWrapper(warpUi):
 
 	# Save tidToSids every backupDataEvery frames
 	if fr % warpUi.parmDic("backupDataEvery") == 0:
-		print "_genData(): BACKING UP tidToSids and sidToTid:"
+		#print "_genData(): BACKING UP tidToSids and sidToTid:"
+		print "_genData(): BACKING UP tidToSids :"
 		saveTidToSid(warpUi)
 
 	# TEMP - aovs to compare prev + cur inSurfGrids.
@@ -1220,7 +1222,7 @@ def calcProg(warpUi, sid, level, lev):
 	progEnd = progStart + progDur
 	#progEnd = progStart + progDur
 	#return ut.smoothstep(progStart, progEnd, level)
-	return min(1, 2*ut.smoothstep(progStart, progEnd, level))
+	return min(1, ut.smoothstep(progStart, progEnd, level))
 
 def calcXf(warpUi, prog, res, relSize, bbx):
 	fall = prog * res[1] * warpUi.parmDic("fallDist")

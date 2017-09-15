@@ -21,7 +21,7 @@ class warpUi():
 	def flushDics(self):
 		print "\n_flushDics(): Flushing dics"
 		#self.tidToSids = None
-		self.sidToTid = None
+		#self.sidToTid = None
 		self.nextSid = 0
 		
 	def putParmDicInUI(self):
@@ -1047,7 +1047,7 @@ class warpUi():
 		self.updateRenAndDataDirs()
 		self.nextSid = 0
 		self.tidToSids = None
-		self.sidToTid = None
+		#self.sidToTid = None
 		self.tholds = None
 		self.root = Tk()
 		self.root.wm_title("WARP")
