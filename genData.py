@@ -895,10 +895,12 @@ void setArrayCell(int x, int y, int xres,
   uchar* val,
   uchar __attribute__((address_space(1)))* ret)
 {
-	int i = y * xres * 3 + x * 3;
-	ret[i] = val[0];
-	ret[i+1] = val[1];
-	ret[i+2] = val[2];
+	if (x > 0 && x < xres && y > 0 and y < yres) {
+		int i = y * xres * 3 + x * 3;
+		ret[i] = val[0];
+		ret[i+1] = val[1];
+		ret[i+2] = val[2];
+	}
 }
 
 int getCellScalar(int x, int y, int xres,
@@ -1222,6 +1224,7 @@ def renCvWrapper(warpUi):
 			warpUi.tidGrid = inSurfGridToTidGrid(warpUi)
 			pickleDump(tidGridPath, warpUi.tidGrid)
 			print "\n_renCvWrapper(): post _renGPU...\n\n"
+		renTidGridGPU(warpUi)
 	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
 
 
@@ -1410,54 +1413,7 @@ def inSurfGridToTidGrid(warpUi):
 	nLevels = warpUi.parmDic("nLevels")
 	res = warpUi.res
 
-	kernel = """
-void setArrayCell(int x, int y, int xres,
-  uchar* val,
-  uchar __attribute__((address_space(1)))* ret)
-{
-	int i = y * xres * 3 + x * 3;
-	ret[i] = val[0];
-	ret[i+1] = val[1];
-	ret[i+2] = val[2];
-}
-
-int getCellScalar(int x, int y, int xres,
-  int __attribute__((address_space(1)))* _inSurfGrid)
-{
-	int i = y * xres + x;
-	return _inSurfGrid[i];
-}
-
-__kernel void lookupTid(
-			int xres,
-			int nClrs,
-			__global int* _inSurfGrid,
-			__global uchar* clrsInt,
-			__global uchar* sidPostThisAr,
-			__global uchar* sidPostALL)
-{
-	int x = get_global_id(1);
-	int y = get_global_id(0);
-
-	int sid = getCellScalar(x, y, xres, _inSurfGrid);
-
-	int clrInd = sid % nClrs;
-
-	uchar val[] = {0, 0, 0};
-	if (sid > -1) {
-		val[0] = clrsInt[clrInd * 3];
-		val[1] = clrsInt[clrInd * 3+1];
-		val[2] = clrsInt[clrInd * 3+2];
-		setArrayCell(x, y, xres, val, sidPostALL);
-		setArrayCell(x, y, xres, val, sidPostThisAr);
-	} else {
-		// Strange: if you don't do this, it accumulates levs.
-		setArrayCell(x, y, xres, val, sidPostThisAr);
-	}
-}
-"""
-
-	print "_renGPU(): Converting tidToSids to sidToTid..."
+	print "inSurfGridToTidGrid(): Converting tidToSids to sidToTid..."
 	sidToTid = [{} for lev in range(nLevels)]
 	for lev in range(nLevels):
 		for tid, vals in warpUi.tidToSids[lev].items():
@@ -1465,16 +1421,14 @@ __kernel void lookupTid(
 				#sidToTid[lev].append((sid, tid))
 				sidToTid[lev][sid] = tid
 
-	tidImgs = []
 	inSurfGridPath = warpUi.framesDataDir + ("/%05d/inSurfGrid" % fr)
 	inSurfGrid = pickleLoad(inSurfGridPath)
 
-	print "\n_renGPU(): Doing GPU rendering..."
 	tidGrid = []
 	maxTid = -1
 	for lev in range(nLevels):
 
-		print "\n_renGPU(): Making tidGridThisLev for lev", lev
+		print "\n_inSurfGridToTidGrid(): Making tidGridThisLev for lev", lev
 		tidGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
 		for xx in range(res[0]):
 			for yy in range(res[1]):
@@ -1487,8 +1441,83 @@ __kernel void lookupTid(
 				else:
 					tidGridThisLev[xx][yy] = 0
 		tidGrid.append(tidGridThisLev)
-		print "_renGPU(): Done tidGridThisLev for lev", lev
-		tidGridAr = np.array(tidGridThisLev, dtype=np.intc)
+	
+	return tidGrid
+
+
+
+def renTidGridGPU(warpUi):
+
+	fr = warpUi.parmDic("fr")
+	nLevels = warpUi.parmDic("nLevels")
+	res = warpUi.res
+
+	kernelRen = """
+void setArrayCell(int x, int y, int xres, int yres,
+  uchar* val,
+  uchar __attribute__((address_space(1)))* ret)
+{
+	if (x >= 0 && x < xres && y >= 0 and y < yres) {
+		//int i = (y * xres + x) * 3;
+		int i = (x * yres + y) * 3;
+		ret[i] = val[0];
+		ret[i+1] = val[1];
+		ret[i+2] = val[2];
+	}
+}
+
+int getCellScalar(int x, int y, int yres,
+  int __attribute__((address_space(1)))* _inSurfGrid)
+{
+	//int i = y * xres + x;
+	int i = x * yres + y;
+	return _inSurfGrid[i];
+}
+
+__kernel void renFromTid(
+			int xres,
+			int yres,
+			int nClrs,
+			__global int* _inSurfGrid,
+			__global uchar* clrsInt,
+			__global uchar* sidPostThisAr,
+			__global uchar* sidPostALL)
+{
+	int xi = get_global_id(0);
+	int yi = get_global_id(1);
+
+	int tid = getCellScalar(xi, yi, yres, _inSurfGrid);
+
+	int clrInd = tid % nClrs;
+
+	//int xo = xi;
+	//srand(tid);
+	float xofs = 15;//.01*((float) (rand() % 100)) * 2;
+	int xo = xi + xofs;
+	int yo = yi;
+
+	uchar val[] = {0, 0, 0};
+	if (tid > -1) {
+		val[0] = clrsInt[clrInd * 3];
+		val[1] = clrsInt[clrInd * 3+1];
+		val[2] = clrsInt[clrInd * 3+2];
+		setArrayCell(xo, yo, xres, yres, val, sidPostALL);
+		setArrayCell(xo, yo, xres, yres, val, sidPostThisAr);
+	} else {
+		// Strange: if you don't do this, it accumulates levs.
+		setArrayCell(xo, yo, xres, yres, val, sidPostThisAr);
+	}
+}
+"""
+
+	tidImgs = []
+
+	print "\n_renGPU(): Doing GPU rendering..."
+	maxTid = -1
+	for lev in range(nLevels):
+
+		print "\n_renGPU(): Making tidGridThisLev for lev", lev
+		tidGridAr = np.array(warpUi.tidGrid[lev], dtype=np.intc)
 		tidGridAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidGridAr)
 
@@ -1505,11 +1534,12 @@ __kernel void lookupTid(
 		tidThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY,
 			tidThisLev.nbytes)
 
-		bld = cl.Program(warpUi.cntxt, kernel).build()
-		launch = bld.lookupTid(
+		bld = cl.Program(warpUi.cntxt, kernelRen).build()
+		launch = bld.renFromTid(
 				warpUi.queue,
 				tidGridAr.shape,
 				None,
+				np.int32(res[0]),
 				np.int32(res[1]),
 				np.int32(len(ut.clrsInt)),
 				tidGridAr_buf,
@@ -1530,12 +1560,10 @@ __kernel void lookupTid(
 
 	for lev in range(nLevels + 1):
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-		levDir,imgPath = warpUi.getDebugDirAndImg("tid", levStr)
+		levDir,imgPath = warpUi.getDebugDirAndImg("tid2", levStr)
 		ut.mkDirSafe(levDir)
 		print "_growCurves(): saving", imgPath
 		tidImgs[lev].save(imgPath)
-	
-	return tidGrid
 
 
 def renCv(warpUi, sidToCvDic, tholds):
