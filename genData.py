@@ -6,6 +6,10 @@ import pyopencl as cl
 import numpy as np
 from PIL import Image
 
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
+
 
 outFile = "/tmp/out"
 
@@ -1171,6 +1175,7 @@ def getLastFrameDirPath(warpUi, fr=None):
 	return frameDir
 
 def renCvWrapper(warpUi):
+	renCvWrapperStartTime = time.time()
 	print "_renCvWrapper(): BEGIN"
 	fr, frameDir = warpUi.makeFramesDataDir(doMake=False)
 	frPerCycle = warpUi.parmDic("frPerCycle")
@@ -1206,8 +1211,18 @@ def renCvWrapper(warpUi):
 			warpUi.animButCmd()
 		warpUi.setStatus("error", "ERROR: sidToCvDic == None")
 	else:
-		renCv(warpUi, sidToCvDic, tholds)
-	print "_renCvWrapper(): END"
+		tidGridPath = warpUi.framesDataDir + ("/%05d/tidGrid" % fr)
+		print "_renCvWrapper(): Checking for existence of", tidGridPath, "..."
+		if os.path.exists(tidGridPath):
+			print "_renCvWrapper():", tidGridPath, "exists.  Loading..."
+			warpUi.tidGrid = pickleLoad(tidGridPath)
+		else:
+			print "_renCvWrapper():", tidGridPath, " DOES NOT exist.  Creating with _renGPU()..."
+			#renCv(warpUi, sidToCvDic, tholds)
+			warpUi.tidGrid = renGPU(warpUi)
+			pickleDump(tidGridPath, warpUi.tidGrid)
+			print "\n_renCvWrapper(): post _renGPU...\n\n"
+	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
 
 
 
@@ -1389,16 +1404,192 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 
 			iJt += 1
 
+def renGPU(warpUi):
+
+	fr = warpUi.parmDic("fr")
+	nLevels = warpUi.parmDic("nLevels")
+	res = warpUi.res
+
+	#print "warpUi.tidToSids:"
+	#pp.pprint(warpUi.tidToSids)
+
+	#sidToTidAr = np.array(sidToTid)
+
+	#print "sidToTidAr:"
+	#pp.pprint(sidToTidAr)
+
+	#print "\nsorting sidToTidAr..."
+	#sidToTidAr.sort()
+	#print "_renGPU(): Sorting sidToTidLs..."
+	#for lev in range(nLevels):
+	#	sidToTidLs[lev].sort()
+	#print "_renGPU(): Done sorting sidToTidLs."
+	#print "\nDone sorting sidToTidAr, sorted:"
+	#pp.pprint(sidToTidAr)
+
+	kernel = """
+void setArrayCell(int x, int y, int xres,
+  uchar* val,
+  uchar __attribute__((address_space(1)))* ret)
+{
+	int i = y * xres * 3 + x * 3;
+	ret[i] = val[0];
+	ret[i+1] = val[1];
+	ret[i+2] = val[2];
+}
+
+int getCellScalar(int x, int y, int xres,
+  int __attribute__((address_space(1)))* _inSurfGrid)
+{
+	int i = y * xres + x;
+	return _inSurfGrid[i];
+}
+
+__kernel void lookupTid(
+			int xres,
+			int nClrs,
+			//int sidToTidLen,
+			//__global int* sidToTid,
+			__global int* _inSurfGrid,
+			__global uchar* clrsInt,
+			__global uchar* sidPostThisAr,
+			__global uchar* sidPostALL)
+{
+	int x = get_global_id(1);
+	int y = get_global_id(0);
+
+	int sid = getCellScalar(x, y, xres, _inSurfGrid);
+
+	// Lookup tid from sid.
+	// int i;
+	// int tid = 0;
+	// bool found = 0;
+	// for (i = 0; i < sidToTidLen && found == 0; i ++) {
+	// 	if (sid == sidToTid[i*2]) {
+	// 		tid = sidToTid[i*2 +1];
+	// 		found == 1;
+	// 	}
+	// }
+
+	int clrInd = sid % nClrs;
+
+	uchar val[] = {0, 0, 0};
+	if (sid > -1) {
+		val[0] = clrsInt[clrInd * 3];
+		val[1] = clrsInt[clrInd * 3+1];
+		val[2] = clrsInt[clrInd * 3+2];
+		setArrayCell(x, y, xres, val, sidPostALL);
+		setArrayCell(x, y, xres, val, sidPostThisAr);
+	} else {
+		// Strange: if you don't do this, it accumulates levs.
+		setArrayCell(x, y, xres, val, sidPostThisAr);
+	}
+}
+"""
+
+	print "_renGPU(): Converting tidToSids to sidToTid..."
+	sidToTid = [{} for lev in range(nLevels)]
+	for lev in range(nLevels):
+		for tid, vals in warpUi.tidToSids[lev].items():
+			for sid in vals["sids"]:
+				#sidToTid[lev].append((sid, tid))
+				sidToTid[lev][sid] = tid
+
+	tidImgs = []
+	inSurfGridPath = warpUi.framesDataDir + ("/%05d/inSurfGrid" % fr)
+	inSurfGrid = pickleLoad(inSurfGridPath)
+
+	print "\n_renGPU(): Doing GPU rendering..."
+	tidGrid = []
+	maxTid = -1
+	for lev in range(nLevels):
+
+		#sidToTidThisLev = np.array(sidToTid[lev], dtype=np.intc)
+		#sidToTid_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		#	cl.mem_flags.COPY_HOST_PTR,hostbuf=sidToTidThisLev)
+
+		#print "\ninSurfGrid[" + str(lev) + "]:"
+		#pp.pprint(inSurfGrid[lev])
+		print "\n_renGPU(): Making tidGridThisLev for lev", lev
+		tidGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
+		for xx in range(res[0]):
+			for yy in range(res[1]):
+				sid = inSurfGrid[lev][xx][yy]
+				if sid == None:
+					tidGridThisLev[xx][yy] = -1
+				elif sid in sidToTid[lev].keys():
+					tidGridThisLev[xx][yy] = sidToTid[lev][sid]
+					maxTid = max(maxTid, tidGridThisLev[xx][yy])
+				else:
+					tidGridThisLev[xx][yy] = 0
+		tidGrid.append(tidGridThisLev)
+		print "_renGPU(): Done tidGridThisLev for lev", lev
+		#tidGrid = [[[sidToTid[lev][inSurfGrid[lev][xx][yy]] if inSurfGrid[lev][xx][yy] else 0 for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
+		tidGridAr = np.array(tidGridThisLev, dtype=np.intc)
+		tidGridAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidGridAr)
+
+		#inSurfGridNoNone = [[-1 if inSurfGrid[lev][xx][yy] == None else inSurfGrid[lev][xx][yy] for yy in range(res[1])] for xx in range(res[0])]
+		#inSurfGridAr = np.array(inSurfGridNoNone, dtype=np.intc)
+		#inSurfGridAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		#	cl.mem_flags.COPY_HOST_PTR,hostbuf=inSurfGridAr)
+
+		if lev == 0:
+			tidALL = np.zeros(tidGridAr.shape + (3,), dtype=np.uint8)
+			tidALL_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
+				cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALL)
+
+		clrsIntAr = np.array(ut.clrsInt, dtype=np.uint8)
+		clrsIntAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
+
+		tidThisLev = np.zeros(tidGridAr.shape + (3,), dtype=np.uint8)
+		tidThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY,
+			tidThisLev.nbytes)
+
+		bld = cl.Program(warpUi.cntxt, kernel).build()
+		launch = bld.lookupTid(
+				warpUi.queue,
+				tidGridAr.shape,
+				None,
+				np.int32(res[1]),
+				np.int32(len(ut.clrsInt)),
+				#np.int32(len(sidToTidThisLev)),
+				#sidToTid_buf,
+				tidGridAr_buf,
+				clrsIntAr_buf,
+				tidThisLev_buf,
+				tidALL_buf)
+		launch.wait()
+
+		cl.enqueue_read_buffer(warpUi.queue, tidThisLev_buf, tidThisLev).wait()
+		cl.enqueue_read_buffer(warpUi.queue, tidALL_buf, tidALL).wait()
+
+		tidImgs.append(Image.fromarray(np.swapaxes(tidThisLev, 0, 1), 'RGB'))
+		tidImgs[lev].save("/tmp/img." + str(lev) + ".png")
+	tidImgs.append(Image.fromarray(np.swapaxes(tidALL, 0, 1), 'RGB'))
+	print "\n_renGPU(): Done GPU rendering."
+
+	print "\n_renGPU(): maxTid", maxTid
+
+	for lev in range(nLevels + 1):
+		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+		levDir,imgPath = warpUi.getDebugDirAndImg("tid", levStr)
+		ut.mkDirSafe(levDir)
+		print "_growCurves(): saving", imgPath
+		tidImgs[lev].save(imgPath)
+	
+	return tidGrid
 
 
 def renCv(warpUi, sidToCvDic, tholds):
 	
 	print "\n\n\n"
-	print "_renCv(): *******************"
-	print "_renCv(): *** DOING renCv ***"
-	print "_renCv(): *******************"
+	print "_renCv(): ********************"
+	print "_renCv(): *** DOING _renCv ***"
+	print "_renCv(): ********************"
 
-	warpUi.setStatus("busy", "Doing renCv...")
+	warpUi.setStatus("busy", "Doing _renCv...")
 
 	res = warpUi.res
 	nLevels = warpUi.parmDic("nLevels")
@@ -1520,7 +1711,7 @@ def renCv(warpUi, sidToCvDic, tholds):
 		pygame.image.save(outputs[name], imgPath)
 		ut.exeCmd("convert -resize 200% " + imgPath + " " + imgPath)
 
-	print "_renCv(): done renCv for fr", warpUi.parmDic("fr")
+	print "_renCv(): done _renCv for fr", warpUi.parmDic("fr")
 
 
 
