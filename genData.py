@@ -1219,7 +1219,7 @@ def renCvWrapper(warpUi):
 		else:
 			print "_renCvWrapper():", tidGridPath, " DOES NOT exist.  Creating with _renGPU()..."
 			#renCv(warpUi, sidToCvDic, tholds)
-			warpUi.tidGrid = renGPU(warpUi)
+			warpUi.tidGrid = inSurfGridToTidGrid(warpUi)
 			pickleDump(tidGridPath, warpUi.tidGrid)
 			print "\n_renCvWrapper(): post _renGPU...\n\n"
 	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
@@ -1404,28 +1404,11 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 
 			iJt += 1
 
-def renGPU(warpUi):
+def inSurfGridToTidGrid(warpUi):
 
 	fr = warpUi.parmDic("fr")
 	nLevels = warpUi.parmDic("nLevels")
 	res = warpUi.res
-
-	#print "warpUi.tidToSids:"
-	#pp.pprint(warpUi.tidToSids)
-
-	#sidToTidAr = np.array(sidToTid)
-
-	#print "sidToTidAr:"
-	#pp.pprint(sidToTidAr)
-
-	#print "\nsorting sidToTidAr..."
-	#sidToTidAr.sort()
-	#print "_renGPU(): Sorting sidToTidLs..."
-	#for lev in range(nLevels):
-	#	sidToTidLs[lev].sort()
-	#print "_renGPU(): Done sorting sidToTidLs."
-	#print "\nDone sorting sidToTidAr, sorted:"
-	#pp.pprint(sidToTidAr)
 
 	kernel = """
 void setArrayCell(int x, int y, int xres,
@@ -1448,8 +1431,6 @@ int getCellScalar(int x, int y, int xres,
 __kernel void lookupTid(
 			int xres,
 			int nClrs,
-			//int sidToTidLen,
-			//__global int* sidToTid,
 			__global int* _inSurfGrid,
 			__global uchar* clrsInt,
 			__global uchar* sidPostThisAr,
@@ -1459,17 +1440,6 @@ __kernel void lookupTid(
 	int y = get_global_id(0);
 
 	int sid = getCellScalar(x, y, xres, _inSurfGrid);
-
-	// Lookup tid from sid.
-	// int i;
-	// int tid = 0;
-	// bool found = 0;
-	// for (i = 0; i < sidToTidLen && found == 0; i ++) {
-	// 	if (sid == sidToTid[i*2]) {
-	// 		tid = sidToTid[i*2 +1];
-	// 		found == 1;
-	// 	}
-	// }
 
 	int clrInd = sid % nClrs;
 
@@ -1504,12 +1474,6 @@ __kernel void lookupTid(
 	maxTid = -1
 	for lev in range(nLevels):
 
-		#sidToTidThisLev = np.array(sidToTid[lev], dtype=np.intc)
-		#sidToTid_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		#	cl.mem_flags.COPY_HOST_PTR,hostbuf=sidToTidThisLev)
-
-		#print "\ninSurfGrid[" + str(lev) + "]:"
-		#pp.pprint(inSurfGrid[lev])
 		print "\n_renGPU(): Making tidGridThisLev for lev", lev
 		tidGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
 		for xx in range(res[0]):
@@ -1524,15 +1488,9 @@ __kernel void lookupTid(
 					tidGridThisLev[xx][yy] = 0
 		tidGrid.append(tidGridThisLev)
 		print "_renGPU(): Done tidGridThisLev for lev", lev
-		#tidGrid = [[[sidToTid[lev][inSurfGrid[lev][xx][yy]] if inSurfGrid[lev][xx][yy] else 0 for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)]
 		tidGridAr = np.array(tidGridThisLev, dtype=np.intc)
 		tidGridAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidGridAr)
-
-		#inSurfGridNoNone = [[-1 if inSurfGrid[lev][xx][yy] == None else inSurfGrid[lev][xx][yy] for yy in range(res[1])] for xx in range(res[0])]
-		#inSurfGridAr = np.array(inSurfGridNoNone, dtype=np.intc)
-		#inSurfGridAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		#	cl.mem_flags.COPY_HOST_PTR,hostbuf=inSurfGridAr)
 
 		if lev == 0:
 			tidALL = np.zeros(tidGridAr.shape + (3,), dtype=np.uint8)
@@ -1554,8 +1512,6 @@ __kernel void lookupTid(
 				None,
 				np.int32(res[1]),
 				np.int32(len(ut.clrsInt)),
-				#np.int32(len(sidToTidThisLev)),
-				#sidToTid_buf,
 				tidGridAr_buf,
 				clrsIntAr_buf,
 				tidThisLev_buf,
