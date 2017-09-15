@@ -717,7 +717,8 @@ class warpUi():
 		verDir = self.seqRenDir if verType == "ren" else self.seqDataDir
 		ut.mkDirSafe(verDir + "/" + nextVer)
 		# Copy parms
-		shutil.copy2(self.seqDataVDir + "/parms", verDir + "/" + nextVer)
+		if os.path.exists(self.seqDataVDir + "/parms"):
+			shutil.copy2(self.seqDataVDir + "/parms", verDir + "/" + nextVer)
 
 		self.setVal(verType + "Ver", nextVer)
 

@@ -1466,6 +1466,14 @@ void setArrayCell(int x, int y, int xres, int yres,
 	}
 }
 
+float jRand(int seed) {
+	return ((seed + 11)*(seed + 1321) % 1000)/1000.0;
+}
+
+float jRandNP(int seed) {
+	return 2.0*jRand(seed) - 1.0;
+}
+
 int getCellScalar(int x, int y, int yres,
   int __attribute__((address_space(1)))* _inSurfGrid)
 {
@@ -1491,10 +1499,10 @@ __kernel void renFromTid(
 	int clrInd = tid % nClrs;
 
 	//int xo = xi;
-	//srand(tid);
-	float xofs = 15;//.01*((float) (rand() % 100)) * 2;
+	float xofs = jRandNP(tid) * 10;
+	float yofs = jRandNP(tid+11) * 10;
 	int xo = xi + xofs;
-	int yo = yi;
+	int yo = yi + yofs;
 
 	uchar val[] = {0, 0, 0};
 	if (tid > -1) {
