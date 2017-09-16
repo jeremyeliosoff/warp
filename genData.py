@@ -1215,7 +1215,6 @@ def renCvWrapper(warpUi):
 			warpUi.dataLoadedForFr = fr
 		else:
 			print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _renGPU()..."
-			#renCv(warpUi, sidToCvDic, tholds)
 			warpUi.tidPosGrid = inSurfGridToTidGrid(warpUi)
 			pickleDump(tidPosGridPath, warpUi.tidPosGrid)
 			warpUi.dataLoadedForFr = fr
@@ -1479,9 +1478,11 @@ def renTidGridGPU(warpUi):
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
 
 		# Make corresponding attrs lists.
-		tids = warpUi.tidToSids[lev].keys()
+		#tids = warpUi.tidToSids[lev].keys()
 		atrBbx = []
 		for tid in tids:
+			if tid % 3 == 0:
+				print "XXXXXXlev:", lev, "; tid", tid, "--", warpUi.tidToSids[lev][tid]
 			if "bbx" in warpUi.tidToSids[lev][tid].keys():
 				atrBbx.append(warpUi.tidToSids[lev][tid]["bbx"])
 			else:
@@ -1513,6 +1514,8 @@ def renTidGridGPU(warpUi):
 		tidThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
 			tidThisLev.nbytes)
 
+		levThresh = warpUi.getOfsWLev(lev) % 1.0
+
 		bld = cl.Program(cntxt, kernelRen).build()
 		launch = bld.renFromTid(
 				queue,
@@ -1521,6 +1524,7 @@ def renTidGridGPU(warpUi):
 				np.int32(res[0]),
 				np.int32(res[1]),
 				np.int32(len(ut.clrsInt)),
+				np.float32(levThresh),
 				tidPosGridAr_buf,
 				tidsAr_buf,
 				atrBbxAr_buf,
@@ -1548,142 +1552,10 @@ def renTidGridGPU(warpUi):
 			print "\n\n_renTidGridGPU(): ***** Saving", name, " image, path:", imgPath, "\n\n"
 			print "**********************************************\n\n"
 		else:
-			print "_renCv(): Saving", name, " image, path:", imgPath
+			print "_renTidGridGPU(): Saving", name, " image, path:", imgPath
 		tidImgs[lev].save(imgPath)
 
 	print "\n_renTidGridGPU(): END\n"
-
-
-def renCv(warpUi, sidToCvDic, tholds):
-	
-	print "\n\n\n"
-	print "_renCv(): ********************"
-	print "_renCv(): *** DOING _renCv ***"
-	print "_renCv(): ********************"
-
-	warpUi.setStatus("busy", "Doing _renCv...")
-
-	res = warpUi.res
-	nLevels = warpUi.parmDic("nLevels")
-
-
-	outputs = {}
-	srcImg = pygame.image.load(warpUi.images["source"]["path"])
-	# TODO can you reuse srcImg for srcImgRenCv without referencing/modifying it?
-	srcImgRenCv = pygame.image.load(warpUi.images["source"]["path"])
-
-	dark = pygame.Surface((srcImgRenCv.get_width(), srcImgRenCv.get_height()), flags=pygame.SRCALPHA)
-	dark.fill((50, 50, 50, 0))
-	srcImgRenCv.blit(dark, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
-
-	renOutputsMultiLev = ["ren"]
-	for name in renOutputsMultiLev:
-		# TODO are those [:]s necessary?
-		outputs[name] = [pygame.Surface(res) for i in range(nLevels+1)][:]
-
-	renOutputsOneLev = ["move"]
-	for name in renOutputsOneLev:
-		outputs[name] = pygame.Surface(res)
-
-
-	renMov = False #TODO: make this a parm obv
-	if renMov:
-		ut.timerStart(warpUi, "moveImg")
-		# Visualize movement
-		circleSizeRel = .1
-		circleSize = circleSizeRel * max(res[0],res[1])
-		for x in range(res[0]):
-			for y in range(res[1]):
-				c = srcImgRenCv.get_at((x, y))
-				c = list(c)[:3]
-				c.reverse() # TODO/NOTE: Stupid fucking bug or something requires this reverse.
-				lum = int(ut.vAvg(c))
-				origin = (res[0]*warpUi.parmDic("fallVecX"), res[1]*warpUi.parmDic("fallVecY"))
-				dist = ut.vDist(origin, (x,y))
-				c[0] = 0 if dist > circleSize else 255
-				c[1] = lum
-				c[2] = lum
-				newVal = tuple(list(c) + [255])
-				outputs["move"].set_at((x,y), newVal)
-		ut.timerStop(warpUi, "moveImg")
-
-
-
-	# Sort levels in order of tholds (thresholds).
-	levLs = range(nLevels)
-	tholdsAndLevLs = zip(tholds, levLs)
-	tholdsAndLevLs.sort()
-	dud, levsSortedByTholds = zip(*tholdsAndLevLs)
-
-	print "\n\n_renCv(): tholds:", tholds
-	print "_renCv(): levsSortedByTholds:", levsSortedByTholds
-
-
-	falseArray = [[False for y in range(res[1])] for x in range(res[0])] 
-	for thold, lev in tholdsAndLevLs[warpUi.parmDic("startLev"):]:
-		tids = warpUi.tidToSids[lev].keys()
-		iTid = 0
-		nTids = len(tids)
-		print "_renCv(): lev:", lev, "thold:", thold, "nTids:", nTids
-		for tid in tids:
-			iTid += 1
-			print "\r\ttid:", tid, ("(%d of %d)" % (iTid, nTids)), "sids:",
-			sids = warpUi.tidToSids[lev][tid]["sids"]
-
-			levProg = warpUi.getOfsWLev(lev) % 1.0
-
-			# Fade in and out - TODO: Improve this
-			levelAlph = levProg* (1-levProg)**2
-			levelAlph = min(levProg*1.5*pow(thold,.5), 1)
-			levelAlph = float(lev)/(nLevels-1)
-			levelAlph = levelAlph**.1
-			levelAlph = 1 #TEMP?
-
-			iSid = 0
-			for sid in sids:
-				if sid in sidToCvDic[lev]:
-					bbx = sidToCvDic[lev][sid]["bbx"]
-					bbxSize = [bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1]]
-					relSize = [float(bbxSize[0])/res[0], float(bbxSize[1])/res[1]]
-					iSid += 1
-					print sid,
-					#print "bbx:", bbx, "relSize:", relSize,
-					# Try only ren sids <= half res
-					maxSize = warpUi.parmDic("maxSize")
-					#print "\n\n yyyyyyy sid", sid, "bbx", bbx, "bbxSize", bbxSize, "res", res, "relSize", relSize
-					if relSize[0] <= maxSize and relSize[1] <= maxSize:
-						renSid(warpUi, srcImg, tid, sid, nLevels, lev, levProg, levelAlph, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray)
-		print
-
-
-
-
-	for name in renOutputsMultiLev:
-		for lev in range(nLevels+1):
-			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-			levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
-			ut.mkDirSafe(levDir)
-			if name == "ren" and lev == nLevels:
-				print "\n\n**********************************************"
-				print "\n\n_renCv(): ***** Saving", name, " image, path:", imgPath, "\n\n"
-				print "**********************************************\n\n"
-			else:
-				print "_renCv(): Saving", name, " image, path:", imgPath
-			pygame.image.save(outputs[name][lev], imgPath)
-			# Save bmp
-			if False:
-				bmpPath = imgPath.replace(warpUi.seqImgExt, ".bmp")
-				pygame.image.save(outputs[name][lev], bmpPath)
-				#ut.exeCmd("convert -resize 400% " + bmpPath + " " + bmpPath)
-
-	for name in renOutputsOneLev:
-		levDir,imgPath = warpUi.getRenDirAndImgPath(name)
-		ut.mkDirSafe(levDir)
-		print "_renCv(): Saving", name, " image, path:", imgPath
-		pygame.image.save(outputs[name], imgPath)
-		ut.exeCmd("convert -resize 200% " + imgPath + " " + imgPath)
-
-	print "_renCv(): done _renCv for fr", warpUi.parmDic("fr")
 
 
 
