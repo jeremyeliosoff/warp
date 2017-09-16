@@ -1507,6 +1507,10 @@ def renTidGridGPU(warpUi):
 			tidALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
 				cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALL)
 
+		tidALLPrev = np.copy(tidALL)
+		tidALLPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALLPrev)
+
 		#srcImgNoSA = pygame.image.load(warpUi.images["source"]["path"])
 		#srcImg = pygame.surfarray.array3d(srcImgNoSA)
 		srcImg = Image.open(warpUi.images["source"]["path"])
@@ -1542,6 +1546,7 @@ def renTidGridGPU(warpUi):
 				clrsIntAr_buf,
 				srcImgAr_buf,
 				tidThisLev_buf,
+				tidALLPrev_buf,
 				tidALL_buf)
 		launch.wait()
 
