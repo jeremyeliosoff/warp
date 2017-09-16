@@ -1044,6 +1044,7 @@ class warpUi():
 		statsDirDest = self.seqRenVDir 
 		self.inSurfGridPrev = None
 		self.tidPosGrid = None
+		#self.srcImg = None
 		#self.sidToCvDic = None
 		#self.tholds = None
 		self.dataLoadedForFr = -1

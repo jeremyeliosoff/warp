@@ -1481,8 +1481,8 @@ def renTidGridGPU(warpUi):
 		#tids = warpUi.tidToSids[lev].keys()
 		atrBbx = []
 		for tid in tids:
-			if tid % 3 == 0:
-				print "XXXXXXlev:", lev, "; tid", tid, "--", warpUi.tidToSids[lev][tid]
+			#if tid % 3 == 0:
+			#	print "XXXXXXlev:", lev, "; tid", tid, "--", warpUi.tidToSids[lev][tid]
 			if "bbx" in warpUi.tidToSids[lev][tid].keys():
 				atrBbx.append(warpUi.tidToSids[lev][tid]["bbx"])
 			else:
@@ -1495,6 +1495,8 @@ def renTidGridGPU(warpUi):
 
 
 		tidPosGridAr = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
+		print "XXXXXX tidPosGridAr.shape", tidPosGridAr.shape
+		print
 		#print "XXXXX tidPosGridAr"
 		#print tidPosGridAr
 		tidPosGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
@@ -1504,6 +1506,15 @@ def renTidGridGPU(warpUi):
 			tidALL = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
 			tidALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
 				cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALL)
+
+		#srcImgNoSA = pygame.image.load(warpUi.images["source"]["path"])
+		#srcImg = pygame.surfarray.array3d(srcImgNoSA)
+		srcImg = Image.open(warpUi.images["source"]["path"])
+		srcImgPreSwap = np.array(srcImg)
+		srcImgAr = np.swapaxes(srcImgPreSwap, 1, 0)
+		print "XXXXXX srcImgAr.shape", srcImgAr.shape
+		srcImgAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgPreSwap)
 
 		clrsIntAr = np.array(ut.clrsInt, dtype=np.uint8)
 		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
@@ -1529,6 +1540,7 @@ def renTidGridGPU(warpUi):
 				tidsAr_buf,
 				atrBbxAr_buf,
 				clrsIntAr_buf,
+				srcImgAr_buf,
 				tidThisLev_buf,
 				tidALL_buf)
 		launch.wait()
