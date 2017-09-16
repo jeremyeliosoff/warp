@@ -9,6 +9,19 @@ void mix3(uchar* a, uchar* b, float m, uchar* ret) {
 	}
 }
 
+void getArrayCell(int x, int y, int xres, int yres,
+  uchar __attribute__((address_space(1)))* img,
+  uchar* ret)
+{
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		//int i = (y * xres + x) * 3;
+		int i = (x * yres + y) * 3;
+		ret[0] = img[i];
+		ret[1] = img[i+1];
+		ret[2] = img[i+2];
+	}
+}
+
 void setArrayCell(int x, int y, int xres, int yres,
   uchar* val,
   uchar __attribute__((address_space(1)))* ret)
@@ -138,7 +151,13 @@ __kernel void renFromTid(
 
 		mix3(imgClr, clrRand, .3, val);
 
-		setArrayCell(xo, yo, xres, yres, val, sidPostALL);
+		uchar prevVal[] = {0, 0, 0};
+		getArrayCell(xo, yo, xres, yres, sidPostALLPrev, prevVal);
+
+		uchar valMixed[] = {0, 0, 0};
+		mix3(prevVal, val, mxr, valMixed);
+
+		setArrayCell(xo, yo, xres, yres, valMixed, sidPostALL);
 		setArrayCell(xo, yo, xres, yres, val, sidPostThisAr);
 	} else {
 		// Strange: if you don't do this, it accumulates levs.

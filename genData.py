@@ -1495,8 +1495,8 @@ def renTidGridGPU(warpUi):
 
 
 		tidPosGridAr = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
-		print "XXXXXX tidPosGridAr.shape", tidPosGridAr.shape
-		print
+		#print "XXXXXX tidPosGridAr.shape", tidPosGridAr.shape
+		#print
 		#print "XXXXX tidPosGridAr"
 		#print tidPosGridAr
 		tidPosGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
@@ -1516,7 +1516,7 @@ def renTidGridGPU(warpUi):
 		srcImg = Image.open(warpUi.images["source"]["path"])
 		srcImgPreSwap = np.array(srcImg)
 		srcImgAr = np.swapaxes(srcImgPreSwap, 1, 0)
-		print "XXXXXX srcImgAr.shape", srcImgAr.shape
+		#print "XXXXXX srcImgAr.shape", srcImgAr.shape
 		srcImgAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgPreSwap)
 
