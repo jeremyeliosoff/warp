@@ -1043,7 +1043,10 @@ class warpUi():
 		global statsDirDest # for cProfile
 		statsDirDest = self.seqRenVDir 
 		self.inSurfGridPrev = None
-		self.tidGrid = None
+		self.tidPosGrid = None
+		#self.sidToCvDic = None
+		#self.tholds = None
+		self.dataLoadedForFr = -1
 		self.setVal("anim", 0)
 		nLevels = self.parmDic("nLevels")
 		self.updateRenAndDataDirs()

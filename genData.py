@@ -1204,24 +1204,33 @@ def renCvWrapper(warpUi):
 	# TODO is below necessary?  Why was it ever un-commented?  As well as MARK_A
 	#if warpUi.sidToTid == None:
 	#	warpUi.sidToTid = _pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
-	sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
-	tholds = pickleLoad(frameDir + "/tholds")
-	if sidToCvDic == None:
-		if warpUi.parmDic("anim") == 1:
-			warpUi.animButCmd()
-		warpUi.setStatus("error", "ERROR: sidToCvDic == None")
+	#if sidToCvDic == None:
+	#	if warpUi.parmDic("anim") == 1:
+	#		warpUi.animButCmd()
+	#	warpUi.setStatus("error", "ERROR: sidToCvDic == None")
 	else:
-		tidPosGridPath = warpUi.framesDataDir + ("/%05d/tidPosGrid" % fr)
-		print "_renCvWrapper(): Checking for existence of", tidPosGridPath, "..."
-		if os.path.exists(tidPosGridPath):
-			print "_renCvWrapper():", tidPosGridPath, "exists.  Loading..."
-			warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
+		#print "\n\n\n ---NNNNNNNNN-> warpUi.tidPosGrid == None", (warpUi.tidPosGrid == None)
+		#print "warpUi.dataLoadedForFr == fr",  (warpUi.dataLoadedForFr == fr)
+		#print "\n\n"
+		if (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
+			print "_renCvWrapper(): tidPosGrid already loaded for fr " \
+				+ str(fr) + ", reusing."
 		else:
-			print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _renGPU()..."
-			#renCv(warpUi, sidToCvDic, tholds)
-			warpUi.tidPosGrid = inSurfGridToTidGrid(warpUi)
-			pickleDump(tidPosGridPath, warpUi.tidPosGrid)
-			print "\n_renCvWrapper(): post _renGPU...\n\n"
+			tidPosGridPath = warpUi.framesDataDir + ("/%05d/tidPosGrid" % fr)
+			print "_renCvWrapper(): Checking for existence of", tidPosGridPath, "..."
+			#sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
+			#tholds = pickleLoad(frameDir + "/tholds")
+			if os.path.exists(tidPosGridPath):
+				print "_renCvWrapper():", tidPosGridPath, "exists.  Loading..."
+				warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
+				warpUi.dataLoadedForFr = fr
+			else:
+				print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _renGPU()..."
+				#renCv(warpUi, sidToCvDic, tholds)
+				warpUi.tidPosGrid = inSurfGridToTidGrid(warpUi)
+				pickleDump(tidPosGridPath, warpUi.tidPosGrid)
+				warpUi.dataLoadedForFr = fr
+				print "\n_renCvWrapper(): post _renGPU...\n\n"
 		renTidGridGPU(warpUi)
 	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
 
@@ -1436,12 +1445,13 @@ def inSurfGridToTidGrid(warpUi):
 
 		print "\n_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev", lev
 		tidPosGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
+		sidSet = set(sidToTidPos[lev].keys())
 		for xx in range(res[0]):
 			for yy in range(res[1]):
 				sid = inSurfGrid[lev][xx][yy]
 				if sid == None:
 					tidPosGridThisLev[xx][yy] = -1
-				elif sid in sidToTidPos[lev].keys():
+				elif sid in sidSet:
 					tidPosGridThisLev[xx][yy] = sidToTidPos[lev][sid]
 					maxTid = max(maxTid, tidPosGridThisLev[xx][yy])
 				else:
@@ -1453,6 +1463,7 @@ def inSurfGridToTidGrid(warpUi):
 
 
 def renTidGridGPU(warpUi):
+	print "\n_renTidGridGPU(): BEGIN\n"
 	
 	# Refresh these?
 	cntxt = cl.create_some_context()
@@ -1462,80 +1473,35 @@ def renTidGridGPU(warpUi):
 	nLevels = warpUi.parmDic("nLevels")
 	res = warpUi.res
 
-	kernelRen = """
-void setArrayCell(int x, int y, int xres, int yres,
-  uchar* val,
-  uchar __attribute__((address_space(1)))* ret)
-{
-	if (x >= 0 && x < xres && y >= 0 and y < yres) {
-		//int i = (y * xres + x) * 3;
-		int i = (x * yres + y) * 3;
-		ret[i] = val[0];
-		ret[i+1] = val[1];
-		ret[i+2] = val[2];
-	}
-}
-
-float jRand(int seed) {
-	return ((seed + 11)*(seed + 1321) % 1000)/1000.0;
-}
-
-float jRandNP(int seed) {
-	return 2.0*jRand(seed) - 1.0;
-}
-
-int getCellScalar(int x, int y, int yres,
-  int __attribute__((address_space(1)))* _inSurfGrid)
-{
-	//int i = y * xres + x;
-	int i = x * yres + y;
-	return _inSurfGrid[i];
-}
-
-__kernel void renFromTid(
-			int xres,
-			int yres,
-			int nClrs,
-			__global int* _inSurfGrid,
-			__global int* tids,
-			__global uchar* clrsInt,
-			__global uchar* sidPostThisAr,
-			__global uchar* sidPostALL)
-{
-	int xi = get_global_id(0);
-	int yi = get_global_id(1);
-	uchar val[] = {0, 0, 0};
-
-	int tidPos = getCellScalar(xi, yi, yres, _inSurfGrid);
-	if (tidPos > -1) {
-		int tid = tids[tidPos];
-
-		int clrInd = tid % nClrs;
-
-		//int xo = xi;
-		float xofs = jRandNP(tid) * 10;
-		float yofs = jRandNP(tid+11) * 10;
-		int xo = xi + xofs;
-		int yo = yi + yofs;
-
-		uchar val[] = {0, 0, 0};
-		val[0] = clrsInt[clrInd * 3];
-		val[1] = clrsInt[clrInd * 3+1];
-		val[2] = clrsInt[clrInd * 3+2];
-		setArrayCell(xo, yo, xres, yres, val, sidPostALL);
-		setArrayCell(xo, yo, xres, yres, val, sidPostThisAr);
-	} else {
-		// Strange: if you don't do this, it accumulates levs.
-		setArrayCell(xi, yi, xres, yres, val, sidPostThisAr);
-	}
-}
-"""
+	kernelPath = ut.projDir + "/GPUrenFromTidPos.c"
+	with open(kernelPath) as f:
+		kernelRen = "".join(f.readlines())
 
 	tidImgs = []
 
 	print "\n_renGPU(): Doing GPU rendering..."
-	maxTid = -1
 	for lev in range(nLevels):
+
+		# Make sorted tids list.
+		tids = warpUi.tidToSids[lev].keys()
+		tids.sort()
+		tidsAr = np.array(tids, dtype=np.intc)
+		tidsAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
+
+		# Make corresponding attrs lists.
+		tids = warpUi.tidToSids[lev].keys()
+		atrBbx = []
+		for tid in tids:
+			if "bbx" in warpUi.tidToSids[lev][tid].keys():
+				atrBbx.append(warpUi.tidToSids[lev][tid]["bbx"])
+			else:
+				print "_renTidGridGPU(): bbx not in keys! tid:", tid
+				atrBbx.append([[-1,-1],[-1,-1]])
+		atrBbxAr = np.array(atrBbx, dtype=np.intc)
+		atrBbxAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=atrBbxAr)
+
 
 
 		tidPosGridAr = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
@@ -1553,12 +1519,6 @@ __kernel void renFromTid(
 		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
 
-		tids = warpUi.tidToSids[lev].keys()
-		tids.sort()
-		tidsAr = np.array(tids, dtype=np.intc)
-		tidsAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
-
 
 		tidThisLev = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
 		tidThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
@@ -1574,6 +1534,7 @@ __kernel void renFromTid(
 				np.int32(len(ut.clrsInt)),
 				tidPosGridAr_buf,
 				tidsAr_buf,
+				atrBbxAr_buf,
 				clrsIntAr_buf,
 				tidThisLev_buf,
 				tidALL_buf)
@@ -1587,7 +1548,6 @@ __kernel void renFromTid(
 	tidImgs.append(Image.fromarray(np.swapaxes(tidALL, 0, 1), 'RGB'))
 	print "\n_renGPU(): Done GPU rendering."
 
-	print "\n_renGPU(): maxTid", maxTid
 
 	for lev in range(nLevels + 1):
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
@@ -1595,6 +1555,8 @@ __kernel void renFromTid(
 		ut.mkDirSafe(levDir)
 		print "_growCurves(): saving", imgPath
 		tidImgs[lev].save(imgPath)
+
+	print "\n_renTidGridGPU(): END\n"
 
 
 def renCv(warpUi, sidToCvDic, tholds):
