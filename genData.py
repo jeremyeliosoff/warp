@@ -1201,37 +1201,26 @@ def renCvWrapper(warpUi):
 			print "_renCvWrapper(): dicPathToLoad not found, attempting to load latest..."
 			loadLatestTidToSids(warpUi)
 
-	# TODO is below necessary?  Why was it ever un-commented?  As well as MARK_A
-	#if warpUi.sidToTid == None:
-	#	warpUi.sidToTid = _pickleLoad(warpUi.seqDataVDir  + "/sidToTid")
-	#if sidToCvDic == None:
-	#	if warpUi.parmDic("anim") == 1:
-	#		warpUi.animButCmd()
-	#	warpUi.setStatus("error", "ERROR: sidToCvDic == None")
+	if (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
+		print "_renCvWrapper(): tidPosGrid already loaded for fr " \
+			+ str(fr) + ", reusing."
 	else:
-		#print "\n\n\n ---NNNNNNNNN-> warpUi.tidPosGrid == None", (warpUi.tidPosGrid == None)
-		#print "warpUi.dataLoadedForFr == fr",  (warpUi.dataLoadedForFr == fr)
-		#print "\n\n"
-		if (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
-			print "_renCvWrapper(): tidPosGrid already loaded for fr " \
-				+ str(fr) + ", reusing."
+		tidPosGridPath = warpUi.framesDataDir + ("/%05d/tidPosGrid" % fr)
+		print "_renCvWrapper(): Checking for existence of", tidPosGridPath, "..."
+		#sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
+		#tholds = pickleLoad(frameDir + "/tholds")
+		if os.path.exists(tidPosGridPath):
+			print "_renCvWrapper():", tidPosGridPath, "exists.  Loading..."
+			warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
+			warpUi.dataLoadedForFr = fr
 		else:
-			tidPosGridPath = warpUi.framesDataDir + ("/%05d/tidPosGrid" % fr)
-			print "_renCvWrapper(): Checking for existence of", tidPosGridPath, "..."
-			#sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
-			#tholds = pickleLoad(frameDir + "/tholds")
-			if os.path.exists(tidPosGridPath):
-				print "_renCvWrapper():", tidPosGridPath, "exists.  Loading..."
-				warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
-				warpUi.dataLoadedForFr = fr
-			else:
-				print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _renGPU()..."
-				#renCv(warpUi, sidToCvDic, tholds)
-				warpUi.tidPosGrid = inSurfGridToTidGrid(warpUi)
-				pickleDump(tidPosGridPath, warpUi.tidPosGrid)
-				warpUi.dataLoadedForFr = fr
-				print "\n_renCvWrapper(): post _renGPU...\n\n"
-		renTidGridGPU(warpUi)
+			print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _renGPU()..."
+			#renCv(warpUi, sidToCvDic, tholds)
+			warpUi.tidPosGrid = inSurfGridToTidGrid(warpUi)
+			pickleDump(tidPosGridPath, warpUi.tidPosGrid)
+			warpUi.dataLoadedForFr = fr
+			print "\n_renCvWrapper(): post _renGPU...\n\n"
+	renTidGridGPU(warpUi)
 	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
 
 
