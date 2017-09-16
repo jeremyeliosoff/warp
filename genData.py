@@ -1551,9 +1551,15 @@ def renTidGridGPU(warpUi):
 
 	for lev in range(nLevels + 1):
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-		levDir,imgPath = warpUi.getDebugDirAndImg("tid2", levStr)
+		name = "ren" # Fixed for the moment - to be appended with other ren AOVs.
+		levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
 		ut.mkDirSafe(levDir)
-		print "_growCurves(): saving", imgPath
+		if name == "ren" and lev == nLevels:
+			print "\n\n**********************************************"
+			print "\n\n_renTidGridGPU(): ***** Saving", name, " image, path:", imgPath, "\n\n"
+			print "**********************************************\n\n"
+		else:
+			print "_renCv(): Saving", name, " image, path:", imgPath
 		tidImgs[lev].save(imgPath)
 
 	print "\n_renTidGridGPU(): END\n"
