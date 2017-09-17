@@ -1,3 +1,19 @@
+/*float smoothstep(float edge0, float edge1, float x) {
+	// Scale, bias and saturate x to 0..1 range
+	float ret = edge1;
+	if (edge1 > edge0) {
+		ret = clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0); 
+		//Evaluate polynomial
+		ret = ret*ret*(3 - 2*ret);
+	}
+	return ret;
+}
+*/
+
+float smoothLaunch(float edge0, float edge1, float x) {
+	return min(1.0,2.0*smoothstep(edge0, edge0+(edge1-edge0)*2, x));
+}
+
 float mixI(uchar a, uchar b, float m) {
 	return m*b + (1.0-m)*a;
 }
@@ -76,14 +92,17 @@ void getBbx(int __attribute__((address_space(1)))* atrBbx, int i, int* mnx, int*
 }
 
 
-void getCent(int __attribute__((address_space(1)))* atrBbx, int i, int* cx, int* cy) {
+void getBbxInfo(int __attribute__((address_space(1)))* atrBbx,
+		int i, int* cx, int* cy, int *dx, int *dy,
+		int* mnx, int* mny, int* mxx, int* mxy) {
 	int ix4 = i*4;
-	int mnx, mny, mxx, mxy;
 
-	getBbx(atrBbx, i, &mnx, &mny, &mxx, &mxy);
+	getBbx(atrBbx, i, mnx, mny, mxx, mxy);
 
-	*cx = (mnx + mxx)/2;
-	*cy = (mny + mxy)/2;
+	*cx = (*mnx + *mxx)/2;
+	*cy = (*mny + *mxy)/2;
+	*dx = *mxx - *mnx;
+	*dy = *mxy - *mny;
 
 }
 
@@ -103,6 +122,8 @@ __kernel void renFromTid(
 {
 	int xi = get_global_id(0);
 	int yi = get_global_id(1);
+
+	float prog = levThresh;
 	uchar val[] = {0, 0, 0};
 
 	val[0] = 255*xi/xres;
@@ -123,16 +144,26 @@ __kernel void renFromTid(
 		//getBbx(atrBbx, tid, &mnx, &mny, &mxx, &mxy);
 		int cx = xres/2;
 		int cy = .35*yres;
-		int tcx, tcy;
-		getCent(atrBbx, tidPos, &tcx, &tcy);
+		int tcx, tcy, dx, dy, mnx, mny, mxx, mxy;
+		getBbxInfo(atrBbx, tidPos, &tcx, &tcy, &dx, &dy, &mnx, &mny, &mxx, &mxy);
+		float big = ((float)dx/xres)*((float)dy/yres);
+		float bigK = 1-big;
+		bigK *= bigK;
 
-		//int xo = xi;
-		int xofs = levThresh*(tcx-cx);//jRandNP(tid) * 10;
-		int yofs = levThresh*(tcy-cy);//jRandNP(tid+11) * 10;
+
+		float xfK = 0;
+		
+		if (cx < mnx || cx > mxx || cy < mny || cy > mxy) {
+			float xfKK = 3;
+			xfK = smoothLaunch(0.2, 1.0, prog) * bigK * xfKK;
+		}
+
+		int xofs = xfK*(tcx-cx);//jRandNP(tid) * 10;
+		int yofs = xfK*(tcy-cy);//jRandNP(tid+11) * 10;
 		int xo = xi + xofs;
 		int yo = yi + yofs;
 
-		float mxr = 4*(1-levThresh)*levThresh;
+		float mxr = 4*(1-prog)*prog;
 		getImageCell(xi, yi, xres, yres, srcImg, imgClr);
 		//imgClr[0] = 200;
 		//imgClr[1] = 200;
@@ -149,7 +180,8 @@ __kernel void renFromTid(
 		val[1] = imgClr[1];
 		val[2] = imgClr[2];
 
-		mix3(imgClr, clrRand, .3, val);
+		float clrMix = smoothLaunch(0.0, 1.0, prog)*(1-big);
+		mix3(imgClr, clrRand, clrMix, val);
 
 		uchar prevVal[] = {0, 0, 0};
 		getArrayCell(xo, yo, xres, yres, sidPostALLPrev, prevVal);

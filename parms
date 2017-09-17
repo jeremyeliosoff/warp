@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 361
+val 510
 
 fps
 val 52
@@ -37,13 +37,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v057comp
+val v061fullOnGPU
 
 frStart
-val 270
+val 250
 
 frEnd
-val 400
+val 1000
 
 frPerCycle
 val 30
@@ -95,7 +95,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v056
+val v057fullOnGPU
 
 startLev
 val 0

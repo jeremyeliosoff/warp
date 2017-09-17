@@ -1214,11 +1214,11 @@ def renCvWrapper(warpUi):
 			warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
 			warpUi.dataLoadedForFr = fr
 		else:
-			print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _renGPU()..."
+			print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _inSurfGridToTidGrid()..."
 			warpUi.tidPosGrid = inSurfGridToTidGrid(warpUi)
 			pickleDump(tidPosGridPath, warpUi.tidPosGrid)
 			warpUi.dataLoadedForFr = fr
-			print "\n_renCvWrapper(): post _renGPU...\n\n"
+			print "\n_renCvWrapper(): post _inSurfGridToTidGrid...\n\n"
 	renTidGridGPU(warpUi)
 	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
 
