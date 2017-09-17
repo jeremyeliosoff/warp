@@ -18,12 +18,6 @@ class warpUi():
 		self.saveParmDic()
 		ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
 		
-	def flushDics(self):
-		print "\n_flushDics(): Flushing dics"
-		#self.tidToSids = None
-		#self.sidToTid = None
-		self.nextSid = 0
-		
 	def putParmDicInUI(self):
 		self.pauseSaveUIToParmsAndFile = True
 		print "\n\n_putParmDicInUI(): self.parmDic.parmDic.keys():", self.parmDic.parmDic.keys()
@@ -596,7 +590,6 @@ class warpUi():
 			initRecordVal = self.record
 			self.record = False
 			self.setVal("image", selection) #TODO: Rename image to maybe seqName?
-			self.flushDics()
 			self.updateRenAndDataDirs()
 			self.updateCurImg()
 			self.updateDebugImg()
@@ -695,7 +688,6 @@ class warpUi():
 		self.updateCurImg()
 		self.updateDebugImg()
 		self.saveUIToParmsAndFile(verType + "Ver", verNum)
-		self.flushDics()
 
 
 	def butVNew(self, verType):

@@ -1117,7 +1117,6 @@ def genData(warpUi, statsDirDest):
 	ut.indicateProjDirtyAs(warpUi, False, "createContextAndQueue_inProgress")
 
 	if warpUi.genRen1fr == 1:
-		warpUi.flushDics()
 		genDataWrapper(warpUi)
 		renCvWrapper(warpUi)
 		saveTidToSid(warpUi)
@@ -1467,15 +1466,19 @@ def renTidGridGPU(warpUi):
 
 	tidImgs = []
 
-	print "\n_renGPU(): Doing GPU rendering..."
 	for lev in range(nLevels):
 
 		# Make sorted tids list.
 		tids = warpUi.tidToSids[lev].keys()
 		tids.sort()
 		tidsAr = np.array(tids, dtype=np.intc)
+		
+		# Do checkpoint, sometimes crashes with:
+		# pyopencl.LogicError: create_buffer failed: invalid buffer size
+		ut.indicateProjDirtyAs(warpUi, True, "renTidGridGPU_inProgress")
 		tidsAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
+		ut.indicateProjDirtyAs(warpUi, False, "renTidGridGPU_inProgress")
 
 		# Make corresponding attrs lists.
 		#tids = warpUi.tidToSids[lev].keys()
@@ -1495,7 +1498,7 @@ def renTidGridGPU(warpUi):
 
 
 		tidPosGridAr = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
-		#print "XXXXXX tidPosGridAr.shape", tidPosGridAr.shape
+		#print "\nXXXXXX tidPosGridAr.shape", tidPosGridAr.shape
 		#print
 		#print "XXXXX tidPosGridAr"
 		#print tidPosGridAr
@@ -1514,11 +1517,12 @@ def renTidGridGPU(warpUi):
 		#srcImgNoSA = pygame.image.load(warpUi.images["source"]["path"])
 		#srcImg = pygame.surfarray.array3d(srcImgNoSA)
 		srcImg = Image.open(warpUi.images["source"]["path"])
-		srcImgPreSwap = np.array(srcImg)
-		srcImgAr = np.swapaxes(srcImgPreSwap, 1, 0)
-		#print "XXXXXX srcImgAr.shape", srcImgAr.shape
+		srcImgArWithAlpha = np.array(srcImg)
+		srcImgAr = np.array(srcImgArWithAlpha[:,:,:3])
+		#print "\nXXXXXX srcImgAr.shape", srcImgAr.shape
+		#print 
 		srcImgAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgPreSwap)
+			cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgAr)
 
 		clrsIntAr = np.array(ut.clrsInt, dtype=np.uint8)
 		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
@@ -1556,7 +1560,6 @@ def renTidGridGPU(warpUi):
 		tidImgs.append(Image.fromarray(np.swapaxes(tidThisLev, 0, 1), 'RGB'))
 		tidImgs[lev].save("/tmp/img." + str(lev) + ".png")
 	tidImgs.append(Image.fromarray(np.swapaxes(tidALL, 0, 1), 'RGB'))
-	print "\n_renGPU(): Done GPU rendering."
 
 
 	for lev in range(nLevels + 1):
