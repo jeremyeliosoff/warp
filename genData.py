@@ -1464,7 +1464,8 @@ def renTidGridGPU(warpUi):
 	with open(kernelPath) as f:
 		kernelRen = "".join(f.readlines())
 
-	tidImgs = []
+	outputDic = {}
+	outputNames = ["ren", "out1", "out2"]
 
 	for lev in range(nLevels):
 
@@ -1506,6 +1507,8 @@ def renTidGridGPU(warpUi):
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridAr)
 
 		if lev == 0:
+			for outputName in outputNames:
+				outputDic[outputName] = []
 			tidALL = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
 			tidALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
 				cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALL)
@@ -1533,6 +1536,18 @@ def renTidGridGPU(warpUi):
 		tidThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
 			tidThisLev.nbytes)
 
+		out1 = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
+		#out1.fill(123)
+		#out1_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, out1.nbytes)
+
+		out2 = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
+		#out2.fill(210)
+		#out2_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, out2.nbytes)
+
+		outputs = np.array([out1, out2], dtype=np.uint8)
+		outputs_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outputs.nbytes)
+
+
 		levThresh = warpUi.getOfsWLev(lev) % 1.0
 
 		bld = cl.Program(cntxt, kernelRen).build()
@@ -1551,29 +1566,42 @@ def renTidGridGPU(warpUi):
 				srcImgAr_buf,
 				tidThisLev_buf,
 				tidALLPrev_buf,
-				tidALL_buf)
+				tidALL_buf,
+				outputs_buf)
 		launch.wait()
 
 		cl.enqueue_read_buffer(queue, tidThisLev_buf, tidThisLev).wait()
 		cl.enqueue_read_buffer(queue, tidALL_buf, tidALL).wait()
 
-		tidImgs.append(Image.fromarray(np.swapaxes(tidThisLev, 0, 1), 'RGB'))
-		tidImgs[lev].save("/tmp/img." + str(lev) + ".png")
-	tidImgs.append(Image.fromarray(np.swapaxes(tidALL, 0, 1), 'RGB'))
+		cl.enqueue_read_buffer(queue, outputs_buf, outputs).wait()
+
+		for outputName in outputNames:
+			if outputName == "out1":
+				img =Image.fromarray(np.swapaxes(outputs[0], 0, 1), 'RGB')
+			elif outputName == "out2":
+				img =Image.fromarray(np.swapaxes(outputs[1], 0, 1), 'RGB')
+			else:
+				img =Image.fromarray(np.swapaxes(tidThisLev, 0, 1), 'RGB')
+			outputDic[outputName].append(img)
+
+	for outputName in outputNames:
+		# TODO: Make it not so all outputs get ren
+		outputDic[outputName].append(Image.fromarray(np.swapaxes(tidALL, 0, 1), 'RGB'))
 
 
-	for lev in range(nLevels + 1):
-		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-		name = "ren" # Fixed for the moment - to be appended with other ren AOVs.
-		levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
-		ut.mkDirSafe(levDir)
-		if name == "ren" and lev == nLevels:
-			print "\n\n**********************************************"
-			print "\n\n_renTidGridGPU(): ***** Saving", name, " image, path:", imgPath, "\n\n"
-			print "**********************************************\n\n"
-		else:
-			print "_renTidGridGPU(): Saving", name, " image, path:", imgPath
-		tidImgs[lev].save(imgPath)
+	for outputName in outputNames:
+		for lev in range(nLevels + 1):
+			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+			#name = "ren" # Fixed for the moment - to be appended with other ren AOVs.
+			levDir,imgPath = warpUi.getRenDirAndImgPath(outputName, levStr)
+			ut.mkDirSafe(levDir)
+			if outputName == "ren" and lev == nLevels:
+				print "\n\n**********************************************"
+				print "\n\n_renTidGridGPU(): ***** Saving", outputName, " image, path:", imgPath, "\n\n"
+				print "**********************************************\n\n"
+			else:
+				print "_renTidGridGPU(): Saving", outputName, " image, path:", imgPath
+			outputDic[outputName][lev].save(imgPath)
 
 	print "\n_renTidGridGPU(): END\n"
 

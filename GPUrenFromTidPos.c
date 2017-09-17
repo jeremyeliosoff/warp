@@ -30,11 +30,22 @@ void getArrayCell(int x, int y, int xres, int yres,
   uchar* ret)
 {
 	if (x >= 0 && x < xres && y >= 0 && y < yres) {
-		//int i = (y * xres + x) * 3;
 		int i = (x * yres + y) * 3;
 		ret[0] = img[i];
 		ret[1] = img[i+1];
 		ret[2] = img[i+2];
+	}
+}
+
+void setArrayNCell(int n, int x, int y, int xres, int yres,
+  uchar* val,
+  uchar __attribute__((address_space(1)))* ret)
+{
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		int i = (n*xres*yres + x * yres + y) * 3;
+		ret[i] = val[0];
+		ret[i+1] = val[1];
+		ret[i+2] = val[2];
 	}
 }
 
@@ -118,17 +129,14 @@ __kernel void renFromTid(
 			__global uchar* srcImg,
 			__global uchar* sidPostThisAr,
 			__global uchar* sidPostALLPrev,
-			__global uchar* sidPostALL)
+			__global uchar* sidPostALL,
+			__global uchar* outputs)
 {
 	int xi = get_global_id(0);
 	int yi = get_global_id(1);
 
 	float prog = levThresh;
 	uchar val[] = {0, 0, 0};
-
-	val[0] = 255*xi/xres;
-	val[1] = 255*yi/yres;
-	val[2] = 0;
 
 	uchar imgClr[3];
 	//getImageCell(xi, yi, xres, yres, srcImg, imgClr);
@@ -195,5 +203,16 @@ __kernel void renFromTid(
 		// Strange: if you don't do this, it accumulates levs.
 		setArrayCell(xi, yi, xres, yres, val, sidPostThisAr);
 	}
+
+	
+	val[0] = 255;
+	val[1] = 0;
+	val[2] = 0;
+	setArrayNCell(0, xi, yi, xres, yres, val, outputs);
+	
+	val[0] = 0;
+	val[1] = 255;
+	val[2] = 0;
+	setArrayNCell(1, xi, yi, xres, yres, val, outputs);
 	
 }
