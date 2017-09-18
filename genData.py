@@ -1464,99 +1464,65 @@ def renTidGridGPU(warpUi):
 	cntxt = cl.create_some_context()
 	queue = cl.CommandQueue(cntxt)
 
-	for lev in range(nLevels):
+	tidPosGridAr = np.array(warpUi.tidPosGrid[0], dtype=np.intc)
+	allImages = [None]
+	allArray = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
+
 		
+	outsAll = np.array(allArray, dtype=np.uint8)
+	outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
+	#outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.READ_WRITE, outsAll.nbytes)
+	
+	kernelDel = """
+void setLevCell0(int n, int x, int y, int xres, int yres,
+  uchar __attribute__((address_space(1)))* ret)
+{
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		int i = (n*xres*yres + x * yres + y) * 3;
+		ret[i] = 0;
+		ret[i+1] = 0;
+		ret[i+2] = 0;
+	}
+}
+
+__kernel void clear(
+			int xres,
+			int yres,
+			__global uchar* outsAll)
+{
+	int x = get_global_id(1);
+	int y = get_global_id(0);
+	setLevCell0(0, x, y, xres, yres, outsAll);
+
+}
+"""
+	bldDel = cl.Program(cntxt, kernelDel).build()
+	launchDel = bldDel.clear(
+			queue,
+			tidPosGridAr.shape,
+			None,
+			np.int32(res[0]),
+			np.int32(res[1]),
+			outsAll_buf)
+	launchDel.wait()
+
+	cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
 
 
-		# Make sorted tids list.
-		tids = warpUi.tidToSids[lev].keys()
-		tids.sort()
-		tidsAr = np.array(tids, dtype=np.intc)
-		
-		tidsAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
+	bld = cl.Program(cntxt, kernelRen).build()
+	launch = bld.renFromTid(
+			queue,
+			tidPosGridAr.shape,
+			None,
+			np.int32(res[0]),
+			np.int32(res[1]),
+			outsAll_buf)
+	launch.wait()
 
-		# Make corresponding attrs lists.
-		atrBbx = []
-		for tid in tids:
-			if "bbx" in warpUi.tidToSids[lev][tid].keys():
-				atrBbx.append(warpUi.tidToSids[lev][tid]["bbx"])
-			else:
-				print "_renTidGridGPU(): bbx not in keys! tid:", tid
-				atrBbx.append([[-1,-1],[-1,-1]])
-		atrBbxAr = np.array(atrBbx, dtype=np.intc)
-		atrBbxAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=atrBbxAr)
+	cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
 
+	allArray = np.copy(outsAll)
 
-		tidPosGridAr = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
-		tidPosGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridAr)
-
-		if lev == 0:
-			allImages = [None]
-			allArray = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-			tidALL = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-			tidALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
-				cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALL)
-
-		#srcImgNoSA = pygame.image.load(warpUi.images["source"]["path"])
-		#srcImg = pygame.surfarray.array3d(srcImgNoSA)
-		srcImg = Image.open(warpUi.images["source"]["path"])
-		srcImgArWithAlpha = np.array(srcImg)
-		srcImgAr = np.array(srcImgArWithAlpha[:,:,:3])
-		#print "\nXXXXXX srcImgAr.shape", srcImgAr.shape
-		#print 
-		srcImgAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgAr)
-
-		clrsIntAr = np.array(ut.clrsInt, dtype=np.uint8)
-		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
-
-
-		tidThisLev = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-		tidThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
-			tidThisLev.nbytes)
-
-		outsAllPrev = np.copy(allArray)
-		outsAllPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=outsAllPrev)
-
-		outsAll = np.array(allArray, dtype=np.uint8)
-		outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
-		#outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.READ_WRITE, outsAll.nbytes)
-
-
-		levThresh = warpUi.getOfsWLev(lev) % 1.0
-
-
-		bld = cl.Program(cntxt, kernelRen).build()
-		launch = bld.renFromTid(
-				queue,
-				tidPosGridAr.shape,
-				None,
-				np.int32(res[0]),
-				np.int32(res[1]),
-				np.int32(len(ut.clrsInt)),
-				np.int32(lev),
-				np.float32(levThresh),
-				tidPosGridAr_buf,
-				tidsAr_buf,
-				atrBbxAr_buf,
-				clrsIntAr_buf,
-				outsAllPrev_buf,
-				outsAll_buf)
-		launch.wait()
-
-		cl.enqueue_read_buffer(queue, tidThisLev_buf, tidThisLev).wait()
-		cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
-
-		allArray = np.copy(outsAll)
-
-	print
-	print
-	print
 	print "\n NNNNNNNNNN oDicAllNLev:"
 	pp.pprint(oDicAllNLev)
 

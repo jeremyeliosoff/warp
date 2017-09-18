@@ -144,53 +144,17 @@ void getBbxInfo(int __attribute__((address_space(1)))* atrBbx,
 __kernel void renFromTid(
 			int xres,
 			int yres,
-			int nClrs,
-			int lev,
-			float levThresh,
-			__global int* _tidPosGrid,
-			__global int* tids,
-			__global int* atrBbx,
-			__global uchar* clrsInt,
-			__global uchar* outsAllPrev,
 			__global uchar* outsAll)
 {
 	int xi = get_global_id(0);
 	int yi = get_global_id(1);
 
-	float prog = levThresh;
+	uchar red[] = {255, 0, 0};
+	uchar green[] = {0, 255, 0};
 
+	setLevCell(0, xi, yi, xres, yres, green, outsAll);
 
-	uchar val[] = {0, 0, 0};
-	uchar prevVal[] = {0, 0, 0};
-	uchar red = {255, 0, 0};
-	uchar green = {0, 255, 0};
-
-	getArrayCell(xi, yi, xres, yres, outsAllPrev, prevVal);
-
-	setLevCell0(0, xi, yi, xres, yres, outsAll);
-
-	int tidPos = getCellScalar(xi, yi, yres, _tidPosGrid);
-	if (tidPos > -10) {
-		int tid = tids[tidPos];
-
-		int xofs = 0;//xfK*(tcx-cx);//jRandNP(tid) * 10;
-		int yofs = 3;//fK*(tcy-cy);//jRandNP(tid+11) * 10;
-		int xo = xi + xofs;
-		int yo = yi + yofs;
-
-		float mxr = 4*(1-prog)*prog;
-		uchar val[] = {0, 0, 0};
-		int clrInd = tid % nClrs;
-		val[0] = clrsInt[clrInd * 3];
-		val[1] = clrsInt[clrInd * 3+1];
-		val[2] = clrsInt[clrInd * 3+2];
-
-
-		setLevCell(0, xo, yo, xres, yres, red, outsAll);
-	} else {
-		// Strange: if you don't do this, it accumulates levs.
-		//setLevCell(0, xi, yi, xres, yres, prevVal, outsAll);
-	}
+	setLevCell(0, xi, yi+3, xres, yres, red, outsAll);
 
 	
 }
