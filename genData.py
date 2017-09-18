@@ -1451,11 +1451,6 @@ def inSurfGridToTidGrid(warpUi):
 
 def renTidGridGPU(warpUi):
 	print "\n_renTidGridGPU(): BEGIN\n"
-	
-	# Refresh these?
-	cntxt = cl.create_some_context()
-	queue = cl.CommandQueue(cntxt)
-
 	fr = warpUi.parmDic("fr")
 	nLevels = warpUi.parmDic("nLevels")
 	res = warpUi.res
@@ -1464,30 +1459,26 @@ def renTidGridGPU(warpUi):
 	with open(kernelPath) as f:
 		kernelRen = "".join(f.readlines())
 
-	outputDic = {}
-	outputNames = ["ren", "out1", "out2"]
-	outputNums = range(len(outputNames))
+	oDicAllNLev = {}
+	# Refresh these?
+	cntxt = cl.create_some_context()
+	queue = cl.CommandQueue(cntxt)
 
 	for lev in range(nLevels):
+		
+
 
 		# Make sorted tids list.
 		tids = warpUi.tidToSids[lev].keys()
 		tids.sort()
 		tidsAr = np.array(tids, dtype=np.intc)
 		
-		# Do checkpoint, sometimes crashes with:
-		# pyopencl.LogicError: create_buffer failed: invalid buffer size
-		ut.indicateProjDirtyAs(warpUi, True, "renTidGridGPU_inProgress")
 		tidsAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
-		ut.indicateProjDirtyAs(warpUi, False, "renTidGridGPU_inProgress")
 
 		# Make corresponding attrs lists.
-		#tids = warpUi.tidToSids[lev].keys()
 		atrBbx = []
 		for tid in tids:
-			#if tid % 3 == 0:
-			#	print "XXXXXXlev:", lev, "; tid", tid, "--", warpUi.tidToSids[lev][tid]
 			if "bbx" in warpUi.tidToSids[lev][tid].keys():
 				atrBbx.append(warpUi.tidToSids[lev][tid]["bbx"])
 			else:
@@ -1498,30 +1489,16 @@ def renTidGridGPU(warpUi):
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=atrBbxAr)
 
 
-
 		tidPosGridAr = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
-		#print "\nXXXXXX tidPosGridAr.shape", tidPosGridAr.shape
-		#print
-		#print "XXXXX tidPosGridAr"
-		#print tidPosGridAr
 		tidPosGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridAr)
 
 		if lev == 0:
-			outputDic["separate"] = []
-			outputDic["allArrays"] = []
-			outputDic["all"] = [None]*nLevels
-			for outputNum in outputNums:
-				outputDic["separate"].append([None]*nLevels)
-				outputDic["allArrays"].append(\
-					np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8))
+			allImages = [None]
+			allArray = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
 			tidALL = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
 			tidALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
 				cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALL)
-
-		tidALLPrev = np.copy(tidALL)
-		tidALLPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALLPrev)
 
 		#srcImgNoSA = pygame.image.load(warpUi.images["source"]["path"])
 		#srcImg = pygame.surfarray.array3d(srcImgNoSA)
@@ -1542,20 +1519,17 @@ def renTidGridGPU(warpUi):
 		tidThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
 			tidThisLev.nbytes)
 
-		outSep1 = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-		outSep2 = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-		outsSep = np.array([tidThisLev, outSep1, outSep2], dtype=np.uint8)
-		outsSep_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsSep.nbytes)
-
-		outsAllPrev = np.copy(outputDic["allArrays"])
+		outsAllPrev = np.copy(allArray)
 		outsAllPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 			cl.mem_flags.COPY_HOST_PTR,hostbuf=outsAllPrev)
 
-		outsAll = np.array(outputDic["allArrays"], dtype=np.uint8)
+		outsAll = np.array(allArray, dtype=np.uint8)
 		outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
+		#outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.READ_WRITE, outsAll.nbytes)
 
 
 		levThresh = warpUi.getOfsWLev(lev) % 1.0
+
 
 		bld = cl.Program(cntxt, kernelRen).build()
 		launch = bld.renFromTid(
@@ -1571,72 +1545,34 @@ def renTidGridGPU(warpUi):
 				tidsAr_buf,
 				atrBbxAr_buf,
 				clrsIntAr_buf,
-				srcImgAr_buf,
-				tidThisLev_buf,
-				tidALLPrev_buf,
-				tidALL_buf,
-				outsSep_buf,
 				outsAllPrev_buf,
 				outsAll_buf)
 		launch.wait()
 
 		cl.enqueue_read_buffer(queue, tidThisLev_buf, tidThisLev).wait()
-		cl.enqueue_read_buffer(queue, tidALL_buf, tidALL).wait()
-
-		cl.enqueue_read_buffer(queue, outsSep_buf, outsSep).wait()
 		cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
 
-		print "\n ZZZZZZzz outputDic:", outputDic
-		print
-		print
-		print
-		for outputNum in outputNums:
-			outputName = outputNames[outputNum]
-			if outputName == "out1":
-				img =Image.fromarray(np.swapaxes(outsSep[1], 0, 1), 'RGB')
-			elif outputName == "out2":
-				img =Image.fromarray(np.swapaxes(outsSep[2], 0, 1), 'RGB')
-			else:
-				img =Image.fromarray(np.swapaxes(outsSep[0], 0, 1), 'RGB')
-			outputDic["separate"][outputNum][lev] = img
+		allArray = np.copy(outsAll)
 
-			if outputName == "out1":
-				outputDic["allArrays"][outputNum] = outsAll[1]
-			elif outputName == "out2":
-				outputDic["allArrays"][outputNum] = outsAll[2]
-			else:
-				outputDic["allArrays"][outputNum] = outsAll[0]
-
-	print "\n NNNNNNNNNN outputDic:"
-	pp.pprint(outputDic)
 	print
 	print
 	print
+	print "\n NNNNNNNNNN oDicAllNLev:"
+	pp.pprint(oDicAllNLev)
 
-	for outputNum in outputNums:
-		# TODO: Make it not so all outputs get ren
-		outputDic["all"][outputNum] = \
-			Image.fromarray(np.swapaxes( \
-				outputDic["allArrays"][outputNum], 0, 1), 'RGB')
+	allImages[0] = Image.fromarray(np.swapaxes(allArray, 0, 1), 'RGB')
 
 
-	for outputNum in outputNums:
-		outputName = outputNames[outputNum]
-		for lev in range(nLevels + 1):
-			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-			#name = "ren" # Fixed for the moment - to be appended with other ren AOVs.
-			levDir,imgPath = warpUi.getRenDirAndImgPath(outputName, levStr)
-			ut.mkDirSafe(levDir)
-			if outputName == "ren" and lev == nLevels:
-				print "\n\n**********************************************"
-				print "\n\n_renTidGridGPU(): ***** Saving", outputName, " image, path:", imgPath, "\n\n"
-				print "**********************************************\n\n"
-			else:
-				print "_renTidGridGPU(): Saving", outputName, " image, path:", imgPath
-			if lev == nLevels:
-				outputDic["all"][outputNum].save(imgPath)
-			else:
-				outputDic["separate"][outputNum][lev].save(imgPath)
+	for lev in range(nLevels + 1):
+		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+		#name = "ren" # Fixed for the moment - to be appended with other ren AOVs.
+		levDir,imgPath = warpUi.getRenDirAndImgPath("ren", levStr)
+		ut.mkDirSafe(levDir)
+		print "\n\n**********************************************"
+		print "\n\n_renTidGridGPU(): ***** Saving ren image, path:", imgPath, "\n\n"
+		print "**********************************************\n\n"
+		if lev == nLevels:
+			allImages[0].save(imgPath)
 
 	print "\n_renTidGridGPU(): END\n"
 

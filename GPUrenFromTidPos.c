@@ -49,6 +49,17 @@ void setLevCell(int n, int x, int y, int xres, int yres,
 	}
 }
 
+void setLevCell0(int n, int x, int y, int xres, int yres,
+  uchar __attribute__((address_space(1)))* ret)
+{
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		int i = (n*xres*yres + x * yres + y) * 3;
+		ret[i] = 0;
+		ret[i+1] = 0;
+		ret[i+2] = 0;
+	}
+}
+
 void setImgLevCell(int imgn, int n, int x, int y, int xres, int yres,
   uchar* val,
   uchar __attribute__((address_space(1)))* ret)
@@ -140,11 +151,6 @@ __kernel void renFromTid(
 			__global int* tids,
 			__global int* atrBbx,
 			__global uchar* clrsInt,
-			__global uchar* srcImg,
-			__global uchar* sidPostThisAr,
-			__global uchar* sidPostALLPrev,
-			__global uchar* sidPostALL,
-			__global uchar* outsSep,
 			__global uchar* outsAllPrev,
 			__global uchar* outsAll)
 {
@@ -152,100 +158,39 @@ __kernel void renFromTid(
 	int yi = get_global_id(1);
 
 	float prog = levThresh;
+
+
 	uchar val[] = {0, 0, 0};
-
-	uchar imgClr[3];
-	getImageCell(xi, yi, xres, yres, srcImg, imgClr);
-
 	uchar prevVal[] = {0, 0, 0};
-	getArrayCell(xi, yi, xres, yres, outsAllPrev, prevVal);
-	//getImageCell(xi, yi, xres, yres, srcImg, imgClr);
-	//setArrayCell(xi, yi, xres, yres, imgClr, sidPostALL);
+	uchar red = {255, 0, 0};
+	uchar green = {0, 255, 0};
 
+	getArrayCell(xi, yi, xres, yres, outsAllPrev, prevVal);
+
+	setLevCell0(0, xi, yi, xres, yres, outsAll);
 
 	int tidPos = getCellScalar(xi, yi, yres, _tidPosGrid);
-	if (tidPos > -1) {
+	if (tidPos > -10) {
 		int tid = tids[tidPos];
 
-
-		//int mnx, mny, mxx, mxy;
-		//getBbx(atrBbx, tid, &mnx, &mny, &mxx, &mxy);
-		int cx = xres/2;
-		int cy = .35*yres;
-		int tcx, tcy, dx, dy, mnx, mny, mxx, mxy;
-		getBbxInfo(atrBbx, tidPos, &tcx, &tcy, &dx, &dy, &mnx, &mny, &mxx, &mxy);
-		float big = ((float)dx/xres)*((float)dy/yres);
-		float bigK = 1-big;
-		bigK *= bigK;
-
-
-		float xfK = 0;
-		
-		if (cx < mnx || cx > mxx || cy < mny || cy > mxy) {
-			float xfKK = 3;
-			xfK = smoothLaunch(0.2, 1.0, prog) * bigK * xfKK;
-		}
-
-		int xofs = xfK*(tcx-cx);//jRandNP(tid) * 10;
-		int yofs = xfK*(tcy-cy);//jRandNP(tid+11) * 10;
+		int xofs = 0;//xfK*(tcx-cx);//jRandNP(tid) * 10;
+		int yofs = 3;//fK*(tcy-cy);//jRandNP(tid+11) * 10;
 		int xo = xi + xofs;
 		int yo = yi + yofs;
 
 		float mxr = 4*(1-prog)*prog;
-		//imgClr[0] = 200;
-		//imgClr[1] = 200;
-		//imgClr[2] = 200;
-
-		uchar clrRand[] = {0, 0, 0};
-		int clrInd = tid % nClrs;
-		clrRand[0] = clrsInt[clrInd * 3];
-		clrRand[1] = clrsInt[clrInd * 3+1];
-		clrRand[2] = clrsInt[clrInd * 3+2];
-
 		uchar val[] = {0, 0, 0};
-		val[0] = imgClr[0];
-		val[1] = imgClr[1];
-		val[2] = imgClr[2];
-
-		float clrMix = smoothLaunch(0.0, 1.0, prog)*(1-big);
-		mix3(imgClr, clrRand, clrMix, val);
+		int clrInd = tid % nClrs;
+		val[0] = clrsInt[clrInd * 3];
+		val[1] = clrsInt[clrInd * 3+1];
+		val[2] = clrsInt[clrInd * 3+2];
 
 
-		uchar valMixed[] = {0, 0, 0};
-		mix3(prevVal, val, mxr, valMixed);
-
-		setLevCell(0, xo, yo, xres, yres, valMixed, outsAll);
-		setImgLevCell(0, lev, xo, yo, xres, yres, val, outsSep);
+		setLevCell(0, xo, yo, xres, yres, red, outsAll);
 	} else {
 		// Strange: if you don't do this, it accumulates levs.
-		int red = {255, 0, 0};
-		setLevCell(0, xi, yi, xres, yres, prevVal, outsAll);
-		setImgLevCell(0, lev, xi, yi, xres, yres, val, outsSep);
+		//setLevCell(0, xi, yi, xres, yres, prevVal, outsAll);
 	}
 
-	
-	float xr = (float)xi/xres;
-	float yr = (float)yi/yres;
-	
-	val[0] = 0;
-	val[1] = 255;
-	val[2] = xr < levThresh ? 0 : 255;
-	setLevCell(1, xi, yi, xres, yres, val, outsSep);
-	
-	val[0] = 199;//yr < .5*levThresh ? 0 : 255;
-	val[1] = 199;//0;
-	val[2] = 0;//255;
-	setLevCell(2, xi, yi, xres, yres, val, outsSep);
-	
-	
-	val[0] = 0;
-	val[1] = 199;//yr > levThresh ? 0 : 255;
-	val[2] = 0;//255;
-	setLevCell(1, xi, yi, xres, yres, val, outsAll);
-	
-	val[0] = 0;
-	val[1] = 0;//yr > levThresh ? 0 : 255;
-	val[2] = 199;//255;
-	setLevCell(2, xi, yi, xres, yres, val, outsAll);
 	
 }
