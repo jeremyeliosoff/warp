@@ -1466,12 +1466,10 @@ def renTidGridGPU(warpUi):
 
 	tidPosGridAr = np.array(warpUi.tidPosGrid[0], dtype=np.intc)
 	allImages = [None]
-	allArray = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
+	tpgs = tidPosGridAr.shape
+	allArray = np.zeros((tpgs[1]+1, tpgs[0]+1, 3,), dtype=np.uint8)
 
 		
-	outsAll = np.array(allArray, dtype=np.uint8)
-	outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
-	#outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.READ_WRITE, outsAll.nbytes)
 	
 	kernelDel = """
 void setLevCell0(int n, int x, int y, int xres, int yres,
@@ -1480,7 +1478,7 @@ void setLevCell0(int n, int x, int y, int xres, int yres,
 	if (x >= 0 && x < xres && y >= 0 && y < yres) {
 		int i = (n*xres*yres + x * yres + y) * 3;
 		ret[i] = 0;
-		ret[i+1] = 0;
+		ret[i+1] = 255;
 		ret[i+2] = 0;
 	}
 }
@@ -1496,28 +1494,66 @@ __kernel void clear(
 
 }
 """
-	bldDel = cl.Program(cntxt, kernelDel).build()
-	launchDel = bldDel.clear(
-			queue,
-			tidPosGridAr.shape,
-			None,
-			np.int32(res[0]),
-			np.int32(res[1]),
-			outsAll_buf)
-	launchDel.wait()
+	#outsAll = np.zeros((tpgs[0]+1, tpgs[1]+1, 3,), dtype=np.uint8)
+	#print "\n\nXXXXX outsAll.shape", outsAll.shape
+	#outsAllToDel_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
+	##outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.READ_WRITE, outsAll.nbytes)
 
-	cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
+	#bldDel = cl.Program(cntxt, kernelDel).build()
+	#launchDel = bldDel.clear(
+	#		queue,
+	#		outsAll.shape,
+	#		None,
+	#		np.int32(res[0]),
+	#		np.int32(res[1]),
+	#		outsAllToDel_buf)
+	#launchDel.wait()
+
+	#cl.enqueue_read_buffer(queue, outsAllToDel_buf, outsAll).wait()
+	outsAll = np.zeros((tpgs[1]+1, tpgs[0]+1, 3,), dtype=np.uint8)
+	outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
+	print "\n\nYYYY outsAll.shape", outsAll.shape
+
+	#outsAllPrev = np.copy(outsAll)
+	outsAllPrev = np.zeros((tpgs[1]+1, tpgs[0]+1, 3,), dtype=np.uint8)
+	outsAllPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=outsAllPrev)
 
 
+	srcImg = Image.open(warpUi.images["source"]["path"])
+	srcImgArWithAlpha = np.array(srcImg)
+	srcImgAr = np.array(srcImgArWithAlpha[:,:,:3])
+	srcImgAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgAr)
+
+	lev = 0
+	tidPosGridAr = np.array(np.swapaxes(warpUi.tidPosGrid[lev], 0, 1), dtype=np.intc)
+	tidPosGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridAr)
+
+
+	
+	shp = outsAllPrev.shape
 	bld = cl.Program(cntxt, kernelRen).build()
 	launch = bld.renFromTid(
 			queue,
-			tidPosGridAr.shape,
+			shp,
 			None,
-			np.int32(res[0]),
-			np.int32(res[1]),
+			np.int32(shp[0]),
+			np.int32(shp[1]),
+			tidPosGridAr_buf,
+			srcImgAr_buf,
+			outsAllPrev_buf,
 			outsAll_buf)
 	launch.wait()
+	print "\n", "*"*100
+	print "tidPosGridAr.shape", tidPosGridAr.shape
+	print "outsAllPrev.shape", outsAllPrev.shape
+	print "outsAll.shape", outsAll.shape
+	print "srcImgAr.shape", srcImgAr.shape
+	print "allArray.shape", allArray.shape
+	print "*"*100
+	print
 
 	cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
 
@@ -1526,7 +1562,7 @@ __kernel void clear(
 	print "\n NNNNNNNNNN oDicAllNLev:"
 	pp.pprint(oDicAllNLev)
 
-	allImages[0] = Image.fromarray(np.swapaxes(allArray, 0, 1), 'RGB')
+	allImages[0] = Image.fromarray(allArray, 'RGB')
 
 
 	for lev in range(nLevels + 1):
@@ -1534,9 +1570,9 @@ __kernel void clear(
 		#name = "ren" # Fixed for the moment - to be appended with other ren AOVs.
 		levDir,imgPath = warpUi.getRenDirAndImgPath("ren", levStr)
 		ut.mkDirSafe(levDir)
-		print "\n\n**********************************************"
+		#print "\n\n**********************************************"
 		print "\n\n_renTidGridGPU(): ***** Saving ren image, path:", imgPath, "\n\n"
-		print "**********************************************\n\n"
+		#print "**********************************************\n\n"
 		if lev == nLevels:
 			allImages[0].save(imgPath)
 
