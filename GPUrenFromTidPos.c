@@ -52,7 +52,7 @@ void setLevCell(int n, int x, int y, int xres, int yres,
 		int i = (n*xres*yres + x * yres + y) * 3;
 		ret[i] = val[0];
 		ret[i+1] = val[1];
-		ret[i+2] = i < 15 ? 255 : i % 255;
+		ret[i+2] = val[2];//i < 15 ? 255 : i % 255;
 	}
 }
 
@@ -99,9 +99,9 @@ void getImageCell(int x, int y, int xresIn, int yresIn,
 {
 	int xres = xresIn + 1;
 	int yres = yresIn + 1;
-	if (x >= 0 && x < xres && y >= 0 && y < yres) {
-		//int i = (y * xres + x) * 3;
-		int i = (x * yres + y) * 3;
+	if (x >= 0 && x < yres && y >= 0 && y < xres) {
+		int i = (y * yres + x) * 3;
+		//int i = (x * yres + y) * 3;
 		ret[0] = img[i];
 		ret[1] = img[i+1];
 		ret[2] = img[i+2];
@@ -116,12 +116,16 @@ float jRandNP(int seed) {
 	return 2.0*jRand(seed) - 1.0;
 }
 
-int getCellScalar(int x, int y, int xres,
+int getCellScalar(int x, int y, int xres, int yres,
   int __attribute__((address_space(1)))* _inSurfGrid)
 {
-	int i = y * xres + x;
-	//int i = x * yres + y;
-	return _inSurfGrid[i];
+	if (x < 0 || x > yres || y < 0 || y > xres) {
+		return -1;
+	} else {
+		//int i = y * xres + x;
+		int i = x * xres + y;
+		return _inSurfGrid[i];
+	}
 }
 
 void getBbx(int __attribute__((address_space(1)))* atrBbx, int i, int* mnx, int* mny, int* mxx, int* mxy) {
@@ -151,40 +155,54 @@ void getBbxInfo(int __attribute__((address_space(1)))* atrBbx,
 __kernel void renFromTid(
 			int xres,
 			int yres,
+			int tidPosToRen,
 			__global int* _tidPosGrid,
 			__global uchar* srcImg,
 			__global uchar* outsAllPrev,
 			__global uchar* outsAll)
 {
-	int xi = get_global_id(0);
-	int yi = get_global_id(1);
+	int yo = get_global_id(0);
+	int xo = get_global_id(1);
 
 	uchar red[] = {255, 0, 0};
 	uchar green[] = {0, 255, 0};
 
+	int yi = yo;//tidPosToRen % 2;
+	int xi = xo;// + tidPosToRen/50;//1*(((tidPosToRen/30) % 2)-1);
+
+	//int xii = xi-1;
+
 	int tidPos = -1;
-	//if (xi < xres-1 && yi < yres-1) 
-		tidPos = getCellScalar(xi, yi, xres-1, _tidPosGrid);
+	//if (yi < xres-1 && xi < yres-1) 
+		tidPos = getCellScalar(xi-1, yi, xres-1, yres-1, _tidPosGrid); // Why xi-1?
 
 	uchar outsAllPrevClr[] = {0, 0, 0};
-	getImageCell(xi, yi, xres, yres, outsAllPrev, outsAllPrevClr);
+	getImageCell(xi, yi, xres-1, yres-1, outsAllPrev, outsAllPrevClr);
 
-	//uchar imgClr[] = {0, 0, 0};
-	//getImageCell(xi, yi, xres, yres, srcImg, imgClr);
+	uchar imgClr[] = {0, 0, 0};
+	getImageCell(xi, yi, xres-1, yres-1, srcImg, imgClr); // Why -1?
 
 	uchar outClr[] = {0, 0, 0};
-	if (tidPos > -1) {
+	if (tidPos == tidPosToRen) 
+	//if (1)
+	{
 		set3uchar(255, 0, 100, outClr);
-		setLevCell(0, xi, yi, xres, yres, outClr, outsAll);
+		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
+		//imgClr[2] = 200;
+		setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
 	} else {
 		set3uchar(0, 200, 0, outClr);
-		//setLevCell(0, xi, yi, xres, yres, outsAllPrevClr, outsAll);
-		setLevCell(0, xi, yi, xres, yres, outClr, outsAll);
+		setLevCell(0, yo, xo, xres, yres, outsAllPrevClr, outsAll);
+		//setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
+		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
 	}
 
-	uchar db[] = {(10*xi)%255, (10*yi)%255, 0};
-	//setLevCell(0, xi, yi, xres, yres, db, outsAll);
-	//setLevCell(0, xi, yi+3, xres, yres, red, outsAll);
+	xi += 1;
+	//setLevCell(0, yo, xo, xres, yres, red, outsAll);
+	//uchar db[] = {(10*yi)%255, (10*xi)%255, 0};
+	//setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
+	//setLevCell(0, yi, xi, xres, yres, db, outsAll);
+	//setLevCell(0, yi, xi+3, xres, yres, red, outsAll);
 
 	
 }

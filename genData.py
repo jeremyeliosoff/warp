@@ -229,7 +229,7 @@ def getLevThresh(warpUi, lev, nLevels):
 	levThresh = warpUi.getOfsWLev(lev) % 1.0
 	levThreshRemap = ut.gamma(levThresh, warpUi.parmDic("gamma"))
 
-	levRel = float(lev)/(nLevels-1)
+	levRel = .5 if nLevels == 1 else float(lev)/(nLevels-1)
 	minThreshThisLev = ut.mix(minThreshMin, minThreshMax, levRel)
 	maxThreshThisLev = ut.mix(maxThreshMin, maxThreshMax, levRel)
 
@@ -521,13 +521,13 @@ def growCurves(warpUi, jtGrid, frameDir):
 	#frDirDebug.write("PRE warpUi.nextSid:" + str(warpUi.nextSid) + "\n\n")
 
 	tidToSidsStr = "PRE warpUi.tidToSids:\n"
-	ks = warpUi.tidToSids[1].keys()
+	ks = warpUi.tidToSids[0].keys()
 	ks.sort()
 	for k in ks:
-		kks = warpUi.tidToSids[1][k].keys()
+		kks = warpUi.tidToSids[0][k].keys()
 		kks.sort()
 		for kk in kks:
-			tidToSidsStr += str(k) + ":" + str(kk) + ":" + str(warpUi.tidToSids[1][k][kk]) + "\n"
+			tidToSidsStr += str(k) + ":" + str(kk) + ":" + str(warpUi.tidToSids[0][k][kk]) + "\n"
 		tidToSidsStr += "\n"
 
 	#frDirDebug.write(tidToSidsStr)
@@ -1211,6 +1211,7 @@ def renCvWrapper(warpUi):
 		if os.path.exists(tidPosGridPath):
 			print "_renCvWrapper():", tidPosGridPath, "exists.  Loading..."
 			warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
+			makeTidsSorted(warpUi)
 			warpUi.dataLoadedForFr = fr
 		else:
 			print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _inSurfGridToTidGrid()..."
@@ -1401,17 +1402,22 @@ def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToC
 
 			iJt += 1
 
-def inSurfGridToTidGrid(warpUi):
-
-	fr = warpUi.parmDic("fr")
+def makeTidsSorted(warpUi):
+	print "_makeTidsSorted(): BEGIN"
 	nLevels = warpUi.parmDic("nLevels")
 	res = warpUi.res
 
-	print "inSurfGridToTidGrid(): Converting tidToSids to sidToTidPos..."
-	sidToTidPos = [{} for lev in range(nLevels)]
+	if warpUi.tidToSids == None:
+		loadLatestTidToSids(warpUi)
+
+	print "_makeTidsSorted(): Converting tidToSids to warpUi.sidToTidPos..."
+	warpUi.sidToTidPos = [{} for lev in range(nLevels)]
+	warpUi.tidsSorted = []
 	for lev in range(nLevels):
+		print "XXXXXXXXXX warpUi.tidToSids", warpUi.tidToSids
 		tids = warpUi.tidToSids[lev].keys()
 		tids.sort()
+		warpUi.tidsSorted.append(tids)
 		tidPos = 0
 		#for tid, vals in warpUi.tidToSids[lev].items():
 		for tid in tids:
@@ -1419,9 +1425,16 @@ def inSurfGridToTidGrid(warpUi):
 			for sid in vals["sids"]:
 				#sidToTidPos[lev].append((sid, tid))
 				#sidToTidPos[lev][sid] = tid
-				sidToTidPos[lev][sid] = tidPos
+				warpUi.sidToTidPos[lev][sid] = tidPos
 			tidPos += 1
 
+
+def inSurfGridToTidGrid(warpUi):
+
+	fr = warpUi.parmDic("fr")
+	nLevels = warpUi.parmDic("nLevels")
+	res = warpUi.res
+	makeTidsSorted(warpUi)
 
 	inSurfGridPath = warpUi.framesDataDir + ("/%05d/inSurfGrid" % fr)
 	inSurfGrid = pickleLoad(inSurfGridPath)
@@ -1432,14 +1445,14 @@ def inSurfGridToTidGrid(warpUi):
 
 		print "\n_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev", lev
 		tidPosGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
-		sidSet = set(sidToTidPos[lev].keys())
+		sidSet = set(warpUi.sidToTidPos[lev].keys())
 		for xx in range(res[0]):
 			for yy in range(res[1]):
 				sid = inSurfGrid[lev][xx][yy]
 				if sid == None:
 					tidPosGridThisLev[xx][yy] = -1
 				elif sid in sidSet:
-					tidPosGridThisLev[xx][yy] = sidToTidPos[lev][sid]
+					tidPosGridThisLev[xx][yy] = warpUi.sidToTidPos[lev][sid]
 					maxTid = max(maxTid, tidPosGridThisLev[xx][yy])
 				else:
 					tidPosGridThisLev[xx][yy] = 0
@@ -1488,8 +1501,8 @@ __kernel void clear(
 			int yres,
 			__global uchar* outsAll)
 {
-	int x = get_global_id(1);
-	int y = get_global_id(0);
+	int x = get_global_id(0);
+	int y = get_global_id(1);
 	setLevCell0(0, x, y, xres, yres, outsAll);
 
 }
@@ -1514,10 +1527,6 @@ __kernel void clear(
 	outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
 	print "\n\nYYYY outsAll.shape", outsAll.shape
 
-	#outsAllPrev = np.copy(outsAll)
-	outsAllPrev = np.zeros((tpgs[1]+1, tpgs[0]+1, 3,), dtype=np.uint8)
-	outsAllPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=outsAllPrev)
 
 
 	srcImg = Image.open(warpUi.images["source"]["path"])
@@ -1533,19 +1542,52 @@ __kernel void clear(
 
 
 	
-	shp = outsAllPrev.shape
-	bld = cl.Program(cntxt, kernelRen).build()
-	launch = bld.renFromTid(
-			queue,
-			shp,
-			None,
-			np.int32(shp[0]),
-			np.int32(shp[1]),
-			tidPosGridAr_buf,
-			srcImgAr_buf,
-			outsAllPrev_buf,
-			outsAll_buf)
-	launch.wait()
+	print "LLLLLLL warpUi.tidsSorted[lev]:", warpUi.tidsSorted[lev]
+	print "\n\n_______ len(warpUi.tidsSorted[lev]:", len(warpUi.tidsSorted[lev])
+	for tidPosToRen in range(len(warpUi.tidsSorted[lev])):
+		#print "MMMMMMMM tidPosToRen:", tidPosToRen
+		outsAllPrev = np.copy(outsAll)
+		#outsAllPrev = np.zeros((tpgs[1]+1, tpgs[0]+1, 3,), dtype=np.uint8)
+		outsAllPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=outsAllPrev)
+
+		#print "-------------------------BUF"
+		#for d in dir(outsAllPrev_buf):
+		#	print d
+
+		shp = outsAllPrev.shape
+
+		bld = cl.Program(cntxt, kernelRen).build()
+		launch = bld.renFromTid(
+				queue,
+				shp,
+				None,
+				np.int32(shp[0]),
+				np.int32(shp[1]),
+				np.int32(tidPosToRen),
+				tidPosGridAr_buf,
+				srcImgAr_buf,
+				outsAllPrev_buf,
+				outsAll_buf)
+		launch.wait()
+		cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
+
+
+		#bldDel = cl.Program(cntxt, kernelDel).build()
+		#launchDel = bldDel.clear(
+		#		queue,
+		#		shp,
+		#		None,
+		#		np.int32(shp[0]),
+		#		np.int32(shp[1]),
+		#		outsAll_buf)
+		#launchDel.wait()
+		#cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
+
+	outsAll_buf.release()
+	outsAllPrev_buf.release()
+		#outsAll_buf.release()
+
 	print "\n", "*"*100
 	print "tidPosGridAr.shape", tidPosGridAr.shape
 	print "outsAllPrev.shape", outsAllPrev.shape
@@ -1555,7 +1597,6 @@ __kernel void clear(
 	print "*"*100
 	print
 
-	cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
 
 	allArray = np.copy(outsAll)
 
