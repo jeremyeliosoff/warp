@@ -1535,7 +1535,7 @@ __kernel void clear(
 	srcImgAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgAr)
 
-	lev = 0
+	lev = 3
 	tidPosGridAr = np.array(np.swapaxes(warpUi.tidPosGrid[lev], 0, 1), dtype=np.intc)
 	tidPosGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridAr)
@@ -1544,7 +1544,7 @@ __kernel void clear(
 	
 	print "LLLLLLL warpUi.tidsSorted[lev]:", warpUi.tidsSorted[lev]
 	print "\n\n_______ len(warpUi.tidsSorted[lev]:", len(warpUi.tidsSorted[lev])
-	for tidPosToRen in range(len(warpUi.tidsSorted[lev])):
+	for tidPosToRen in xrange(len(warpUi.tidsSorted[lev])):
 		#print "MMMMMMMM tidPosToRen:", tidPosToRen
 		outsAllPrev = np.copy(outsAll)
 		#outsAllPrev = np.zeros((tpgs[1]+1, tpgs[0]+1, 3,), dtype=np.uint8)
@@ -1565,6 +1565,7 @@ __kernel void clear(
 				np.int32(shp[0]),
 				np.int32(shp[1]),
 				np.int32(tidPosToRen),
+				np.int32(1),
 				tidPosGridAr_buf,
 				srcImgAr_buf,
 				outsAllPrev_buf,

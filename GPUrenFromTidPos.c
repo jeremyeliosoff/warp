@@ -156,6 +156,7 @@ __kernel void renFromTid(
 			int xres,
 			int yres,
 			int tidPosToRen,
+			int xofs,
 			__global int* _tidPosGrid,
 			__global uchar* srcImg,
 			__global uchar* outsAllPrev,
@@ -167,8 +168,13 @@ __kernel void renFromTid(
 	uchar red[] = {255, 0, 0};
 	uchar green[] = {0, 255, 0};
 
+	__local int xxof;
+	xxof = 30;
+	//__private int yi;
+	__local int xofss;
+	xofss = 2;
 	int yi = yo;//tidPosToRen % 2;
-	int xi = xo;// + tidPosToRen/50;//1*(((tidPosToRen/30) % 2)-1);
+	int xi = xo + 1;// + xofs;//1*(((tidPosToRen/30) % 2)-1);
 
 	//int xii = xi-1;
 
@@ -188,7 +194,11 @@ __kernel void renFromTid(
 	{
 		set3uchar(255, 0, 100, outClr);
 		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
-		//imgClr[2] = 200;
+		imgClr[tidPosToRen % 3] = 200;
+		if (tidPosToRen == 3 || tidPosToRen == 10) {
+			set3uchar(200, 0, 0, imgClr);
+
+		}
 		setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
 	} else {
 		set3uchar(0, 200, 0, outClr);
@@ -197,7 +207,7 @@ __kernel void renFromTid(
 		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
 	}
 
-	xi += 1;
+	//xi += 1;
 	//setLevCell(0, yo, xo, xres, yres, red, outsAll);
 	//uchar db[] = {(10*yi)%255, (10*xi)%255, 0};
 	//setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
