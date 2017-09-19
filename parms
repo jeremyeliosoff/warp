@@ -22,7 +22,7 @@ doRenCv
 val 1
 
 image
-val tuktukPt1
+val testPng
 
 dbImg1
 val sidPost
@@ -31,13 +31,13 @@ lev_dbImg1
 val ALL
 
 dbImg2
-val cvSid
+val sidPost
 
 lev_dbImg2
-val ALL
+val lev03
 
 renVer
-val v041
+val v003moreAovs
 
 frStart
 val 1
@@ -46,7 +46,7 @@ frEnd
 val 5
 
 frPerCycle
-val 10
+val 15
 
 doGen
 val 1
@@ -60,7 +60,7 @@ val 1
 ---GEN---
 
 nLevels
-val 1
+val 4
 
 kSurf
 val 1
@@ -69,10 +69,10 @@ gamma
 val 1
 
 minThresh
-val 0.3
+val 0.5
 
 maxThresh
-val .6
+val .9
 
 rangeThresh
 val .1
@@ -95,13 +95,13 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v024
+val v002moreAovs
 
 startLev
-val 1
+val 0
 
 fallDist
-val .2
+val 0
 
 fallKForBiggest
 val 1
@@ -119,7 +119,7 @@ fallVecY
 val .5
 
 fallMode
-val orig
+val fall
 
 progDurBot
 val 1
@@ -128,16 +128,16 @@ progDurTop
 val .5
 
 sfA
-val .8
+val .6
 
 sfK
-val 1
+val 1.1
 
 cvA
 val .8
 
 cvK
-val 1.3
+val 1.4
 
 mixClrSob
 val 0

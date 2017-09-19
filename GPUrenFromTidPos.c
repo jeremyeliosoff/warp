@@ -10,7 +10,6 @@
 }
 */
 
-
 float smoothLaunch(float edge0, float edge1, float x) {
 	return min(1.0,2.0*smoothstep(edge0, edge0+(edge1-edge0)*2, x));
 }
@@ -24,12 +23,6 @@ void mix3(uchar* a, uchar* b, float m, uchar* ret) {
 	for (i = 0; i < 3; i++) {
 		ret[i] = mixI(a[i], b[i], m);
 	}
-}
-
-void set3uchar(uchar x, uchar y, uchar z, uchar* ret) {
-	ret[0] = x;
-	ret[1] = y;
-	ret[2] = z;
 }
 
 void getArrayCell(int x, int y, int xres, int yres,
@@ -52,18 +45,7 @@ void setLevCell(int n, int x, int y, int xres, int yres,
 		int i = (n*xres*yres + x * yres + y) * 3;
 		ret[i] = val[0];
 		ret[i+1] = val[1];
-		ret[i+2] = val[2];//i < 15 ? 255 : i % 255;
-	}
-}
-
-void setLevCell0(int n, int x, int y, int xres, int yres,
-  uchar __attribute__((address_space(1)))* ret)
-{
-	if (x >= 0 && x < xres && y >= 0 && y < yres) {
-		int i = (n*xres*yres + x * yres + y) * 3;
-		ret[i] = 0;
-		ret[i+1] = 0;
-		ret[i+2] = 0;
+		ret[i+2] = val[2];
 	}
 }
 
@@ -99,9 +81,9 @@ void getImageCell(int x, int y, int xresIn, int yresIn,
 {
 	int xres = xresIn + 1;
 	int yres = yresIn + 1;
-	if (x >= 0 && x < yres && y >= 0 && y < xres) {
-		int i = (y * yres + x) * 3;
-		//int i = (x * yres + y) * 3;
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		//int i = (y * xres + x) * 3;
+		int i = (y * xres + x) * 3;
 		ret[0] = img[i];
 		ret[1] = img[i+1];
 		ret[2] = img[i+2];
@@ -116,16 +98,12 @@ float jRandNP(int seed) {
 	return 2.0*jRand(seed) - 1.0;
 }
 
-int getCellScalar(int x, int y, int xres, int yres,
+int getCellScalar(int x, int y, int yres,
   int __attribute__((address_space(1)))* _inSurfGrid)
 {
-	if (x < 0 || x > yres || y < 0 || y > xres) {
-		return -1;
-	} else {
-		//int i = y * xres + x;
-		int i = x * xres + y;
-		return _inSurfGrid[i];
-	}
+	//int i = y * xres + x;
+	int i = x * yres + y;
+	return _inSurfGrid[i];
 }
 
 void getBbx(int __attribute__((address_space(1)))* atrBbx, int i, int* mnx, int* mny, int* mxx, int* mxy) {
@@ -152,69 +130,213 @@ void getBbxInfo(int __attribute__((address_space(1)))* atrBbx,
 
 }
 
+void renTidPos(
+	int xi,
+	int yi,
+	int tidPos,
+	uchar* imgClr,
+	uchar* prevVal,
+	int xres,
+	int yres,
+	int nClrs,
+	int lev,
+	float levThresh,
+	__global int* _tidPosGrid,
+	__global int* tids,
+	__global int* atrBbx,
+	__global uchar* clrsInt,
+	__global uchar* srcImg,
+	__global uchar* sidPostThisAr,
+	__global uchar* sidPostALLPrev,
+	__global uchar* sidPostALL,
+	__global uchar* outsSep,
+	__global uchar* outsAllPrev,
+	__global uchar* outsAll) {
+
+	float prog = levThresh;
+	if (tidPos > -1) {
+		int tid = tids[tidPos];
+
+		//int mnx, mny, mxx, mxy;
+		//getBbx(atrBbx, tid, &mnx, &mny, &mxx, &mxy);
+		int cx = xres/2;
+		int cy = .35*yres;
+		int tcx, tcy, dx, dy, mnx, mny, mxx, mxy;
+		getBbxInfo(atrBbx, tidPos, &tcx, &tcy, &dx, &dy, &mnx, &mny, &mxx, &mxy);
+		float big = ((float)dx/xres)*((float)dy/yres);
+		float bigK = 1-big;
+		bigK *= bigK;
+
+
+		float xfK = 0;
+		
+		if (cx < mnx || cx > mxx || cy < mny || cy > mxy) {
+			float xfKK = 3;
+			xfK = smoothLaunch(0.2, 1.0, prog) * bigK * xfKK;
+		}
+
+		int xofs = xfK*(tcx-cx);//jRandNP(tid) * 10;
+		int yofs = xfK*(tcy-cy);//jRandNP(tid+11) * 10;
+		int xo = xi + xofs;
+		int yo = yi + yofs;
+
+		float mxr = 4*(1-prog)*prog;
+		//imgClr[0] = 200;
+		//imgClr[1] = 200;
+		//imgClr[2] = 200;
+
+		uchar clrRand[] = {0, 0, 0};
+		int clrInd = tid % nClrs;
+		clrRand[0] = clrsInt[clrInd * 3];
+		clrRand[1] = clrsInt[clrInd * 3+1];
+		clrRand[2] = clrsInt[clrInd * 3+2];
+
+		uchar val[] = {0, 0, 0};
+		val[0] = imgClr[0];
+		val[1] = imgClr[1];
+		val[2] = imgClr[2];
+
+		float clrMix = smoothLaunch(0.0, 1.0, prog)*(1-big);
+		mix3(imgClr, clrRand, clrMix, val);
+
+
+		uchar valMixed[] = {0, 0, 0};
+		// TODO: This is from xi,yi; should be xo,yo, no?
+		mix3(prevVal, val, mxr, valMixed);
+
+		setLevCell(0, xo, yo, xres, yres, valMixed, outsAll);
+		setImgLevCell(0, lev, xo, yo, xres, yres, val, outsSep);
+	}
+}
+
+
 __kernel void renFromTid(
 			int xres,
 			int yres,
 			int nTids,
-			int xofs,
+			int nClrs,
+			int lev,
+			float levThresh,
 			__global int* _tidPosGrid,
+			__global int* tids,
+			__global int* atrBbx,
+			__global uchar* clrsInt,
 			__global uchar* srcImg,
+			__global uchar* sidPostThisAr,
+			__global uchar* sidPostALLPrev,
+			__global uchar* sidPostALL,
+			__global uchar* outsSep,
 			__global uchar* outsAllPrev,
 			__global uchar* outsAll)
 {
-	int yo = get_global_id(0);
-	int xo = get_global_id(1);
+	int xi = get_global_id(0);
+	int yi = get_global_id(1);
 
-	uchar red[] = {255, 0, 0};
-	uchar green[] = {0, 25, 0};
+	uchar val[] = {0, 0, 0};
 
-	setLevCell(0, yo, xo, xres, yres, green, outsAll);
+
+	uchar prevVal[] = {0, 0, 0};
+	getArrayCell(xi, yi, xres, yres, outsAllPrev, prevVal);
+
+	setLevCell(0, xi, yi, xres, yres, prevVal, outsAll);
+	setImgLevCell(0, lev, xi, yi, xres, yres, val, outsSep);
+
+	// Make sure you've coloured the entire background before proceding.
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	int tidPosToRen;
-	for (tidPosToRen=0; tidPosToRen<nTids; tidPosToRen++) {
-	int yi = yo;//tidPosToRen % 2;
-	int xi = xo + tidPosToRen*.3;// + xofs;//1*(((tidPosToRen/30) % 2)-1);
+	uchar imgClr[3];
+	getImageCell(xi, yi, xres, yres, srcImg, imgClr);
 
-	//int xii = xi-1;
+	//getImageCell(xi, yi, xres, yres, srcImg, imgClr);
+	//setArrayCell(xi, yi, xres, yres, imgClr, sidPostALL);
 
-	int tidPos = -1;
-	tidPos = getCellScalar(xi-1, yi, xres-1, yres-1, _tidPosGrid); // Why xi-1?
-	if (tidPos == tidPosToRen) 
-	//if (1)
-	{
 
-		uchar outsAllPrevClr[] = {0, 0, 0};
-		getImageCell(xi, yi, xres-1, yres-1, outsAllPrev, outsAllPrevClr);
+	int tidPos = getCellScalar(xi, yi, yres, _tidPosGrid);
 
-		uchar imgClr[] = {0, 0, 0};
-		getImageCell(xi, yi, xres-1, yres-1, srcImg, imgClr); // Why -1?
-
-		uchar outClr[] = {0, 0, 0};
-		set3uchar(255, 0, 100, outClr);
-		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
-		imgClr[(tidPosToRen+1) % 3] = 200;
-		if (tidPosToRen == 3 || tidPosToRen == 10) {
-			set3uchar(200, 0, 0, imgClr);
-
+	bool safeMode = 1;
+	
+	if (safeMode) {
+		//int nTids = 11;
+		int tidPosToCheck;
+		for (tidPosToCheck = 0; tidPosToCheck < nTids; tidPosToCheck ++) {
+			if (tidPosToCheck == tidPos) {
+				renTidPos(
+					xi,
+					yi,
+					tidPos,
+					imgClr,
+					prevVal,
+					xres,
+					yres,
+					nClrs,
+					lev,
+					levThresh,
+					_tidPosGrid,
+					tids,
+					atrBbx,
+					clrsInt,
+					srcImg,
+					sidPostThisAr,
+					sidPostALLPrev,
+					sidPostALL,
+					outsSep,
+					outsAllPrev,
+					outsAll);
+			}
+			barrier(CLK_GLOBAL_MEM_FENCE);
 		}
-		setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
-	//} else {
-	//	uchar green[] = {0, 200, 0};
-	//	//setLevCell(0, yo, xo, xres, yres, outsAllPrevClr, outsAll);
-	//	setLevCell(0, yo, xo, xres, yres, green, outsAll);
-		//setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
-		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
+	} else {
+		renTidPos(
+			xi,
+			yi,
+			tidPos,
+			imgClr,
+			prevVal,
+			xres,
+			yres,
+			nClrs,
+			lev,
+			levThresh,
+			_tidPosGrid,
+			tids,
+			atrBbx,
+			clrsInt,
+			srcImg,
+			sidPostThisAr,
+			sidPostALLPrev,
+			sidPostALL,
+			outsSep,
+			outsAllPrev,
+			outsAll);
 	}
 
-	//xi += 1;
-	//setLevCell(0, yo, xo, xres, yres, red, outsAll);
-	//uchar db[] = {(10*yi)%255, (10*xi)%255, 0};
-	//setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
-	//setLevCell(0, yi, xi, xres, yres, db, outsAll);
-	//setLevCell(0, yi, xi+3, xres, yres, red, outsAll);
+	
+	/*
 
-	barrier(CLK_GLOBAL_MEM_FENCE);
-	}
+	AOV experiments
+	float xr = (float)xi/xres;
+	float yr = (float)yi/yres;
+	
+	val[0] = 0;
+	val[1] = 255;
+	val[2] = xr < levThresh ? 0 : 255;
+	setLevCell(1, xi, yi, xres, yres, val, outsSep);
+	
+	val[0] = 199;//yr < .5*levThresh ? 0 : 255;
+	val[1] = 199;//0;
+	val[2] = 0;//255;
+	setLevCell(2, xi, yi, xres, yres, val, outsSep);
+	
+	
+	val[0] = 0;
+	val[1] = 199;//yr > levThresh ? 0 : 255;
+	val[2] = 0;//255;
+	setLevCell(1, xi, yi, xres, yres, val, outsAll);
+	
+	val[0] = 0;
+	val[1] = 0;//yr > levThresh ? 0 : 255;
+	val[2] = 199;//255;
+	setLevCell(2, xi, yi, xres, yres, val, outsAll);
+	*/
 	
 }
