@@ -155,7 +155,7 @@ void getBbxInfo(int __attribute__((address_space(1)))* atrBbx,
 __kernel void renFromTid(
 			int xres,
 			int yres,
-			int tidPosToRen,
+			int nTids,
 			int xofs,
 			__global int* _tidPosGrid,
 			__global uchar* srcImg,
@@ -166,43 +166,43 @@ __kernel void renFromTid(
 	int xo = get_global_id(1);
 
 	uchar red[] = {255, 0, 0};
-	uchar green[] = {0, 255, 0};
+	uchar green[] = {0, 25, 0};
 
-	__local int xxof;
-	xxof = 30;
-	//__private int yi;
-	__local int xofss;
-	xofss = 2;
+	setLevCell(0, yo, xo, xres, yres, green, outsAll);
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	int tidPosToRen;
+	for (tidPosToRen=0; tidPosToRen<nTids; tidPosToRen++) {
 	int yi = yo;//tidPosToRen % 2;
-	int xi = xo + 1;// + xofs;//1*(((tidPosToRen/30) % 2)-1);
+	int xi = xo + tidPosToRen*.3;// + xofs;//1*(((tidPosToRen/30) % 2)-1);
 
 	//int xii = xi-1;
 
 	int tidPos = -1;
-	//if (yi < xres-1 && xi < yres-1) 
-		tidPos = getCellScalar(xi-1, yi, xres-1, yres-1, _tidPosGrid); // Why xi-1?
-
-	uchar outsAllPrevClr[] = {0, 0, 0};
-	getImageCell(xi, yi, xres-1, yres-1, outsAllPrev, outsAllPrevClr);
-
-	uchar imgClr[] = {0, 0, 0};
-	getImageCell(xi, yi, xres-1, yres-1, srcImg, imgClr); // Why -1?
-
-	uchar outClr[] = {0, 0, 0};
+	tidPos = getCellScalar(xi-1, yi, xres-1, yres-1, _tidPosGrid); // Why xi-1?
 	if (tidPos == tidPosToRen) 
 	//if (1)
 	{
+
+		uchar outsAllPrevClr[] = {0, 0, 0};
+		getImageCell(xi, yi, xres-1, yres-1, outsAllPrev, outsAllPrevClr);
+
+		uchar imgClr[] = {0, 0, 0};
+		getImageCell(xi, yi, xres-1, yres-1, srcImg, imgClr); // Why -1?
+
+		uchar outClr[] = {0, 0, 0};
 		set3uchar(255, 0, 100, outClr);
 		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
-		imgClr[tidPosToRen % 3] = 200;
+		imgClr[(tidPosToRen+1) % 3] = 200;
 		if (tidPosToRen == 3 || tidPosToRen == 10) {
 			set3uchar(200, 0, 0, imgClr);
 
 		}
 		setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
-	} else {
-		set3uchar(0, 200, 0, outClr);
-		setLevCell(0, yo, xo, xres, yres, outsAllPrevClr, outsAll);
+	//} else {
+	//	uchar green[] = {0, 200, 0};
+	//	//setLevCell(0, yo, xo, xres, yres, outsAllPrevClr, outsAll);
+	//	setLevCell(0, yo, xo, xres, yres, green, outsAll);
 		//setLevCell(0, yo, xo, xres, yres, imgClr, outsAll);
 		//setLevCell(0, yo, xo, xres, yres, outClr, outsAll);
 	}
@@ -214,5 +214,7 @@ __kernel void renFromTid(
 	//setLevCell(0, yi, xi, xres, yres, db, outsAll);
 	//setLevCell(0, yi, xi+3, xres, yres, red, outsAll);
 
+	barrier(CLK_GLOBAL_MEM_FENCE);
+	}
 	
 }
