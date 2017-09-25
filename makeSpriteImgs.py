@@ -66,30 +66,39 @@ for fr in range(5,6):
 
 		tidPosGrid = genData.pickleLoad(tidPosGridPath)
 		tidPosGridThisLev = tidPosGrid[lev]
+		arTidPosGridThisLev = np.array(tidPosGridThisLev)
+		print "arTidPosGridThisLev.shape", arTidPosGridThisLev.shape
+		padTest = np.lib.pad(arTidPosGridThisLev, ((1,0), (0,1)), "constant", constant_values=-1)
+		print "padTest.shape", padTest.shape
+		print "arTidPosGridThisLev[0]", arTidPosGridThisLev[0]
+		print "padTest[0]", padTest[0]
 
 		tidToSids = genData.pickleLoad(tidToSidsPath)
 		tidToSidsThisLev = tidToSids[lev]
 		tids = tidToSidsThisLev.keys()
 		tids.sort()
 
-		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
-		tidGridSz = (len(tidClrGrid), len(tidClrGrid[0]))
-		#tidImg = pygame.Surface(tidGridSz)
-		#pygame.pixelcopy.array_to_surface(tidImg, tidClrGrid)
+		tidClrGrid = converTidPosGridToTidClrGrid(padTest, tids)
 		tidImg = pygame.surfarray.make_surface(tidClrGrid)
 		path = "test/img/tidImg.lev%03d.%05d.png" % (lev, fr)
 		pygame.image.save(tidImg, path)
 
 		print "tids", tids
 		srcImg = pygame.image.load(srcPath)
-		sprites = []
+		#sprites = []
+
+		res = srcImg.get_size()
+		# Initialize canvas
+		canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
+		canvas.fill((0, 90, 0))
+
 
 		for tidPos in range(len(tids)):
 			tid = tids[tidPos]
 			bbx = tidToSidsThisLev[tid]["bbx"]
 			sz=(bbx[1][0]-bbx[0][0], bbx[1][1]-bbx[0][1])
 
-			# +1 totally trial + error.
+			# +1 totally trial + error. ***********???????? maybe not needed?
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 			print "bbxTup", bbxTup
 
@@ -99,7 +108,7 @@ for fr in range(5,6):
 			pygame.image.save(cropFromSrcImg, "test/img/%05d_cropFromSrc.png" % tid)
 
 			pygame.surfarray.pixels_alpha(cropFromSrcImg)[:,:] = 0
-			sprites.append({"img":cropFromSrcImg, "bbx":bbx, "tid":tid})
+			#sprites.append({"img":cropFromSrcImg, "bbx":bbx, "tid":tid})
 			
 			# Fill a sprite-sized np array with tidClr based on tidPos.
 			tidClr = convertTidToClr(tidPos)
@@ -123,4 +132,8 @@ for fr in range(5,6):
 			pygame.surfarray.pixels3d(spriteImg)[:,:] = \
 				pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
 			pygame.image.save(spriteImg, "test/img/%05dBgImgCB_CkeyInvAlphaOrigClr.png" % tid)
+			canvas.blit(spriteImg, (bbxTup[0], bbxTup[1]))
+
+		pygame.image.save(canvas, "test/img/_canvas.%05d.png" % (fr))
+		pygame.image.save(srcImg, "test/img/_src.%05d.png" % (fr))
 
