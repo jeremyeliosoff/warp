@@ -3,7 +3,16 @@ import pygame, math, ut, os, pprint, sys, random, time, shutil, glob, genData
 from PIL import Image
 import numpy as np
 
-tidToSidsPath = base = "/home/jeremy/dev/warp/data/testPng/v021/frames/%05d/tidToSids" % 5
+#seq = "testPng"
+#dataV = "v021"
+#frange = range(5,6):
+#lrange = range(0,1):
+#seq = "lzSmokeShortp2pngGm1p3"
+#dataV = "v063"
+seq = "lzSmokeShortFRpng"
+dataV = "v012GPUNewHope"
+frange = range(250,251)
+lrange = range(0,10)
 
 def convertTidToClr(tid):
 	if tid < 0:
@@ -57,23 +66,35 @@ def invert255(v):
 invert255V = np.vectorize(invert255)
 
 
-for fr in range(5,6):
-	for lev in range(0,1):
-		srcPath = "/home/jeremy/dev/warp/seq/testPng/testPng.%05d.png" % fr
 
-		base = "/home/jeremy/dev/warp/data/testPng/v021/frames/%05d" % fr
-		tidPosGridPath = base + "/tidPosGrid"
+for fr in frange:
+	print "Doing fr", fr, "..."
+	tidToSidsPath = "/home/jeremy/dev/warp/data/" + seq + "/" + dataV + "/frames/%05d/tidToSids" % fr
+	tidToSids = genData.pickleLoad(tidToSidsPath)
 
-		tidPosGrid = genData.pickleLoad(tidPosGridPath)
+	base = "/home/jeremy/dev/warp/data/" + seq + "/" + dataV + "/frames/%05d" % fr
+	tidPosGridPath = base + "/tidPosGrid"
+	tidPosGrid = genData.pickleLoad(tidPosGridPath)
+
+	srcPath = "/home/jeremy/dev/warp/seq/" + seq + "/" + seq + ".%05d.png" % fr
+	srcImg = pygame.image.load(srcPath)
+	res = srcImg.get_size()
+
+# Initialize canvas
+	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
+	canvas.fill((0, 90, 0))
+
+	for lev in lrange:
+		print "Doing lev", lev, "..."
+
 		tidPosGridThisLev = tidPosGrid[lev]
 		arTidPosGridThisLev = np.array(tidPosGridThisLev)
-		print "arTidPosGridThisLev.shape", arTidPosGridThisLev.shape
+		#print "arTidPosGridThisLev.shape", arTidPosGridThisLev.shape
 		padTest = np.lib.pad(arTidPosGridThisLev, ((1,0), (0,1)), "constant", constant_values=-1)
-		print "padTest.shape", padTest.shape
-		print "arTidPosGridThisLev[0]", arTidPosGridThisLev[0]
-		print "padTest[0]", padTest[0]
+		#print "padTest.shape", padTest.shape
+		#print "arTidPosGridThisLev[0]", arTidPosGridThisLev[0]
+		#print "padTest[0]", padTest[0]
 
-		tidToSids = genData.pickleLoad(tidToSidsPath)
 		tidToSidsThisLev = tidToSids[lev]
 		tids = tidToSidsThisLev.keys()
 		tids.sort()
@@ -83,14 +104,12 @@ for fr in range(5,6):
 		path = "test/img/tidImg.lev%03d.%05d.png" % (lev, fr)
 		pygame.image.save(tidImg, path)
 
-		print "tids", tids
-		srcImg = pygame.image.load(srcPath)
+		#print "tids", tids
 		#sprites = []
 
-		res = srcImg.get_size()
-		# Initialize canvas
-		canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
-		canvas.fill((0, 90, 0))
+		# Initialize canvasLev
+		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
+		canvasLev.fill((0, 90, 0))
 
 
 		for tidPos in range(len(tids)):
@@ -100,7 +119,7 @@ for fr in range(5,6):
 
 			# +1 totally trial + error. ***********???????? maybe not needed?
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-			print "bbxTup", bbxTup
+			#print "bbxTup", bbxTup
 
 			# Blit bbx of tid from srcImg to empty cropFromSrcImg of bbx size.
 			cropFromSrcImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
@@ -133,7 +152,9 @@ for fr in range(5,6):
 				pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
 			pygame.image.save(spriteImg, "test/img/%05dBgImgCB_CkeyInvAlphaOrigClr.png" % tid)
 			canvas.blit(spriteImg, (bbxTup[0], bbxTup[1]))
+			canvasLev.blit(spriteImg, (bbxTup[0], bbxTup[1]))
 
-		pygame.image.save(canvas, "test/img/_canvas.%05d.png" % (fr))
-		pygame.image.save(srcImg, "test/img/_src.%05d.png" % (fr))
+		pygame.image.save(canvasLev, "test/img/_canvasLev%03d.%05d.png" % (lev,  fr))
 
+	pygame.image.save(canvas, "test/img/_canvas.%05d.png" % (fr))
+	pygame.image.save(srcImg, "test/img/_src.%05d.png" % (fr))
