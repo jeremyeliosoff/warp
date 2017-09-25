@@ -51,6 +51,11 @@ def vecTo3dArray(v, xres, yres):
 #for fr in range(1,6):
 #	for lev in range(4):
 
+def invert255(v):
+	return 255-v
+
+invert255V = np.vectorize(invert255)
+
 
 for fr in range(5,6):
 	for lev in range(0,1):
@@ -82,90 +87,40 @@ for fr in range(5,6):
 		for tidPos in range(len(tids)):
 			tid = tids[tidPos]
 			bbx = tidToSidsThisLev[tid]["bbx"]
-			#print "\ntid", tid
-			#print "bbx", bbx
 			sz=(bbx[1][0]-bbx[0][0], bbx[1][1]-bbx[0][1])
-			destImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
-
 
 			# +1 totally trial + error.
-			bbxTp = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-			print "bbxTp", bbxTp
+			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+			print "bbxTup", bbxTup
 
-			# Blit bbx of tid from srcImg to empty destImg of bbx size.
-			destImg.blit(srcImg, (0, 0), bbxTp)
-			path = "test/img/%05d.png" % tid
-			pygame.image.save(destImg, path)
+			# Blit bbx of tid from srcImg to empty cropFromSrcImg of bbx size.
+			cropFromSrcImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
+			cropFromSrcImg.blit(srcImg, (0, 0), bbxTup)
+			pygame.image.save(cropFromSrcImg, "test/img/%05d_cropFromSrc.png" % tid)
 
-			pygame.surfarray.pixels_alpha(destImg)[:,:] = 0
-			sprites.append({"img":destImg, "bbx":bbx, "tid":tid})
-
+			pygame.surfarray.pixels_alpha(cropFromSrcImg)[:,:] = 0
+			sprites.append({"img":cropFromSrcImg, "bbx":bbx, "tid":tid})
+			
+			# Fill a sprite-sized np array with tidClr based on tidPos.
 			tidClr = convertTidToClr(tidPos)
-			print "\n\nXXX tidClr", tidClr
-
-			tidClrOfs = ((tidClr[0] + 128) % 256, tidClr[1], tidClr[2])
-			#bgAr.fill([255, 0, 0])
-			print "bgAr = np.empty(sz) - sz = ", sz
 			tidClrAr = vecTo3dArray(tidClr, sz[0], sz[1])
-			tidClrOfsAr = vecTo3dArray(tidClrOfs, sz[0], sz[1])
-			#bgImg = Image.fromarray(bgAr, 'RGB')
 
-			tidClrOfsBbxImg = pygame.surfarray.make_surface(tidClrOfsAr)
-			pygame.image.save(tidClrOfsBbxImg, "test/img/%05dTidClrOfsBbxImg.png" % tid)
 			tidClrBbxImg = pygame.surfarray.make_surface(tidClrAr)
 			pygame.image.save(tidClrBbxImg, "test/img/%05dTidClr.png" % tid)
 
-			#bgAr.fill(200)
-			bgAr = np.empty(sz)
-			bgImg = pygame.surfarray.make_surface(bgAr)
-			pygame.image.save(bgImg, "test/img/%05dBgImgA_Org.png" % tid)
+			# Initialize spriteImg with A=0.
+			spriteImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
+			pygame.surfarray.pixels_alpha(spriteImg)[:,:] = 0
 
-			tidImg.set_colorkey((0, 0, 10))
-			bgImg = pygame.surfarray.make_surface(bgAr)
-			bgImg.blit(tidImg, (0, 0), bbxTp)
-			pygame.image.save(bgImg, "test/img/%05dBgImgB_NoCkey.png" % tid)
-
+			# Comp tid using tidClr colorkey - makes hole at tid.
 			tidImg.set_colorkey(tidClr)
-			bgImg = pygame.surfarray.make_surface(bgAr)
-			bgImg.blit(tidImg, (0, 0), bbxTp)
-			pygame.image.save(bgImg, "test/img/%05dBgImgC_Ckey.png" % tid)
+			spriteImg.blit(tidImg, (0, 0), bbxTup)
 
-			#destImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
-			bgImg = pygame.surfarray.make_surface(bgAr)
-			# LAST CHANGE vvvv
-			bgImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
-			pygame.surfarray.pixels_alpha(bgImg)[:,:] = 0
-			bgImg.blit(tidClrOfsBbxImg, (0, 0), bbxTp)
-			pygame.image.save(bgImg, "test/img/%05dBgImgD_CkeyTidClr.png" % tid)
-
-
-
-
-
-
-
-			#x = sz[0]/2
-			#y = sz[1]/2
-			#print "get at", x, y, destImg.get_at((0, 0))
-			#print destImgAr
-
-		res = srcImg.get_size()
-
-		for x in range(res[0]-1):
-			for y in range(res[1]-1):
-				tidPos = tidPosGridThisLev[x][y]
-				if tidPos > -1:
-					bbx = sprites[tidPos]["bbx"]
-					xs = x-bbx[0][0]+0
-					ys = y-bbx[0][1]-1
-					#print "tidPos", tidPos, "tid", tids[tidPos], "bbx", bbx, "xy", x, y, "xys", xs, ys,
-					#print "shape", pygame.surfarray.array3d(sprites[tidPos]["img"]).shape
-					sptImg = sprites[tidPos]["img"]
-					sz = sptImg.get_size()
-					if xs >= 0 and ys >= 0 and xs < sz[0] and ys < sz[1]:
-						pygame.surfarray.pixels_alpha(sptImg)[xs][ys] = 255
-
-		for sprite in sprites:
-			path = "test/img/tid%05d.lev%03d.%05d.png" % (sprite["tid"], lev, fr)
-			#pygame.image.save(sprite["img"], path)
+			# Invert alpha - TODO: a) quicker (GPU) inversion, ie. OPTIMIZE?
+			# b) array_alpha instead because it copies, not references?
+			pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
+				invert255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:])
+			pygame.surfarray.pixels3d(spriteImg)[:,:] = \
+				pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
+			pygame.image.save(spriteImg, "test/img/%05dBgImgCB_CkeyInvAlphaOrigClr.png" % tid)
 
