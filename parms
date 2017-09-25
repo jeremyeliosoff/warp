@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v003moreAovs
+val v022
 
 frStart
 val 1
@@ -69,7 +69,7 @@ gamma
 val 1
 
 minThresh
-val 0.5
+val 0.1
 
 maxThresh
 val .9
@@ -95,7 +95,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v002moreAovs
+val v021
 
 startLev
 val 0

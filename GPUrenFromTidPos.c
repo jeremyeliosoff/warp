@@ -149,7 +149,7 @@ void renTidPos(
 	__global uchar* sidPostThisAr,
 	__global uchar* sidPostALLPrev,
 	__global uchar* sidPostALL,
-	__global uchar* outsSep,
+	__global uchar* outsPerLev,
 	__global uchar* outsAllPrev,
 	__global uchar* outsAll) {
 
@@ -205,7 +205,7 @@ void renTidPos(
 		mix3(prevVal, val, mxr, valMixed);
 
 		setLevCell(0, xo, yo, xres, yres, valMixed, outsAll);
-		setImgLevCell(0, lev, xo, yo, xres, yres, val, outsSep);
+		setImgLevCell(0, lev, xo, yo, xres, yres, val, outsPerLev);
 	}
 }
 
@@ -225,7 +225,7 @@ __kernel void renFromTid(
 			__global uchar* sidPostThisAr,
 			__global uchar* sidPostALLPrev,
 			__global uchar* sidPostALL,
-			__global uchar* outsSep,
+			__global uchar* outsPerLev,
 			__global uchar* outsAllPrev,
 			__global uchar* outsAll)
 {
@@ -239,7 +239,7 @@ __kernel void renFromTid(
 	getArrayCell(xi, yi, xres, yres, outsAllPrev, prevVal);
 
 	setLevCell(0, xi, yi, xres, yres, prevVal, outsAll);
-	setImgLevCell(0, lev, xi, yi, xres, yres, val, outsSep);
+	setImgLevCell(0, lev, xi, yi, xres, yres, val, outsPerLev);
 
 	// Make sure you've coloured the entire background before proceding.
 	barrier(CLK_GLOBAL_MEM_FENCE);
@@ -258,7 +258,7 @@ __kernel void renFromTid(
 	if (safeMode) {
 		//int nTids = 11;
 		int tidPosToCheck;
-		for (tidPosToCheck = 0; tidPosToCheck < nTids; tidPosToCheck ++) {
+		for (tidPosToCheck = 0; tidPosToCheck < nTids; tidPosToCheck++) {
 			if (tidPosToCheck == tidPos) {
 				renTidPos(
 					xi,
@@ -279,11 +279,12 @@ __kernel void renFromTid(
 					sidPostThisAr,
 					sidPostALLPrev,
 					sidPostALL,
-					outsSep,
+					outsPerLev,
 					outsAllPrev,
 					outsAll);
+				int dud = 0;
 			}
-			barrier(CLK_GLOBAL_MEM_FENCE);
+			barrier(CLK_LOCAL_MEM_FENCE);
 		}
 	} else {
 		renTidPos(
@@ -305,7 +306,7 @@ __kernel void renFromTid(
 			sidPostThisAr,
 			sidPostALLPrev,
 			sidPostALL,
-			outsSep,
+			outsPerLev,
 			outsAllPrev,
 			outsAll);
 	}
@@ -320,12 +321,12 @@ __kernel void renFromTid(
 	val[0] = 0;
 	val[1] = 255;
 	val[2] = xr < levThresh ? 0 : 255;
-	setLevCell(1, xi, yi, xres, yres, val, outsSep);
+	setLevCell(1, xi, yi, xres, yres, val, outsPerLev);
 	
 	val[0] = 199;//yr < .5*levThresh ? 0 : 255;
 	val[1] = 199;//0;
 	val[2] = 0;//255;
-	setLevCell(2, xi, yi, xres, yres, val, outsSep);
+	setLevCell(2, xi, yi, xres, yres, val, outsPerLev);
 	
 	
 	val[0] = 0;
