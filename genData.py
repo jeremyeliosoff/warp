@@ -1311,7 +1311,7 @@ def genSprites(warpUi, srcImg):
 
 
 
-def renSprites(warpUi, spritesThisFr, res, fr):
+def renSprites(warpUi, res, fr):
 	print "_renSprites(): BEGIN, fr", fr
 	# Initialize canvas
 	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
@@ -1320,15 +1320,19 @@ def renSprites(warpUi, spritesThisFr, res, fr):
 	nLevels = warpUi.parmDic("nLevels")
 	for lev in range(nLevels):
 		print "_renSprites(): fr", fr, "lev", lev
-		spritesThisLev = spritesThisFr[lev]
+		spritesThisLev = warpUi.spritesThisFr[lev]
 		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
 		canvasLev.fill((0, 90, 0))
 		for spriteDic in spritesThisLev:
 			bbx = spriteDic["bbx"]
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 			spriteImg = spriteDic["spriteImg"]
-			canvas.blit(spriteImg, (bbxTup[0], bbxTup[1]))
-			canvasLev.blit(spriteImg, (bbxTup[0], bbxTup[1]))
+			k = warpUi.parmDic("fallDist")
+			tCent = ((bbxTup[0] + bbxTup[2])/2, (bbxTup[1] + bbxTup[3])/2) 
+			pCent = (res[0]/2, res[1]/2)
+			xf = ((tCent[0]-pCent[0])*k, (tCent[1]-pCent[1])*k)
+			canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+			canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
 		levDir,imgPath = warpUi.getRenDirAndImgPath("ren", levStr)
@@ -1347,8 +1351,14 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
 	res = srcImg.get_size()
 
-	spritesThisFr = genSprites(warpUi, srcImg)
-	renSprites(warpUi, spritesThisFr, res, fr)
+	# Only gen sprites if they don't exist or fr is different.
+	if warpUi.spritesThisFr == None or (not warpUi.spritesLoadedFr == fr):
+		print "_genAndRenSprites(): spritesThisFr don't exist or wrong fr; generating..."
+		warpUi.spritesThisFr = genSprites(warpUi, srcImg)
+		warpUi.spritesLoadedFr = fr
+	else:
+		print "_genAndRenSprites(): spritesThisFr exist for this frame, reusing."
+	renSprites(warpUi, res, fr)
 
 
 

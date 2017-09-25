@@ -101,7 +101,7 @@ startLev
 val 0
 
 fallDist
-val .5
+val .3
 
 fallKForBiggest
 val 0
