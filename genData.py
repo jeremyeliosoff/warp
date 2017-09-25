@@ -366,7 +366,7 @@ def initJtGrid(img, warpUi):
 	# Write stats
 
 	renPath = warpUi.images["ren"]["path"]
-	renSeqDir = "/".join(renPath.split("/")[:-1])
+	renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
 	ut.mkDirSafe(renSeqDir)
 
 	ut.timerStop(warpUi, "initJtGridXYLoop")
@@ -1118,10 +1118,10 @@ def genData(warpUi, statsDirDest):
 
 	if warpUi.genRen1fr == 1:
 		genDataWrapper(warpUi)
-		renCvWrapper(warpUi)
+		renWrapper(warpUi)
 		saveTidToSid(warpUi)
 	elif warpUi.parmDic("doRenCv") == 1:
-		renCvWrapper(warpUi)
+		renWrapper(warpUi)
 	else:
 		genDataWrapper(warpUi)
 
@@ -1173,7 +1173,186 @@ def getLastFrameDirPath(warpUi, fr=None):
 		frameDir = warpUi.framesDataDir + ("/%05d" % fr)
 	return frameDir
 
-def renCvWrapper(warpUi):
+
+###########################
+#### REN SPRITES STUFF ####
+###########################
+
+def convertTidToClr(tid):
+	if tid < 0:
+		return (0, 0, 0)
+	else:
+		if tid == 0: tid = 21111 # Get rid of white, it doesn't tint nicely.
+		octant = tid%8
+		tDiv = tid/8
+		ocR = tDiv % 128 + 128*(octant % 2)
+		tDiv = tDiv/128
+		ocG = tDiv % 128 + 128*(octant/2 % 2)
+		tDiv = tDiv/128
+		ocB = tDiv % 128 + 128*(octant/4 % 2)# This should never loop - till we get to tid = 256^3
+		return (255-ocR, 255-ocG, 255-ocB)
+
+
+
+def converTidPosGridToTidClrGrid(tidPosGrid, tids):
+	xres = len(tidPosGrid)
+	yres = len(tidPosGrid[0])
+	tidClrGrid = np.zeros((xres, yres) + (3,), dtype=np.uint8)
+	
+	for x in range(xres):
+		for y in range(yres): 
+			tidPos = tidPosGrid[x][y]
+			tid = tids[tidPos]
+			tidClrGrid[x][y] = convertTidToClr(tidPos)
+	
+	return tidClrGrid
+
+
+
+def vecTo3dArray(v, xres, yres):
+	ret = np.repeat([v[:]], yres, 0)
+	return np.repeat([ret[:]], xres, 0)
+
+#for fr in range(1,6):
+#	for lev in range(4):
+
+
+
+def invert255(v):
+	return 255-v
+
+invert255V = np.vectorize(invert255)
+
+
+
+def makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
+	tid = tids[tidPos]
+	if "bbx" in tidToSidsThisLev[tid]:
+		bbx = tidToSidsThisLev[tid]["bbx"]
+	#regen = True
+	#if regen:
+		sz=(bbx[1][0]-bbx[0][0], bbx[1][1]-bbx[0][1])
+
+		# +1 totally trial + error. ***********???????? maybe not needed?
+		bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+		#print "bbxTup", bbxTup
+
+		# Blit bbx of tid from srcImg to empty cropFromSrcImg of bbx size.
+		cropFromSrcImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
+		cropFromSrcImg.blit(srcImg, (0, 0), bbxTup)
+		#pygame.image.save(cropFromSrcImg, "test/img/%05d_cropFromSrc.png" % tid)
+
+		#pygame.surfarray.pixels_alpha(cropFromSrcImg)[:,:] = 0
+		
+		# Fill a sprite-sized np array with tidClr based on tidPos.
+		tidClr = convertTidToClr(tidPos)
+		tidClrAr = vecTo3dArray(tidClr, sz[0], sz[1])
+
+		tidClrBbxImg = pygame.surfarray.make_surface(tidClrAr)
+		#pygame.image.save(tidClrBbxImg, "test/img/%05d_idClr.png" % tid)
+
+		# Initialize spriteImg with A=0.
+		spriteImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
+		pygame.surfarray.pixels_alpha(spriteImg)[:,:] = 0
+
+		# Comp tid using tidClr colorkey - makes hole at tid.
+		tidImg.set_colorkey(tidClr)
+		spriteImg.blit(tidImg, (0, 0), bbxTup)
+
+		# Invert alpha - TODO: a) quicker (GPU) inversion, ie. OPTIMIZE?
+		# b) array_alpha instead because it copies, not references?
+		pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
+			invert255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:])
+		
+		# Copy colours from src.
+		pygame.surfarray.pixels3d(spriteImg)[:,:] = \
+			pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
+
+		# Save (tmp?)
+		#pygame.image.save(spriteImg, "test/img/%05d_spriteImg.png" % tid)
+		spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
+	#else:
+	#	spriteImg = pygame.image.load("test/img/%05d_spriteImg.png" % tid)
+		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid}
+	else:
+		return None
+
+
+
+def genSprites(warpUi, srcImg): 
+	spritesThisFr = []
+	for lev in range(warpUi.parmDic("nLevels")):
+		print "Doing lev", lev, "..."
+
+		tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
+		tidToSidsThisLev = warpUi.tidToSids[lev]
+
+		# Pad to fit img dimensions - no tid for last x or y.
+		tidPosGridThisLev = np.lib.pad(tidPosGridThisLev, ((1,0), (0,1)), "constant", constant_values=-1)
+		tids = tidToSidsThisLev.keys()
+		tids.sort()
+
+		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
+		tidImg = pygame.surfarray.make_surface(tidClrGrid)
+		#path = "test/img/tidImg.lev%03d.%05d.png" % (lev, fr)
+		#pygame.image.save(tidImg, path)
+
+		spritesThisLev = []
+
+		for tidPos in range(len(tids)):
+			spriteDic = makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev)
+			if spriteDic:
+				spritesThisLev.append(spriteDic)
+
+
+		spritesThisFr.append(spritesThisLev)
+	return spritesThisFr
+
+
+
+
+def renSprites(warpUi, spritesThisFr, res, fr):
+	print "_renSprites(): BEGIN, fr", fr
+	# Initialize canvas
+	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
+	canvas.fill((0, 90, 0))
+	#for spritesThisLev in spritesThisFr:
+	nLevels = warpUi.parmDic("nLevels")
+	for lev in range(nLevels):
+		print "_renSprites(): fr", fr, "lev", lev
+		spritesThisLev = spritesThisFr[lev]
+		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
+		canvasLev.fill((0, 90, 0))
+		for spriteDic in spritesThisLev:
+			bbx = spriteDic["bbx"]
+			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+			spriteImg = spriteDic["spriteImg"]
+			canvas.blit(spriteImg, (bbxTup[0], bbxTup[1]))
+			canvasLev.blit(spriteImg, (bbxTup[0], bbxTup[1]))
+
+		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+		levDir,imgPath = warpUi.getRenDirAndImgPath("ren", levStr)
+		ut.mkDirSafe(levDir)
+		pygame.image.save(canvasLev, imgPath)
+
+	pygame.image.save(canvas, "test/img/_canvas.%05d.png" % (fr))
+	renPath = warpUi.images["ren"]["path"]
+	renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
+	ut.mkDirSafe(renSeqDir)
+	pygame.image.save(canvas, renPath)
+
+
+
+def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
+	srcImg = pygame.image.load(warpUi.images["source"]["path"])
+	res = srcImg.get_size()
+
+	spritesThisFr = genSprites(warpUi, srcImg)
+	renSprites(warpUi, spritesThisFr, res, fr)
+
+
+
+def renWrapper(warpUi):
 	renCvWrapperStartTime = time.time()
 	print "_renCvWrapper(): BEGIN"
 	fr, frameDir = warpUi.makeFramesDataDir(doMake=False)
@@ -1218,7 +1397,8 @@ def renCvWrapper(warpUi):
 			pickleDump(tidPosGridPath, warpUi.tidPosGrid)
 			warpUi.dataLoadedForFr = fr
 			print "\n_renCvWrapper(): post _inSurfGridToTidGrid...\n\n"
-	renTidGridGPU(warpUi)
+	#renTidGridGPU(warpUi)
+	genAndRenSprites(fr, warpUi)
 	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
 
 
@@ -1447,191 +1627,6 @@ def inSurfGridToTidGrid(warpUi):
 	
 	return tidPosGrid
 
-
-
-def renTidGridGPU(warpUi):
-	print "\n_renTidGridGPU(): BEGIN\n"
-	
-	# Refresh these?
-	cntxt = cl.create_some_context()
-	queue = cl.CommandQueue(cntxt)
-
-	fr = warpUi.parmDic("fr")
-	nLevels = warpUi.parmDic("nLevels")
-	res = warpUi.res
-
-	kernelPath = ut.projDir + "/GPUrenFromTidPos.c"
-	with open(kernelPath) as f:
-		kernelRen = "".join(f.readlines())
-
-	outputDic = {}
-	outputNames = ["ren", "out1", "out2"]
-	outputNums = range(len(outputNames))
-
-	for lev in range(nLevels):
-
-		# Make sorted tids list.
-		tids = warpUi.tidToSids[lev].keys()
-		tids.sort()
-		tidsAr = np.array(tids, dtype=np.intc)
-		
-		# Do checkpoint, sometimes crashes with:
-		# pyopencl.LogicError: create_buffer failed: invalid buffer size
-		ut.indicateProjDirtyAs(warpUi, True, "renTidGridGPU_inProgress")
-		tidsAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
-		ut.indicateProjDirtyAs(warpUi, False, "renTidGridGPU_inProgress")
-
-		# Make corresponding attrs lists.
-		#tids = warpUi.tidToSids[lev].keys()
-		atrBbx = []
-		for tid in tids:
-			#if tid % 3 == 0:
-			#	print "XXXXXXlev:", lev, "; tid", tid, "--", warpUi.tidToSids[lev][tid]
-			if "bbx" in warpUi.tidToSids[lev][tid].keys():
-				atrBbx.append(warpUi.tidToSids[lev][tid]["bbx"])
-			else:
-				print "_renTidGridGPU(): bbx not in keys! tid:", tid
-				atrBbx.append([[-1,-1],[-1,-1]])
-		atrBbxAr = np.array(atrBbx, dtype=np.intc)
-		atrBbxAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=atrBbxAr)
-
-
-
-		tidPosGridAr = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
-		#print "\nXXXXXX tidPosGridAr.shape", tidPosGridAr.shape
-		#print
-		#print "XXXXX tidPosGridAr"
-		#print tidPosGridAr
-		tidPosGridAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridAr)
-
-		if lev == 0:
-			outputDic["perLevImgs"] = []
-			outputDic["allArrays"] = []
-			outputDic["all"] = [None]*nLevels
-			for outputNum in outputNums:
-				outputDic["perLevImgs"].append([None]*nLevels)
-				outputDic["allArrays"].append(\
-					np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8))
-			tidALL = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-			tidALL_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY |
-				cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALL)
-
-		tidALLPrev = np.copy(tidALL)
-		tidALLPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=tidALLPrev)
-
-		#srcImgNoSA = pygame.image.load(warpUi.images["source"]["path"])
-		#srcImg = pygame.surfarray.array3d(srcImgNoSA)
-		srcImg = Image.open(warpUi.images["source"]["path"])
-		srcImgArWithAlpha = np.array(srcImg)
-		srcImgAr = np.array(srcImgArWithAlpha[:,:,:3])
-		#print "\nXXXXXX srcImgAr.shape", srcImgAr.shape
-		#print 
-		srcImgAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgAr)
-
-		clrsIntAr = np.array(ut.clrsInt, dtype=np.uint8)
-		clrsIntAr_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=clrsIntAr)
-
-
-		tidThisLev = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-		tidThisLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY,
-			tidThisLev.nbytes)
-
-		outSep1 = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-		outSep2 = np.zeros(tidPosGridAr.shape + (3,), dtype=np.uint8)
-		outsPerLev = np.array([tidThisLev, outSep1, outSep2], dtype=np.uint8)
-		outsPerLev_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsPerLev.nbytes)
-
-		outsAllPrev = np.copy(outputDic["allArrays"])
-		outsAllPrev_buf = cl.Buffer(cntxt, cl.mem_flags.READ_ONLY |
-			cl.mem_flags.COPY_HOST_PTR,hostbuf=outsAllPrev)
-
-		outsAll = np.array(outputDic["allArrays"], dtype=np.uint8)
-		outsAll_buf = cl.Buffer(cntxt, cl.mem_flags.WRITE_ONLY, outsAll.nbytes)
-
-
-		levThresh = warpUi.getOfsWLev(lev) % 1.0
-		print "\n\nBBBBBBBBBBBBBB len(tids):", len(tids)
-
-		bld = cl.Program(cntxt, kernelRen).build()
-		launch = bld.renFromTid(
-				queue,
-				tidPosGridAr.shape,
-				None,
-				np.int32(res[0]),
-				np.int32(res[1]),
-				np.int32(len(tids)),
-				np.int32(len(ut.clrsInt)),
-				np.int32(lev),
-				np.float32(levThresh),
-				tidPosGridAr_buf,
-				tidsAr_buf,
-				atrBbxAr_buf,
-				clrsIntAr_buf,
-				srcImgAr_buf,
-				tidThisLev_buf,
-				tidALLPrev_buf,
-				tidALL_buf,
-				outsPerLev_buf,
-				outsAllPrev_buf,
-				outsAll_buf)
-		launch.wait()
-
-		cl.enqueue_read_buffer(queue, tidThisLev_buf, tidThisLev).wait()
-		cl.enqueue_read_buffer(queue, tidALL_buf, tidALL).wait()
-
-		cl.enqueue_read_buffer(queue, outsPerLev_buf, outsPerLev).wait()
-		cl.enqueue_read_buffer(queue, outsAll_buf, outsAll).wait()
-
-		for outputNum in outputNums:
-			outputName = outputNames[outputNum]
-			if outputName == "out1":
-				img =Image.fromarray(np.swapaxes(outsPerLev[1], 0, 1), 'RGB')
-			elif outputName == "out2":
-				img =Image.fromarray(np.swapaxes(outsPerLev[2], 0, 1), 'RGB')
-			else:
-				img =Image.fromarray(np.swapaxes(outsPerLev[0], 0, 1), 'RGB')
-			outputDic["perLevImgs"][outputNum][lev] = img
-
-			if outputName == "out1":
-				outputDic["allArrays"][outputNum] = outsAll[1]
-			elif outputName == "out2":
-				outputDic["allArrays"][outputNum] = outsAll[2]
-			else:
-				outputDic["allArrays"][outputNum] = outsAll[0]
-
-
-	for outputNum in outputNums:
-		# TODO: Make it not so all outputs get ren
-		outputDic["all"][outputNum] = \
-			Image.fromarray(np.swapaxes( \
-				outputDic["allArrays"][outputNum], 0, 1), 'RGB')
-
-
-	for outputNum in outputNums:
-		outputName = outputNames[outputNum]
-		for lev in range(nLevels + 1):
-			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-			#name = "ren" # Fixed for the moment - to be appended with other ren AOVs.
-			levDir,imgPath = warpUi.getRenDirAndImgPath(outputName, levStr)
-			ut.mkDirSafe(levDir)
-			if outputName == "ren" and lev == nLevels:
-				print "\n\n**********************************************"
-				print "\n\n_renTidGridGPU(): ***** Saving", outputName, " image, path:", imgPath, "\n\n"
-				print "**********************************************\n\n"
-			else:
-				print "_renTidGridGPU(): Saving", outputName, " image, path:", imgPath
-			if lev == nLevels:
-				outputDic["all"][outputNum].save(imgPath)
-			else:
-				outputDic["perLevImgs"][outputNum][lev].save(imgPath)
-
-	print "\n_renTidGridGPU(): END\n"
 
 
 
