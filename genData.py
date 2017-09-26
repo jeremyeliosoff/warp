@@ -1223,6 +1223,12 @@ def invert255(v):
 
 invert255V = np.vectorize(invert255)
 
+def mult255(v, k):
+	return v * k
+
+mult255V = np.vectorize(mult255)
+
+
 
 
 def makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
@@ -1315,7 +1321,7 @@ def renSprites(warpUi, res, fr):
 	print "_renSprites(): BEGIN, fr", fr
 	# Initialize canvas
 	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
-	canvas.fill((0, 90, 0))
+	canvas.fill((0, 0, 0))
 	#for spritesThisLev in spritesThisFr:
 	nLevels = warpUi.parmDic("nLevels")
 	for lev in range(nLevels):
@@ -1327,10 +1333,25 @@ def renSprites(warpUi, res, fr):
 			bbx = spriteDic["bbx"]
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 			spriteImg = spriteDic["spriteImg"]
-			k = warpUi.parmDic("fallDist")
+
+			prog = warpUi.getOfsWLev(lev) % 1.0
+
+			kProg = ut.smoothstep(.2, .8, prog)
+			k = warpUi.parmDic("fallDist")*kProg
 			tCent = ((bbxTup[0] + bbxTup[2])/2, (bbxTup[1] + bbxTup[3])/2) 
 			pCent = (res[0]/2, res[1]/2)
 			xf = ((tCent[0]-pCent[0])*k, (tCent[1]-pCent[1])*k)
+
+			#spriteImg.set_alpha(255)
+
+			sfFdIn = .2
+			sfFdOut = .3
+			sfA = warpUi.parmDic("sfA")
+			sfK = warpUi.parmDic("sfK")
+			surfAlpha = sfA *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, prog)
+			pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
+				mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
+
 			canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 			canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 
