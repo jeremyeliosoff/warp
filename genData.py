@@ -1231,7 +1231,7 @@ mult255V = np.vectorize(mult255)
 
 
 
-def makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
+def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 	tid = tids[tidPos]
 	if "bbx" in tidToSidsThisLev[tid]:
 		bbx = tidToSidsThisLev[tid]["bbx"]
@@ -1250,9 +1250,10 @@ def makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 
 		#pygame.surfarray.pixels_alpha(cropFromSrcImg)[:,:] = 0
 		
-		# Fill a sprite-sized np array with tidClr based on tidPos.
-		tidClr = convertTidToClr(tidPos)
-		tidClrAr = vecTo3dArray(tidClr, sz[0], sz[1])
+		# Fill a sprite-sized np array with tidPosClr based on tidPos.
+		tidPosClr = convertTidToClr(tidPos)
+		#print "XXXX tid:", tid,  "-- tidPos:", tidPos, " -- tidPosClr", tidPosClr
+		tidClrAr = vecTo3dArray(tidPosClr, sz[0], sz[1])
 
 		tidClrBbxImg = pygame.surfarray.make_surface(tidClrAr)
 		#pygame.image.save(tidClrBbxImg, "test/img/%05d_idClr.png" % tid)
@@ -1261,8 +1262,8 @@ def makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 		spriteImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
 		pygame.surfarray.pixels_alpha(spriteImg)[:,:] = 0
 
-		# Comp tid using tidClr colorkey - makes hole at tid.
-		tidImg.set_colorkey(tidClr)
+		# Comp tid using tidPosClr colorkey - makes hole at tid.
+		tidImg.set_colorkey(tidPosClr)
 		spriteImg.blit(tidImg, (0, 0), bbxTup)
 
 		# Invert alpha - TODO: a) quicker (GPU) inversion, ie. OPTIMIZE?
@@ -1276,6 +1277,15 @@ def makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 
 		# Save (tmp?)
 		#pygame.image.save(spriteImg, "test/img/%05d_spriteImg.png" % tid)
+		tidClr = convertTidToClr(tid)
+		tidClr = ut.minVSc(ut.multVSc(tidClr, warpUi.parmDic("sfK")), 255)
+		#print "XXXX tid:", tid,  "-- tidPos:", tidPos, " -- tidPosClr", tidPosClr
+
+		# TEMP to make warped progs more visible, copied from renSprites.
+		#prog = warpUi.getOfsWLev(lev) % 1.0
+		#kProg = ut.smoothstep(.2, .8, prog)
+		#tidClr = ut.mixV((50, 50, 50), tidClr, kProg)
+
 		spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
 	#else:
 	#	spriteImg = pygame.image.load("test/img/%05d_spriteImg.png" % tid)
@@ -1288,7 +1298,7 @@ def makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 def genSprites(warpUi, srcImg): 
 	spritesThisFr = []
 	for lev in range(warpUi.parmDic("nLevels")):
-		print "Doing lev", lev, "..."
+		print "_genSprites(): Doing lev", lev, "..."
 
 		tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
 		tidToSidsThisLev = warpUi.tidToSids[lev]
@@ -1306,7 +1316,7 @@ def genSprites(warpUi, srcImg):
 		spritesThisLev = []
 
 		for tidPos in range(len(tids)):
-			spriteDic = makeSpriteDic(srcImg, tidImg, tids, tidPos, tidToSidsThisLev)
+			spriteDic = makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev)
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
@@ -1318,7 +1328,7 @@ def genSprites(warpUi, srcImg):
 
 
 def renSprites(warpUi, res, fr):
-	print "_renSprites(): BEGIN, fr", fr
+	print "\n_renSprites(): BEGIN, fr", fr
 	# Initialize canvas
 	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
 	canvas.fill((0, 0, 0))
@@ -1328,11 +1338,12 @@ def renSprites(warpUi, res, fr):
 		print "_renSprites(): fr", fr, "lev", lev
 		spritesThisLev = warpUi.spritesThisFr[lev]
 		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
-		canvasLev.fill((0, 90, 0))
+		canvasLev.fill((0, 0, 0))
 		for spriteDic in spritesThisLev:
 			bbx = spriteDic["bbx"]
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-			spriteImg = spriteDic["spriteImg"]
+			spriteImg = spriteDic["spriteImg"].copy()
+
 
 			prog = warpUi.getOfsWLev(lev) % 1.0
 
@@ -1343,6 +1354,10 @@ def renSprites(warpUi, res, fr):
 			xf = ((tCent[0]-pCent[0])*k, (tCent[1]-pCent[1])*k)
 
 			#spriteImg.set_alpha(255)
+
+			kIntensProg = ut.smoothstep(.1, .6, prog)
+			kIntens = min(255, 500 * kIntensProg)
+			spriteImg.fill((kIntens, kIntens, kIntens), None, pygame.BLEND_MULT)
 
 			sfFdIn = .2
 			sfFdOut = .3
@@ -1384,19 +1399,19 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 
 
 def renWrapper(warpUi):
-	renCvWrapperStartTime = time.time()
-	print "_renCvWrapper(): BEGIN"
+	renWrapperStartTime = time.time()
+	print "\n_renWrapper(): BEGIN"
 	fr, frameDir = warpUi.makeFramesDataDir(doMake=False)
 	frPerCycle = warpUi.parmDic("frPerCycle")
 	backupDataEvery = warpUi.parmDic("backupDataEvery")
 	# Load tidToSids when you don't have one, or every frPerCycle frames.
 	if warpUi.tidToSids == None:
-		print "_renCvWrapper(): warpUi.tidToSids == None"
+		print "_renWrapper(): warpUi.tidToSids == None"
 	else:
-		print "_renCvWrapper(): warpUi.tidToSids NOT == None"
+		print "_renWrapper(): warpUi.tidToSids NOT == None"
 	if warpUi.tidToSids == None or fr == warpUi.parmDic("frStart") \
 			or fr % backupDataEvery == 0:
-		print "_renCvWrapper(): Updating tidToSids"
+		print "_renWrapper(): Updating tidToSids"
 		framesDir = warpUi.seqDataVDir + "/frames"
 		nextSafeTidFr = fr + frPerCycle # ensure all tids have been merged.
 		frToLoad = backupDataEvery*int(math.ceil(
@@ -1404,33 +1419,33 @@ def renWrapper(warpUi):
 		dicPathToLoad = warpUi.seqDataVDir + ("/frames/%05d/tidToSids" % frToLoad)
 
 		if os.path.exists(dicPathToLoad):
-			print "_renCvWrapper(): loading dicPathToLoad..."
+			print "_renWrapper(): loading dicPathToLoad..."
 			warpUi.tidToSids = pickleLoad(dicPathToLoad)
 		else:
-			print "_renCvWrapper(): dicPathToLoad not found, attempting to load latest..."
+			print "_renWrapper(): dicPathToLoad not found, attempting to load latest..."
 			loadLatestTidToSids(warpUi)
 
 	if (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
-		print "_renCvWrapper(): tidPosGrid already loaded for fr " \
+		print "_renWrapper(): tidPosGrid already loaded for fr " \
 			+ str(fr) + ", reusing."
 	else:
 		tidPosGridPath = warpUi.framesDataDir + ("/%05d/tidPosGrid" % fr)
-		print "_renCvWrapper(): Checking for existence of", tidPosGridPath, "..."
+		print "_renWrapper(): Checking for existence of", tidPosGridPath, "..."
 		#sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
 		#tholds = pickleLoad(frameDir + "/tholds")
 		if os.path.exists(tidPosGridPath):
-			print "_renCvWrapper():", tidPosGridPath, "exists.  Loading..."
+			print "_renWrapper():", tidPosGridPath, "exists.  Loading..."
 			warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
 			warpUi.dataLoadedForFr = fr
 		else:
-			print "_renCvWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _inSurfGridToTidGrid()..."
+			print "_renWrapper():", tidPosGridPath, " DOES NOT exist.  Creating with _inSurfGridToTidGrid()..."
 			warpUi.tidPosGrid = inSurfGridToTidGrid(warpUi)
 			pickleDump(tidPosGridPath, warpUi.tidPosGrid)
 			warpUi.dataLoadedForFr = fr
-			print "\n_renCvWrapper(): post _inSurfGridToTidGrid...\n\n"
+			print "\n_renWrapper(): post _inSurfGridToTidGrid...\n\n"
 	#renTidGridGPU(warpUi)
 	genAndRenSprites(fr, warpUi)
-	print "_renCvWrapper(): END - time =", time.time() - renCvWrapperStartTime;
+	print "_renWrapper(): END - time =", time.time() - renWrapperStartTime;
 
 
 
@@ -1641,7 +1656,7 @@ def inSurfGridToTidGrid(warpUi):
 	maxTid = -1
 	for lev in range(nLevels):
 
-		print "\n_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev", lev
+		print "_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev", lev
 		tidPosGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
 		sidSet = set(sidToTidPos[lev].keys())
 		for xx in range(res[0]):

@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 337
+val 40
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
 
 image
-val lzSmokeShortp2pngGm1p3
+val scarfIn
 
 dbImg1
 val sidPost
@@ -37,13 +37,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v070sprites
+val v004fullSeq
 
 frStart
-val 250
+val 0
 
 frEnd
-val 1000
+val 40
 
 frPerCycle
 val 30
@@ -72,7 +72,7 @@ minThresh
 val 0
 
 maxThresh
-val 1
+val .6
 
 rangeThresh
 val .1
@@ -95,13 +95,13 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v065sprites
+val v003fullSeq
 
 startLev
 val 0
 
 fallDist
-val .3
+val .5
 
 fallKForBiggest
 val 0
@@ -131,7 +131,7 @@ sfA
 val .6
 
 sfK
-val 1.1
+val 1.5
 
 cvA
 val .8
