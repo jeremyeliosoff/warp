@@ -227,14 +227,17 @@ def getLevThresh(warpUi, lev, nLevels):
 	maxThreshMin = ut.mix(minThreshMin, maxThreshMax, rangeThresh)
 
 	levThresh = warpUi.getOfsWLev(lev) % 1.0
-	levThreshRemap = ut.gamma(levThresh, warpUi.parmDic("gamma"))
+	#levThreshRemap = ut.gamma(levThresh, warpUi.parmDic("gamma"))
 
 	levRel = float(lev)/(nLevels-1)
 	minThreshThisLev = ut.mix(minThreshMin, minThreshMax, levRel)
 	maxThreshThisLev = ut.mix(maxThreshMin, maxThreshMax, levRel)
 
 
+	levThreshRemap = levThresh
 	levThreshRemap = ut.mix(minThreshThisLev, maxThreshThisLev, levThreshRemap)
+	levThreshRemap = ut.gamma(levThreshRemap, warpUi.parmDic("gamma"))
+	print "_getLevThresh(): levThresh:", levThresh, ", levThreshRemap:", levThreshRemap
 	levThreshInt = int(levThreshRemap*255)
 	return levThreshRemap, levThreshInt
 
@@ -267,6 +270,8 @@ def initJtGrid(img, warpUi):
 			# TODO -> tholds[lev] = thisLevThreshRemap
 			levThreshInt.append(thisLevThreshInt)
 
+		print "_initJtGrid(): levThreshInt:", levThreshInt
+		print "_initJtGrid(): levThreshRemap:", levThreshRemap
 		levThreshArray = np.array(levThreshInt, dtype=np.uint8)
 		levThreshArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
