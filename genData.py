@@ -1277,8 +1277,8 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 
 		# Save (tmp?)
 		#pygame.image.save(spriteImg, "test/img/%05d_spriteImg.png" % tid)
-		tidClr = convertTidToClr(tid)
-		tidClr = ut.minVSc(ut.multVSc(tidClr, warpUi.parmDic("sfK")), 255)
+		#tidClr = convertTidToClr(tid)
+		#tidClr = ut.minVSc(ut.multVSc(tidClr, warpUi.parmDic("sfK")), 255)
 		#print "XXXX tid:", tid,  "-- tidPos:", tidPos, " -- tidPosClr", tidPosClr
 
 		# TEMP to make warped progs more visible, copied from renSprites.
@@ -1286,7 +1286,7 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 		#kProg = ut.smoothstep(.2, .8, prog)
 		#tidClr = ut.mixV((50, 50, 50), tidClr, kProg)
 
-		spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
+		#spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
 	#else:
 	#	spriteImg = pygame.image.load("test/img/%05d_spriteImg.png" % tid)
 		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid}
@@ -1325,6 +1325,25 @@ def genSprites(warpUi, srcImg):
 	return spritesThisFr
 
 
+def calcXf(warpUi, tidProg, bbxTup):
+	res = warpUi.res
+
+	sz = (bbxTup[2] - bbxTup[0], bbxTup[3] - bbxTup[1]) 
+
+	rels = (float(sz[0])/res[0]) * (float(sz[1])/res[1])
+	
+	#if sz[0] > 10:
+	#	print "res", res, "sz", sz, "rels", rels
+	relsPostSmooth = ut.smoothstep(0, warpUi.parmDic("fallUseAsBiggest"), rels)
+	relsPostSmooth = pow(relsPostSmooth, warpUi.parmDic("fallBiggestPow"))
+	
+	fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), relsPostSmooth)
+
+	k = warpUi.parmDic("fallDist")*tidProg*fallK
+	tCent = ((bbxTup[0] + bbxTup[2])/2, (bbxTup[1] + bbxTup[3])/2) 
+	pCent = (res[0]/2, res[1]/2)
+	return ((tCent[0]-pCent[0])*k, (tCent[1]-pCent[1])*k)
+
 
 
 def renSprites(warpUi, res, fr):
@@ -1341,29 +1360,41 @@ def renSprites(warpUi, res, fr):
 		canvasLev.fill((0, 0, 0))
 		for spriteDic in spritesThisLev:
 			bbx = spriteDic["bbx"]
-			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 			spriteImg = spriteDic["spriteImg"].copy()
+			tid = spriteDic["tid"]
 
+			# Get tidProg.
+			levProg = warpUi.getOfsWLev(lev) % 1.0
+			progDurMin = .6
+			progDurMax = 1
 
-			prog = warpUi.getOfsWLev(lev) % 1.0
+			random.seed(tid)
+			progDur = ut.mix(progDurMin, progDurMax, random.random())
+			progStart = (1.0 - progDur) * random.random()
+			tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
 
-			kProg = ut.smoothstep(.2, .8, prog)
-			k = warpUi.parmDic("fallDist")*kProg
-			tCent = ((bbxTup[0] + bbxTup[2])/2, (bbxTup[1] + bbxTup[3])/2) 
-			pCent = (res[0]/2, res[1]/2)
-			xf = ((tCent[0]-pCent[0])*k, (tCent[1]-pCent[1])*k)
+			# Get xf.
+			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+			xf = calcXf(warpUi, tidProg, bbxTup)
 
 			#spriteImg.set_alpha(255)
 
-			kIntensProg = ut.smoothstep(.1, .6, prog)
-			kIntens = min(255, 500 * kIntensProg)
-			spriteImg.fill((kIntens, kIntens, kIntens), None, pygame.BLEND_MULT)
+			#kIntens = min(255, 500 * kIntensProg)
+
+			tidClr = convertTidToClr(tid)
+			tidClr = ut.minVSc(ut.multVSc(tidClr, warpUi.parmDic("sfK")), 255)
+			dark = 100
+			clrProg = ut.smoothstep(0, .3, tidProg)
+			fillClr = ut.mixV((dark, dark, dark), tidClr, clrProg)
+			#spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
+			#spriteImg.fill((kIntens, kIntens, kIntens), None, pygame.BLEND_MULT)
+			spriteImg.fill(fillClr, None, pygame.BLEND_MULT)
 
 			sfFdIn = .2
 			sfFdOut = .3
 			sfA = warpUi.parmDic("sfA")
 			sfK = warpUi.parmDic("sfK")
-			surfAlpha = sfA *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, prog)
+			surfAlpha = sfA *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, tidProg)
 			pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 				mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 
@@ -1462,7 +1493,7 @@ def calcProg(warpUi, sid, level, lev):
 	#return ut.smoothstep(progStart, progEnd, level)
 	return min(1, ut.smoothstep(progStart, progEnd, level))
 
-def calcXf(warpUi, prog, res, relSize, bbx):
+def calcXfOld(warpUi, prog, res, relSize, bbx):
 	fall = prog * res[1] * warpUi.parmDic("fallDist")
 	# Slower for biggekr
 	relSizeF = relSize[0]*relSize[1]

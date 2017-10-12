@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 40
+val 1
 
 fps
 val 52
@@ -19,10 +19,10 @@ anim
 val 0
 
 doRenCv
-val 1
+val 0
 
 image
-val scarfIn
+val lzFin2Shortmx40
 
 dbImg1
 val sidPost
@@ -31,19 +31,19 @@ lev_dbImg1
 val ALL
 
 dbImg2
-val cvSid
+val sidPost
 
 lev_dbImg2
-val ALL
+val lev03
 
 renVer
-val v004fullSeq
+val v000
 
 frStart
-val 0
+val 5
 
 frEnd
-val 40
+val 899
 
 frPerCycle
 val 30
@@ -66,13 +66,13 @@ kSurf
 val 1
 
 gamma
-val .2
+val .01
 
 minThresh
 val 0
 
 maxThresh
-val .6
+val 1
 
 rangeThresh
 val .1
@@ -95,13 +95,13 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v003fullSeq
+val v001gamPt01
 
 startLev
 val 0
 
 fallDist
-val .5
+val .3
 
 fallKForBiggest
 val 0
@@ -131,7 +131,7 @@ sfA
 val .6
 
 sfK
-val 1.5
+val 1.1
 
 cvA
 val .8
