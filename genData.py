@@ -1298,7 +1298,85 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 	else:
 		return None
 
+def shadeImg(warpUi, srcImg, tidImg):
+	kernel = """
 
+void getImageCell(int x, int y, int xresIn, int yresIn,
+  uchar __attribute__((address_space(1)))* img,
+  uchar* ret)
+{
+	int xres = xresIn + 0;
+	int yres = yresIn + 0;
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		//int i = (y * xres + x) * 3;
+		int i = (x * yres + y) * 3;
+		ret[0] = img[i];
+		ret[1] = img[i+1];
+		ret[2] = img[i+2];
+	}
+}
+
+
+void setArrayCell(int x, int y, int xres, int yres,
+  uchar* val,
+  uchar __attribute__((address_space(1)))* ret)
+{
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		//int i = (y * xres + x) * 3;
+		int i = (x * yres + y) * 3;
+		ret[i] = val[0];
+		ret[i+1] = val[1];
+		ret[i+2] = val[2];
+	}
+}
+
+__kernel void krShadeImg(
+			int xres,
+			int yres,
+			__global uchar* srcImg,
+			__global uchar* tidImg,
+			__global uchar* shadedImg)
+{
+	int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	uchar imgClr[3];
+	getImageCell(x, y, xres, yres, tidImg, imgClr);
+	//imgClr[0] = 255;//x % 255;
+	//imgClr[1] = 0;//y % 255;
+	//imgClr[2] = 0;
+	setArrayCell(x, y, xres, yres, imgClr, shadedImg);
+}
+	"""
+
+	srcImgAr = np.array(list(pygame.surfarray.array3d(srcImg)))
+	srcImgAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgAr)
+		
+	tidImgAr = np.array(list(pygame.surfarray.array3d(tidImg)))
+	tidImgAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidImgAr)
+		
+	shadedImg = np.zeros(tidImgAr.shape, dtype=np.uint8)
+	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
+
+	bld = cl.Program(warpUi.cntxt, kernel).build()
+	launch = bld.krShadeImg(
+			warpUi.queue,
+			srcImgAr.shape,
+			None,
+			np.int32(warpUi.res[0]),
+			np.int32(warpUi.res[1]),
+			srcImgAr_buf,
+			tidImgAr_buf,
+			shadedImg_buf)
+	launch.wait()
+	
+
+	cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
+		
+	return pygame.surfarray.make_surface(shadedImg)
 
 def genSprites(warpUi, srcImg): 
 	spritesThisFr = []
@@ -1320,8 +1398,11 @@ def genSprites(warpUi, srcImg):
 
 		spritesThisLev = []
 
+		shadedImg = shadeImg(warpUi, srcImg, tidImg)
+
 		for tidPos in range(len(tids)):
-			spriteDic = makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev)
+			#spriteDic = makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev)
+			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev)
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
@@ -1393,7 +1474,7 @@ def renSprites(warpUi, res, fr):
 			fillClr = ut.mixV((dark, dark, dark), tidClr, clrProg)
 			#spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
 			#spriteImg.fill((kIntens, kIntens, kIntens), None, pygame.BLEND_MULT)
-			spriteImg.fill(fillClr, None, pygame.BLEND_MULT)
+			#spriteImg.fill(fillClr, None, pygame.BLEND_MULT)
 
 			sfFdIn = .2
 			sfFdOut = .3
@@ -1447,6 +1528,7 @@ def renWrapper(warpUi):
 		print "_renWrapper(): warpUi.tidToSids NOT == None"
 	if warpUi.tidToSids == None or fr == warpUi.parmDic("frStart") \
 			or fr % backupDataEvery == 0:
+		# Load tidToSids
 		print "_renWrapper(): Updating tidToSids"
 		framesDir = warpUi.seqDataVDir + "/frames"
 		nextSafeTidFr = fr + frPerCycle # ensure all tids have been merged.
@@ -1455,9 +1537,11 @@ def renWrapper(warpUi):
 		dicPathToLoad = warpUi.seqDataVDir + ("/frames/%05d/tidToSids" % frToLoad)
 
 		if os.path.exists(dicPathToLoad):
+			# Load NEXT suitable tidToSids
 			print "_renWrapper(): loading dicPathToLoad..."
 			warpUi.tidToSids = pickleLoad(dicPathToLoad)
 		else:
+			# Load LAST tidToSids
 			print "_renWrapper(): dicPathToLoad not found, attempting to load latest..."
 			loadLatestTidToSids(warpUi)
 
@@ -1540,128 +1624,7 @@ def calcXfOld(warpUi, prog, res, relSize, bbx):
 
 	return tx, ty
 
-def setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, tidRanClr, k, alpha, iJt=None):
-	texClr = srcImg.get_at((jx, jy))
-	texClr = list(texClr)[:3]
-	cTripPow = 3
-	mixClr = ut.mix(warpUi.parmDic("mixClrSob"),
-		warpUi.parmDic("mixClrTrp"), pow(prog, cTripPow))
-	clr = ut.mixV(texClr, tidRanClr, mixClr)
-	clr = ut.multVSc(clr, k)
-
-	# Adapted from  setAOV(warpUi, "ren", outputs, lev, nLevels, jx + tx, jy + ty, clr)
-	thisDic = outputs["ren"]
-	prevVal = ut.black
-	jxt = jx + tx
-	jyt = jy + ty
-	if lev <= len(thisDic): # TODO: Won't this always be true?
-		res = thisDic[lev].get_size()
-		if jxt < res[0] and jxt > -1 and jyt < res[1] and jyt > -1:
-
-			# Write UNPREMULTIPLIED color to this level AOV
-			if warpUi.parmDic("aov_perLev") == 1:
-				newValThisLev = tuple(ut.multVSc(clr, alpha))
-				newValThisLev = ut.clampVSc(newValThisLev, 0, 255)
-				#newValThisLev = tuple(clr)
-				thisDic[lev].set_at((jxt,jyt), newValThisLev)
-
-			newVal = tuple(list(clr) + [255])
-
-			db = False
-			if not db or iJt == None:
-				# Comp for ALL level
-				prevVal = thisDic[nLevels].get_at((jxt,jyt))
-				occludePrev = .75 # TODO Parm?
-				prevVal = ut.mixV(prevVal,
-					ut.multVSc(prevVal, (1-alpha)), occludePrev)
-
-
-				newVal = ut.vAdd(prevVal, ut.multVSc(newVal, alpha))
-				newValLs = []
-				for v in newVal:
-					newValLs.append(int(v))
-				newVal = tuple(newValLs)
-				newVal = ut.clampVSc(newVal, 0, 255)
-			else: # DEBUG: show curve prog 
-  				cProg = float(iJt % 20)/19*255
-  				newVal = (255-cProg,cProg, 0, 255)
-  				if iJt < 4:
-					newVal = (255-cProg,cProg, 255, 255)
-
-			thisDic[nLevels].set_at((jxt,jyt), newVal)
-
-
-
 	
-
-def renSid(warpUi, srcImg, tid, sid, nLevels, lev, level, levelAlph, res, sidToCvDic, outputs, bbx, bbxSize, relSize, thold, falseArray):
-	tidRanClr = ut.intToClr(sid)
-
-
-	prog = calcProg(warpUi, tid, level, lev)
-	tx,ty = calcXf(warpUi, prog, res, relSize, bbx)
-	#tx,ty = (0, 0)
-
-	# TODO: You don't have to include the whole sidToCvDic, just sidToCvDic[lev]
-	cvs = sidToCvDic[lev][sid]["cvs"]
-	allCoords = []
-
-	for cv in cvs: # TODO: Delete this, and "False" part below
-		allCoords += cv
-
-	for cv in cvs:
-		iJt = 0
-		while iJt < len(cv):
-			jt = cv[iJt]
-			jtNext = cv[(iJt+1) % len(cv)]
-			jtPrev = cv[(iJt-1) % len(cv)]
-			jx,jy = list(jt)
-
-			#surfAlpha = levelAlph * (1-prog)
-			sfFdIn = .2
-			sfFdOut = .3
-			sfA = warpUi.parmDic("sfA")
-			sfK = warpUi.parmDic("sfK")
-			surfAlpha = sfA * levelAlph * ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, prog)
-			cvFdIn = .1
-			cvFdOut = .1
-			cvA = warpUi.parmDic("cvA")
-			cvK = warpUi.parmDic("cvK")
-			curveAlpha = cvA * levelAlph * ut.smoothpulse(0, cvFdIn, 1-cvFdOut, 1, prog)
-
-
-			if jx > jtPrev[0]:
-				# Skip to the top (lowest #) of a vertical line
-				while (jtNext[0] == jx	# next x is same - vertical line
-						and jtNext[1] < jy):   # next y is lower
-					iJt += 1
-					jx,jy = list(cv[iJt])
-					jtNext = cv[(iJt+1) % len(cv)]
-					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev,
-						nLevels, jx, jy, tx, ty, tidRanClr, cvK, curveAlpha, iJt)
-				if jtNext[0] < jx:
-					# If the next x is less than this x -- which I think 
-					# would only happen if the above while loop landed us
-					# at a back-curving turn - skip this jt.
-					# TODO: must this next line exist?
-					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev,
-						nLevels, jx, jy, tx, ty, tidRanClr, cvK, curveAlpha, iJt)
-					iJt += 1
-					continue
-
-				#yy = jy +1
-
-				# MAIN FILLING - Draw vertical line up to next curve in this sid.
-				yy = jy
-				while (int(avgLs(srcImg.get_at((jx,yy))[:-1])) > thold*255) and yy > 0:
-					setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, yy, tx, ty, tidRanClr, sfK, surfAlpha)
-					yy -= 1
-
-
-			# Draw the curve. 
-			setRenCvFromTex(warpUi, prog, srcImg, outputs, lev, nLevels, jx, jy, tx, ty, tidRanClr, cvK, curveAlpha, iJt)
-
-			iJt += 1
 
 def inSurfGridToTidGrid(warpUi):
 
