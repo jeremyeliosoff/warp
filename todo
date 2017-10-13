@@ -4791,7 +4791,7 @@ Try using SHADERS -- maybe my own "unofficial" gpu shaders... hmm, maybe to avoi
 
 
 *********** PLAN OF ATTACK *********** 
-Fix git, sync 2 laptops
+#D seemingly# Fix git, sync 2 laptops
 
 Install opencl + whatever else needed on "Big D" (big laptop)
 
