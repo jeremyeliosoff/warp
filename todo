@@ -4798,6 +4798,7 @@ Install opencl + whatever else needed on "Big D" (big laptop)
 
 GPU cop-style 2d "shader"
 	Try inputting per-tid attrs - eg. cent, bbx - and colour accordingly
+		Make sure you have inputs tidPosGrid, tids, tidAttrs
 	Edge detect
 	output alpha
 
