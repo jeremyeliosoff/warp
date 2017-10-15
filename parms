@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 4
+val 1668
 
 fps
 val 52
@@ -22,7 +22,7 @@ doRenCv
 val 1
 
 image
-val testPng
+val lzFin2mx40
 
 dbImg1
 val sidPost
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v024shader
+val v000
 
 frStart
-val 1
+val 1600
 
 frEnd
-val 5
+val 3508
 
 frPerCycle
 val 15
@@ -60,7 +60,7 @@ val 1
 ---GEN---
 
 nLevels
-val 4
+val 10
 
 kSurf
 val 1
@@ -95,16 +95,16 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v022shader
+val v008redoGamP5
 
 startLev
 val 0
 
 fallDist
-val 0
+val .3
 
 fallKForBiggest
-val 1
+val 0
 
 fallUseAsBiggest
 val 1

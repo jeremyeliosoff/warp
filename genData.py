@@ -1236,9 +1236,10 @@ mult255V = np.vectorize(mult255)
 
 
 
-def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
+def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs):
 	tid = tids[tidPos]
 	if "bbx" in tidToSidsThisLev[tid]:
+		tidProg = tidProgs[tidPos]
 		bbx = tidToSidsThisLev[tid]["bbx"]
 	#regen = True
 	#if regen:
@@ -1294,132 +1295,17 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev):
 		#spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
 	#else:
 	#	spriteImg = pygame.image.load("test/img/%05d_spriteImg.png" % tid)
-		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid}
+		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid, "tidProg":tidProg}
 	else:
 		return None
 
-def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents):
+def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidProgs):
 	srcImgAr = np.array(srcImg)
 	tidImgAr = np.array(tidImg)
 	print "_shadeImg():                     res:", warpUi.res
 	print "_shadeImg(): tidPosGridThisLev.shape:", tidPosGridThisLev.shape
 	print "_shadeImg():            srcImg.shape:", srcImg.get_size()
 	print "_shadeImg():            tidImg.shape:", tidImg.get_size()
-	kernelOld = """
-
-void getImageCell(int x, int y, int xresIn, int yresIn,
-  uchar __attribute__((address_space(1)))* img,
-  uchar* ret)
-{
-	int xres = xresIn + 0;
-	int yres = yresIn + 0;
-	if (x >= 0 && x < xres && y >= 0 && y < yres) {
-		//int i = (y * xres + x) * 3;
-		int i = (x * yres + y) * 3;
-		ret[0] = img[i];
-		ret[1] = img[i+1];
-		ret[2] = img[i+2];
-	}
-}
-
-
-void setArrayCell(int x, int y, int xres, int yres,
-  uchar* val,
-  uchar __attribute__((address_space(1)))* ret)
-{
-	if (x >= 0 && x < xres && y >= 0 && y < yres) {
-		int i = (x * yres + y) * 3;
-		ret[i] = val[0];
-		ret[i+1] = val[1];
-		ret[i+2] = val[2];
-	}
-}
-
-int getCellScalar(int x, int y, int xres, int yres,
-  __global int* tidPosGridThisLev)
-{
-	//int i = y * xres + x;
-	int i = x * yres + y;
-	return tidPosGridThisLev[i];
-}
-
-void getBbxInfo(int tidPos,
-		__global int* bbxs,
-		int* mn, int* mx) {
-	int ofs = tidPos*4;
-	mn[0] = bbxs[ofs];
-	mn[1] = bbxs[ofs+1];
-	mx[0] = bbxs[ofs+2];
-	mx[1] = bbxs[ofs+3];
-}
-
-__kernel void krShadeImg(
-			int xres,
-			int yres,
-			__global uchar* srcImg,
-			__global uchar* tidImg,
-			__global int* tidPosGridThisLev,
-			//__global int* tids,
-			__global int* bbxs,
-			//__global int* cents,
-			__global uchar* shadedImg)
-{
-	unsigned int x = get_global_id(0);
-	unsigned int y = get_global_id(1);
-
-	int xx = x;//max(0, x+2);
-	int yy = y;//max(0, y+2);
-	int tidPos = getCellScalar(xx, yy, xres, yres+1, tidPosGridThisLev);
-
-	int mn[2];
-	int mx[2];
-	getBbxInfo(tidPos, bbxs, mn, mx);
-
-	uchar imgClr[3];
-	//getImageCell(x, y, xres, yres, tidImg, imgClr);
-	////imgClr[0] = (50*tidPos)%255;//255*((float)mx[0])/xres;
-	//imgClr[2] = 0;
-	////if (mn[0] == 77) 
-	////if (mn[0] == 77 && tidPos == 0) // && mn[1] == 6) //&& mx[0] == 87 && mx[1] == 17)
-	////if (0 && x > mn[0]) // && mn[1] == 6) //&& mx[0] == 87 && mx[1] == 17)
-
-	imgClr[0] = 100;
-	imgClr[1] = 100;
-	imgClr[2] = 100;
-
-	if (x > mn[0]+3)
-		imgClr[0] = 255;
-	if (y > mn[1]+3) // && mn[1] == 6) //&& mx[0] == 87 && mx[1] == 17)
-		imgClr[1] = 255;
-	if (x > mx[0]-5)
-		imgClr[2] = 255;
-
-	//if (x % 5 == 0)
-	//	imgClr[0] = 250;
-
-	//if (y % 5 == 0)
-	//	imgClr[1] = 250;
-	
-
-	//if (tidPos == -1) {
-	//	imgClr[0] = 200;
-	//	imgClr[1] = 200;
-	//	imgClr[2] = 200;
-	//} else {
-	//	imgClr[0] = 255*(tidPos%2);
-	//	imgClr[1] = 255*((tidPos/2)%2);
-	//	imgClr[2] = 255*((tidPos/4)%2);
-	//}
-
-	// yres+1 from trial + error.
-	
-	imgClr[0] = 255*((float)mx[1])/xres;
-	imgClr[1] = 255-imgClr[0];//y % 255;
-	imgClr[2] = 0;
-
-	setArrayCell(x, y, xres, yres+1, imgClr, shadedImg);
-}
-	"""
 
 	# Inputs
 	srcImgAr = np.array(list(pygame.surfarray.array3d(srcImg)))
@@ -1439,6 +1325,10 @@ __kernel void krShadeImg(
 	bbxsAr = np.array(bbxs, dtype=np.intc)
 	bbxs_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=bbxsAr)
+		
+	tidProgsAr = np.array(tidProgs, dtype=np.intc)
+	tidProgs_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidProgsAr)
 		
 
 	# Outputs
@@ -1464,6 +1354,7 @@ __kernel void krShadeImg(
 			tidPosGridThisLev_buf,
 			#tids_buf,
 			bbxs_buf,
+			tidProgs_buf,
 			#cents_buf,
 			shadedImg_buf)
 	launch.wait()
@@ -1494,6 +1385,7 @@ def genSprites(warpUi, srcImg):
 
 		bbxs = []
 		cents = []
+		tidProgs = []
 		for tidPos,tid in enumerate(tids):
 			if "bbx" in tidToSidsThisLev[tid]:
 				bbx = tidToSidsThisLev[tid]["bbx"]
@@ -1507,13 +1399,23 @@ def genSprites(warpUi, srcImg):
 				cent = ((bbx[0][0] + bbx[0][1])/2, (bbx[1][0] + bbx[1][1])/2) 
 				cents.append(cent)
 
+			# Get tidProg.
+			levProg = warpUi.getOfsWLev(lev) % 1.0
+			progDurMin = .6
+			progDurMax = 1
+
+			random.seed(tid)
+			progDur = ut.mix(progDurMin, progDurMax, random.random())
+			progStart = (1.0 - progDur) * random.random()
+			tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
+			tidProgs.append(int(tidProg*100))
+
 		shadedImg = shadeImg(warpUi, srcImg, tidImg,
-			tidPosGridThisLev, tids, bbxs, cents)
+			tidPosGridThisLev, tids, bbxs, cents, tidProgs)
 
 		spritesThisLev = []
 		for tidPos in range(len(tids)):
-			#spriteDic = makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev)
-			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev)
+			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs)
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
@@ -1561,14 +1463,15 @@ def renSprites(warpUi, res, fr):
 			tid = spriteDic["tid"]
 
 			# Get tidProg.
-			levProg = warpUi.getOfsWLev(lev) % 1.0
-			progDurMin = .6
-			progDurMax = 1
+			# levProg = warpUi.getOfsWLev(lev) % 1.0
+			# progDurMin = .6
+			# progDurMax = 1
 
-			random.seed(tid)
-			progDur = ut.mix(progDurMin, progDurMax, random.random())
-			progStart = (1.0 - progDur) * random.random()
-			tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
+			# random.seed(tid)
+			# progDur = ut.mix(progDurMin, progDurMax, random.random())
+			# progStart = (1.0 - progDur) * random.random()
+			# tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
+			tidProg = .01*spriteDic["tidProg"]
 
 			# Get xf.
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
@@ -1580,9 +1483,9 @@ def renSprites(warpUi, res, fr):
 
 			tidClr = convertTidToClr(tid)
 			tidClr = ut.minVSc(ut.multVSc(tidClr, warpUi.parmDic("sfK")), 255)
-			dark = 100
-			clrProg = ut.smoothstep(0, .3, tidProg)
-			fillClr = ut.mixV((dark, dark, dark), tidClr, clrProg)
+			#dark = 100
+			#clrProg = ut.smoothstep(0, .3, tidProg)
+			#fillClr = ut.mixV((dark, dark, dark), tidClr, clrProg)
 			#spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
 			#spriteImg.fill((kIntens, kIntens, kIntens), None, pygame.BLEND_MULT)
 			#spriteImg.fill(fillClr, None, pygame.BLEND_MULT)
@@ -1591,7 +1494,11 @@ def renSprites(warpUi, res, fr):
 			sfFdOut = .3
 			sfA = warpUi.parmDic("sfA")
 			sfK = warpUi.parmDic("sfK")
-			surfAlpha = 1 #sfA *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, tidProg)
+
+			levProg = warpUi.getOfsWLev(lev) % 1.0
+			surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
+			surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
+			#surfAlpha *= sfA # *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, .01*tidProg)
 			pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 				mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 
