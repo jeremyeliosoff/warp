@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1668
+val 93
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 0
-
-doRenCv
 val 1
 
+doRenCv
+val 0
+
 image
-val lzFin2mx40
+val lzFin2Shortmx40scP25
 
 dbImg1
 val sidPost
@@ -40,10 +40,10 @@ renVer
 val v000
 
 frStart
-val 1600
+val 80
 
 frEnd
-val 3508
+val 561
 
 frPerCycle
 val 15
@@ -95,7 +95,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v008redoGamP5
+val v000
 
 startLev
 val 0

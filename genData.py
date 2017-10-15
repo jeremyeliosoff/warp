@@ -1302,10 +1302,6 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, t
 def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidProgs):
 	srcImgAr = np.array(srcImg)
 	tidImgAr = np.array(tidImg)
-	print "_shadeImg():                     res:", warpUi.res
-	print "_shadeImg(): tidPosGridThisLev.shape:", tidPosGridThisLev.shape
-	print "_shadeImg():            srcImg.shape:", srcImg.get_size()
-	print "_shadeImg():            tidImg.shape:", tidImg.get_size()
 
 	# Inputs
 	srcImgAr = np.array(list(pygame.surfarray.array3d(srcImg)))
@@ -1389,7 +1385,7 @@ def genSprites(warpUi, srcImg):
 		for tidPos,tid in enumerate(tids):
 			if "bbx" in tidToSidsThisLev[tid]:
 				bbx = tidToSidsThisLev[tid]["bbx"]
-				print "_genSprites() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
+				#print "_genSprites() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
 				#bbxs.append(bbx)
 				bbxTup = (bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1])
 				bbxs.append(bbxTup)
