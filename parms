@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 93
+val 242
 
 fps
 val 52
@@ -19,7 +19,7 @@ anim
 val 1
 
 doRenCv
-val 0
+val 1
 
 image
 val lzFin2Shortmx40scP25

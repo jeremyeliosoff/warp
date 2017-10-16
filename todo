@@ -1,3 +1,5 @@
+rvcq code: ZFDZGL112301
+
 -------------------
 -------TODO--------
 -------------------
@@ -4690,6 +4692,10 @@ Call:
 	Charlotte
 "Chat": Signe
 
+#D seemingly# Fix git, sync 2 laptops
+
+#Dish# Install opencl + whatever else needed on "Big D" (big laptop)
+
 
 =========================================================
 ======================= WARP TODO =======================
@@ -4790,23 +4796,28 @@ Try using SHADERS -- maybe my own "unofficial" gpu shaders... hmm, maybe to avoi
 	Edge/curves
 
 
+Look into networking 2 laptops/using Big D as server.
+
+Maybe make c plugin for growCurves + maybe other bottlenecks
+
 *********** PLAN OF ATTACK *********** 
-#D seemingly# Fix git, sync 2 laptops
 
-Install opencl + whatever else needed on "Big D" (big laptop)
+#D# Send link to LA film fest
 
+Clean code
 
 GPU cop-style 2d "shader"
-	Try inputting per-tid attrs - eg. cent, bbx - and colour accordingly
-		Make sure you have inputs tidPosGrid, tids, tidAttrs
+	#Dish# Try inputting per-tid attrs - eg. cent, bbx - and colour accordingly
+	#Dish# 	Make sure you have inputs tidPosGrid, tids, tidAttrs
+	vignette/halo/distFade -- make sure NCD space works
+	anim parms
+	brightness per lev
+	"flashing lights"?
 	Edge detect
 	output alpha
 
 Pretty fun lookdev stuff
 
-Look into networking 2 laptops/using Big D as server.
-
-Maybe make c plugin for growCurves + maybe other bottlenecks
 
 ============================================================
 

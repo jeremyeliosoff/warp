@@ -66,10 +66,9 @@ void setArrayCell(int x, int y, int xres, int yres,
 	}
 }
 
-int getCellScalar(int x, int y, int xres, int yres,
+int getCellScalar(int x, int y, int yres,
   __global int* tidPosGridThisLev)
 {
-	//int i = y * xres + x;
 	int i = x * yres + y;
 	return tidPosGridThisLev[i];
 }
@@ -101,9 +100,7 @@ __kernel void krShadeImg(
 	unsigned int x = get_global_id(0);
 	unsigned int y = get_global_id(1);
 
-	int xx = x;//max(0, x+2);
-	int yy = y;//max(0, y+2);
-	int tidPos = getCellScalar(xx, yy, xres, yres+1, tidPosGridThisLev);
+	int tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
 
 	int mn[2];
 	int mx[2];
@@ -111,51 +108,12 @@ __kernel void krShadeImg(
 	getBbxInfo(tidPos, bbxs, mn, mx, cent);
 
 
-	uchar outClr[3];
 	uchar srcClr[3];
 	getImageCell(x, y, xres, yres+1, srcImg, srcClr);
 
 	uchar tidClr[3];
 	getImageCell(x, y, xres, yres+1, tidImg, tidClr);
-	////imgClr[0] = (50*tidPos)%255;//255*((float)mx[0])/xres;
-	//imgClr[2] = 0;
-	////if (mn[0] == 77) 
-	////if (mn[0] == 77 && tidPos == 0) // && mn[1] == 6) //&& mx[0] == 87 && mx[1] == 17)
-	////if (0 && x > mn[0]) // && mn[1] == 6) //&& mx[0] == 87 && mx[1] == 17)
-
-	outClr[0] = 100;
-	outClr[1] = 100;
-	outClr[2] = 100;
-
-	if (x > mn[0]+3)
-		outClr[0] = 255;
-	if (y > mn[1]+3) // && mn[1] == 6) //&& mx[0] == 87 && mx[1] == 17)
-		outClr[1] = 255;
-	if (x > mx[0]-5)
-		outClr[2] = 255;
-
-	//if (x % 5 == 0)
-	//	outClr[0] = 250;
-
-	//if (y % 5 == 0)
-	//	outClr[1] = 250;
 	
-
-	//if (tidPos == -1) {
-	//	outClr[0] = 200;
-	//	outClr[1] = 200;
-	//	outClr[2] = 200;
-	//} else {
-	//	outClr[0] = 255*(tidPos%2);
-	//	outClr[1] = 255*((tidPos/2)%2);
-	//	outClr[2] = 255*((tidPos/4)%2);
-	//}
-
-	// yres+1 from trial + error.
-	
-	outClr[0] = 255*((float)cent[1])/xres;
-	outClr[1] = 255-outClr[0];//y % 255;
-	outClr[2] = 0;
 
 	float tidProg = ((float)tidProgs[tidPos])/100;
 	float clrProg = tidProg;//smoothstep(0, .3, tidProg);
@@ -164,9 +122,9 @@ __kernel void krShadeImg(
 	mult3_255(srcClr, tidClr, tripClr);
 	mult3sc(tripClr, 2, tripClr);
 
+	uchar outClr[3];
 	mix3(srcClr, tripClr, clrProg, outClr);
 	
-
-
+	// yres+1 from trial+error.
 	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
 }

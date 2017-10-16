@@ -1252,13 +1252,9 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, t
 		# Blit bbx of tid from srcImg to empty cropFromSrcImg of bbx size.
 		cropFromSrcImg = pygame.Surface(sz, pygame.SRCALPHA, 32)
 		cropFromSrcImg.blit(srcImg, (0, 0), bbxTup)
-		#pygame.image.save(cropFromSrcImg, "test/img/%05d_cropFromSrc.png" % tid)
-
-		#pygame.surfarray.pixels_alpha(cropFromSrcImg)[:,:] = 0
 		
 		# Fill a sprite-sized np array with tidPosClr based on tidPos.
 		tidPosClr = convertTidToClr(tidPos)
-		#print "XXXX tid:", tid,  "-- tidPos:", tidPos, " -- tidPosClr", tidPosClr
 		tidClrAr = vecTo3dArray(tidPosClr, sz[0], sz[1])
 
 		tidClrBbxImg = pygame.surfarray.make_surface(tidClrAr)
@@ -1281,20 +1277,6 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, t
 		pygame.surfarray.pixels3d(spriteImg)[:,:] = \
 			pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
 
-		# Save (tmp?)
-		#pygame.image.save(spriteImg, "test/img/%05d_spriteImg.png" % tid)
-		#tidClr = convertTidToClr(tid)
-		#tidClr = ut.minVSc(ut.multVSc(tidClr, warpUi.parmDic("sfK")), 255)
-		#print "XXXX tid:", tid,  "-- tidPos:", tidPos, " -- tidPosClr", tidPosClr
-
-		# TEMP to make warped progs more visible, copied from renSprites.
-		#prog = warpUi.getOfsWLev(lev) % 1.0
-		#kProg = ut.smoothstep(.2, .8, prog)
-		#tidClr = ut.mixV((50, 50, 50), tidClr, kProg)
-
-		#spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
-	#else:
-	#	spriteImg = pygame.image.load("test/img/%05d_spriteImg.png" % tid)
 		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid, "tidProg":tidProg}
 	else:
 		return None
@@ -1312,8 +1294,6 @@ def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidPr
 	tidImgAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidImgAr)
 		
-		
-	#tidPosGridThisLevAr = np.array(list(pygame.surfarray.array2d(tidPosGridThisLev)))
 	tidPosGridThisLevAr = np.array(tidPosGridThisLev, dtype=np.intc)
 	tidPosGridThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridThisLevAr)
@@ -1340,8 +1320,6 @@ def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidPr
 	launch = bld.krShadeImg(
 			warpUi.queue,
 			srcImgAr.shape,
-			#(50, 70),
-			#warpUi.res,
 			None,
 			np.int32(warpUi.res[0]),
 			np.int32(warpUi.res[1]),
@@ -1457,34 +1435,11 @@ def renSprites(warpUi, res, fr):
 			bbx = spriteDic["bbx"]
 			spriteImg = spriteDic["spriteImg"].copy()
 			tid = spriteDic["tid"]
-
-			# Get tidProg.
-			# levProg = warpUi.getOfsWLev(lev) % 1.0
-			# progDurMin = .6
-			# progDurMax = 1
-
-			# random.seed(tid)
-			# progDur = ut.mix(progDurMin, progDurMax, random.random())
-			# progStart = (1.0 - progDur) * random.random()
-			# tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
-			tidProg = .01*spriteDic["tidProg"]
+			tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
 
 			# Get xf.
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 			xf = calcXf(warpUi, tidProg, bbxTup)
-
-			#spriteImg.set_alpha(255)
-
-			#kIntens = min(255, 500 * kIntensProg)
-
-			tidClr = convertTidToClr(tid)
-			tidClr = ut.minVSc(ut.multVSc(tidClr, warpUi.parmDic("sfK")), 255)
-			#dark = 100
-			#clrProg = ut.smoothstep(0, .3, tidProg)
-			#fillClr = ut.mixV((dark, dark, dark), tidClr, clrProg)
-			#spriteImg.fill(tidClr, None, pygame.BLEND_MULT)
-			#spriteImg.fill((kIntens, kIntens, kIntens), None, pygame.BLEND_MULT)
-			#spriteImg.fill(fillClr, None, pygame.BLEND_MULT)
 
 			sfFdIn = .2
 			sfFdOut = .3
@@ -1519,7 +1474,7 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 	res = srcImg.get_size()
 
 	# Only gen sprites if they don't exist or fr is different.
-	forceRegen = True
+	forceRegen = False
 	if forceRegen or warpUi.spritesThisFr == None or (not warpUi.spritesLoadedFr == fr):
 		print "_genAndRenSprites(): spritesThisFr don't exist or wrong fr; generating..."
 		warpUi.spritesThisFr = genSprites(warpUi, srcImg)
