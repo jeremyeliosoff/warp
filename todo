@@ -4809,9 +4809,10 @@ Maybe make c plugin for growCurves + maybe other bottlenecks
 GPU cop-style 2d "shader"
 	#Dish# Try inputting per-tid attrs - eg. cent, bbx - and colour accordingly
 	#Dish# 	Make sure you have inputs tidPosGrid, tids, tidAttrs
-	vignette/halo/distFade -- make sure NCD space works
-	anim parms
-	brightness per lev
+	#Dish need parms# brightness per lev
+	#Dish need parms# anim parms
+	#Dish need parms# vignette/halo/distFade -- make sure NCD space works
+	tinting/colour/colourspace parms
 	"flashing lights"?
 	Edge detect
 	output alpha
