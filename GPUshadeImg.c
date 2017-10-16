@@ -21,6 +21,12 @@ float mixI(uchar a, uchar b, float m) {
 	return m*b + (1.0-m)*a;
 }
 
+float dist(float x0, float y0, float x1, float y1) {
+	float dx = x1-x0;
+	float dy = y1-y0;
+	return sqrt(dx*dx + dy*dy);
+}
+
 void mix3(uchar* a, uchar* b, float m, uchar* ret) {
 	int i;
 	for (i = 0; i < 3; i++) {
@@ -148,12 +154,22 @@ __kernel void krShadeImg(
 	mix3(srcClr, tripClr, clrProg, outClr);
 
 	// Darken lower level when tripping.
-	float levPctK = levPct*.01;
-	levPctK = 1.0-(1.0-levPctK)*(1.0-levPctK);
+	float levPctF = levPct*.01;
+	float levPctK = 1.0-(1.0-levPctF)*(1.0-levPctF);
 	float kLevPct = mix(1, levPctK, tripGlobPct*.01);
+
 	float tripK = 2;
 	float tripKmult = mix(1, tripK, tripGlobPct*.01);
-	mult3sc(outClr, kLevPct*tripKmult, outClr);
+
+	int cx = xres/2;	
+	int cy = yres/2;	
+	float dFromCent = dist(x, y, cx, cy);
+	float dNorm = dFromCent/cx;
+	float vignK = 1-smoothstep(0, 1, dNorm);
+	vignK = 1-(1-vignK)*(1-vignK);
+	float vignKmult = mix(1, vignK, tripGlobPct*.01);
+	vignKmult = mix(vignKmult, 1, levPctF);
+	mult3sc(outClr, kLevPct*tripKmult*vignKmult, outClr);
 	
 	// yres+1 from trial+error.
 	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
