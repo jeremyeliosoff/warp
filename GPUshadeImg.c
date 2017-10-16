@@ -1,3 +1,22 @@
+
+void convertTidToClr(int tid, uchar* ret) {
+	if (tid < 0) {
+		ret[0] = 0; ret[1] = 0; ret[2] = 0;
+	} else {
+		if (tid == 0)
+			tid = 21111;// Get rid of white, it doesn't tint nicely.
+
+		int octant = tid%8;
+		int tDiv = tid/8;
+		int ocR = tDiv % 128 + 128*(octant % 2);
+		tDiv = tDiv/128;
+		int ocG = tDiv % 128 + 128*(octant/2 % 2);
+		tDiv = tDiv/128;
+		int ocB = tDiv % 128 + 128*(octant/4 % 2); // This should never loop - till we get to tid = 256^3
+		ret[0] = 255-ocR; ret[1] = 255-ocG; ret[2] = 255-ocB;
+	}
+}
+
 float mixI(uchar a, uchar b, float m) {
 	return m*b + (1.0-m)*a;
 }
@@ -113,9 +132,9 @@ __kernel void krShadeImg(
 	uchar srcClr[3];
 	getImageCell(x, y, xres, yres+1, srcImg, srcClr);
 
-	uchar tidClr[3];
-	getImageCell(x, y, xres, yres+1, tidImg, tidClr);
-	
+	int tid = tids[tidPos];
+	uchar tidClr[] = {0, 0, 0};
+	convertTidToClr(tid, tidClr);
 
 	float tidTrip = ((float)tidTrips[tidPos])/100;
 	float clrProg = tidTrip;//smoothstep(0, .3, tidTrip);
