@@ -4804,7 +4804,7 @@ Maybe make c plugin for growCurves + maybe other bottlenecks
 
 #D# Send link to LA film fest
 
-Clean code
+#Dish# Clean code
 
 GPU cop-style 2d "shader"
 	#Dish# Try inputting per-tid attrs - eg. cent, bbx - and colour accordingly

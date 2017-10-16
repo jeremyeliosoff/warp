@@ -1207,8 +1207,11 @@ def converTidPosGridToTidClrGrid(tidPosGrid, tids):
 	for x in range(xres):
 		for y in range(yres): 
 			tidPos = tidPosGrid[x][y]
-			tid = tids[tidPos]
-			tidClrGrid[x][y] = convertTidToClr(tidPos)
+			if tidPos < len(tids):
+				tid = tids[tidPos]
+				tidClrGrid[x][y] = convertTidToClr(tidPos)
+			else: # TODO: This should never be.
+				tidClrGrid[x][y] = (255, 0, 0)
 	
 	return tidClrGrid
 
@@ -1236,10 +1239,11 @@ mult255V = np.vectorize(mult255)
 
 
 
-def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs):
+def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips):
 	tid = tids[tidPos]
 	if "bbx" in tidToSidsThisLev[tid]:
 		tidProg = tidProgs[tidPos]
+		tidTrip = tidTrips[tidPos]
 		bbx = tidToSidsThisLev[tid]["bbx"]
 	#regen = True
 	#if regen:
@@ -1277,11 +1281,13 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, t
 		pygame.surfarray.pixels3d(spriteImg)[:,:] = \
 			pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
 
-		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid, "tidProg":tidProg}
+		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid,
+			"tidProg":tidProg, "tidTrip":tidTrip}
 	else:
 		return None
 
-def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidProgs):
+def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
+		tids, bbxs, cents, tidTrips, tripFrK):
 	srcImgAr = np.array(srcImg)
 	tidImgAr = np.array(tidImg)
 
@@ -1302,9 +1308,13 @@ def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidPr
 	bbxs_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=bbxsAr)
 		
-	tidProgsAr = np.array(tidProgs, dtype=np.intc)
-	tidProgs_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidProgsAr)
+	tidsAr = np.array(tids, dtype=np.intc)
+	tids_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
+		
+	tidTripsAr = np.array(tidTrips, dtype=np.intc)
+	tidTrips_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidTripsAr)
 		
 
 	# Outputs
@@ -1315,20 +1325,27 @@ def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidPr
 	kernelPath = ut.projDir + "/GPUshadeImg.c"
 	with open(kernelPath) as f:
 		kernel = "".join(f.readlines())
+	
+	ofs = warpUi.getOfsWLev(lev) % 1.0
+	levPct = int(100*(lev+ofs)/warpUi.parmDic("nLevels")) #int((warpUi.getOfsWLev(lev)*100.0)%100)
+	tripGlobPct = int(tripFrK*100)
 
 	bld = cl.Program(warpUi.cntxt, kernel).build()
+	print "lev", lev, "levPct", levPct
 	launch = bld.krShadeImg(
 			warpUi.queue,
 			srcImgAr.shape,
 			None,
 			np.int32(warpUi.res[0]),
 			np.int32(warpUi.res[1]),
+			np.int32(levPct),
+			np.int32(tripGlobPct),
 			srcImgAr_buf,
 			tidImgAr_buf,
 			tidPosGridThisLev_buf,
-			#tids_buf,
+			tids_buf,
 			bbxs_buf,
-			tidProgs_buf,
+			tidTrips_buf,
 			#cents_buf,
 			shadedImg_buf)
 	launch.wait()
@@ -1340,6 +1357,20 @@ def shadeImg(warpUi, srcImg, tidImg, tidPosGridThisLev, tids, bbxs, cents, tidPr
 
 def genSprites(warpUi, srcImg): 
 	spritesThisFr = []
+
+	# Adjust by global seq prog.
+	tripFrStart = 120
+	tripFrMid = 130
+	tripFrEnd = 200
+	tripKMid = .2
+	fr = warpUi.parmDic("fr")
+	if fr < tripFrMid:
+		print "_genSprites(): fr:", fr, "sm:", ut.smoothstep(tripFrStart, tripFrMid, fr)
+		tripFrK = tripKMid * ut.smoothstep(tripFrStart, tripFrMid, fr)
+	else:
+		tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
+	print "_genSprites(): tripFrK:", tripFrK
+
 	for lev in range(warpUi.parmDic("nLevels")):
 		print "_genSprites(): Doing lev", lev, "..."
 
@@ -1360,6 +1391,7 @@ def genSprites(warpUi, srcImg):
 		bbxs = []
 		cents = []
 		tidProgs = []
+		tidTrips = []
 		for tidPos,tid in enumerate(tids):
 			if "bbx" in tidToSidsThisLev[tid]:
 				bbx = tidToSidsThisLev[tid]["bbx"]
@@ -1382,14 +1414,18 @@ def genSprites(warpUi, srcImg):
 			progDur = ut.mix(progDurMin, progDurMax, random.random())
 			progStart = (1.0 - progDur) * random.random()
 			tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
-			tidProgs.append(int(tidProg*100))
+			
+			tidTrip = tidProg * tripFrK
 
-		shadedImg = shadeImg(warpUi, srcImg, tidImg,
-			tidPosGridThisLev, tids, bbxs, cents, tidProgs)
+			tidProgs.append(int(tidProg*100))
+			tidTrips.append(int(tidTrip*100))
+
+		shadedImg = shadeImg(warpUi, lev, srcImg, tidImg,
+			tidPosGridThisLev, tids, bbxs, cents, tidTrips,  tripFrK)
 
 		spritesThisLev = []
 		for tidPos in range(len(tids)):
-			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs)
+			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips)
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
@@ -1436,10 +1472,11 @@ def renSprites(warpUi, res, fr):
 			spriteImg = spriteDic["spriteImg"].copy()
 			tid = spriteDic["tid"]
 			tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
+			tidTrip = .01*spriteDic["tidTrip"] # tidTrip is int in range (0,100)
 
 			# Get xf.
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-			xf = calcXf(warpUi, tidProg, bbxTup)
+			xf = calcXf(warpUi, tidTrip, bbxTup)
 
 			sfFdIn = .2
 			sfFdOut = .3
@@ -1474,7 +1511,7 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 	res = srcImg.get_size()
 
 	# Only gen sprites if they don't exist or fr is different.
-	forceRegen = False
+	forceRegen = True
 	if forceRegen or warpUi.spritesThisFr == None or (not warpUi.spritesLoadedFr == fr):
 		print "_genAndRenSprites(): spritesThisFr don't exist or wrong fr; generating..."
 		warpUi.spritesThisFr = genSprites(warpUi, srcImg)

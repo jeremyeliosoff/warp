@@ -383,7 +383,10 @@ def vAdd(a, b):
 		ret.append(a[i] + b[i])
 	return ret
 
-def smoothstep(edge0, edge1, x):
+def smoothstep(edge0in, edge1in, xin):
+	edge1 = float(edge1in)
+	edge0 = float(edge0in)
+	x = float(xin)
 	# Scale, bias and saturate x to 0..1 range
 	ret = edge1
 	if edge1 > edge0:

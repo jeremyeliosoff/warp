@@ -88,12 +88,14 @@ void getBbxInfo(int tidPos,
 __kernel void krShadeImg(
 			int xres,
 			int yres,
+			int levPct,
+			int tripGlobPct,
 			__global uchar* srcImg,
 			__global uchar* tidImg,
 			__global int* tidPosGridThisLev,
-			//__global int* tids,
+			__global int* tids,
 			__global int* bbxs,
-			__global int* tidProgs,
+			__global int* tidTrips,
 			//__global int* cents,
 			__global uchar* shadedImg)
 {
@@ -115,15 +117,24 @@ __kernel void krShadeImg(
 	getImageCell(x, y, xres, yres+1, tidImg, tidClr);
 	
 
-	float tidProg = ((float)tidProgs[tidPos])/100;
-	float clrProg = tidProg;//smoothstep(0, .3, tidProg);
+	float tidTrip = ((float)tidTrips[tidPos])/100;
+	float clrProg = tidTrip;//smoothstep(0, .3, tidTrip);
 
 	uchar tripClr[3];
 	mult3_255(srcClr, tidClr, tripClr);
-	mult3sc(tripClr, 2, tripClr);
+ 
+	mult3sc(tripClr, 3, tripClr);
 
 	uchar outClr[3];
 	mix3(srcClr, tripClr, clrProg, outClr);
+
+	// Darken lower level when tripping.
+	float levPctK = levPct*.01;
+	levPctK = 1.0-(1.0-levPctK)*(1.0-levPctK);
+	float kLevPct = mix(1, levPctK, tripGlobPct*.01);
+	float tripK = 2;
+	float tripKmult = mix(1, tripK, tripGlobPct*.01);
+	mult3sc(outClr, kLevPct*tripKmult, outClr);
 	
 	// yres+1 from trial+error.
 	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
