@@ -1498,7 +1498,6 @@ def renSprites(warpUi, res, fr):
 		ut.mkDirSafe(levDir)
 		pygame.image.save(canvasLev, imgPath)
 
-	pygame.image.save(canvas, "test/img/_canvas.%05d.png" % (fr))
 	renPath = warpUi.images["ren"]["path"]
 	renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
 	ut.mkDirSafe(renSeqDir)
