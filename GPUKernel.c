@@ -1,5 +1,5 @@
 
-bool compare4(int v0, v1, v2, v3, int *b) {
+bool compare4(int v0, int v1, int v2, int v3, int *b) {
 	bool ret = 0;
 	if ( v0 == b[0] && v1 == b[1] && v2 == b[2] && v3 == b[3])
 		ret = 1;
@@ -126,7 +126,7 @@ int clrAvg(uchar* clr)
 
 
 void getClr(int x, int y, int xres, int npix,
-  uchar __attribute__((address_space(1)))* imgArray,
+  __global uchar* imgArray,
   uchar* ret)
 {
 	int i = y * xres * npix + x * npix;
@@ -137,7 +137,7 @@ void getClr(int x, int y, int xres, int npix,
 
 void setArrayCell(int x, int y, int xres, int npix,
   uchar* val,
-  uchar __attribute__((address_space(1)))* ret)
+  __global uchar* ret)
 {
 	int i = y * xres * npix + x * npix;
 	ret[i] = val[0];
@@ -147,7 +147,7 @@ void setArrayCell(int x, int y, int xres, int npix,
 
 void setArrayCellInt(int x, int y, int levOfs, int xres, int npix,
   int val,
-  int __attribute__((address_space(1)))* ret)
+  __global int* ret)
 {
 	int i = y * xres + x;
 	ret[i+levOfs] = val;
@@ -155,7 +155,7 @@ void setArrayCellInt(int x, int y, int levOfs, int xres, int npix,
 
 
 int getClrAvg(int x, int y, int xres, int npix,
-  uchar __attribute__((address_space(1)))* imgArray)
+  __global uchar* imgArray)
 {
 	uchar clr[3];
 	getClr(x, y, xres, npix,imgArray, clr);
@@ -163,8 +163,8 @@ int getClrAvg(int x, int y, int xres, int npix,
 }
 
 void cpClr(int x, int y, int xres, int npix,
-  uchar __attribute__((address_space(1)))* imgArray,
-  uchar __attribute__((address_space(1)))* ret)
+  __global uchar* imgArray,
+  __global uchar* ret)
 {
 	int i = y * xres * npix + x * npix;
 	uchar clr[3];
@@ -214,7 +214,7 @@ __kernel void initJtC(
 		//printf("\nnbrs: %%d, %%d, %%d, %%d", nbrs[0], nbrs[1], nbrs[2], nbrs[3]);
 		int cons[] = {0, 0, 0, 0};
 		int ncons = 0;
-		if (tot > 0 and tot < 4) {
+		if (tot > 0 && tot < 4) {
 			ncons = neighboursToConns (nbrs, cons) - 97;
 		}
 		//setArrayCell(x, y, xres, 1, tot, nconsOut);

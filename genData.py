@@ -898,7 +898,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 	kernel = """
 void setArrayCell(int x, int y, int xres,
   uchar* val,
-  uchar __attribute__((address_space(1)))* ret)
+  __global uchar* ret)
 {
 	int i = y * xres * 3 + x * 3;
 	ret[i] = val[0];
@@ -907,7 +907,7 @@ void setArrayCell(int x, int y, int xres,
 }
 
 int getCellScalar(int x, int y, int xres,
-  int __attribute__((address_space(1)))* _inSurfGrid)
+  __global int* _inSurfGrid)
 {
 	int i = y * xres + x;
 	return _inSurfGrid[i];

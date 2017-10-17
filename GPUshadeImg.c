@@ -64,7 +64,7 @@ float ssmoothstep(float edge0, float edge1, float x) {
 }
 
 void getImageCell(int x, int y, int xresIn, int yresIn,
-  uchar __attribute__((address_space(1)))* img,
+  __global uchar* img,
   uchar* ret)
 {
 	int xres = xresIn + 0;
@@ -81,7 +81,7 @@ void getImageCell(int x, int y, int xresIn, int yresIn,
 
 void setArrayCell(int x, int y, int xres, int yres,
   uchar* val,
-  uchar __attribute__((address_space(1)))* ret)
+  __global uchar* ret)
 {
 	if (x >= 0 && x < xres && y >= 0 && y < yres) {
 		int i = (x * yres + y) * 3;
@@ -165,7 +165,7 @@ __kernel void krShadeImg(
 	int cy = yres/2;	
 	float dFromCent = dist(x, y, cx, cy);
 	float dNorm = dFromCent/cx;
-	float vignK = 1-smoothstep(0, 1, dNorm);
+	float vignK = 1-(float)smoothstep(0.0, 1.0, dNorm);
 	vignK = 1-(1-vignK)*(1-vignK);
 	float vignKmult = mix(1, vignK, tripGlobPct*.01);
 	vignKmult = mix(vignKmult, 1, levPctF);
