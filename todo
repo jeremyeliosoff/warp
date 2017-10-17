@@ -4812,13 +4812,16 @@ GPU cop-style 2d "shader"
 	#Dish need parms# brightness per lev
 	#Dish need parms# anim parms
 	#Dish need parms# vignette/halo/distFade -- make sure NCD space works
+	ripple from center
 	tinting/colour/colourspace parms
 	"flashing lights"?
-	Edge detect
-	output alpha
+	edge detect
+	float xf?
+	output alpha?
 
-Pretty fun lookdev stuff
+ren by step
 
+transition from reg to slo mo.
 
 ============================================================
 

@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 397
+val 400
 
 fps
 val 52
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v006tidClrNotTidPos
+val v007vig30fpc
 
 frStart
 val 100
@@ -46,7 +46,7 @@ frEnd
 val 400
 
 frPerCycle
-val 15
+val 30
 
 doGen
 val 1
@@ -95,7 +95,7 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v002againTripFr
+val v003vig30fpc
 
 startLev
 val 0

@@ -1360,8 +1360,8 @@ def genSprites(warpUi, srcImg):
 
 	# Adjust by global seq prog.
 	tripFrStart = 120
-	tripFrMid = 130
-	tripFrEnd = 200
+	tripFrMid = 140
+	tripFrEnd = 250
 	tripKMid = .2
 	fr = warpUi.parmDic("fr")
 	if fr < tripFrMid:
