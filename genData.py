@@ -1207,11 +1207,14 @@ def converTidPosGridToTidClrGrid(tidPosGrid, tids):
 	for x in range(xres):
 		for y in range(yres): 
 			tidPos = tidPosGrid[x][y]
-			if tidPos < len(tids):
+			if tidPos == -1: # TODO: This should never be.
+				tidClrGrid[x][y] = (255, 0, 0)
+			elif tidPos < len(tids):
+				#print "tidPos", tidPos, "len(tids)", len(tids)
 				tid = tids[tidPos]
 				tidClrGrid[x][y] = convertTidToClr(tidPos)
 			else: # TODO: This should never be.
-				tidClrGrid[x][y] = (255, 0, 0)
+				tidClrGrid[x][y] = (0, 255, 0)
 	
 	return tidClrGrid
 
@@ -1380,6 +1383,9 @@ def genSprites(warpUi, srcImg):
 		# Pad to fit img dimensions - no tid for last x or y.
 		tidPosGridThisLev = np.lib.pad(tidPosGridThisLev, ((1,0), (0,1)), "constant", constant_values=-1)
 		tids = tidToSidsThisLev.keys()
+		if tids == []:
+			spritesThisFr.append({})
+			continue
 		tids.sort()
 
 		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
@@ -1666,6 +1672,10 @@ def inSurfGridToTidGrid(warpUi):
 		sidSet = set(sidToTidPos[lev].keys())
 		for xx in range(res[0]):
 			for yy in range(res[1]):
+				#print "lev", lev, "xx", xx, "yy", yy
+				#print "len(inSurfGrid)", len(inSurfGrid)
+				#print "len(inSurfGrid[lev])", len(inSurfGrid[lev])
+				#print "len(inSurfGrid[lev][xx])", len(inSurfGrid[lev][xx])
 				sid = inSurfGrid[lev][xx][yy]
 				if sid == None:
 					tidPosGridThisLev[xx][yy] = -1
