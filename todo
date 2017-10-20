@@ -4,6 +4,38 @@ rvcq code: ZFDZGL112301
 -------TODO--------
 -------------------
 
+clinfo output:
+============================================================
+
+Number of platforms                               1
+  Platform Name                                   Clover
+  Platform Vendor                                 Mesa
+  Platform Version                                OpenCL 1.1 Mesa 17.0.7
+  Platform Profile                                FULL_PROFILE
+  Platform Extensions                             cl_khr_icd
+  Platform Extensions function suffix             MESA
+
+  Platform Name                                   Clover
+Number of devices                                 0
+
+NULL platform behavior
+  clGetPlatformInfo(NULL, CL_PLATFORM_NAME, ...)  Clover
+  clGetDeviceIDs(NULL, CL_DEVICE_TYPE_ALL, ...)   Clover
+  clCreateContext(NULL, ...) [default]            No devices found in platform
+  clCreateContextFromType(NULL, CL_DEVICE_TYPE_CPU)  No devices found in platform
+  clCreateContextFromType(NULL, CL_DEVICE_TYPE_GPU)  No devices found in platform
+  clCreateContextFromType(NULL, CL_DEVICE_TYPE_ACCELERATOR)  No devices found in platform
+  clCreateContextFromType(NULL, CL_DEVICE_TYPE_CUSTOM)  No devices found in platform
+  clCreateContextFromType(NULL, CL_DEVICE_TYPE_ALL)  No devices found in platform
+
+ICD loader properties
+  ICD loader Name                                 OpenCL ICD Loader
+  ICD loader Vendor                               OCL Icd free software
+  ICD loader Version                              2.2.8
+  ICD loader Profile                              OpenCL 1.2
+	NOTE:	your OpenCL library declares to support OpenCL 1.2,
+		but it seems to support up to OpenCL 2.1 too.
+
 
 
 
@@ -4676,6 +4708,16 @@ Modify recover system so the bak dir name indicates what crashed
 
 
 
+Breath times lzFin2mx40_fromPng60fps:
+s  nfr fr
+27 --- 1620 light
+33 360 1980 exhale
+38 300 2280 inhale
+40 120 2400 exhale
+43 180 2580 inhale
+47 240 2820 exhale
+50 180 3000 inhale
+52 120 3120 exhale
 
 ==========================================================
 ======================= OTHER TODO =======================
@@ -4819,9 +4861,11 @@ GPU cop-style 2d "shader"
 	float xf?
 	output alpha?
 
+FIX THE OPENCL FAIL!
+
 ren by step
 
 transition from reg to slo mo.
 
-============================================================
+
 

@@ -1114,11 +1114,15 @@ def genData(warpUi, statsDirDest):
 	print "_genData(): #####################"
 	print "_genData(): ### DOING genData ###"
 	print "_genData(): #####################"
+	print "_genData(): fr:", warpUi.parmDic("fr"), "\n" 
 
 	# Initialize GPU stuff.
 	ut.indicateProjDirtyAs(warpUi, True, "createContextAndQueue_inProgress")
+	print "_genData(): before _create_some_context()"
 	warpUi.cntxt = cl.create_some_context()
+	print "_genData(): after _create_some_context(); before _CommandQueue"
 	warpUi.queue = cl.CommandQueue(warpUi.cntxt)
+	print "_genData(): after _CommandQueue"
 	ut.indicateProjDirtyAs(warpUi, False, "createContextAndQueue_inProgress")
 
 	if warpUi.genRen1fr == 1:
@@ -1130,6 +1134,8 @@ def genData(warpUi, statsDirDest):
 	else:
 		genDataWrapper(warpUi)
 
+	#warpUi.cntxt.release()
+	#cl.enqueue_release_gl_objects(warpUi.queue)
 	ut.timerStop(warpUi, "genData")
 
 def convertCvToLs(cv):
@@ -1362,9 +1368,9 @@ def genSprites(warpUi, srcImg):
 	spritesThisFr = []
 
 	# Adjust by global seq prog.
-	tripFrStart = 120
-	tripFrMid = 140
-	tripFrEnd = 250
+	tripFrStart = 1605
+	tripFrMid = 1640
+	tripFrEnd = 1850
 	tripKMid = .2
 	fr = warpUi.parmDic("fr")
 	if fr < tripFrMid:

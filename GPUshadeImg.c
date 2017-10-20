@@ -37,7 +37,7 @@ void mix3(uchar* a, uchar* b, float m, uchar* ret) {
 void mult3_255(uchar* a, uchar* b, uchar* ret) {
 	int i;
 	for (i = 0; i < 3; i++) {
-		ret[i] = (uchar) (a[i]*(float)(b[i]/255));
+		ret[i] = (uchar) (a[i]*((float)b[i])/255);
 	}
 }
 
@@ -141,14 +141,16 @@ __kernel void krShadeImg(
 	int tid = tids[tidPos];
 	uchar tidClr[] = {0, 0, 0};
 	convertTidToClr(tid, tidClr);
+	
+	float tripGlobF = tripGlobPct*.01;
 
 	float tidTrip = ((float)tidTrips[tidPos])/100;
-	float clrProg = tidTrip;//smoothstep(0, .3, tidTrip);
+	float clrProg = tripGlobF;//tidTrip;//smoothstep(0, .3, tidTrip);
 
 	uchar tripClr[3];
 	mult3_255(srcClr, tidClr, tripClr);
  
-	mult3sc(tripClr, 3, tripClr);
+	mult3sc(tripClr, 1.5, tripClr);
 
 	uchar outClr[3];
 	mix3(srcClr, tripClr, clrProg, outClr);
@@ -156,10 +158,11 @@ __kernel void krShadeImg(
 	// Darken lower level when tripping.
 	float levPctF = levPct*.01;
 	float levPctK = 1.0-(1.0-levPctF)*(1.0-levPctF);
-	float kLevPct = mix(1, levPctK, tripGlobPct*.01);
+	float levKmix = .2;
+	float kLevPct = mix(1, levPctK, tripGlobF*levKmix);
 
-	float tripK = 2;
-	float tripKmult = mix(1, tripK, tripGlobPct*.01);
+	float tripK = 1.2;
+	float tripKmult = mix(1, tripK, tripGlobF);
 
 	int cx = xres/2;	
 	int cy = yres/2;	
@@ -167,7 +170,7 @@ __kernel void krShadeImg(
 	float dNorm = dFromCent/cx;
 	float vignK = 1-(float)smoothstep(0.0, 1.0, dNorm);
 	vignK = 1-(1-vignK)*(1-vignK);
-	float vignKmult = mix(1, vignK, tripGlobPct*.01);
+	float vignKmult = mix(1, vignK, tripGlobF);
 	vignKmult = mix(vignKmult, 1, levPctF);
 	mult3sc(outClr, kLevPct*tripKmult*vignKmult, outClr);
 	

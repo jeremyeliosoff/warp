@@ -171,8 +171,10 @@ class warpUi():
 		
 
 	def positionWindow(self):
-		w = 1500 # width for the Tk root
-		h = 950 # height for the Tk root
+		#w = 1800 # width for the Tk root
+		#h = 950 # height for the Tk root
+		w = 1800 # width for the Tk root
+		h = 1000 # height for the Tk root
 
 		# get screen width and height
 		ws = self.root.winfo_screenwidth() # width of the screen
@@ -829,8 +831,10 @@ class warpUi():
 			res = loadedImg.size
 			self.res = res
 			sc = 2 # TODO: Make this a parm?
-			maxXres = 520
-			maxYres = 400
+			#maxXres = 520
+			#maxYres = 400
+			maxXres = 720
+			maxYres = 600
 			if res[0] > maxXres or self.displayNaturalRes == 0:
 				y = int(res[1] * float(maxXres)/res[0])
 				x = maxXres
