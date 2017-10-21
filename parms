@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2102
+val 1820
 
 fps
 val 52
@@ -22,7 +22,7 @@ doRenCv
 val 1
 
 image
-val lzFin2mx40
+val lzFin2mx40scP25
 
 dbImg1
 val sidPost
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v003
+val v002fallDistNp3
 
 frStart
-val 1600
+val 1580
 
 frEnd
-val 3508
+val 3370
 
 frPerCycle
 val 30
@@ -60,7 +60,7 @@ val 1
 ---GEN---
 
 nLevels
-val 10
+val 6
 
 kSurf
 val 1
@@ -95,13 +95,16 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v010
+val v0016lev
+
+frIncRen
+val 2
 
 startLev
 val 0
 
 fallDist
-val .3
+val -.3
 
 fallKForBiggest
 val 0

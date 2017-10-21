@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os, genData, ut, time, datetime, pprint, cProfile, shutil, glob
+import pyopencl as cl
 from Tkinter import *
 import Tkinter, ttk
 import PIL
@@ -1001,7 +1002,7 @@ class warpUi():
 
 
 	def __init__(self, resumeMode=False):
-		print "__init__(): resumeMode =", resumeMode
+		print "_warpUi.__init__(): resumeMode =", resumeMode
 
 		# Not currently dirty
 		dirtyIndicator = ut.projDir + "/dirty"
@@ -1032,6 +1033,16 @@ class warpUi():
 		self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
 		self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
 		self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
+
+		# Init opencl stuff.
+		ut.indicateProjDirtyAs(self, True, "createContextAndQueue_inProgress")
+		print "_warpUi.__init__(): before _create_some_context()"
+		self.cntxt = cl.create_some_context()
+		print "_warpUi.__init__(): after _create_some_context(); before _CommandQueue"
+		self.queue = cl.CommandQueue(self.cntxt)
+		print "_warpUi.__init__(): after _CommandQueue"
+		ut.indicateProjDirtyAs(self, False, "createContextAndQueue_inProgress")
+
 
 
 		self.timerStarts = {}
@@ -1095,7 +1106,7 @@ class warpUi():
 		self.errorImgPath = base + "error" + ut.statImgExt
 		for name in self.staticImageNames:
 			loadedImg = Image.open(base + name + ut.statImgExt)
-			print "__init__(): name:" + name + "; loadedImg", loadedImg
+			print "_warpUi.__init__(): name:" + name + "; loadedImg", loadedImg
 			#res = loadedImg.size
 			#sc = 2
 			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
@@ -1211,7 +1222,7 @@ class warpUi():
 
 			self.verUI[verType]["menuVar"] = StringVar(frameImgVmenu)
 			self.verUI[verType]["menuVar"].set(self.parmDic(verType + "Ver"))
-			print "__init__(): --- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
+			print "_warpUi.__init__(): --- self.verUI[verType][\"menuVar\"].get()", self.verUI[verType]["menuVar"].get()
 			vers = self.getSeqVersions(verType)
 			print "\n__init__(): " + verType + " vers:", vers
 
@@ -1334,7 +1345,7 @@ class warpUi():
 
 		# Debug images.
 		path = self.seqDataVDir + "/debugImg"
-		print "__init__(): =========== PATH", path
+		print "_warpUi.__init__(): =========== PATH", path
 		if os.path.exists(path):
 			sourceImages = os.listdir(path)
 		else:
@@ -1347,7 +1358,7 @@ class warpUi():
 		self.dbMenus = {}
 		col = 0
 		for dbImgName in self.getDbImgParmNames():
-			print "__init__(): \\\\\\\\\\\\ col", col, "dbImgName", dbImgName
+			print "_warpUi.__init__(): \\\\\\\\\\\\ col", col, "dbImgName", dbImgName
 			frameDbParm = Frame(self.frameImg)
 			thisButton = self.makeImgButton(dbImgName, frameDbParm)
 			thisButton.grid()
@@ -1387,7 +1398,7 @@ class warpUi():
 
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
 				if newFr > fr:		
-					fr = min(fr + 1, newFr)
+					fr = min(fr + self.parmDic("frIncRen"), newFr)
 					framesPassed = fr - self.frStartAnim
 					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed
 					framesToGo = self.parmDic("frEnd") - fr
@@ -1417,7 +1428,7 @@ class warpUi():
 
 """
 
-					print "__init__(): statsMsg:", statsMsg
+					print "_warpUi.__init__(): statsMsg:", statsMsg
 					with open(self.seqRenVDir + "/stats", 'w') as f:
 						f.write(statsMsg)
 
@@ -1433,7 +1444,7 @@ class warpUi():
 								self.setVal("fr", frEnd)
 								# Back up tidToSids for final frame, if not already done.
 								if not frEnd % self.parmDic("backupDataEvery") == 0:
-									print "__init__(): BACKING UP tidToSids for final fr", fr
+									print "_warpUi.__init__(): BACKING UP tidToSids for final fr", fr
 									genData.saveTidToSid(self)
 
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
@@ -1446,11 +1457,11 @@ class warpUi():
 								hmsPassed = ut.secsToHms(secondsPassed)
 								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
 
-								print "__init__(): Turning on doRenCv"
+								print "_warpUi.__init__(): Turning on doRenCv"
 								self.setVal("doRenCv", 1)
 								self.chk_doRenCv_var.set(1)
 								self.setRenCvUIClr()
-								print "__init__(): Returning to", self.parmDic("frStart")
+								print "_warpUi.__init__(): Returning to", self.parmDic("frStart")
 								fr = self.parmDic("frStart")
 							elif self.parmDic("image") in self.renQLs and not self.parmDic("image") == self.renQLs[-1]:
 								# If recording and in renQ but not last,
@@ -1476,7 +1487,7 @@ class warpUi():
 								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
 						else:
 							# Loop if not recording
-							print "__init__(): Returning to", self.parmDic("frStart")
+							print "_warpUi.__init__(): Returning to", self.parmDic("frStart")
 							fr = self.parmDic("frStart")
 							self.timeStart = time.time()
 							#self.animFrStart = fr

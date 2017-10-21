@@ -1117,13 +1117,13 @@ def genData(warpUi, statsDirDest):
 	print "_genData(): fr:", warpUi.parmDic("fr"), "\n" 
 
 	# Initialize GPU stuff.
-	ut.indicateProjDirtyAs(warpUi, True, "createContextAndQueue_inProgress")
-	print "_genData(): before _create_some_context()"
-	warpUi.cntxt = cl.create_some_context()
-	print "_genData(): after _create_some_context(); before _CommandQueue"
-	warpUi.queue = cl.CommandQueue(warpUi.cntxt)
-	print "_genData(): after _CommandQueue"
-	ut.indicateProjDirtyAs(warpUi, False, "createContextAndQueue_inProgress")
+	# ut.indicateProjDirtyAs(warpUi, True, "createContextAndQueue_inProgress")
+	# print "_genData(): before _create_some_context()"
+	# warpUi.cntxt = cl.create_some_context()
+	# print "_genData(): after _create_some_context(); before _CommandQueue"
+	# warpUi.queue = cl.CommandQueue(warpUi.cntxt)
+	# print "_genData(): after _CommandQueue"
+	# ut.indicateProjDirtyAs(warpUi, False, "createContextAndQueue_inProgress")
 
 	if warpUi.genRen1fr == 1:
 		genDataWrapper(warpUi)

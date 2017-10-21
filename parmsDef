@@ -136,6 +136,11 @@ hidden True
 type str
 val v031testGenRen
 
+frIncRen
+type int
+val 1
+
+
 startLev
 type int
 val 0
