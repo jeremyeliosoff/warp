@@ -79,6 +79,15 @@ void getImageCell(int x, int y, int xresIn, int yresIn,
 }
 
 
+void assign(
+	uchar* src,
+	uchar* dst)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+}
+
 void setArrayCell(int x, int y, int xres, int yres,
   uchar* val,
   __global uchar* ret)
@@ -174,6 +183,9 @@ __kernel void krShadeImg(
 	vignKmult = mix(vignKmult, 1, levPctF);
 	mult3sc(outClr, kLevPct*tripKmult*vignKmult, outClr);
 	
+
+	// DEBUG
+	// assign(tidClr, outClr);
 	// yres+1 from trial+error.
 	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
 }

@@ -1368,9 +1368,12 @@ def genSprites(warpUi, srcImg):
 	spritesThisFr = []
 
 	# Adjust by global seq prog.
-	tripFrStart = 1605
-	tripFrMid = 1640
-	tripFrEnd = 1850
+	#tripFrStart = 1605
+	#tripFrMid = 1640
+	#tripFrEnd = 1850
+	tripFrStart = warpUi.parmDic("tripFrStart")
+	tripFrMid = warpUi.parmDic("tripFrMid")
+	tripFrEnd = warpUi.parmDic("tripFrEnd")
 	tripKMid = .2
 	fr = warpUi.parmDic("fr")
 	if fr < tripFrMid:
@@ -1381,7 +1384,6 @@ def genSprites(warpUi, srcImg):
 	print "_genSprites(): tripFrK:", tripFrK
 
 	for lev in range(warpUi.parmDic("nLevels")):
-		print "_genSprites(): Doing lev", lev, "..."
 
 		tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
 		tidToSidsThisLev = warpUi.tidToSids[lev]
@@ -1393,6 +1395,7 @@ def genSprites(warpUi, srcImg):
 			spritesThisFr.append({})
 			continue
 		tids.sort()
+		print "_genSprites(): Doing lev", lev, "len(tids) =", len(tids)
 
 		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
 		tidImg = pygame.surfarray.make_surface(tidClrGrid)
@@ -1446,7 +1449,53 @@ def genSprites(warpUi, srcImg):
 	return spritesThisFr
 
 
-def calcXf(warpUi, tidProg, bbxTup):
+def getMoveKProg(warpUi):
+	inOuts = [warpUi.parmDic("tripFrStart"),
+		warpUi.parmDic("inh0"), 
+		warpUi.parmDic("exh0"), 
+		warpUi.parmDic("inh1"), 
+		warpUi.parmDic("exh1"), 
+		warpUi.parmDic("inh2"), 
+		warpUi.parmDic("exh2"), 
+		warpUi.parmDic("inh3"), 
+		warpUi.parmDic("exh3"),
+		warpUi.parmDic("frEnd"),
+		] 
+
+	fr = warpUi.parmDic("fr")
+
+	nx = 0
+	pv = 0
+	sign = 1
+	ii = 0
+	for i,v in enumerate(inOuts):
+		if v > fr:
+			pv = inOuts[i-1]
+			nx = v
+			if i % 2 == 1:
+				ii = i
+				sign = -1
+			break
+	
+	if pv == 0:
+		moveKProg = 0
+	else:
+		prog = ut.smoothstep(pv, nx, fr)
+		k = ut.smoothpulse(pv, (pv+nx)/2,  (pv+nx)/2, nx, fr)
+		moveKProg = sign * k
+		#if pv == warpUi.parmDic("tripFrStart"):
+		#	moveKProg = -prog
+		#else:
+		#	moveKProg = sign * ut.mix(-1, 1, prog)
+	
+	print "\n_getMoveKProg(): inOuts", inOuts
+	print "_getMoveKProg(): fr", fr, "ii", ii, "pv", pv, "nx", nx, "sign", sign, "prog", prog, "moveKProg", moveKProg
+	print
+		
+	return moveKProg
+
+
+def calcXf(warpUi, tidProg, bbxTup, moveKProg):
 	res = warpUi.res
 
 	sz = (bbxTup[2] - bbxTup[0], bbxTup[3] - bbxTup[1]) 
@@ -1455,19 +1504,23 @@ def calcXf(warpUi, tidProg, bbxTup):
 	
 	#if sz[0] > 10:
 	#	print "res", res, "sz", sz, "rels", rels
-	relsPostSmooth = ut.smoothstep(0, warpUi.parmDic("fallUseAsBiggest"), rels)
-	relsPostSmooth = pow(relsPostSmooth, warpUi.parmDic("fallBiggestPow"))
+	relsPostSmooth = ut.smoothstep(0, warpUi.parmDic("moveUseAsBiggest"), rels)
+	relsPostSmooth = pow(relsPostSmooth, warpUi.parmDic("moveBiggestPow"))
 	
-	fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), relsPostSmooth)
+	moveKBig = ut.mix(1.0, warpUi.parmDic("moveKForBiggest"), relsPostSmooth)
 
-	k = warpUi.parmDic("fallDist")*tidProg*fallK
+
+	#moveKProg = getMoveKProg(warpUi)
+	#fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), relsPostSmooth)
+
+	k = warpUi.parmDic("moveK")*tidProg*moveKBig*moveKProg
 	tCent = ((bbxTup[0] + bbxTup[2])/2, (bbxTup[1] + bbxTup[3])/2) 
 	pCent = (res[0]/2, res[1]/2)
 	return ((tCent[0]-pCent[0])*k, (tCent[1]-pCent[1])*k)
 
 
 
-def renSprites(warpUi, res, fr):
+def renSprites(warpUi, res, fr, moveKProg):
 	print "\n_renSprites(): BEGIN, fr", fr
 	# Initialize canvas
 	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
@@ -1475,8 +1528,8 @@ def renSprites(warpUi, res, fr):
 	#for spritesThisLev in spritesThisFr:
 	nLevels = warpUi.parmDic("nLevels")
 	for lev in range(nLevels):
-		print "_renSprites(): fr", fr, "lev", lev
 		spritesThisLev = warpUi.spritesThisFr[lev]
+		print "_renSprites(): fr", fr, "lev", lev, "len(spritesThisLev)", len(spritesThisLev)
 		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
 		canvasLev.fill((0, 0, 0))
 		for spriteDic in spritesThisLev:
@@ -1488,7 +1541,9 @@ def renSprites(warpUi, res, fr):
 
 			# Get xf.
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-			xf = calcXf(warpUi, tidTrip, bbxTup)
+			#if bbxTup[0] < bbxTup[2]-5:
+			#	print "tid", tid, "bbxTup", bbxTup
+			xf = calcXf(warpUi, tidTrip, bbxTup, moveKProg)
 
 			sfFdIn = .2
 			sfFdOut = .3
@@ -1498,6 +1553,7 @@ def renSprites(warpUi, res, fr):
 			levProg = warpUi.getOfsWLev(lev) % 1.0
 			surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
 			surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
+			#surfAlpha = 1
 			#surfAlpha *= sfA # *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, .01*tidProg)
 			pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 				mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
@@ -1529,7 +1585,8 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 		warpUi.spritesLoadedFr = fr
 	else:
 		print "_genAndRenSprites(): spritesThisFr exist for this frame, reusing."
-	renSprites(warpUi, res, fr)
+	moveKProg = getMoveKProg(warpUi)
+	renSprites(warpUi, res, fr, moveKProg)
 
 
 
@@ -1563,7 +1620,8 @@ def renWrapper(warpUi):
 			print "_renWrapper(): dicPathToLoad not found, attempting to load latest..."
 			loadLatestTidToSids(warpUi)
 
-	if (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
+	forceGenTidPosGrid = True # TODO: Do you ever want this False?
+	if forceGenTidPosGrid == False and (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
 		print "_renWrapper(): tidPosGrid already loaded for fr " \
 			+ str(fr) + ", reusing."
 	else:
@@ -1571,7 +1629,7 @@ def renWrapper(warpUi):
 		print "_renWrapper(): Checking for existence of", tidPosGridPath, "..."
 		#sidToCvDic = pickleLoad(frameDir + "/sidToCvDic")
 		#tholds = pickleLoad(frameDir + "/tholds")
-		if os.path.exists(tidPosGridPath):
+		if forceGenTidPosGrid == False and os.path.exists(tidPosGridPath):
 			print "_renWrapper():", tidPosGridPath, "exists.  Loading..."
 			warpUi.tidPosGrid = pickleLoad(tidPosGridPath)
 			warpUi.dataLoadedForFr = fr
@@ -1600,49 +1658,6 @@ def calcProg(warpUi, sid, level, lev):
 	#return ut.smoothstep(progStart, progEnd, level)
 	return min(1, ut.smoothstep(progStart, progEnd, level))
 
-def calcXfOld(warpUi, prog, res, relSize, bbx):
-	fall = prog * res[1] * warpUi.parmDic("fallDist")
-	# Slower for biggekr
-	relSizeF = relSize[0]*relSize[1]
-	resF = res[0]*res[1]
-	#rels = float(relSizeF)/(resF)
-	rels = relSizeF
-	#rels = .5
-	
-	relsPostSmooth = ut.smoothstep(0, warpUi.parmDic("fallUseAsBiggest"), rels)
-	relsPostSmooth = pow(relsPostSmooth, warpUi.parmDic("fallBiggestPow"))
-	
-	fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), relsPostSmooth)
-
-	fall *= fallK
-
-	if warpUi.parmDic("fallMode") == "orig":
-		bbxCent = ((bbx[0][0]+bbx[1][0])/2, (bbx[0][1]+bbx[1][1])/2)
-		origin = (res[0]*warpUi.parmDic("fallVecX"), res[1]*warpUi.parmDic("fallVecY"))
-		fallDir = ut.vDiff(origin, bbxCent)
-		#fallDir[1] *= warpUi.parmDic("fallYscale")
-		#fallDir = (100, 100)
-		tx = int(fall * fallDir[0]/res[0])
-		ty = int(fall * fallDir[1]/res[1])
-	elif warpUi.parmDic("fallMode") == "xline":
-		bbxCent = (bbx[0][1]+bbx[1][1])/2
-		origin = res[1]*warpUi.parmDic("fallVecX")
-		fallDir = bbxCent - origin
-		tx = 0
-		ty = int(fall * fallDir/res[1])
-	elif warpUi.parmDic("fallMode") == "yline":
-		bbxCent = (bbx[0][0]+bbx[1][0])/2
-		origin = res[0]*warpUi.parmDic("fallVecX") #TODO THAT SHOULD BE Y!!!
-		fallDir = bbxCent - origin
-		tx = int(fall * fallDir/res[0])
-		ty = 0
-	else:
-		tx = 0
-		ty = int(fall)
-
-	return tx, ty
-
-	
 
 def inSurfGridToTidGrid(warpUi):
 

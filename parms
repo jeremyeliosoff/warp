@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2224
+val 1928
 
 fps
 val 52
@@ -37,10 +37,10 @@ lev_dbImg2
 val lev03
 
 renVer
-val v002fallDistNp3
+val v009flipSignAgain
 
 frStart
-val 1580
+val 1600
 
 frEnd
 val 3370
@@ -98,31 +98,19 @@ dataVer
 val v0016lev
 
 frIncRen
-val 2
-
-startLev
-val 0
-
-fallDist
-val -.3
-
-fallKForBiggest
-val 0
-
-fallUseAsBiggest
 val 1
 
-fallBiggestPow
+moveK
+val .3
+
+moveKForBiggest
+val 0
+
+moveUseAsBiggest
+val 1
+
+moveBiggestPow
 val .25
-
-fallVecX
-val .8
-
-fallVecY
-val .5
-
-fallMode
-val fall
 
 progDurBot
 val 1
@@ -142,14 +130,41 @@ val .8
 cvK
 val 1.4
 
-mixClrSob
-val 0
+tripFrStart
+val 1605
 
-mixClrTrp
-val 0.8
+tripFrMid
+val 1850
 
-progDur
-val .6
+tripFrEnd
+val 3000
+
+tripKMid
+val .2
+
+inh0
+val 1980
+
+exh0
+val 2280
+
+inh1
+val 2400
+
+exh1
+val 2580
+
+inh2
+val 2820
+
+exh2
+val 3000
+
+inh3
+val 3120
+
+exh3
+val 3320
 
 
 

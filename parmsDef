@@ -140,38 +140,21 @@ frIncRen
 type int
 val 1
 
-
-startLev
-type int
-val 0
-
-fallDist
+moveK
 type float
 val 0
 
-fallKForBiggest
+moveKForBiggest
+type float
+val 0
+
+moveUseAsBiggest
 type float
 val 1
 
-fallUseAsBiggest
-type float
-val 1
-
-fallBiggestPow
+moveBiggestPow
 type float
 val .25
-
-fallVecX
-type float
-val .8
-
-fallVecY
-type float
-val .5
-
-fallMode
-type str
-val fall
 
 progDurBot
 type float
@@ -197,18 +180,55 @@ cvK
 type float
 val .8
 
-mixClrSob
-type float
-val 0
 
-mixClrTrp
-type float
-val 0.8
+tripFrStart
+type int
+val 1605
 
-progDur
-type float
-val .6
+tripFrMid
+type int
+val 1640
 
+tripFrEnd
+type int
+val 1850
+
+tripKMid
+type float
+val .2
+
+
+inh0
+type int
+val 1980
+
+exh0
+type int
+val 2280
+
+inh1
+type int
+val 2400
+
+exh1
+type int
+val 2580
+
+inh2
+type int
+val 2820
+
+exh2
+type int
+val 3000
+
+inh3
+type int
+val 3120
+
+exh3
+type int
+val 3320
 
 
 

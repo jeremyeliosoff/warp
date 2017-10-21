@@ -30,7 +30,7 @@ class parmDic:
 	parmStages = {}
 	parmLs = []
 
-	def loadParmLs(self, parmPath=None):
+	def loadParmLs(self, parmPath, appendMode):
 		print "\n\n_loadParmLs(): BEGIN: parmPath:", parmPath
 		#self.parmLs = []
 		thisParmDic = {}
@@ -64,7 +64,7 @@ class parmDic:
 									#print "_loadParmLs():\t", thisParmName, \
 									#	"alreadyInList! Setting to", thisParmDic
 
-							if not alreadyInList:
+							if not alreadyInList and not appendMode:
 								self.parmLs.append([thisParmName, thisParmDic])
 
 						thisParmName = stripped
@@ -91,8 +91,8 @@ class parmDic:
 						
 					nextIsParmOrDivider = False
 
-		# Needed for last parm, I think.
-		if not alreadyInList:
+		# Needed for last parm, I think - "and not appendMode" for only adding parms in parmsDef
+		if not alreadyInList and not appendMode:
 			self.parmLs.append([thisParmName, thisParmDic])
 
 		#print "\n\n_loadParmLs(): self.parmLs:"
@@ -119,8 +119,8 @@ class parmDic:
 					self.parmStages[stage] = [k]
 
 
-	def loadParms(self, parmPath):
-		self.loadParmLs(parmPath)
+	def loadParms(self, parmPath, appendMode=False):
+		self.loadParmLs(parmPath, appendMode)
 		self.parmLsToDic()
 
 	# This should maybe be in a separate utility script?
@@ -139,7 +139,7 @@ class parmDic:
 
 	def __init__(self, parmPath):
 		self.loadParms(parmsDefPath)
-		self.loadParms(parmsPath)
+		self.loadParms(parmsPath, True)
 	
 
 # FUNCTIONS
