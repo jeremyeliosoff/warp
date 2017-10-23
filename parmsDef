@@ -190,6 +190,8 @@ type float
 val .8
 
 
+---SEQ---
+
 tripFrStart
 type int
 val 1605

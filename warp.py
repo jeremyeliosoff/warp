@@ -104,7 +104,7 @@ class warpUi():
 		#stages = self.parmDic.parmStages.keys()
 		#stages.sort() # Just to get GEN in front of REN
 		#TODO make this dynamically depend on parms file
-		stages = ["META", "GEN", "REN", "AOV"]
+		stages = ["META", "GEN", "REN", "SEQ", "AOV"]
 		for stage in stages:
 			if not stage == "META":
 				self.nbFrames[stage] = ttk.Frame(self.nbParm)
@@ -437,7 +437,7 @@ class warpUi():
 		# TODO THIS GETS CALLED WAY TOO MUCH
 		print "_saveParmDic(): BEGIN"
 		# TODO Maybe don't hardwire this, user can config it in parmfile
-		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "AOV"])]
+		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "SEQ", "AOV"])]
 		print "_saveParmDic(): self.seqDataVDir:", self.seqDataVDir, "for GEN -- ",
 		# TODO Shouldn't seqDataVDir and seqRenVDir always exist?
 		if os.path.exists(self.seqDataVDir):
@@ -448,7 +448,7 @@ class warpUi():
 
 		print "_saveParmDic(): self.seqRenVDir:", self.seqRenVDir, "for REN -- ",
 		if os.path.exists(self.seqRenVDir):
-			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN"]))
+			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN", "SEQ"]))
 			print "EXISTS"
 		else:
 			print "DOES NOT EXIST"
@@ -834,8 +834,13 @@ class warpUi():
 			sc = 2 # TODO: Make this a parm?
 			#maxXres = 520
 			#maxYres = 400
-			maxXres = 720
-			maxYres = 600
+			#maxXres = 720
+			#maxYres = 600
+			#infoObj = pygame.display.Info()
+			#maxXres = infoObj.current_w
+			#maxYres = infoObj.current_h
+			maxXres = int(.37*self.root.winfo_screenwidth())
+			maxYres = int(.37*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:
 				y = int(res[1] * float(maxXres)/res[0])
 				x = maxXres
