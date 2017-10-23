@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2032
+val 2116
 
 fps
 val 52
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v017correctRip400not0
+val v018rip300
 
 frStart
 val 1600
@@ -110,7 +110,7 @@ moveKForBiggest
 val 0
 
 moveRippleSpeed
-val 400
+val 300
 
 moveUseAsBiggest
 val 1
