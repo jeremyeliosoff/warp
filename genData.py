@@ -1382,6 +1382,7 @@ def genSprites(warpUi, srcImg):
 	else:
 		tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
 	print "_genSprites(): tripFrK:", tripFrK
+	tripFrK = 1
 
 	for lev in range(warpUi.parmDic("nLevels")):
 
@@ -1514,7 +1515,8 @@ def calcXf(warpUi, tidProg, bbxTup):
 	#dFromCent = math.sqrt(dFromCentXy[0]*dFromCentXy[0] + dFromCentXy[1]*dFromCentXy[1])
 	dFromCent = ut.vLen(dFromCentXy)/float(res[0]/2)
 	fr = warpUi.parmDic("fr")
-	frOfs = fr - dFromCent * warpUi.parmDic("moveRippleSpeed")
+	moveRippleOfs = .2
+	frOfs = fr - (dFromCent-moveRippleOfs) * warpUi.parmDic("moveRippleSpeed")
 	moveKProg = getMoveKProg(warpUi, frOfs)
 
 	k = warpUi.parmDic("moveK")*tidProg*moveKBig*(warpUi.parmDic("moveKofs")+moveKProg)
