@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1928
+val 2956
 
 fps
 val 52
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v009flipSignAgain
+val v014betrIOPointsRip400
 
 frStart
 val 1600
 
 frEnd
-val 3370
+val 3200
 
 frPerCycle
 val 30
@@ -101,10 +101,16 @@ frIncRen
 val 1
 
 moveK
-val .3
+val .2
+
+moveKofs
+val .25
 
 moveKForBiggest
 val 0
+
+moveRippleSpeed
+val 400
 
 moveUseAsBiggest
 val 1
@@ -140,31 +146,31 @@ tripFrEnd
 val 3000
 
 tripKMid
-val .2
+val .3
 
 inh0
-val 1980
+val 1900
 
 exh0
-val 2280
+val 2090
 
 inh1
-val 2400
+val 2330
 
 exh1
-val 2580
+val 2510
 
 inh2
-val 2820
+val 2760
 
 exh2
-val 3000
+val 2940
 
 inh3
-val 3120
+val 3140
 
 exh3
-val 3320
+val 3350
 
 
 

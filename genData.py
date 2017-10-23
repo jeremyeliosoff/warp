@@ -1449,7 +1449,7 @@ def genSprites(warpUi, srcImg):
 	return spritesThisFr
 
 
-def getMoveKProg(warpUi):
+def getMoveKProg(warpUi, frOfs):
 	inOuts = [warpUi.parmDic("tripFrStart"),
 		warpUi.parmDic("inh0"), 
 		warpUi.parmDic("exh0"), 
@@ -1462,14 +1462,13 @@ def getMoveKProg(warpUi):
 		warpUi.parmDic("frEnd"),
 		] 
 
-	fr = warpUi.parmDic("fr")
 
 	nx = 0
 	pv = 0
 	sign = 1
 	ii = 0
 	for i,v in enumerate(inOuts):
-		if v > fr:
+		if v > frOfs:
 			pv = inOuts[i-1]
 			nx = v
 			if i % 2 == 1:
@@ -1480,22 +1479,22 @@ def getMoveKProg(warpUi):
 	if pv == 0:
 		moveKProg = 0
 	else:
-		prog = ut.smoothstep(pv, nx, fr)
-		k = ut.smoothpulse(pv, (pv+nx)/2,  (pv+nx)/2, nx, fr)
+		prog = ut.smoothstep(pv, nx, frOfs)
+		k = ut.smoothpulse(pv, (pv+nx)/2,  (pv+nx)/2, nx, frOfs)
 		moveKProg = sign * k
 		#if pv == warpUi.parmDic("tripFrStart"):
 		#	moveKProg = -prog
 		#else:
 		#	moveKProg = sign * ut.mix(-1, 1, prog)
 	
-	print "\n_getMoveKProg(): inOuts", inOuts
-	print "_getMoveKProg(): fr", fr, "ii", ii, "pv", pv, "nx", nx, "sign", sign, "prog", prog, "moveKProg", moveKProg
-	print
+	fr = warpUi.parmDic("fr")
+	#print "\n_getMoveKProg(): inOuts", inOuts
+	#print "_getMoveKProg(): fr", fr, " frOfs", frOfs, "ii", ii, "pv", pv, "nx", nx, "sign", sign, "prog", prog, "moveKProg", moveKProg
 		
 	return moveKProg
 
 
-def calcXf(warpUi, tidProg, bbxTup, moveKProg):
+def calcXf(warpUi, tidProg, bbxTup):
 	res = warpUi.res
 
 	sz = (bbxTup[2] - bbxTup[0], bbxTup[3] - bbxTup[1]) 
@@ -1509,18 +1508,21 @@ def calcXf(warpUi, tidProg, bbxTup, moveKProg):
 	
 	moveKBig = ut.mix(1.0, warpUi.parmDic("moveKForBiggest"), relsPostSmooth)
 
-
-	#moveKProg = getMoveKProg(warpUi)
-	#fallK = ut.mix(1.0, warpUi.parmDic("fallKForBiggest"), relsPostSmooth)
-
-	k = warpUi.parmDic("moveK")*tidProg*moveKBig*moveKProg
 	tCent = ((bbxTup[0] + bbxTup[2])/2, (bbxTup[1] + bbxTup[3])/2) 
 	pCent = (res[0]/2, res[1]/2)
-	return ((tCent[0]-pCent[0])*k, (tCent[1]-pCent[1])*k)
+	dFromCentXy = (tCent[0]-pCent[0], tCent[1]-pCent[1])
+	#dFromCent = math.sqrt(dFromCentXy[0]*dFromCentXy[0] + dFromCentXy[1]*dFromCentXy[1])
+	dFromCent = ut.vLen(dFromCentXy)/float(res[0]/2)
+	fr = warpUi.parmDic("fr")
+	frOfs = fr - dFromCent * warpUi.parmDic("moveRippleSpeed")
+	moveKProg = getMoveKProg(warpUi, frOfs)
+
+	k = warpUi.parmDic("moveK")*tidProg*moveKBig*(warpUi.parmDic("moveKofs")+moveKProg)
+	return (dFromCentXy[0]*k, dFromCentXy[1]*k)
 
 
 
-def renSprites(warpUi, res, fr, moveKProg):
+def renSprites(warpUi, res, fr):
 	print "\n_renSprites(): BEGIN, fr", fr
 	# Initialize canvas
 	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
@@ -1543,7 +1545,8 @@ def renSprites(warpUi, res, fr, moveKProg):
 			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 			#if bbxTup[0] < bbxTup[2]-5:
 			#	print "tid", tid, "bbxTup", bbxTup
-			xf = calcXf(warpUi, tidTrip, bbxTup, moveKProg)
+			#xf = calcXf(warpUi, tidTrip, bbxTup, moveKProg)
+			xf = calcXf(warpUi, tidTrip, bbxTup)
 
 			sfFdIn = .2
 			sfFdOut = .3
@@ -1558,6 +1561,13 @@ def renSprites(warpUi, res, fr, moveKProg):
 			pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 				mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 
+			#spriteImg.fill((225, 0, 0))
+			#for dr in dir(pygame.surfarray):
+			#	print "\t", dr
+			#res = warpUi.res
+			#red = np.empty((res[0], res[1]))#, dtype=np.intc)
+			#red.fill(0)
+			#pygame.surfarray.pixels3d(spriteImg)[0][:,:] = (255, 0, 0)
 			canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 			canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 
@@ -1578,15 +1588,16 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 	res = srcImg.get_size()
 
 	# Only gen sprites if they don't exist or fr is different.
-	forceRegen = True
+	forceRegen = False # True
 	if forceRegen or warpUi.spritesThisFr == None or (not warpUi.spritesLoadedFr == fr):
 		print "_genAndRenSprites(): spritesThisFr don't exist or wrong fr; generating..."
 		warpUi.spritesThisFr = genSprites(warpUi, srcImg)
 		warpUi.spritesLoadedFr = fr
 	else:
 		print "_genAndRenSprites(): spritesThisFr exist for this frame, reusing."
-	moveKProg = getMoveKProg(warpUi)
-	renSprites(warpUi, res, fr, moveKProg)
+	#moveKProg = getMoveKProg(warpUi)
+	#renSprites(warpUi, res, fr, moveKProg)
+	renSprites(warpUi, res, fr)
 
 
 

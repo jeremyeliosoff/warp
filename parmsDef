@@ -144,7 +144,16 @@ moveK
 type float
 val 0
 
+moveKofs
+type float
+val .25
+
+
 moveKForBiggest
+type float
+val 0
+
+moveRippleSpeed
 type float
 val 0
 
