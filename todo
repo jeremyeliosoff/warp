@@ -4735,6 +4735,10 @@ s  nfr fr
 50 180 3000 inhale
 52 120 3120 exhale
 
+#Dish# FIX THE OPENCL FAIL!
+
+#Dish# ren by step
+
 ==========================================================
 ======================= OTHER TODO =======================
 ==========================================================
@@ -4870,16 +4874,16 @@ GPU cop-style 2d "shader"
 	#Dish need parms# brightness per lev
 	#Dish need parms# anim parms
 	#Dish need parms# vignette/halo/distFade -- make sure NCD space works
-	ripple from center
+
+	#CUR# ripple from center
+
+	Big is dark
 	tinting/colour/colourspace parms
 	"flashing lights"?
 	edge detect
 	float xf?
 	output alpha?
 
-FIX THE OPENCL FAIL!
-
-ren by step
 
 transition from reg to slo mo.
 
