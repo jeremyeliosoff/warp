@@ -4878,6 +4878,7 @@ GPU cop-style 2d "shader"
 	#CUR# ripple from center
 
 	Big is dark
+	bg glow
 	tinting/colour/colourspace parms
 	"flashing lights"?
 	edge detect

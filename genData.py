@@ -1295,39 +1295,32 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, t
 	else:
 		return None
 
+def makeBuffer(warpUi, inputList, dtype=None):
+	if dtype == None:
+		ar = np.array(inputList)
+	else:
+		ar = np.array(inputList, dtype=dtype)
+	return cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=ar)
+	
+	
+
 def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		tids, bbxs, cents, tidTrips, tripFrK):
-	srcImgAr = np.array(srcImg)
-	tidImgAr = np.array(tidImg)
+	srcImgLs = np.array(srcImg)
+	tidImgLs = list(pygame.surfarray.array3d(tidImg))
 
 	# Inputs
-	srcImgAr = np.array(list(pygame.surfarray.array3d(srcImg)))
-	srcImgAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=srcImgAr)
 		
-	tidImgAr = np.array(list(pygame.surfarray.array3d(tidImg)))
-	tidImgAr_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidImgAr)
-		
-	tidPosGridThisLevAr = np.array(tidPosGridThisLev, dtype=np.intc)
-	tidPosGridThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidPosGridThisLevAr)
-
-	bbxsAr = np.array(bbxs, dtype=np.intc)
-	bbxs_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=bbxsAr)
-		
-	tidsAr = np.array(tids, dtype=np.intc)
-	tids_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidsAr)
-		
-	tidTripsAr = np.array(tidTrips, dtype=np.intc)
-	tidTrips_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=tidTripsAr)
-		
+	srcImgAr_buf = makeBuffer(warpUi, list(pygame.surfarray.array3d(srcImg)))
+	tidImgAr_buf = makeBuffer(warpUi, tidImgLs)
+	tidPosGridThisLev_buf = makeBuffer(warpUi, tidPosGridThisLev, dtype=np.intc)
+	bbxs_buf = makeBuffer(warpUi, bbxs, dtype=np.intc)
+	tids_buf = makeBuffer(warpUi, tids, dtype=np.intc)
+	tidTrips_buf = makeBuffer(warpUi, tidTrips, dtype=np.intc)
 
 	# Outputs
-	shadedImg = np.zeros(tidImgAr.shape, dtype=np.uint8)
+	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.uint8)
 	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
 
@@ -1343,12 +1336,14 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	print "lev", lev, "levPct", levPct
 	launch = bld.krShadeImg(
 			warpUi.queue,
-			srcImgAr.shape,
+			#srcImgAr.shape,
+			warpUi.res,
 			None,
 			np.int32(warpUi.res[0]),
 			np.int32(warpUi.res[1]),
 			np.int32(levPct),
 			np.int32(tripGlobPct),
+			np.float32(warpUi.parmDic("clrKBig")),
 			srcImgAr_buf,
 			tidImgAr_buf,
 			tidPosGridThisLev_buf,
@@ -1590,7 +1585,7 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 	res = srcImg.get_size()
 
 	# Only gen sprites if they don't exist or fr is different.
-	forceRegen = False # True
+	forceRegen = True
 	if forceRegen or warpUi.spritesThisFr == None or (not warpUi.spritesLoadedFr == fr):
 		print "_genAndRenSprites(): spritesThisFr don't exist or wrong fr; generating..."
 		warpUi.spritesThisFr = genSprites(warpUi, srcImg)

@@ -109,12 +109,16 @@ int getCellScalar(int x, int y, int yres,
 
 void getBbxInfo(int tidPos,
 		__global int* bbxs,
-		int* mn, int* mx, int* cent) {
+		int* sz, int* cent) {
 	int ofs = tidPos*4;
+	int mn[2];
+	int mx[2];
 	mn[0] = bbxs[ofs];
 	mn[1] = bbxs[ofs+1];
 	mx[0] = bbxs[ofs+2];
 	mx[1] = bbxs[ofs+3];
+	sz[0] = mx[0]-mn[0];
+	sz[1] = mx[1]-mn[1];
 	cent[0] = (mn[0] + mx[0])/2;
 	cent[1] = (mn[1] + mx[1])/2;
 }
@@ -124,6 +128,7 @@ __kernel void krShadeImg(
 			int yres,
 			int levPct,
 			int tripGlobPct,
+			float clrKBig,
 			__global uchar* srcImg,
 			__global uchar* tidImg,
 			__global int* tidPosGridThisLev,
@@ -138,10 +143,9 @@ __kernel void krShadeImg(
 
 	int tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
 
-	int mn[2];
-	int mx[2];
+	int sz[2];
 	int cent[2];
-	getBbxInfo(tidPos, bbxs, mn, mx, cent);
+	getBbxInfo(tidPos, bbxs, sz, cent);
 
 
 	uchar srcClr[3];
@@ -173,6 +177,12 @@ __kernel void krShadeImg(
 	float tripK = 1.2;
 	float tripKmult = mix(1, tripK, tripGlobF);
 
+	// Darken bigger
+	float rels = ((float)sz[0]/xres) * ((float)sz[1]/yres);
+	float relsMod = rels*rels;
+	relsMod *= relsMod;
+	float bigKmult = mix(1.0, clrKBig, min(1.0, relsMod));
+
 	int cx = xres/2;	
 	int cy = yres/2;	
 	float dFromCent = dist(x, y, cx, cy);
@@ -181,7 +191,8 @@ __kernel void krShadeImg(
 	vignK = 1-(1-vignK)*(1-vignK);
 	float vignKmult = mix(1, vignK, tripGlobF);
 	vignKmult = mix(vignKmult, 1, levPctF);
-	mult3sc(outClr, kLevPct*tripKmult*vignKmult, outClr);
+
+	mult3sc(outClr, kLevPct*tripKmult*vignKmult*bigKmult, outClr);
 	
 
 	// DEBUG
