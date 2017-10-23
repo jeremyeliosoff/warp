@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2116
+val 1624
 
 fps
 val 52
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v018rip300
+val v019advanceInh
 
 frStart
 val 1600
@@ -154,25 +154,25 @@ tripKMid
 val .3
 
 inh0
-val 1900
+val 1840
 
 exh0
 val 2090
 
 inh1
-val 2330
+val 2270
 
 exh1
 val 2510
 
 inh2
-val 2760
+val 2700
 
 exh2
 val 2940
 
 inh3
-val 3140
+val 3080
 
 exh3
 val 3350
