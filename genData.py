@@ -218,6 +218,12 @@ def vBy255(v):
 		ret = tuple(ret)
 	return ret
 
+def vX255(v):
+	ret = [int(f*255) for f in v]
+	if type(v) == type(()):
+		ret = tuple(ret)
+	return ret
+
 
 def getLevThresh(warpUi, lev, nLevels):
 	minThreshMin = warpUi.parmDic("minThresh")
@@ -1305,9 +1311,88 @@ def makeBuffer(warpUi, inputList, dtype=None):
 	
 	
 
+def shadeBg(warpUi, srcImg):
+	kernel = """
+
+float mixI(uchar a, uchar b, float m) {
+	return m*b + (1.0-m)*a;
+}
+
+void mix3(uchar* a, uchar* b, float m, uchar* ret) {
+	int i;
+	for (i = 0; i < 3; i++) {
+		ret[i] = mixI(a[i], b[i], m);
+	}
+}
+
+float dist(float x0, float y0, float x1, float y1) {
+	float dx = x1-x0;
+	float dy = y1-y0;
+	return sqrt(dx*dx + dy*dy);
+}
+
+void setArrayCell(int x, int y, int xres, int yres,
+  uchar* val,
+  __global uchar* ret)
+{
+	if (x >= 0 && x < xres && y >= 0 && y < yres) {
+		int i = (x * yres + y) * 3;
+		ret[i] = val[0];
+		ret[i+1] = val[1];
+		ret[i+2] = val[2];
+	}
+}
+
+__kernel void krShadeBg(
+			int xres,
+			int yres,
+			__global uchar* shadedImg)
+{
+	unsigned int x = get_global_id(0);
+	unsigned int y = get_global_id(1);
+	uchar outClr[3];
+	outClr[0] = 255;
+	outClr[1] = 10;
+	outClr[2] = 200;
+
+	int cx = xres/2;	
+	int cy = yres/2;	
+	float dFromCent = dist(x, y, cx, cy);
+	float dNorm = min(1.0, dFromCent/cx);
+
+	uchar red[] = {20, 0, 0};
+	uchar black[] = {0, 0, 0};
+	mix3(red, black, dNorm, outClr);
+	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
+
+}
+
+"""
+	srcImgLs = list(pygame.surfarray.array3d(srcImg))
+	srcImgAr_buf = makeBuffer(warpUi, srcImgLs)
+	# Outputs
+	shadedImg = np.zeros((len(srcImgLs), len(srcImgLs[0]), len(srcImgLs[0][0])), dtype=np.uint8)
+	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
+
+
+	bld = cl.Program(warpUi.cntxt, kernel).build()
+	launch = bld.krShadeBg(
+			warpUi.queue,
+			#srcImgAr.shape,
+			warpUi.res,
+			None,
+			np.int32(warpUi.res[0]),
+			np.int32(warpUi.res[1]),
+			shadedImg_buf)
+	launch.wait()
+	
+	cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
+		
+	return pygame.surfarray.make_surface(shadedImg)
+
 def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		tids, bbxs, cents, tidTrips, tripFrK):
-	srcImgLs = np.array(srcImg)
 	tidImgLs = list(pygame.surfarray.array3d(tidImg))
 
 	# Inputs
@@ -1318,6 +1403,8 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	bbxs_buf = makeBuffer(warpUi, bbxs, dtype=np.intc)
 	tids_buf = makeBuffer(warpUi, tids, dtype=np.intc)
 	tidTrips_buf = makeBuffer(warpUi, tidTrips, dtype=np.intc)
+	cIn_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn")), dtype=np.intc)
+	cOut_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut")), dtype=np.intc)
 
 	# Outputs
 	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.uint8)
@@ -1344,6 +1431,8 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(levPct),
 			np.int32(tripGlobPct),
 			np.float32(warpUi.parmDic("clrKBig")),
+			cIn_buf,
+			cOut_buf,
 			srcImgAr_buf,
 			tidImgAr_buf,
 			tidPosGridThisLev_buf,
@@ -1377,7 +1466,7 @@ def genSprites(warpUi, srcImg):
 	else:
 		tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
 	print "_genSprites(): tripFrK:", tripFrK
-	tripFrK = 1
+	#tripFrK = 1 # TEMP
 
 	for lev in range(warpUi.parmDic("nLevels")):
 
@@ -1524,6 +1613,8 @@ def renSprites(warpUi, res, fr):
 	# Initialize canvas
 	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
 	canvas.fill((0, 0, 0))
+	srcImg = pygame.image.load(warpUi.images["source"]["path"])
+	canvas = shadeBg(warpUi, srcImg)
 	#for spritesThisLev in spritesThisFr:
 	nLevels = warpUi.parmDic("nLevels")
 	for lev in range(nLevels):

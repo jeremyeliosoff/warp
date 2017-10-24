@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2779
+val 2048
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v019advanceInh
+val v021
 
 frStart
 val 1600
@@ -140,10 +140,10 @@ clrKBig
 val .8
 
 cIn
-val 0.07450980392156863,0.18823529411764706,0.13725490196078433
+val 0.43137254901960786,0.9137254901960784,1.0
 
 cOut
-val 0.10980392156862745,0.3058823529411765,0.6392156862745098
+val 1.0,0.7686274509803922,0.0
 
 cTripMix
 val .5

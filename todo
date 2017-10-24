@@ -4874,12 +4874,13 @@ GPU cop-style 2d "shader"
 	#Dish need parms# brightness per lev
 	#Dish need parms# anim parms
 	#Dish need parms# vignette/halo/distFade -- make sure NCD space works
+	#Dish# Big is dark
+	#Dish# bg glow
 
 	#CUR# ripple from center
+	#CUR# tinting/colour/colourspace parms
 
-	Big is dark
-	bg glow
-	tinting/colour/colourspace parms
+	stop the fading in + out/intensity waver.
 	"flashing lights"?
 	edge detect
 	float xf?
