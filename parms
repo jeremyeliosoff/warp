@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1605
+val 1932
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
@@ -37,10 +37,10 @@ lev_dbImg2
 val lev03
 
 renVer
-val v000
+val v001cInOutMult
 
 frStart
-val 1605
+val 1604
 
 frEnd
 val 3510
@@ -152,6 +152,9 @@ val .5
 
 
 ---SEQ---
+
+tripAlwaysOn
+val 1
 
 tripFrStart
 val 1605

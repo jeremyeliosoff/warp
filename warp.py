@@ -276,17 +276,6 @@ class warpUi():
 		self.updateDebugImg()
 		self.sortStats()
 
-	def keyPress(self, event):
-		print "_keyPress(): event.keysym", event.keysym
-		focused = self.frameMaster.focus_get()
-		dataType = None
-		for typ,ents in self.parmEntries.items():
-			if focused in ents:
-				print "_keyPress(): \tdata typ:", typ
-				dataType = typ
-				break
-
-
 	def setFrAndUpdate(self, fr):
 		# This is what generates data/renders for each fr.
 		self.setStatus("busy")
@@ -513,7 +502,7 @@ class warpUi():
 			if thisFr > mx:
 				mx = thisFr
 
-		fr = ut.clamp(fr, mn, mx)
+		#fr = ut.clamp(fr, mn, mx)
 		self.seqStart = mn
 		#self.frStartAnim = fr
 		self.seqEnd = mx

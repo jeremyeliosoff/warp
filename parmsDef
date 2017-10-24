@@ -208,6 +208,10 @@ val .5
 
 ---SEQ---
 
+tripAlwaysOn
+type bool
+val 0
+
 tripFrStart
 type int
 val 1605

@@ -1459,12 +1459,15 @@ def genSprites(warpUi, srcImg):
 	tripFrMid = warpUi.parmDic("tripFrMid")
 	tripFrEnd = warpUi.parmDic("tripFrEnd")
 	tripKMid = .2
-	fr = warpUi.parmDic("fr")
-	if fr < tripFrMid:
-		print "_genSprites(): fr:", fr, "sm:", ut.smoothstep(tripFrStart, tripFrMid, fr)
-		tripFrK = tripKMid * ut.smoothstep(tripFrStart, tripFrMid, fr)
+	if warpUi.parmDic("tripAlwaysOn") == 1:
+		tripFrK = 1
 	else:
-		tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
+		fr = warpUi.parmDic("fr")
+		if fr < tripFrMid:
+			print "_genSprites(): fr:", fr, "sm:", ut.smoothstep(tripFrStart, tripFrMid, fr)
+			tripFrK = tripKMid * ut.smoothstep(tripFrStart, tripFrMid, fr)
+		else:
+			tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
 	print "_genSprites(): tripFrK:", tripFrK
 	#tripFrK = 1 # TEMP
 

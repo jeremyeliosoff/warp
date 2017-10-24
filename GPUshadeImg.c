@@ -181,14 +181,19 @@ __kernel void krShadeImg(
 	uchar a[3] = {cIn[0], cIn[1], cIn[2]};
 	uchar b[3] = {cOut[0], cOut[1], cOut[2]};
 	mix3(a, b, dNorm, inOutClr);
-	float mixInOut = .5;
+	float mixInOut = 1;
 	uchar tripClr[3];
-	mix3(tidClr, inOutClr, clrProg*mixInOut, tripClr);
+
+	// Mult inOutClr by tripClr
+	mult3_255(inOutClr, tidClr, inOutClr);
+	//mult3sc(inOutClr, 2, inOutClr);
+	//mix3(tidClr, inOutClr, clrProg*mixInOut, tripClr);
+	mix3(tidClr, inOutClr, 1, tripClr);
 
 	uchar trippedClr[3];
 	mult3_255(srcClr, tripClr, trippedClr);
  
-	mult3sc(trippedClr, 1.5, trippedClr);
+	mult3sc(trippedClr, 2, trippedClr);
 
 
 	uchar outClr[3];
