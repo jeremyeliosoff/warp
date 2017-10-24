@@ -844,7 +844,7 @@ class warpUi():
 			if res[0] > maxXres or self.displayNaturalRes == 0:
 				y = int(res[1] * float(maxXres)/res[0])
 				x = maxXres
-				if y > maxYres:
+				if x > maxXres:
 					x = int(x*float(maxYres)/y)
 					y = maxYres
 				res = (x, y)

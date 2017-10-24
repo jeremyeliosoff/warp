@@ -1,3 +1,5 @@
+scp lzFin2Short.MTS jeremy@jeremy-Inspiron-5767.local:/home/jeremy/io
+ssh jeremy@jeremy-Inspiron-5767.local
 
 in0 1900
 ex0 2090
@@ -4880,16 +4882,17 @@ GPU cop-style 2d "shader"
 	#CUR# ripple from center
 	#CUR# tinting/colour/colourspace parms
 
+Techy
 	stop the fading in + out/intensity waver.
+	float xf?
+Arty
 	"flashing lights"?
 	edge detect
-	float xf?
 	output alpha?
+	crop seq
 
 
 transition from reg to slo mo.
 
 
 
-scp lzFin2Short.MTS jeremy@jeremy-Inspiron-5767.local:/home/jeremy/io
-ssh jeremy@jeremy-Inspiron-5767.local
