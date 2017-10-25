@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2732
+val 3418
 
 fps
 val 52
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v006correctMoveK
+val v007notTripAlwaysOn
 
 frStart
 val 1604
@@ -157,7 +157,7 @@ moveDirOverride
 val n
 
 tripAlwaysOn
-val 1
+val 0
 
 tripFrStart
 val 1605
