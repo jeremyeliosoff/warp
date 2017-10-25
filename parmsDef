@@ -208,6 +208,10 @@ val .5
 
 ---SEQ---
 
+moveDirOverride
+type str
+val n
+
 tripAlwaysOn
 type bool
 val 0

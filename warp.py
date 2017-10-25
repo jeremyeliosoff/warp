@@ -1392,7 +1392,8 @@ class warpUi():
 
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
 				if newFr > fr:		
-					fr = min(fr + self.parmDic("frIncRen"), newFr)
+					inc = 1 if self.parmDic("doRenCv") == 0 else self.parmDic("frIncRen")
+					fr = min(fr + inc, newFr)
 					framesPassed = fr - self.frStartAnim
 					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed
 					framesToGo = self.parmDic("frEnd") - fr

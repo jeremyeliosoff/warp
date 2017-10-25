@@ -70,12 +70,10 @@ float ssmoothstep(float edge0, float edge1, float x) {
 	return ret;
 }
 
-void getImageCell(int x, int y, int xresIn, int yresIn,
+void getImageCell(int x, int y, int xres, int yres,
   __global uchar* img,
   uchar* ret)
 {
-	int xres = xresIn + 0;
-	int yres = yresIn + 0;
 	if (x >= 0 && x < xres && y >= 0 && y < yres) {
 		//int i = (y * xres + x) * 3;
 		int i = (x * yres + y) * 3;
@@ -114,6 +112,35 @@ int getCellScalar(int x, int y, int yres,
 	return tidPosGridThisLev[i];
 }
 
+int getBorders(int x, int y, int xres, int yres, int thisTidPos,
+  __global int* tidPosGridThisLev,
+  int* bordNxNyPxPy)
+{
+
+	
+	int bordIndex;
+	for (bordIndex=0; bordIndex<4; bordIndex++) {
+		int xx;
+		int yy;
+		if (bordIndex < 2) {
+			xx = x-1 + 2*bordIndex;
+			yy = y;
+		} else {
+			xx = x;
+			yy = y-1 + 2*(bordIndex-2);
+		}
+		int i = xx * yres + yy;
+		if (xx < 0 || yy < 0 ||
+			xx > xres-1 || yy > yres-1 ||
+			thisTidPos != tidPosGridThisLev[i]) {
+			bordNxNyPxPy[bordIndex] = 1;
+		} else {
+			bordNxNyPxPy[bordIndex] = 0;
+		}
+		
+	}
+}
+
 void getBbxInfo(int tidPos,
 		__global int* bbxs,
 		int* sz, int* cent) {
@@ -130,6 +157,71 @@ void getBbxInfo(int tidPos,
 	cent[1] = (mn[1] + mx[1])/2;
 }
 
+void filterImg  (int x, int y, int xres, int yres,
+	float xfx,
+	float xfy,
+	__global uchar* img,
+	int* bordNxNyPxPy,
+	uchar* ret) {
+
+	int i;
+	for (i=0; i<3; i++) {
+		ret[i] = 0;
+	}	
+
+	float xOfs = xfx - floor(xfx);//fmod(xfx, 1.0);
+	float yOfs = xfy - floor(xfy);//fmod(xfy, 1.0);
+	//float xOfs = fmod(xfx, 1.0);
+	//float yOfs = fmod(xfy, 1.0);
+
+	int xx;
+	int yy;
+
+	if (x > xres-1 || y > yres -1) {
+			getImageCell(x, y, xres, yres+1, img, ret);
+	} else {
+		for (xx=0; xx<2; xx++) {
+			for (yy=0; yy<2; yy++) {
+
+				uchar srcClrSamp[3];
+				getImageCell(x+xx, y+yy, xres, yres+1, img, srcClrSamp);
+
+				float wx = xx == 0 ? xOfs : 1.0-xOfs;
+				float wy = yy == 0 ? yOfs : 1.0-yOfs;
+
+				float alpha = 1;
+				if (bordNxNyPxPy[0] == 1) alpha *= 1.0-xOfs;
+				if (bordNxNyPxPy[1] == 1) alpha *= 1.0-yOfs;
+				if (bordNxNyPxPy[2] == 1) alpha *= xOfs;
+				if (bordNxNyPxPy[3] == 1) alpha *= yOfs;
+
+				for (i=0; i<3; i++) {
+					ret[i] += srcClrSamp[i]*(wx*wy);// *alpha;  TODO: implement alpha
+				}
+
+				//ret[0] = 255*xOfs; ret[1] = 255*yOfs; ret[2] = 50;
+				
+				//if (wx < 0 || wy < 0) {
+				if (0==1 && (bordNxNyPxPy[0] == 1 || 
+					bordNxNyPxPy[1] == 1 || 
+					bordNxNyPxPy[2] == 1 || 
+					bordNxNyPxPy[3] == 1)) {
+					ret[0] = 255;
+					ret[1] = 0;
+					ret[2] = 0;
+				}
+				if (xOfs < 0) {
+					ret[0] = 0;
+					ret[1] = 255;
+					ret[2] = 0;
+				}
+
+
+			}
+		}
+	}
+}
+
 __kernel void krShadeImg(
 			int xres,
 			int yres,
@@ -143,6 +235,7 @@ __kernel void krShadeImg(
 			__global int* tidPosGridThisLev,
 			__global int* tids,
 			__global int* bbxs,
+			__global float* xfs,
 			__global int* tidTrips,
 			//__global int* cents,
 			__global uchar* shadedImg)
@@ -150,7 +243,11 @@ __kernel void krShadeImg(
 	unsigned int x = get_global_id(0);
 	unsigned int y = get_global_id(1);
 
+
 	int tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
+
+	int bordNxNyPxPy[4];
+	getBorders(x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
 
 	int sz[2];
 	int cent[2];
@@ -158,7 +255,10 @@ __kernel void krShadeImg(
 
 
 	uchar srcClr[3];
-	getImageCell(x, y, xres, yres+1, srcImg, srcClr);
+	//getImageCell(x, y, xres, yres+1, srcImg, srcClr);
+	float xfx = xfs[tidPos*2];
+	float xfy = xfs[tidPos*2+1];
+	filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
 
 	int tid = tids[tidPos];
 	uchar tidClr[] = {0, 0, 0};
@@ -227,4 +327,5 @@ __kernel void krShadeImg(
 	// assign(tidClr, outClr);
 	// yres+1 from trial+error.
 	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
+	//setArrayCell(x, y, xres, yres+1, srcClr, shadedImg);
 }

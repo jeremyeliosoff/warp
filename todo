@@ -4740,6 +4740,7 @@ s  nfr fr
 #Dish# FIX THE OPENCL FAIL!
 
 #Dish# ren by step
+#D# crop seq
 
 ==========================================================
 ======================= OTHER TODO =======================
@@ -4888,8 +4889,9 @@ Techy
 Arty
 	"flashing lights"?
 	edge detect
+	colour space
 	output alpha?
-	crop seq
+	play with pygame deformer stuff
 
 
 transition from reg to slo mo.

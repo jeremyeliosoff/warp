@@ -1254,11 +1254,12 @@ mult255V = np.vectorize(mult255)
 
 
 
-def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips):
+def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs):
 	tid = tids[tidPos]
 	if "bbx" in tidToSidsThisLev[tid]:
 		tidProg = tidProgs[tidPos]
 		tidTrip = tidTrips[tidPos]
+		xf = xfs[tidPos]
 		bbx = tidToSidsThisLev[tid]["bbx"]
 	#regen = True
 	#if regen:
@@ -1296,8 +1297,9 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, t
 		pygame.surfarray.pixels3d(spriteImg)[:,:] = \
 			pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
 
+
 		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid,
-			"tidProg":tidProg, "tidTrip":tidTrip}
+			"tidProg":tidProg, "tidTrip":tidTrip, "xf":xf}
 	else:
 		return None
 
@@ -1392,7 +1394,7 @@ __kernel void krShadeBg(
 	return pygame.surfarray.make_surface(shadedImg)
 
 def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
-		tids, bbxs, cents, tidTrips, tripFrK):
+		tids, bbxs, cents, xfs, tidTrips, tripFrK):
 	tidImgLs = list(pygame.surfarray.array3d(tidImg))
 
 	# Inputs
@@ -1403,6 +1405,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	bbxs_buf = makeBuffer(warpUi, bbxs, dtype=np.intc)
 	tids_buf = makeBuffer(warpUi, tids, dtype=np.intc)
 	tidTrips_buf = makeBuffer(warpUi, tidTrips, dtype=np.intc)
+	xfs_buf = makeBuffer(warpUi, xfs, dtype=np.float32)
 	cIn_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn")), dtype=np.intc)
 	cOut_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut")), dtype=np.intc)
 
@@ -1420,7 +1423,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	tripGlobPct = int(tripFrK*100)
 
 	bld = cl.Program(warpUi.cntxt, kernel).build()
-	print "lev", lev, "levPct", levPct
+	print "_shadeImg(): lev", lev, "levPct", levPct
 	launch = bld.krShadeImg(
 			warpUi.queue,
 			#srcImgAr.shape,
@@ -1438,6 +1441,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			tidPosGridThisLev_buf,
 			tids_buf,
 			bbxs_buf,
+			xfs_buf,
 			tidTrips_buf,
 			#cents_buf,
 			shadedImg_buf)
@@ -1493,20 +1497,10 @@ def genSprites(warpUi, srcImg):
 
 		bbxs = []
 		cents = []
+		xfs = []
 		tidProgs = []
 		tidTrips = []
 		for tidPos,tid in enumerate(tids):
-			if "bbx" in tidToSidsThisLev[tid]:
-				bbx = tidToSidsThisLev[tid]["bbx"]
-				#print "_genSprites() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
-				#bbxs.append(bbx)
-				bbxTup = (bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1])
-				bbxs.append(bbxTup)
-				#bbxs.append(tidPos)
-				#bbxs.append(bbx[0][0])
-				#bbxs.append(bbx[0][1])
-				cent = ((bbx[0][0] + bbx[0][1])/2, (bbx[1][0] + bbx[1][1])/2) 
-				cents.append(cent)
 
 			# Get tidProg.
 			levProg = warpUi.getOfsWLev(lev) % 1.0
@@ -1523,12 +1517,32 @@ def genSprites(warpUi, srcImg):
 			tidProgs.append(int(tidProg*100))
 			tidTrips.append(int(tidTrip*100))
 
+			if "bbx" in tidToSidsThisLev[tid]:
+				bbx = tidToSidsThisLev[tid]["bbx"]
+				#print "_genSprites() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
+				#bbxs.append(bbx)
+				bbxTup = (bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1])
+				bbxs.append(bbxTup)
+				#bbxs.append(tidPos)
+				#bbxs.append(bbx[0][0])
+				#bbxs.append(bbx[0][1])
+				cent = ((bbx[0][0] + bbx[0][1])/2, (bbx[1][0] + bbx[1][1])/2) 
+
+				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+				xf = calcXf(warpUi, tidTrip, bbxTup)
+				#xf = calcXf(warpUi, levProg, bbxTup) # TEMP!!!
+
+				cents.append(cent)
+				xfs.append(xf)
+			else:
+				xfs.append((0.0,0.0)) # To keep tidPos synched.
+
 		shadedImg = shadeImg(warpUi, lev, srcImg, tidImg,
-			tidPosGridThisLev, tids, bbxs, cents, tidTrips,  tripFrK)
+			tidPosGridThisLev, tids, bbxs, cents, xfs, tidTrips, tripFrK)
 
 		spritesThisLev = []
 		for tidPos in range(len(tids)):
-			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips)
+			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs)
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
@@ -1538,47 +1552,52 @@ def genSprites(warpUi, srcImg):
 
 
 def getMoveKProg(warpUi, frOfs):
-	inOuts = [warpUi.parmDic("tripFrStart"),
-		warpUi.parmDic("inh0"), 
-		warpUi.parmDic("exh0"), 
-		warpUi.parmDic("inh1"), 
-		warpUi.parmDic("exh1"), 
-		warpUi.parmDic("inh2"), 
-		warpUi.parmDic("exh2"), 
-		warpUi.parmDic("inh3"), 
-		warpUi.parmDic("exh3"),
-		warpUi.parmDic("frEnd"),
-		] 
+	if warpUi.parmDic("moveDirOverride") == "n":
+		inOuts = [warpUi.parmDic("tripFrStart"),
+			warpUi.parmDic("inh0"), 
+			warpUi.parmDic("exh0"), 
+			warpUi.parmDic("inh1"), 
+			warpUi.parmDic("exh1"), 
+			warpUi.parmDic("inh2"), 
+			warpUi.parmDic("exh2"), 
+			warpUi.parmDic("inh3"), 
+			warpUi.parmDic("exh3"),
+			warpUi.parmDic("frEnd"),
+			] 
 
 
-	nx = 0
-	pv = 0
-	sign = 1
-	ii = 0
-	for i,v in enumerate(inOuts):
-		if v > frOfs:
-			pv = inOuts[i-1]
-			nx = v
-			if i % 2 == 1:
-				ii = i
-				sign = -1
-			break
-	
-	if pv == 0:
-		moveKProg = 0
-	else:
-		prog = ut.smoothstep(pv, nx, frOfs)
-		k = ut.smoothpulse(pv, (pv+nx)/2,  (pv+nx)/2, nx, frOfs)
-		moveKProg = sign * k
-		#if pv == warpUi.parmDic("tripFrStart"):
-		#	moveKProg = -prog
-		#else:
-		#	moveKProg = sign * ut.mix(-1, 1, prog)
-	
-	fr = warpUi.parmDic("fr")
-	#print "\n_getMoveKProg(): inOuts", inOuts
-	#print "_getMoveKProg(): fr", fr, " frOfs", frOfs, "ii", ii, "pv", pv, "nx", nx, "sign", sign, "prog", prog, "moveKProg", moveKProg
+		nx = 0
+		pv = 0
+		sign = 1
+		ii = 0
+		for i,v in enumerate(inOuts):
+			if v > frOfs:
+				pv = inOuts[i-1]
+				nx = v
+				if i % 2 == 1:
+					ii = i
+					sign = -1
+				break
 		
+		if pv == 0:
+			moveKProg = 0
+		else:
+			prog = ut.smoothstep(pv, nx, frOfs)
+			k = ut.smoothpulse(pv, (pv+nx)/2,  (pv+nx)/2, nx, frOfs)
+			moveKProg = sign * k
+			#if pv == warpUi.parmDic("tripFrStart"):
+			#	moveKProg = -prog
+			#else:
+			#	moveKProg = sign * ut.mix(-1, 1, prog)
+		
+		fr = warpUi.parmDic("fr")
+		#print "\n_getMoveKProg(): inOuts", inOuts
+		#print "_getMoveKProg(): fr", fr, " frOfs", frOfs, "ii", ii, "pv", pv, "nx", nx, "sign", sign, "prog", prog, "moveKProg", moveKProg
+		
+	else:
+		#print "\n\n ***** setting moveKProg to", float(warpUi.parmDic("moveDirOverride"))
+		moveKProg = float(warpUi.parmDic("moveDirOverride"))
+
 	return moveKProg
 
 
@@ -1608,6 +1627,8 @@ def calcXf(warpUi, tidProg, bbxTup):
 
 	k = warpUi.parmDic("moveK")*tidProg*moveKBig*(warpUi.parmDic("moveKofs")+moveKProg)
 	return (dFromCentXy[0]*k, dFromCentXy[1]*k)
+	#print "\n xxx tidProg", tidProg
+	#return (tidProg*3, tidProg*3);
 
 
 
@@ -1631,13 +1652,8 @@ def renSprites(warpUi, res, fr):
 			tid = spriteDic["tid"]
 			tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
 			tidTrip = .01*spriteDic["tidTrip"] # tidTrip is int in range (0,100)
+			xf = spriteDic["xf"]
 
-			# Get xf.
-			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-			#if bbxTup[0] < bbxTup[2]-5:
-			#	print "tid", tid, "bbxTup", bbxTup
-			#xf = calcXf(warpUi, tidTrip, bbxTup, moveKProg)
-			xf = calcXf(warpUi, tidTrip, bbxTup)
 
 			sfFdIn = .2
 			sfFdOut = .3
@@ -1659,6 +1675,7 @@ def renSprites(warpUi, res, fr):
 			#red = np.empty((res[0], res[1]))#, dtype=np.intc)
 			#red.fill(0)
 			#pygame.surfarray.pixels3d(spriteImg)[0][:,:] = (255, 0, 0)
+			bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 			canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 			canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 
