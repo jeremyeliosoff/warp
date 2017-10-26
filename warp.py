@@ -829,11 +829,12 @@ class warpUi():
 			#maxXres = infoObj.current_w
 			#maxYres = infoObj.current_h
 			maxXres = int(.37*self.root.winfo_screenwidth())
-			maxYres = int(.37*self.root.winfo_screenheight())
+			maxYres = int(.42*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:
 				y = int(res[1] * float(maxXres)/res[0])
 				x = maxXres
-				if x > maxXres:
+				#if x > maxXres:
+				if y > maxYres:
 					x = int(x*float(maxYres)/y)
 					y = maxYres
 				res = (x, y)

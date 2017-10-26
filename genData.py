@@ -1449,6 +1449,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	
 
 	cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
+	#print "\n-------------shadedImg[10][10]:", shadedImg[10][10], "\n"
 		
 	return pygame.surfarray.make_surface(shadedImg)
 
@@ -1476,6 +1477,9 @@ def genSprites(warpUi, srcImg):
 	#tripFrK = 1 # TEMP
 
 	for lev in range(warpUi.parmDic("nLevels")):
+		if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
+			spritesThisFr.append({})
+			continue
 
 		tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
 		tidToSidsThisLev = warpUi.tidToSids[lev]
@@ -1641,7 +1645,13 @@ def renSprites(warpUi, res, fr):
 	canvas = shadeBg(warpUi, srcImg)
 	#for spritesThisLev in spritesThisFr:
 	nLevels = warpUi.parmDic("nLevels")
-	for lev in range(nLevels):
+
+	if warpUi.parmDic("isoLev") > -1:
+		levsToRen = [warpUi.parmDic("isoLev")]
+		print "\n_renSprites(): ISOLATING LEVEL", levsToRen[0]
+	else:
+		levsToRen = range(nLevels)
+	for lev in levsToRen:
 		spritesThisLev = warpUi.spritesThisFr[lev]
 		print "_renSprites(): fr", fr, "lev", lev, "len(spritesThisLev)", len(spritesThisLev)
 		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
@@ -1806,6 +1816,9 @@ def inSurfGridToTidGrid(warpUi):
 	tidPosGrid = []
 	maxTid = -1
 	for lev in range(nLevels):
+		if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
+			tidPosGrid.append(None)
+			continue
 
 		print "_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev", lev
 		tidPosGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]

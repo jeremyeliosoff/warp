@@ -136,6 +136,10 @@ hidden True
 type str
 val v031testGenRen
 
+isoLev
+type int
+val -1
+
 frIncRen
 type int
 val 1
