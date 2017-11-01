@@ -227,6 +227,7 @@ __kernel void krShadeImg(
 			int yres,
 			int levPct,
 			int tripGlobPct,
+			int useFilt,
 			float clrKBig,
 			__global int* cIn,
 			__global int* cOut,
@@ -255,10 +256,13 @@ __kernel void krShadeImg(
 
 
 	uchar srcClr[3];
-	//getImageCell(x, y, xres, yres+1, srcImg, srcClr);
-	float xfx = xfs[tidPos*2];
-	float xfy = xfs[tidPos*2+1];
-	filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
+	if (useFilt > 0) {
+		float xfx = xfs[tidPos*2];
+		float xfy = xfs[tidPos*2+1];
+		filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
+	} else {
+		getImageCell(x, y, xres, yres+1, srcImg, srcClr);
+	}
 
 	int tid = tids[tidPos];
 	uchar tidClr[] = {0, 0, 0};
@@ -306,7 +310,7 @@ __kernel void krShadeImg(
 	float levKmix = .2;
 	float kLevPct = mix(1, levPctK, tripGlobF*levKmix);
 
-	float tripK = 1.2;
+	float tripK = 2;
 	float tripKmult = mix(1, tripK, tripGlobF);
 
 	// Darken bigger

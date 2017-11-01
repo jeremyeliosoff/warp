@@ -1433,6 +1433,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(warpUi.res[1]),
 			np.int32(levPct),
 			np.int32(tripGlobPct),
+			np.int32(warpUi.parmDic("useFilt")),
 			np.float32(warpUi.parmDic("clrKBig")),
 			cIn_buf,
 			cOut_buf,
@@ -1576,13 +1577,14 @@ def getMoveKProg(warpUi, frOfs):
 		ii = 0
 		for i,v in enumerate(inOuts):
 			if v > frOfs:
-				pv = inOuts[i-1]
+				pv = 0 if i == 0 else inOuts[i-1]
 				nx = v
 				if i % 2 == 1:
 					ii = i
 					sign = -1
 				break
 		
+		#print "\nfrOfs", frOfs, "pv", pv, "nx", nx, "ii", ii
 		if pv == 0:
 			moveKProg = 0
 		else:
@@ -1631,8 +1633,6 @@ def calcXf(warpUi, tidProg, bbxTup):
 
 	k = warpUi.parmDic("moveK")*tidProg*moveKBig*(warpUi.parmDic("moveKofs")+moveKProg)
 	return (dFromCentXy[0]*k, dFromCentXy[1]*k)
-	#print "\n xxx tidProg", tidProg
-	#return (tidProg*3, tidProg*3);
 
 
 

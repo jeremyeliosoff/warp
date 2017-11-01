@@ -829,12 +829,11 @@ class warpUi():
 			#maxXres = infoObj.current_w
 			#maxYres = infoObj.current_h
 			maxXres = int(.37*self.root.winfo_screenwidth())
-			maxYres = int(.42*self.root.winfo_screenheight())
+			maxYres = int(.37*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:
 				y = int(res[1] * float(maxXres)/res[0])
 				x = maxXres
-				#if x > maxXres:
-				if y > maxYres:
+				if x > maxXres:
 					x = int(x*float(maxYres)/y)
 					y = maxYres
 				res = (x, y)
@@ -1024,6 +1023,7 @@ class warpUi():
 		self.pauseSaveUIToParmsAndFile = False
 		self.parmEntries = {}
 		self.renQLs = []
+		self.displayRes = (1, 1)
 		self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
 		self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
 		self.seqRenDir = ut.renDir + "/" + self.parmDic("image")

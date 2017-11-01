@@ -136,6 +136,10 @@ hidden True
 type str
 val v031testGenRen
 
+useFilt
+type bool
+val 0
+
 isoLev
 type int
 val -1

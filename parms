@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1
+val 1834
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
 
 image
-val miniPng
+val sm
 
 dbImg1
 val sidPost
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v001nLev2
+val v012fixFlyingBeginning
 
 frStart
-val 1
+val 1604
 
 frEnd
-val 5
+val 3510
 
 frPerCycle
 val 30
@@ -60,7 +60,7 @@ val 1
 ---GEN---
 
 nLevels
-val 2
+val 6
 
 kSurf
 val 1
@@ -95,13 +95,16 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v001nLev2
+val v000
+
+useFilt
+val 0
 
 isoLev
 val -1
 
 frIncRen
-val 1
+val 2
 
 moveK
 val .3
@@ -143,10 +146,10 @@ clrKBig
 val .8
 
 cIn
-val 0.43137254901960786,0.9137254901960784,1.0
+val 0.047058823529411764,0.34509803921568627,1.0
 
 cOut
-val 1.0,0.7686274509803922,0.0
+val 0.7647058823529411,0.28627450980392155,0.0
 
 cTripMix
 val .5
@@ -160,7 +163,7 @@ moveDirOverride
 val n
 
 tripAlwaysOn
-val 1
+val 0
 
 tripFrStart
 val 1605
@@ -175,28 +178,28 @@ tripKMid
 val .3
 
 inh0
-val 1980
+val 1840
 
 exh0
-val 2200
+val 2090
 
 inh1
-val 2400
+val 2270
 
 exh1
-val 2580
+val 2510
 
 inh2
-val 2820
+val 2700
 
 exh2
-val 3000
+val 2940
 
 inh3
-val 3120
+val 3080
 
 exh3
-val 3320
+val 3350
 
 
 
