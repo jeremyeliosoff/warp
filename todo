@@ -4885,13 +4885,17 @@ GPU cop-style 2d "shader"
 
 Techy
 	stop the fading in + out/intensity waver.
-	float xf?
+	#URRRG, on hold till we figure out Dell gpu bugs# float xf?
+	make small + large versions of zoom (right now you have med + xsm)
+	switch for filter
+	sync big + little d
 Arty
 	"flashing lights"?
-	edge detect
+	edge (detect)
 	colour space
+	play with pygame deformer stuff / other warp, esp bg
 	output alpha?
-	play with pygame deformer stuff
+	MUSIC!!!
 
 
 transition from reg to slo mo.
