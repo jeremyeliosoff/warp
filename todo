@@ -4742,6 +4742,26 @@ s  nfr fr
 #Dish# ren by step
 #D# crop seq
 
+Techy
+#D# Send link to LA film fest
+
+#Dish# Clean code
+
+GPU cop-style 2d "shader"
+	#Dish# Try inputting per-tid attrs - eg. cent, bbx - and colour accordingly
+	#Dish# 	Make sure you have inputs tidPosGrid, tids, tidAttrs
+	#Dish need parms# brightness per lev
+	#Dish need parms# anim parms
+	#Dish need parms# vignette/halo/distFade -- make sure NCD space works
+	#Dish# Big is dark
+	#Dish# bg glow
+
+	#CUR# ripple from center
+	#CUR# tinting/colour/colourspace parms
+	#Dish# sync big + little d
+	#D# switch for filter
+	#URRRG, on hold till we figure out Dell gpu bugs# float xf?
+
 ==========================================================
 ======================= OTHER TODO =======================
 ==========================================================
@@ -4865,40 +4885,29 @@ Look into networking 2 laptops/using Big D as server.
 
 Maybe make c plugin for growCurves + maybe other bottlenecks
 
-*********** PLAN OF ATTACK *********** 
 
-#D# Send link to LA film fest
 
-#Dish# Clean code
-
-GPU cop-style 2d "shader"
-	#Dish# Try inputting per-tid attrs - eg. cent, bbx - and colour accordingly
-	#Dish# 	Make sure you have inputs tidPosGrid, tids, tidAttrs
-	#Dish need parms# brightness per lev
-	#Dish need parms# anim parms
-	#Dish need parms# vignette/halo/distFade -- make sure NCD space works
-	#Dish# Big is dark
-	#Dish# bg glow
-
-	#CUR# ripple from center
-	#CUR# tinting/colour/colourspace parms
-
-Techy
-	stop the fading in + out/intensity waver.
-	#URRRG, on hold till we figure out Dell gpu bugs# float xf?
-	make small + large versions of zoom (right now you have med + xsm)
-	switch for filter
-	sync big + little d
+stop the fading in + out/intensity waver.
+make small + large versions of zoom (right now you have med + xsm)
 Arty
 	"flashing lights"?
 	edge (detect)
-	colour space
-	play with pygame deformer stuff / other warp, esp bg
 	output alpha?
 	MUSIC!!!
 
 
 transition from reg to slo mo.
 
+
+*********** PLAN OF ATTACK *********** 
+edge (detect)
+revisit OpenCl bug - focus on data types
+(if above fails)
+	try render on little-d reading data from external drive
+	try shading as cpu c plugin instead of GPU - time test
+pin face parts in place
+make high res zoom
+colour space
+play with pygame deformer stuff / other warp, esp bg
 
 

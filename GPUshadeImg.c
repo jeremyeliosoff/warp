@@ -162,7 +162,7 @@ void filterImg  (int x, int y, int xres, int yres,
 	float xfy,
 	__global uchar* img,
 	int* bordNxNyPxPy,
-	uchar* ret) {
+	int* ret) {
 
 	int i;
 	for (i=0; i<3; i++) {
@@ -227,7 +227,6 @@ __kernel void krShadeImg(
 			int yres,
 			int levPct,
 			int tripGlobPct,
-			int useFilt,
 			float clrKBig,
 			__global int* cIn,
 			__global int* cOut,
@@ -255,14 +254,9 @@ __kernel void krShadeImg(
 	getBbxInfo(tidPos, bbxs, sz, cent);
 
 
-	uchar srcClr[3];
-	if (useFilt > 0) {
-		float xfx = xfs[tidPos*2];
-		float xfy = xfs[tidPos*2+1];
-		filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
-	} else {
-		getImageCell(x, y, xres, yres+1, srcImg, srcClr);
-	}
+	int srcClr[3];
+	//USEFILT float xfx = xfs[tidPos*2]; float xfy = xfs[tidPos*2+1]; filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
+	/*NOUSEFILT*/getImageCell(x, y, xres, yres+1, srcImg, srcClr);
 
 	int tid = tids[tidPos];
 	uchar tidClr[] = {0, 0, 0};

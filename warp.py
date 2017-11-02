@@ -1049,7 +1049,7 @@ class warpUi():
 		self.spritesThisFr = None
 		self.spritesLoadedFr = None
 		#self.srcImg = None
-		#self.sidToCvDic = None
+		self.sidToCvDic = None
 		#self.tholds = None
 		self.dataLoadedForFr = -1
 		self.setVal("anim", 0)

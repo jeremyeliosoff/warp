@@ -144,6 +144,10 @@ isoLev
 type int
 val -1
 
+iso_cs
+type str
+val b
+
 frIncRen
 type int
 val 1

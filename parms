@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2014
+val 3098
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
 
 image
-val sm
+val zLg
 
 dbImg1
 val sidPost
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v012fixFlyingBeginning
+val v001cv
 
 frStart
-val 1604
+val 1600
 
 frEnd
-val 3510
+val 3409
 
 frPerCycle
 val 30
@@ -60,7 +60,7 @@ val 1
 ---GEN---
 
 nLevels
-val 6
+val 10
 
 kSurf
 val 1
@@ -103,11 +103,14 @@ val 0
 isoLev
 val -1
 
+iso_cs
+val b
+
 frIncRen
 val 2
 
 moveK
-val .3
+val .4
 
 moveKofs
 val .25
@@ -146,10 +149,10 @@ clrKBig
 val .8
 
 cIn
-val 0.047058823529411764,0.34509803921568627,1.0
+val 0.43137254901960786,0.9137254901960784,1.0
 
 cOut
-val 0.7647058823529411,0.28627450980392155,0.0
+val 1.0,0.7686274509803922,0.0
 
 cTripMix
 val .5
