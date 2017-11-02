@@ -1,5 +1,5 @@
 
-void convertTidToClr(int tid, uchar* ret) {
+void convertTidToClr(int tid, int* ret) {
 	if (tid < 0) {
 		ret[0] = 0; ret[1] = 0; ret[2] = 0;
 	} else {
@@ -17,18 +17,18 @@ void convertTidToClr(int tid, uchar* ret) {
 	}
 }
 
-float mixI(uchar a, uchar b, float m) {
+float mixI(int a, int b, float m) {
 	return m*b + (1.0-m)*a;
 }
 
-void mix3(uchar* a, uchar* b, float m, uchar* ret) {
+void mix3(int* a, int* b, float m, int* ret) {
 	int i;
 	for (i = 0; i < 3; i++) {
 		ret[i] = mixI(a[i], b[i], m);
 	}
 }
 
-//void mix3i(int* a, int* b, float m, uchar* ret) {
+//void mix3i(int* a, int* b, float m, int* ret) {
 //	int i;
 //	for (i = 0; i < 3; i++) {
 //		ret[i] = mixI(a[i], b[i], m);
@@ -41,17 +41,17 @@ float dist(float x0, float y0, float x1, float y1) {
 	return sqrt(dx*dx + dy*dy);
 }
 
-void mult3_255(uchar* a, uchar* b, uchar* ret) {
+void mult3_255(int* a, int* b, int* ret) {
 	int i;
 	for (i = 0; i < 3; i++) {
-		ret[i] = (uchar) (a[i]*((float)b[i])/255);
+		ret[i] = (int) (a[i]*((float)b[i])/255);
 	}
 }
 
-void mult3sc(uchar* a, float k, uchar* ret) {
+void mult3sc(int* a, float k, int* ret) {
 	int i;
 	for (i = 0; i < 3; i++) {
-		ret[i] = (uchar) min((int)255, (int)(a[i]*k));
+		ret[i] = (int) min((int)255, (int)(a[i]*k));
 	}
 }
 
@@ -71,8 +71,8 @@ float ssmoothstep(float edge0, float edge1, float x) {
 }
 
 void getImageCell(int x, int y, int xres, int yres,
-  __global uchar* img,
-  uchar* ret)
+  __global int* img,
+  int* ret)
 {
 	if (x >= 0 && x < xres && y >= 0 && y < yres) {
 		//int i = (y * xres + x) * 3;
@@ -85,8 +85,8 @@ void getImageCell(int x, int y, int xres, int yres,
 
 
 void assign(
-	uchar* src,
-	uchar* dst)
+	int* src,
+	int* dst)
 {
 	dst[0] = src[0];
 	dst[1] = src[1];
@@ -94,8 +94,8 @@ void assign(
 }
 
 void setArrayCell(int x, int y, int xres, int yres,
-  uchar* val,
-  __global uchar* ret)
+  int* val,
+  __global int* ret)
 {
 	if (x >= 0 && x < xres && y >= 0 && y < yres) {
 		int i = (x * yres + y) * 3;
@@ -160,7 +160,7 @@ void getBbxInfo(int tidPos,
 void filterImg  (int x, int y, int xres, int yres,
 	float xfx,
 	float xfy,
-	__global uchar* img,
+	__global int* img,
 	int* bordNxNyPxPy,
 	int* ret) {
 
@@ -183,7 +183,7 @@ void filterImg  (int x, int y, int xres, int yres,
 		for (xx=0; xx<2; xx++) {
 			for (yy=0; yy<2; yy++) {
 
-				uchar srcClrSamp[3];
+				int srcClrSamp[3];
 				getImageCell(x+xx, y+yy, xres, yres+1, img, srcClrSamp);
 
 				float wx = xx == 0 ? xOfs : 1.0-xOfs;
@@ -259,7 +259,7 @@ __kernel void krShadeImg(
 	/*NOUSEFILT*/getImageCell(x, y, xres, yres+1, srcImg, srcClr);
 
 	int tid = tids[tidPos];
-	uchar tidClr[] = {0, 0, 0};
+	int tidClr[] = {0, 0, 0};
 	convertTidToClr(tid, tidClr);
 
 	
@@ -274,13 +274,13 @@ __kernel void krShadeImg(
 	//float dFromCent = dist(cent[0], cent[1], cx, cy);
 	float dNorm = dFromCent/cx;
 	dNorm = (float)smoothstep(0.0, 1.0, dNorm);
-	uchar inOutClr[3];
+	int inOutClr[3];
 	// Sad, sad workaround for matching types.
-	uchar a[3] = {cIn[0], cIn[1], cIn[2]};
-	uchar b[3] = {cOut[0], cOut[1], cOut[2]};
+	int a[3] = {cIn[0], cIn[1], cIn[2]};
+	int b[3] = {cOut[0], cOut[1], cOut[2]};
 	mix3(a, b, dNorm, inOutClr);
 	float mixInOut = 1;
-	uchar tripClr[3];
+	int tripClr[3];
 
 	// Mult inOutClr by tripClr
 	mult3_255(inOutClr, tidClr, inOutClr);
@@ -288,13 +288,13 @@ __kernel void krShadeImg(
 	//mix3(tidClr, inOutClr, clrProg*mixInOut, tripClr);
 	mix3(tidClr, inOutClr, 1, tripClr);
 
-	uchar trippedClr[3];
+	int trippedClr[3];
 	mult3_255(srcClr, tripClr, trippedClr);
  
 	mult3sc(trippedClr, 2, trippedClr);
 
 
-	uchar outClr[3];
+	int outClr[3];
 	mix3(srcClr, trippedClr, clrProg, outClr);
 	//assign(inOutClr, outClr);
 

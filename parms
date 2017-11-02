@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3098
+val 2202
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
@@ -37,16 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v001cv
+val v003test
 
 frStart
 val 1600
 
 frEnd
 val 3409
-
-frPerCycle
-val 30
 
 doGen
 val 1
@@ -61,6 +58,9 @@ val 1
 
 nLevels
 val 10
+
+frPerCycle
+val 60
 
 kSurf
 val 1
@@ -95,10 +95,10 @@ val 1.0,0.8941176470588236,0.9137254901960784
 ---REN---
 
 dataVer
-val v000
+val v001fpcyc60
 
 useFilt
-val 0
+val 1
 
 isoLev
 val -1

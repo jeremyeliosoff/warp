@@ -282,7 +282,12 @@ def initJtGrid(img, warpUi):
 		levThreshArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
 		
-		imgArray = np.array(list(pygame.surfarray.array3d(img)))
+		try:
+			# This appears to break on black frames, dunno cleaner way around it.
+			imgArray = np.array(list(pygame.surfarray.array3d(img)))
+		except:
+			print "_initJtGrid(): OOPS: pygame.surfarray.array3d(img) caused error, setting imgArray to 0.\n\n"
+			imgArray = np.zeros(res + (3,), dtype=np.uint8)
 		imgArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
@@ -1403,8 +1408,8 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 	# Inputs
 		
-	srcImgAr_buf = makeBuffer(warpUi, list(pygame.surfarray.array3d(srcImg)))
-	tidImgAr_buf = makeBuffer(warpUi, tidImgLs)
+	srcImgAr_buf = makeBuffer(warpUi, list(pygame.surfarray.array3d(srcImg)), dtype=np.intc)
+	tidImgAr_buf = makeBuffer(warpUi, tidImgLs, dtype=np.intc)
 	tidPosGridThisLev_buf = makeBuffer(warpUi, tidPosGridThisLev, dtype=np.intc)
 	bbxs_buf = makeBuffer(warpUi, bbxs, dtype=np.intc)
 	tids_buf = makeBuffer(warpUi, tids, dtype=np.intc)
@@ -1414,7 +1419,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	cOut_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut")), dtype=np.intc)
 
 	# Outputs
-	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.uint8)
+	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
 	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
 

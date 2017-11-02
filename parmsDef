@@ -69,10 +69,6 @@ frEnd
 type int
 val 2
 
-frPerCycle
-type int
-val 30
-
 doGen
 type int
 val 1
@@ -89,6 +85,10 @@ val 1
 nLevels
 type int
 val 8
+
+frPerCycle
+type int
+val 30
 
 kSurf
 type float
