@@ -104,7 +104,7 @@ class warpUi():
 		#stages = self.parmDic.parmStages.keys()
 		#stages.sort() # Just to get GEN in front of REN
 		#TODO make this dynamically depend on parms file
-		stages = ["META", "GEN", "REN", "SEQ", "AOV"]
+		stages = ["META", "GEN", "REN", "CLR", "SEQ", "AOV"]
 		for stage in stages:
 			if not stage == "META":
 				self.nbFrames[stage] = ttk.Frame(self.nbParm)
@@ -308,6 +308,9 @@ class warpUi():
 			print "_returnCmd(): \tIT'S NEITHER!!!!!!!!"
 		self.frameMaster.focus_set()
 
+	def shiftReturnCmd(self):
+		genData.renClrTest(self)
+
 	def returnCmd(self):
 		self.frameMaster.focus_set()
 
@@ -426,7 +429,7 @@ class warpUi():
 		# TODO THIS GETS CALLED WAY TOO MUCH
 		print "_saveParmDic(): BEGIN"
 		# TODO Maybe don't hardwire this, user can config it in parmfile
-		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "SEQ", "AOV"])]
+		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "CLR", "SEQ", "AOV"])]
 		print "_saveParmDic(): self.seqDataVDir:", self.seqDataVDir, "for GEN -- ",
 		# TODO Shouldn't seqDataVDir and seqRenVDir always exist?
 		if os.path.exists(self.seqDataVDir):
@@ -478,6 +481,7 @@ class warpUi():
 			img = self.parmDic("dbImg" + str(i+1))
 			lev = self.parmDic("lev_dbImg" + str(i+1))
 			dbImgPath = self.getDebugDirAndImg(img, lev)[1]
+			print "\n\n ************** img", img, "lev", lev, "dbImgPath", dbImgPath, "\n\n"
 			self.images["dbImg" + str(i+1)]["path"] = dbImgPath
 			self.setVal("dbImg" + str(i+1), img)
 			print "_updateDebugImg(): dbImgPath", dbImgPath
@@ -565,7 +569,6 @@ class warpUi():
 
 	def getImg(self, selection, debugNum=None, debugNumLev=None):
 		print "\n\n_getImg(): selection:",  selection, ", debugNum:", debugNum
-		thisImg = selection
 		if debugNum:
 			self.setVal("dbImg" + str(debugNum), selection)
 			self.updateRenAndDataDirs()
@@ -798,8 +801,12 @@ class warpUi():
 
 	def getDebugDirAndImg(self, AOVname, lev):
 		fr = self.parmDic("fr")
-		levDir = self.seqDataVDir + "/debugImg/" + AOVname + "/" + lev # TODO: v00
-		imgPath = levDir + ("/" + AOVname + "." + lev + (".%05d" + self.seqImgExt) % fr)
+		if AOVname == "CLR":
+			levDir = self.seqDataVDir + "/debugImg/" + AOVname
+			imgPath = levDir + ("/" + AOVname + (".%05d" + self.seqImgExt) % fr)
+		else:
+			levDir = self.seqDataVDir + "/debugImg/" + AOVname + "/" + lev # TODO: v00
+			imgPath = levDir + ("/" + AOVname + "." + lev + (".%05d" + self.seqImgExt) % fr)
 		return levDir,imgPath
 
 	def getRenDirAndImgPath(self, outputName, lev=None):
@@ -1085,6 +1092,7 @@ class warpUi():
 		# TODO e needed?
 		self.root.bind('<Return>', lambda e: self.returnCmd())
 		self.root.bind('<Control-Return>', lambda e: self.ctlReturnCmd())
+		self.root.bind('<Shift-Return>', lambda e: self.shiftReturnCmd())
 		#self.root.bind('<KeyPress>', self.keyPress)
 		for kk in ["Left", "Right", "Escape", "Control-Left", "Control-Right", "space", "c", "r", "x", "g"]:
 			self.root.bind('<' + kk + '>', self.execHotkey)
@@ -1349,6 +1357,9 @@ class warpUi():
 			sourceImages = ["----"]
 
 		sourceImages.sort()
+
+		if not "CLR" in sourceImages:
+			sourceImages.insert(0, "CLR")
 
 		self.dbMenus = {}
 		col = 0

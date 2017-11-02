@@ -286,7 +286,7 @@ def initJtGrid(img, warpUi):
 			# This appears to break on black frames, dunno cleaner way around it.
 			imgArray = np.array(list(pygame.surfarray.array3d(img)))
 		except:
-			print "_initJtGrid(): OOPS: pygame.surfarray.array3d(img) caused error, setting imgArray to 0.\n\n"
+			print "OOPS: pygame.surfarray.array3d(img) caused error, setting imgArray to 0.\n\n"
 			imgArray = np.zeros(res + (3,), dtype=np.uint8)
 		imgArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
@@ -1321,6 +1321,17 @@ def makeBuffer(warpUi, inputList, dtype=None):
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=ar)
 	
 	
+def renClrTest(warpUi):
+	print "\n_renClrTest(): BEGIN\n"
+	srcImg = pygame.image.load(warpUi.images["source"]["path"])
+	srcImg.fill((255, 0, 255), None, pygame.BLEND_MULT)
+	# TODO integrate CLR into AOV system
+	destDir = warpUi.seqDataVDir + "/debugImg/CLR"
+	ut.mkDirSafe(destDir)
+	destPath = destDir + ("/CLR.%05d.png" % warpUi.parmDic("fr"))
+	print "\n_renClrTest(): saving srcImg to\n", destPath
+	pygame.image.save(srcImg, destPath)
+	print "\n_renClrTest(): END\n"
 
 def shadeBg(warpUi, srcImg):
 	kernel = """

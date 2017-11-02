@@ -116,8 +116,8 @@ int getBorders(int x, int y, int xres, int yres, int thisTidPos,
   __global int* tidPosGridThisLev,
   int* bordNxNyPxPy)
 {
+	int bordTotal = 0;	
 
-	
 	int bordIndex;
 	for (bordIndex=0; bordIndex<4; bordIndex++) {
 		int xx;
@@ -134,11 +134,13 @@ int getBorders(int x, int y, int xres, int yres, int thisTidPos,
 			xx > xres-1 || yy > yres-1 ||
 			thisTidPos != tidPosGridThisLev[i]) {
 			bordNxNyPxPy[bordIndex] = 1;
+			bordTotal += 1;
 		} else {
 			bordNxNyPxPy[bordIndex] = 0;
 		}
 		
 	}
+	return bordTotal;
 }
 
 void getBbxInfo(int tidPos,
@@ -247,7 +249,7 @@ __kernel void krShadeImg(
 	int tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
 
 	int bordNxNyPxPy[4];
-	getBorders(x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	int bordTotal = getBorders(x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
 
 	int sz[2];
 	int cent[2];
@@ -324,6 +326,8 @@ __kernel void krShadeImg(
 	// DEBUG
 	// assign(tidClr, outClr);
 	// yres+1 from trial+error.
+	//if (bordTotal > 0) outClr[0] = 255;
+
 	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
 	//setArrayCell(x, y, xres, yres+1, srcClr, shadedImg);
 }

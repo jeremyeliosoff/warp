@@ -205,17 +205,44 @@ clrKBig
 type float
 val 0
 
-cIn
-type clr
-val 0.07450980392156863,0.18823529411764706,0.13725490196078433
-
-cOut
-type clr
-val 0.10980392156862745,0.3058823529411765,0.6392156862745098
-
 cTripMix
 type float
 val .5
+
+
+---CLR---
+
+cIn
+type clr
+val 0.43137254901960786,0.9137254901960784,1.0
+
+cOut
+type clr
+val 1.0,0.7686274509803922,0.0
+
+cInR
+type clr
+val 1,0,0
+
+cInG
+type clr
+val 0,1,0
+
+cInB
+type clr
+val 0,0,1
+
+cOutR
+type clr
+val 1,0,0
+
+cOutG
+type clr
+val 0,1,0
+
+cOutB
+type clr
+val 0,0,1
 
 
 ---SEQ---

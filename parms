@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2202
+val 3008
 
 fps
 val 52
@@ -25,7 +25,7 @@ image
 val zLg
 
 dbImg1
-val sidPost
+val CLR
 
 lev_dbImg1
 val ALL
@@ -98,7 +98,7 @@ dataVer
 val v001fpcyc60
 
 useFilt
-val 1
+val 0
 
 isoLev
 val -1
@@ -148,14 +148,37 @@ val 1.4
 clrKBig
 val .8
 
+cTripMix
+val .5
+
+
+
+
+---CLR---
+
 cIn
 val 0.43137254901960786,0.9137254901960784,1.0
 
 cOut
 val 1.0,0.7686274509803922,0.0
 
-cTripMix
-val .5
+cInR
+val 1,0,0
+
+cInG
+val 0,1,0
+
+cInB
+val 0,0,1
+
+cOutR
+val 1,0,0
+
+cOutG
+val 0,1,0
+
+cOutB
+val 0,0,1
 
 
 
