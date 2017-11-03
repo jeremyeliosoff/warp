@@ -4920,6 +4920,8 @@ colour:
 		make cCommon.h shared between GPU + CPU c files.
 	add colour-chart to CLR aov
 	add cIn, cOut for each breath
+		make 3d array of colors [nlevels][RGBinOut][rgb],
+			where rgb = components, RGB = full colours
 	change edge colouring back to shader; make it nice
 	nicer bg
 

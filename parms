@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3201
+val 3509
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
 
 image
-val zLg
+val sm
 
 dbImg1
 val CLR
@@ -34,16 +34,16 @@ dbImg2
 val sidPost
 
 lev_dbImg2
-val lev03
+val ALL
 
 renVer
-val v005fixSkips
+val v013cSpace
 
 frStart
-val 1600
+val 1604
 
 frEnd
-val 3409
+val 3510
 
 doGen
 val 1
@@ -57,10 +57,10 @@ val 1
 ---GEN---
 
 nLevels
-val 10
+val 6
 
 frPerCycle
-val 60
+val 30
 
 kSurf
 val 1
@@ -86,13 +86,13 @@ val 1
 ---REN---
 
 dataVer
-val v001fpcyc60
+val v000
 
 frIncRen
-val 1
+val 8
 
 useFilt
-val 1
+val 0
 
 isoLev
 val -1
@@ -101,7 +101,7 @@ iso_cs
 val b
 
 moveK
-val .4
+val .3
 
 moveKofs
 val .25
@@ -147,29 +147,77 @@ val .5
 
 ---CLR---
 
-cIn
-val 0.047058823529411764,0.34509803921568627,1.0
-
-cOut
-val 0.7647058823529411,0.28627450980392155,0.0
-
-cInR
+cIn0R
 val 1.0,0.5647058823529412,0.0
 
-cInG
+cIn0G
 val 0.0,0.6588235294117647,0.38823529411764707
 
-cInB
+cIn0B
 val 0.6509803921568628,0.0,0.2549019607843137
 
-cOutR
+cOut0R
 val 0.0,0.1411764705882353,1.0
 
-cOutG
+cOut0G
 val 0.47058823529411764,0.0,0.10980392156862745
 
-cOutB
+cOut0B
 val 0.0,0.5803921568627451,0.0
+
+cIn1R
+val 1,0,0
+
+cIn1G
+val 0,1,0
+
+cIn1B
+val 0,0,1
+
+cOut1R
+val 1,0,0
+
+cOut1G
+val 0,1,0
+
+cOut1B
+val 0,0,1
+
+cIn2R
+val 1,0,0
+
+cIn2G
+val 0,1,0
+
+cIn2B
+val 0,0,1
+
+cOut2R
+val 1,0,0
+
+cOut2G
+val 0,1,0
+
+cOut2B
+val 0,0,1
+
+cIn3R
+val 1,0,0
+
+cIn3G
+val 0,1,0
+
+cIn3B
+val 0,0,1
+
+cOut3R
+val 1,0,0
+
+cOut3G
+val 0,1,0
+
+cOut3B
+val 0,0,1
 
 
 

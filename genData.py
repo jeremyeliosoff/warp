@@ -1336,20 +1336,17 @@ def renClrTest(warpUi):
 	res = srcImg.get_size()
 	srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
-	cIn = np.array([1, 0, 0], dtype=np.float32)
-	cOut = np.array([0, 1, 1], dtype=np.float32)
-	cInR = np.array(warpUi.parmDic("cInR"), dtype=np.float32)
-	cInG = np.array(warpUi.parmDic("cInG"), dtype=np.float32)
-	cInB = np.array(warpUi.parmDic("cInB"), dtype=np.float32)
-	cOutR = np.array(warpUi.parmDic("cOutR"), dtype=np.float32)
-	cOutG = np.array(warpUi.parmDic("cOutG"), dtype=np.float32)
-	cOutB = np.array(warpUi.parmDic("cOutB"), dtype=np.float32)
-	#ret = fragmod.cspaceImg(srcImgAr, csImgAr, cIn, cOut, res[0], res[1])
+	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
+	cIn0G = np.array(warpUi.parmDic("cIn0G"), dtype=np.float32)
+	cIn0B = np.array(warpUi.parmDic("cIn0B"), dtype=np.float32)
+	cOut0R = np.array(warpUi.parmDic("cOut0R"), dtype=np.float32)
+	cOut0G = np.array(warpUi.parmDic("cOut0G"), dtype=np.float32)
+	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
 	print "\n\n\n****************"
-	print "cInR", cInR
-	print "cInG", cInG
-	print "cInB", cInB, "\n"
-	ret = fragmod.cspaceImg(srcImgAr, csImgAr, cInR, cInG, cInB, cOutR, cOutG, cOutB, res[0], res[1])
+	print "cIn0R", cIn0R
+	print "cIn0G", cIn0G
+	print "cIn0B", cIn0B, "\n"
+	ret = fragmod.cspaceImg(srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1])
 	csImg = pygame.surfarray.make_surface(csImgAr)
 	print "\n_renClrTest(): saving srcImg to", destPath
 	pygame.image.save(csImg, destPath)
@@ -1448,14 +1445,12 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	tids_buf = makeBuffer(warpUi, tids, dtype=np.intc)
 	tidTrips_buf = makeBuffer(warpUi, tidTrips, dtype=np.intc)
 	xfs_buf = makeBuffer(warpUi, xfs, dtype=np.float32)
-	cIn_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn")), dtype=np.intc)
-	cOut_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut")), dtype=np.intc)
-	cInR_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cInR")), dtype=np.intc)
-	cInG_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cInG")), dtype=np.intc)
-	cInB_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cInB")), dtype=np.intc)
-	cOutR_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOutR")), dtype=np.intc)
-	cOutG_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOutG")), dtype=np.intc)
-	cOutB_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOutB")), dtype=np.intc)
+	cIn0R_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn0R")), dtype=np.intc)
+	cIn0G_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn0G")), dtype=np.intc)
+	cIn0B_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn0B")), dtype=np.intc)
+	cOut0R_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0R")), dtype=np.intc)
+	cOut0G_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0G")), dtype=np.intc)
+	cOut0B_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0B")), dtype=np.intc)
 
 	# Outputs
 	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
@@ -1488,14 +1483,12 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(tripGlobPct),
 			#np.int32(warpUi.parmDic("useFilt")),
 			np.float32(warpUi.parmDic("clrKBig")),
-			#cIn_buf,
-			#cOut_buf,
-			cInR_buf,
-			cInG_buf,
-			cInB_buf,
-			cOutR_buf,
-			cOutG_buf,
-			cOutB_buf,
+			cIn0R_buf,
+			cIn0G_buf,
+			cIn0B_buf,
+			cOut0R_buf,
+			cOut0G_buf,
+			cOut0B_buf,
 			srcImgAr_buf,
 			tidImgAr_buf,
 			tidPosGridThisLev_buf,

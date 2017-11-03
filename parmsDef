@@ -199,35 +199,102 @@ val .5
 
 ---CLR---
 
-cIn
+cIn0R
 type clr
-val 0.43137254901960786,0.9137254901960784,1.0
+val 1.0,0.5647058823529412,0.0
 
-cOut
+cIn0G
 type clr
-val 1.0,0.7686274509803922,0.0
+val 0.0,0.6588235294117647,0.38823529411764707
 
-cInR
+cIn0B
+type clr
+val 0.6509803921568628,0.0,0.2549019607843137
+
+cOut0R
 type clr
 val 1,0,0
 
-cInG
+cOut0G
 type clr
 val 0,1,0
 
-cInB
+cOut0B
 type clr
 val 0,0,1
 
-cOutR
+
+cIn1R
 type clr
 val 1,0,0
 
-cOutG
+cIn1G
 type clr
 val 0,1,0
 
-cOutB
+cIn1B
+type clr
+val 0,0,1
+
+cOut1R
+type clr
+val 1,0,0
+
+cOut1G
+type clr
+val 0,1,0
+
+cOut1B
+type clr
+val 0,0,1
+
+
+cIn2R
+type clr
+val 1,0,0
+
+cIn2G
+type clr
+val 0,1,0
+
+cIn2B
+type clr
+val 0,0,1
+
+cOut2R
+type clr
+val 1,0,0
+
+cOut2G
+type clr
+val 0,1,0
+
+cOut2B
+type clr
+val 0,0,1
+
+
+cIn3R
+type clr
+val 1,0,0
+
+cIn3G
+type clr
+val 0,1,0
+
+cIn3B
+type clr
+val 0,0,1
+
+cOut3R
+type clr
+val 1,0,0
+
+cOut3G
+type clr
+val 0,1,0
+
+cOut3B
 type clr
 val 0,0,1
 

@@ -109,6 +109,7 @@ class warpUi():
 			if not stage == "META":
 				self.nbFrames[stage] = ttk.Frame(self.nbParm)
 				self.nbParm.add(self.nbFrames[stage], text=stage)
+		maxCNum = 0
 		for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
 			thisParmDic = self.parmDic.parmDic[parmName]
 			print "_makeParmUi(): parmName:", parmName, ", thisParmDic:", thisParmDic
@@ -131,14 +132,32 @@ class warpUi():
 				thisFrame = self.nbFrames[thisStage]
 
 			lab = Label(thisFrame, text=parmName)
-			lab.grid(row=row, column=0, sticky=E)
+
+			thisRow = row
+			colOfs = 0
+			print "KKKKKKKKKKKKKKK thisStage", thisStage
+			if thisStage == "CLR":
+				if parmName[:3] == "cIn":
+					colOfs = 2
+					cNum = int(parmName[3])
+					cRGB = parmName[4]
+				else: # presumably starts with "cOut"
+					colOfs = 0
+					cNum = int(parmName[4])
+					cRGB = parmName[5]
+				maxCNum = max(maxCNum, cNum)
+
+				thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
+				print "\n GGGGGGGGGGGG parmName", parmName, "cNum", cNum, "cRGB", cRGB, "thisRow", thisRow, "colOfs", colOfs, "\n"
+
+			lab.grid(row=thisRow, column=colOfs, sticky=E)
 
 
 			if thisParmDic["type"] == "clr":
 				clrTuple = self.parmDic(parmName)
 				hx = ut.rgb_to_hex(clrTuple)
 				#ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
-				ent = Button(thisFrame, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
+				ent = Button(thisFrame, width=1, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
 			elif thisParmDic["type"] == "bool":
 				self.chkVars[parmName] = IntVar()
 				self.chkVars[parmName].set(self.parmDic(parmName))
@@ -147,7 +166,7 @@ class warpUi():
 			else:
 				#ent = Entry(self.frameParm)
 				ent = Entry(thisFrame)
-			ent.grid(row=row, column=1, sticky=W)
+			ent.grid(row=thisRow, column=(colOfs+1), sticky=W)
 			thisParmDic["uiElement"] = ent
 
 			# Add entry to dic of corresponding types.
@@ -164,6 +183,15 @@ class warpUi():
 				thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
 			row += 1
+
+		for dividerNum in range(maxCNum+1):
+			thisFrame = self.nbFrames["CLR"]
+			lab = Label(thisFrame, font=("Helvetica", 4), text="-")
+			#print "\n UUUUUUUUUUUUUUUU font", lab.font
+			lab.grid(row=(dividerNum+1)*4)
+
+
+
 		print "\n\n_makeParmUi(): parmDic"
 		for k,v in self.parmDic.parmDic.items():
 			print "_makeParmUi(): \t", k, v["val"]
