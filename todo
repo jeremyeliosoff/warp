@@ -4908,6 +4908,10 @@ Arty
 
 transition from reg to slo mo.
 
+Auto-fill frames:
+	If frIncRen > 1, when done, restart + change frIncRen to 0
+	If frIncRen == 0, fill frames
+
 
 *********** PLAN OF ATTACK *********** 
 colour:
