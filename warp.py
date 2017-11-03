@@ -236,9 +236,12 @@ class warpUi():
 			if not img in (self.staticImageNames + self.varyingStaticImageNames):
 				path = self.images[img]["path"]
 				print "_loadImages(): Checking existence of", path
-				self.images[img]["pImg"] = self.loadImgAndSetRes(path)
+				if img == "source":
+					self.images[img]["pImg"] = self.loadImgAndSetRes(path, setRes=True)
+				else:
+					self.images[img]["pImg"] = self.loadImgAndSetRes(path)
 
-		image = self.images["source"]["pImg"]
+		#image = self.images["source"]["pImg"]
 		#self.res = (image.width(), image.height())
 		
 		self.reloadErrorImg()
@@ -310,6 +313,7 @@ class warpUi():
 
 	def shiftReturnCmd(self):
 		genData.renClrTest(self)
+		self.updateDebugImg()
 
 	def returnCmd(self):
 		self.frameMaster.focus_set()
@@ -440,7 +444,7 @@ class warpUi():
 
 		print "_saveParmDic(): self.seqRenVDir:", self.seqRenVDir, "for REN -- ",
 		if os.path.exists(self.seqRenVDir):
-			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN", "SEQ"]))
+			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN", "CLR", "SEQ"]))
 			print "EXISTS"
 		else:
 			print "DOES NOT EXIST"
@@ -802,7 +806,7 @@ class warpUi():
 	def getDebugDirAndImg(self, AOVname, lev):
 		fr = self.parmDic("fr")
 		if AOVname == "CLR":
-			levDir = self.seqDataVDir + "/debugImg/" + AOVname
+			levDir = self.seqRenVDir + "/CLR"
 			imgPath = levDir + ("/" + AOVname + (".%05d" + self.seqImgExt) % fr)
 		else:
 			levDir = self.seqDataVDir + "/debugImg/" + AOVname + "/" + lev # TODO: v00
@@ -820,14 +824,15 @@ class warpUi():
 				(".%05d" + self.seqImgExt) % fr)
 		return levDir, imgPath
 
-	def loadImgAndSetRes(self, path):
+	def loadImgAndSetRes(self, path, setRes=False):
 		#ut.printFrameStack()
 		print "_safeLoad(): Attempting to load", path, "...",
 		if os.path.exists(path):
 			loadedImg = Image.open(path)
 			res = loadedImg.size
-			self.res = res
-			sc = 2 # TODO: Make this a parm?
+			#print "\n\n----------- setting res", res
+			if setRes:
+				self.res = (res[0]-1, res[1]-1)
 			#maxXres = 520
 			#maxYres = 400
 			#maxXres = 720
@@ -1111,8 +1116,6 @@ class warpUi():
 			loadedImg = Image.open(base + name + ut.statImgExt)
 			print "_warpUi.__init__(): name:" + name + "; loadedImg", loadedImg
 			#res = loadedImg.size
-			#sc = 2
-			#loadedImg = loadedImg.resize((res[0]*sc, res[1]*sc), Image.ANTIALIAS)
 			self.staticImages[name] = ImageTk.PhotoImage(loadedImg)
 		self.images = {}
 		self.loadImages()

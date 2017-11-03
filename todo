@@ -1,3 +1,5 @@
+python setupFragmod.py build --force; sudo python setupFragmod.py install
+
 scp lzFin2Short.MTS jeremy@jeremy-Inspiron-5767.local:/home/jeremy/io
 ssh jeremy@jeremy-Inspiron-5767.local
 
@@ -4908,11 +4910,14 @@ transition from reg to slo mo.
 
 
 *********** PLAN OF ATTACK *********** 
-edge detect in shader
 colour:
 	space
+		#D# make a frag C module w cspace(clr, r, g, b [...])
+		make cCommon.h shared between GPU + CPU c files.
+
 	more abrupt change
 	cLevLow, cLevHi
+edge detect in shader
 play with pygame deformer stuff / other warp, esp bg
 pin face parts in place
 make high res zoom

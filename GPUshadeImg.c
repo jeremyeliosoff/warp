@@ -1,3 +1,4 @@
+#include "include/cCommon.h"
 
 void convertTidToClr(int tid, int* ret) {
 	if (tid < 0) {
@@ -28,6 +29,13 @@ void mix3(int* a, int* b, float m, int* ret) {
 	}
 }
 
+void mix3F(float* a, float* b, float m, float* ret) {
+	int i;
+	for (i = 0; i < 3; i++) {
+		ret[i] = mix(a[i], b[i], m);
+	}
+}
+
 //void mix3i(int* a, int* b, float m, int* ret) {
 //	int i;
 //	for (i = 0; i < 3; i++) {
@@ -35,7 +43,7 @@ void mix3(int* a, int* b, float m, int* ret) {
 //	}
 //}
 
-float dist(float x0, float y0, float x1, float y1) {
+float g_dist(float x0, float y0, float x1, float y1) {
 	float dx = x1-x0;
 	float dy = y1-y0;
 	return sqrt(dx*dx + dy*dy);
@@ -92,6 +100,19 @@ void assign(
 	dst[1] = src[1];
 	dst[2] = src[2];
 }
+
+void fToI3(float* vf, int *vi) {
+	for (int i=0; i < 3; i ++) {
+		vi[i] = (int) vf[i];
+	}
+}
+
+void iToF3(__global int* vi, float *vf) {
+	for (int i=0; i < 3; i ++) {
+		vf[i] = (float) vi[i]/255;
+	}
+}
+
 
 void setArrayCell(int x, int y, int xres, int yres,
   int* val,
@@ -230,8 +251,12 @@ __kernel void krShadeImg(
 			int levPct,
 			int tripGlobPct,
 			float clrKBig,
-			__global int* cIn,
-			__global int* cOut,
+			__global int* cInR,
+			__global int* cInG,
+			__global int* cInB,
+			__global int* cOutR,
+			__global int* cOutG,
+			__global int* cOutB,
 			__global uchar* srcImg,
 			__global uchar* tidImg,
 			__global int* tidPosGridThisLev,
@@ -272,23 +297,25 @@ __kernel void krShadeImg(
 	// Vary colour from inner to outer
 	int cx = xres/2;	
 	int cy = yres/2;	
-	float dFromCent = dist(x, y, cx, cy);
-	//float dFromCent = dist(cent[0], cent[1], cx, cy);
+	float dFromCent = g_dist(x, y, cx, cy);
+	//float dFromCent = g_dist(cent[0], cent[1], cx, cy);
 	float dNorm = dFromCent/cx;
 	dNorm = (float)smoothstep(0.0, 1.0, dNorm);
 	int inOutClr[3];
 	// Sad, sad workaround for matching types.
-	int a[3] = {cIn[0], cIn[1], cIn[2]};
-	int b[3] = {cOut[0], cOut[1], cOut[2]};
-	mix3(a, b, dNorm, inOutClr);
+	//int cIn0[3] = {cIn[0], cIn[1], cIn[2]};
+	//int cOut0[3] = {cOut[0], cOut[1], cOut[2]};
+	//mix3(cIn0, cOut0, dNorm, inOutClr);
 	float mixInOut = 1;
 	int tripClr[3];
 
 	// Mult inOutClr by tripClr
-	mult3_255(inOutClr, tidClr, inOutClr);
+	//mult3_255(inOutClr, tidClr, inOutClr);
 	//mult3sc(inOutClr, 2, inOutClr);
 	//mix3(tidClr, inOutClr, clrProg*mixInOut, tripClr);
+	//mix3(tidClr, inOutClr, 1, tripClr);
 	mix3(tidClr, inOutClr, 1, tripClr);
+	assign(tidClr, tripClr);
 
 	int trippedClr[3];
 	mult3_255(srcClr, tripClr, trippedClr);
@@ -328,6 +355,33 @@ __kernel void krShadeImg(
 	// yres+1 from trial+error.
 	//if (bordTotal > 0) outClr[0] = 255;
 
-	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
+	float cShadedInF[3];
+	float cShadedOutF[3];
+	float cShadedInOutF[3];
+	float outClrF[3];
+	outClrF[0] = outClr[0];
+	outClrF[1] = outClr[1];
+	outClrF[2] = outClr[2];
+	int cShadedI[3];
+	//float r[3] = {1.0f, 0, 0};
+	//float g[3] = {0, 1.0f, 0};
+	//float b[3] = {0, 0, 1.0f};
+	float r[3] = {1, 0, 0};
+	float g[3] = {0, 1, 0};
+	float b[3] = {0, 0, 1};
+	float cInRf[3]; float cInGf[3]; float cInBf[3];
+	float cOutRf[3]; float cOutGf[3]; float cOutBf[3];
+	iToF3(cInR, cInRf); iToF3(cInG, cInGf); iToF3(cInB, cInBf);
+	iToF3(cOutR, cOutRf); iToF3(cOutG, cOutGf); iToF3(cOutB, cOutBf);
+
+	csFunc(cInRf, cInGf, cInBf, outClrF, cShadedInF);
+	csFunc(cOutRf, cOutGf, cOutBf, outClrF, cShadedOutF);
+	mix3F(cShadedInF, cShadedOutF, dNorm, cShadedInOutF);
+	cShadedI[0] = (int) min(255.0f, cShadedInOutF[0]*255.0);
+	cShadedI[1] = (int) min(255.0f, cShadedInOutF[1]*255.0);
+	cShadedI[2] = (int) min(255.0f, cShadedInOutF[2]*255.0);
+
+	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
+	//setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
 	//setArrayCell(x, y, xres, yres+1, srcClr, shadedImg);
 }
