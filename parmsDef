@@ -123,6 +123,10 @@ hidden True
 type str
 val v031testGenRen
 
+frIncRen
+type int
+val 1
+
 useFilt
 type bool
 val 0
@@ -134,10 +138,6 @@ val -1
 iso_cs
 type str
 val b
-
-frIncRen
-type int
-val 1
 
 moveK
 type float

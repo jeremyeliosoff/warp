@@ -4914,10 +4914,15 @@ colour:
 	space
 		#D# make a frag C module w cspace(clr, r, g, b [...])
 		make cCommon.h shared between GPU + CPU c files.
+	add colour-chart to CLR aov
+	add cIn, cOut for each breath
+	change edge colouring back to shader; make it nice
+	nicer bg
+
 
 	more abrupt change
 	cLevLow, cLevHi
-edge detect in shader
+smoother motion
 play with pygame deformer stuff / other warp, esp bg
 pin face parts in place
 make high res zoom

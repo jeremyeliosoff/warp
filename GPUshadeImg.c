@@ -381,6 +381,8 @@ __kernel void krShadeImg(
 	cShadedI[1] = (int) min(255.0f, cShadedInOutF[1]*255.0);
 	cShadedI[2] = (int) min(255.0f, cShadedInOutF[2]*255.0);
 
+	mix3(srcClr, cShadedI, clrProg, cShadedI);
+
 	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
 	//setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
 	//setArrayCell(x, y, xres, yres+1, srcClr, shadedImg);
