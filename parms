@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3509
+val 3494
 
 fps
 val 52
@@ -95,7 +95,7 @@ useFilt
 val 0
 
 isoLev
-val -1
+val 3
 
 iso_cs
 val b

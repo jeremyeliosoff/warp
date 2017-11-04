@@ -17,7 +17,7 @@ void vAdd(float* a, float* b, float* out) {
 	}
 }
 
-float csFunc(float* r, float* g, float* b, float* in, float* out) {
+void csFunc(float* r, float* g, float* b, float* in, float* out) {
 	for (int i=0; i<3; i++) {
 		out[i] = 0;
 	}

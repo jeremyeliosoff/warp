@@ -245,12 +245,28 @@ void filterImg  (int x, int y, int xres, int yres,
 	}
 }
 
+
+void getCInOut(
+	__global float* cInOutVals,
+	bool inOut,
+	int cNum,
+	int rgb,
+	int* out) {
+	//int nBreaths = 4;
+	//int i = 0;//9*(inOut * nBreaths + cNum) + 3*rgb;
+	//float* outF;
+	//for (int j=0; j<3; j++) {
+		out[0] = 0;//(int) (255*cInOutVals[i + j]);
+	//}
+}
+
 __kernel void krShadeImg(
 			int xres,
 			int yres,
 			int levPct,
 			int tripGlobPct,
 			float clrKBig,
+			__global int* cInOutVals,
 			__global int* cInR,
 			__global int* cInG,
 			__global int* cInB,
@@ -371,6 +387,11 @@ __kernel void krShadeImg(
 	float b[3] = {0, 0, 1};
 	float cInRf[3]; float cInGf[3]; float cInBf[3];
 	float cOutRf[3]; float cOutGf[3]; float cOutBf[3];
+	int* cInRB;
+
+	//getCInOut(cInOutVals, inOut, cNum, rgb, out);
+	getCInOut(cInOutVals, 0, 0, 0, cInRB);
+
 	iToF3(cInR, cInRf); iToF3(cInG, cInGf); iToF3(cInB, cInBf);
 	iToF3(cOutR, cOutRf); iToF3(cOutG, cOutGf); iToF3(cOutB, cOutBf);
 

@@ -1452,6 +1452,25 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	cOut0G_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0G")), dtype=np.intc)
 	cOut0B_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0B")), dtype=np.intc)
 
+
+	cInOutNameVals = []
+	RGBto012 = {"R":"0R", "G":"1G", "B":"2B"}
+	for pmName,v in warpUi.parmDic.parmDic.items():
+		if pmName[:3] == "cIn" or pmName[:4] == "cOut":
+			pmNameMod = pmName[:-1] + RGBto012[pmName[-1]]
+			cInOutNameVals.append((pmNameMod, v))
+
+	cInOutNameVals.sort()
+	print "\n\nZZZZZZZZZZz cInOutNameVals\n"
+	cInOutVals = []
+	for i in cInOutNameVals:
+		for ss in i[1]["val"].split(","):
+			cInOutVals.append(float(ss))
+	print "cInOutVals"
+	print cInOutVals
+
+	cInOutVals_buf = makeBuffer(warpUi, cInOutVals, dtype=np.float32)
+
 	# Outputs
 	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
 	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
@@ -1483,6 +1502,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(tripGlobPct),
 			#np.int32(warpUi.parmDic("useFilt")),
 			np.float32(warpUi.parmDic("clrKBig")),
+			cInOutVals_buf,
 			cIn0R_buf,
 			cIn0G_buf,
 			cIn0B_buf,
