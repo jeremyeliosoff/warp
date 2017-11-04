@@ -1464,12 +1464,35 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	print "\n\nZZZZZZZZZZz cInOutNameVals\n"
 	cInOutVals = []
 	for i in cInOutNameVals:
+		print i[0]
 		for ss in i[1]["val"].split(","):
 			cInOutVals.append(float(ss))
 	print "cInOutVals"
 	print cInOutVals
 
 	cInOutVals_buf = makeBuffer(warpUi, cInOutVals, dtype=np.float32)
+
+
+	# Breaths.
+	inhParms = []
+	exhParms = []
+	for pd in warpUi.parmDic.parmDic.items():
+		parmName = pd[0]
+		if parmName[:3] == "inh":
+			inhParms.append((parmName, int(pd[1]["val"])))
+		elif parmName[:3] == "exh":
+			exhParms.append((parmName, int(pd[1]["val"])))
+	
+	inhParms.sort()
+	exhParms.sort()
+	dud,inhFrames = zip(*inhParms)
+	dud,exhFrames = zip(*exhParms)
+
+	print "\n NNNNNNNNNNNN inhFrames", inhFrames
+	print "\n NNNNNNNNNNNN exhFrames", exhFrames
+	print "\n\n\n"
+	inhFrames_buf = makeBuffer(warpUi, inhFrames, dtype=np.intc)
+	exhFrames_buf = makeBuffer(warpUi, exhFrames, dtype=np.intc)
 
 	# Outputs
 	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
@@ -1502,6 +1525,9 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(tripGlobPct),
 			#np.int32(warpUi.parmDic("useFilt")),
 			np.float32(warpUi.parmDic("clrKBig")),
+			np.int32(warpUi.parmDic("fr")),
+			inhFrames_buf,
+			exhFrames_buf,
 			cInOutVals_buf,
 			cIn0R_buf,
 			cIn0G_buf,

@@ -17,6 +17,11 @@ void vAdd(float* a, float* b, float* out) {
 	}
 }
 
+float fit(float v, float omn, float omx, float nmn, float nmx) {
+	float prog = (v-omn)/(omx-omn);
+	return nmn + prog * (nmx-nmn);
+}
+
 void csFunc(float* r, float* g, float* b, float* in, float* out) {
 	for (int i=0; i<3; i++) {
 		out[i] = 0;
