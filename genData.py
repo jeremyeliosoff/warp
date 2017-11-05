@@ -253,7 +253,6 @@ def getLevThresh(warpUi, lev, nLevels):
 def initJtGrid(img, warpUi):
 	print "\n_initJtGrid(): BEGIN"
 	nLevels = warpUi.parmDic("nLevels")
-	kSurf = warpUi.parmDic("kSurf")
 	res = img.get_size()
 	nJoints = 0
 	tholds = [None for lev in range(nLevels)]
@@ -1461,14 +1460,11 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			cInOutNameVals.append((pmNameMod, v))
 
 	cInOutNameVals.sort()
-	print "\n\nZZZZZZZZZZz cInOutNameVals\n"
+	##print "\n\nZZZZZZZZZZz cInOutNameVals\n"
 	cInOutVals = []
 	for i in cInOutNameVals:
-		print i[0]
 		for ss in i[1]["val"].split(","):
 			cInOutVals.append(float(ss))
-	print "cInOutVals"
-	print cInOutVals
 
 	cInOutVals_buf = makeBuffer(warpUi, cInOutVals, dtype=np.float32)
 
@@ -1488,9 +1484,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	dud,inhFrames = zip(*inhParms)
 	dud,exhFrames = zip(*exhParms)
 
-	print "\n NNNNNNNNNNNN inhFrames", inhFrames
-	print "\n NNNNNNNNNNNN exhFrames", exhFrames
-	print "\n\n\n"
 	inhFrames_buf = makeBuffer(warpUi, inhFrames, dtype=np.intc)
 	exhFrames_buf = makeBuffer(warpUi, exhFrames, dtype=np.intc)
 
@@ -1791,7 +1784,7 @@ def renSprites(warpUi, srcImg, res, fr):
 					levProg = warpUi.getOfsWLev(lev) % 1.0
 					surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
 					surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
-					#surfAlpha = 1
+					#surfAlpha = 1 # TEMP!!!!
 					#surfAlpha *= sfA # *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, .01*tidProg)
 					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
@@ -1806,8 +1799,8 @@ def renSprites(warpUi, srcImg, res, fr):
 					bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 					canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 					canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-				if not warpUi.parmDic("iso_cs") == "s":
-					renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev)
+				#if not warpUi.parmDic("iso_cs") == "s":
+				#	renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev)
 
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
 		levDir,imgPath = warpUi.getRenDirAndImgPath("ren", levStr)

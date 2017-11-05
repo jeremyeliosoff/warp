@@ -1,3 +1,7 @@
+#define MAX( a, b ) ( ( a > b) ? a : b )
+#define MIN( a, b ) ( ( a < b) ? a : b )
+#define CLAMP( v, mn, mx ) ( MAX ( mn, MIN ( mx, v) ) )
+
 
 void vSMult(float* a, float b, float* out) {
 	for (int i=0; i<3; i++) {
@@ -53,4 +57,44 @@ void mixF3(float* a, float* b, float m, float* ret) {
 	for (i = 0; i < 3; i++) {
 		ret[i] = mixF(a[i], b[i], m);
 	}
+}
+
+void assignFV(
+	float* src,
+	float* dst)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+}
+
+void assignIV(
+	int* src,
+	int* dst)
+{
+	dst[0] = src[0];
+	dst[1] = src[1];
+	dst[2] = src[2];
+}
+
+void assignIS(
+	int x,
+	int y,
+	int z,
+	int* dst)
+{
+	dst[0] = x;
+	dst[1] = y;
+	dst[2] = z;
+}
+
+void assignFS(
+	float x,
+	float y,
+	float z,
+	float* dst)
+{
+	dst[0] = x;
+	dst[1] = y;
+	dst[2] = z;
 }

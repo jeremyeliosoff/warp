@@ -195,7 +195,7 @@ class warpUi():
 		print "\n\n_makeParmUi(): parmDic"
 		for k,v in self.parmDic.parmDic.items():
 			print "_makeParmUi(): \t", k, v["val"]
-		print "\n\n_makeParmUi(): parmLs:", self.parmDic.parmLs
+		#print "\n\n_makeParmUi(): parmLs:", self.parmDic.parmLs
 		return row
 		
 

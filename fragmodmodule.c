@@ -2,10 +2,6 @@
 #include "numpy/arrayobject.h"
 #include "cCommon.h"
 
-#define MAX( a, b ) ( ( a > b) ? a : b )
-#define MIN( a, b ) ( ( a < b) ? a : b )
-#define CLAMP( v, mn, mx ) ( MAX ( mn, MIN ( mx, v) ) )
-
 
 // Define a new exception object for our module.
 static PyObject *fragmodError;
