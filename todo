@@ -1,3 +1,97 @@
+Hi guys,
+
+
+I went to the regie du logement today, here is what I learned:
+
+
+The paper that Nancy signed.  The regie officer thinks *this paper is not legally binding* because Nancy's name is not on the lease.  For the same reason, any audio recording of Nancy making any agreement with K re. the apartment is not legally binding.  The officer said it would be a "courtesy" (which I assume means, good for the Moys, legally) for Nancy's mother to send a letter to K telling him that she does not respect the agreement he made with Nancy.  However, contrary to Mr. Bennet's counsel, the officer said no legal action has to be taken to invalidate the agreement; it's already invalid.  Even if Nancy's name had been on the lease, she might have been able to argue that she had been intimidated into signing the agreement, rendering it invalid.
+
+
+Nancy's brother's deal with the garage.  This depends on whether the agreement (and, I assume, the garage) is of a residential or business nature.  For a residence, K has to go through the same process with Nancy's brother as with us - 6 months notice, 3 months rent, moving, etc.  If it's business the rules are different, but there are rules; the officer wasn't sure of the specifics (not his department) but he said 10 days notice sounded completely wrong.  I told him that, from my understanding, Nancy's brother had a very informal, verbal agreement with Mr. Hum for many years that K inherited, with no lease etc..  The officer said a verbal agreement can still have legal status if, eg., Nancy's brother can prove he has the keys to the place and has been paying rent for several years.
+
+
+Harrassment.  If the paper Nancy signed and any corresponding audio recording is not legally binding, and if K can't evict her brother with 10 days' notice, and if K knows this - all of which I suspect to be true - then the only reason why K would make these (empty) threats to Nancy would be to scare + intimidate her.  Article 1902 of the civil code states, in full:
+
+1902. Neither the lessor nor any other person may harass a lessee in such a manner as to limit his right to peaceable enjoyment of the premises or to induce him to leave the dwelling.
+A lessee who suffers harassment may demand that the lessor or any other person who has harassed him be condemned to pay punitive damages.
+
+I wonder if K's behaviour qualifies as "limit [the Moys'] right to peaceable enjoyment of the premises or to induce [them] to leave the dwelling."  I'm not suggesting the Moys sue for damages, but they might (counter-)threaten Klein that if he continues to make empty threats, they will sue him.
+
+
+One lawyer represent multiple tenants.  Again contrary to Bennet's consel, the officer says there's no reason one lawyer can't represent multiple tenants if legal action is required, although they may have to show up for separate hearings for each plaintiff.
+
+
+If K evicts us for a legal reason, eg. turning the flats into offices, and then fails to follow through (leaves them as flats), we can sue him for damages for dealing in bad faith.  There is some grey area, eg. K turns them into empty offices for 2 months, then back to flats, in which case a judge would decide.  A lawyer is not required.
+
+
+I think the officer said that if we contest the eviction, we have to open a file for each unit for $75 each.  However, again, a lawyer is not required.
+
+
+There are laws stipulating how much K can raise the rent after renovations - depending on, among other things, how much $ he spends on renovations - and these apply to new tenants as well as returning ones.  K can still ask for whatever rent he wants, but he has to specify in the lease what the previous rent was, and the new tenant can insist that the new rent be reduced to the regie-limited amount (assuming the tenant sees that part of the lease + knows their rights).  However, K can ask the tenant to waive this right, and he might be able to find someone willing to do so in this desirable neighbourhood.  This is only relevant because I may threaten K that I will send letters to the new tenant informing them of the previous rent + the approximate legal amount they're entitled to after reno (there are online calculators for this, though I'd need to get an idea how much K is spending on reno), although I admit I don't know how likely it is that I would follow through, or that it would have any effect, and I think K would suspect this.  Anyway, I listed my rent on this rent-exposing website, which I figure can't hurt:  https://myrent.quebec/
+
+
+
+MY PLAN
+
+As you may know, in my disastrous phone call with K on Tuesday, he raised his payout offer to $6000, but asked that I get back to him by Friday.  I think I will write him tomorrow and say:
+
+I would agree to leave on July 1 and never bother K again if he paid me $10 000 (my previous offer).
+I will only discuss things further with him over email.
+If he makes threats that he knows he can't follow through on, or pursues other intimidation tactics, I will sue him for harrassment.
+If he evicts me based on plans that he doesn't follow through on (eg. converting to offices), I will sue him for damages, and will inform the new tenants of the rent I was paying and their rights to limited increase.
+Oh and by the way, fix my damn lights.
+
+This sounds pretty bold, we'll see if I have the guts to follow through, but it's what I'm thinking.  My reasoning is: If it was possible and financially feasible for K to evict us, he wouldn't still be open to negotiation after a couple bargaining "deadlines" have passed (with me at least).  He would just send the eviction letter + pay the minimum (moving + 3 months rent).  $10K is cheap compared to the costs of the changes required to evict us (eg. joining/expanding units), and to the amount he could make with years of higher rent.  K has succeeded in making me want to leave this place, which now feels cursed, but I would feel better getting a bunch of $ from him, and I think we can.
+
+
+That's all I got for now, sorry it's so long.  Let's keep in touch.
+
+
+Jeremy.
+
+
+
+
+
+
+
+
+
+
+?????? QUESTIONS FOR REGGIE ??????
+Can K turn our flats into offices (zoning, permits)
+If he does so just to get us out + then turns them back -> damages?
+Can K hold Nancy to the paper if her name's not on the lease?  What of the recording?
+Is there a moratorium on basements in Mile End?
+Can he evict N's bro from the garage?  Longstanding verbal agreement w prev landlord, transferred to new one, paid for this month.
+Can one lawyer represent multiple tenants? Yes
+What is a usual payout amount for our area?
+
+Enlarge
+
+www.jugments.qc.ca
+
+1902 harass
+
+Can repossess the dwelling?
+
+3months rent + moving
+
+Lawyer not needed for damages if he changes back to offices
+
+$75 per unit to open file to contest eviction
+
+Mamma Moy needs to send letter to landlord
+
+Harrassment
+Recording?
+Audio recording sounds untenable
+Is garage commercial? If res, gotta go through same 3month, if comm something else
+
+
+
+
+
 python setupFragmod.py build --force; sudo python setupFragmod.py install
 
 scp lzFin2Short.MTS jeremy@jeremy-Inspiron-5767.local:/home/jeremy/io
