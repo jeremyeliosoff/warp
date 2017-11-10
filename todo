@@ -114,10 +114,17 @@ Is garage commercial? If res, gotta go through same 3month, if comm something el
 ========================= CGI! =========================
 git test
 Wave times (seconds)
-11-15
-27-31
-47-54
-1:11-1:17
+Min10fps
+	11-15
+	27-31
+	47-54
+	1:11-1:17
+
+Min6fps
+	11-15
+	27-32
+	49-56
+	1:21-1:28
 
 
 
