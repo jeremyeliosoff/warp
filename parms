@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3409
+val 3002
 
 fps
 val 52
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v000
+val v001abruptClrChange
 
 frStart
 val 1600
@@ -95,7 +95,7 @@ useFilt
 val 1
 
 isoLev
-val -1
+val 4
 
 iso_cs
 val b

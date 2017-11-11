@@ -1444,12 +1444,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	tids_buf = makeBuffer(warpUi, tids, dtype=np.intc)
 	tidTrips_buf = makeBuffer(warpUi, tidTrips, dtype=np.intc)
 	xfs_buf = makeBuffer(warpUi, xfs, dtype=np.float32)
-	cIn0R_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn0R")), dtype=np.intc)
-	cIn0G_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn0G")), dtype=np.intc)
-	cIn0B_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cIn0B")), dtype=np.intc)
-	cOut0R_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0R")), dtype=np.intc)
-	cOut0G_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0G")), dtype=np.intc)
-	cOut0B_buf = makeBuffer(warpUi, vX255(warpUi.parmDic("cOut0B")), dtype=np.intc)
 
 
 	cInOutNameVals = []
@@ -1460,7 +1454,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			cInOutNameVals.append((pmNameMod, v))
 
 	cInOutNameVals.sort()
-	##print "\n\nZZZZZZZZZZz cInOutNameVals\n"
 	cInOutVals = []
 	for i in cInOutNameVals:
 		for ss in i[1]["val"].split(","):
@@ -1522,12 +1515,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			inhFrames_buf,
 			exhFrames_buf,
 			cInOutVals_buf,
-			cIn0R_buf,
-			cIn0G_buf,
-			cIn0B_buf,
-			cOut0R_buf,
-			cOut0G_buf,
-			cOut0B_buf,
 			srcImgAr_buf,
 			tidImgAr_buf,
 			tidPosGridThisLev_buf,
@@ -1940,10 +1927,6 @@ def inSurfGridToTidGrid(warpUi):
 		sidSet = set(sidToTidPos[lev].keys())
 		for xx in range(res[0]):
 			for yy in range(res[1]):
-				#print "lev", lev, "xx", xx, "yy", yy
-				#print "len(inSurfGrid)", len(inSurfGrid)
-				#print "len(inSurfGrid[lev])", len(inSurfGrid[lev])
-				#print "len(inSurfGrid[lev][xx])", len(inSurfGrid[lev][xx])
 				sid = inSurfGrid[lev][xx][yy]
 				if sid == None:
 					tidPosGridThisLev[xx][yy] = -1

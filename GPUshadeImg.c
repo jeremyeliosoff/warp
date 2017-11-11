@@ -289,12 +289,6 @@ __kernel void krShadeImg(
 			__global int* inhFrames,
 			__global int* exhFrames,
 			__global float* cInOutVals,
-			__global int* OLDcInR,
-			__global int* OLDcInG,
-			__global int* OLDcInB,
-			__global int* OLDcOutR,
-			__global int* OLDcOutG,
-			__global int* OLDcOutB,
 			__global uchar* srcImg,
 			__global uchar* tidImg,
 			__global int* tidPosGridThisLev,
@@ -398,8 +392,6 @@ __kernel void krShadeImg(
 	int cShadedI[3];
 	int cInRB[3];
 
-	//getCInOut(cInOutVals, inOut, cNum, rgb, out);
-	//getCInOut(cInOutVals, 0, 0, 0, cInRB);
 	int cNum = pvInhFr;
 	// 2 zones (in, out) * 3 clrs * 3 components.
 	float pvCInRGB[9];
@@ -408,24 +400,18 @@ __kernel void krShadeImg(
 	float nxCOutRGB[9];
 
 	// Load all the cInOut parm colours 4 uber-arrays for: inPv, inNx, exPv, exNx
-	//for (int inOut=0; inOut<2; inOut++) {
-		for (int rgb=0; rgb<3; rgb++) {
-			int index = rgb * 3;
-			getCInOut(cInOutVals, 0, pvInhFr, rgb, &pvCInRGB[index]);
-			getCInOut(cInOutVals, 0, nxInhFr, rgb, &nxCInRGB[index]);
-			getCInOut(cInOutVals, 1, pvExhFr, rgb, &pvCOutRGB[index]);
-			getCInOut(cInOutVals, 1, nxExhFr, rgb, &nxCOutRGB[index]);
-		}
-	//}
+	for (int rgb=0; rgb<3; rgb++) {
+		int index = rgb * 3;
+		getCInOut(cInOutVals, 0, pvInhFr, rgb, &pvCInRGB[index]);
+		getCInOut(cInOutVals, 0, nxInhFr, rgb, &nxCInRGB[index]);
+		getCInOut(cInOutVals, 1, pvExhFr, rgb, &pvCOutRGB[index]);
+		getCInOut(cInOutVals, 1, nxExhFr, rgb, &nxCOutRGB[index]);
+	}
 
 
 
 	csFunc(&pvCInRGB[0], &pvCInRGB[3], &pvCInRGB[6], outClrF, pvCIn);
 	csFunc(&pvCOutRGB[0], &pvCOutRGB[3], &pvCOutRGB[6], outClrF, pvCOut);
-
-	//float pvCShadedInOutF[3];
-	//mix3F(pvCIn, pvCOut, dNorm, pvCShadedInOutF);
-
 
 	csFunc(&nxCInRGB[0], &nxCInRGB[3], &nxCInRGB[6], outClrF, nxCIn);
 	csFunc(&nxCOutRGB[0], &nxCOutRGB[3], &nxCOutRGB[6], outClrF, nxCOut);
@@ -436,22 +422,12 @@ __kernel void krShadeImg(
 	mix3F(pvCOut, nxCOut, exhProg, mixedOut);
 
 	float cShadedF[3];	
-	//assignFS(1, 0, 0, pvCShadedInOutF);
-	//assignFS(0, 1, 0, nxCShadedInOutF);
-	//inhProg = 1;
 	mix3F(mixedIn, mixedOut, dNorm, cShadedF);
-	//assignFV(mixedOut, cShadedF);
-	//assignFV(pvCIn, cShadedF);
-	//assignFV(pvCInRGB, cShadedF);
-
 	cShadedI[0] = (int) min(255.0f, cShadedF[0]*255.0);
 	cShadedI[1] = (int) min(255.0f, cShadedF[1]*255.0);
 	cShadedI[2] = (int) min(255.0f, cShadedF[2]*255.0);
 
 	mix3(srcClr, cShadedI, clrProg, cShadedI);
-	//mix3(srcClr, cShadedI, 1, cShadedI); // TEMP!!!
 
 	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
-	//setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
-	//setArrayCell(x, y, xres, yres+1, srcClr, shadedImg);
 }

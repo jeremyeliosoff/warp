@@ -1,3 +1,5 @@
+ffmpeg -i /home/jeremy/retimeBells/export/session.wav -i ren.ALL.avi -codec copy -shortest wSound.avi
+
 Dear Harold Klein,
 
 This email is to follow up our verbal discussion concerning my occupancy of 5977C ave du Parc.
@@ -5083,16 +5085,19 @@ Auto-fill frames:
 *********** PLAN OF ATTACK *********** 
 colour:
 		#D# make a frag C module w cspace(clr, r, g, b [...])
-		make cCommon.h shared between GPU + CPU c files.
-	add colour-chart to CLR aov
+		#D# make cCommon.h shared between GPU + CPU c files.
+	#?# add colour-chart to CLR aov
 	change edge colouring back to shader; make it nice
 	nicer bg
 
 
 	more abrupt change
 	cLevLow, cLevHi
+"flashing lights"
+"fill frames" mode (frIncRen = 0)
+
 smoother motion
 play with pygame deformer stuff / other warp, esp bg
-pin face parts in place
+#Don't think so# pin face parts in place?
 
 
