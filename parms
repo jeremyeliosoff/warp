@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3400
+val 3409
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
 
 image
-val zLg
+val lgP6
 
 dbImg1
 val CLR
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v007
+val v000
 
 frStart
 val 1600
@@ -86,7 +86,7 @@ val 1
 ---REN---
 
 dataVer
-val v001fpcyc60
+val v000
 
 frIncRen
 val 1

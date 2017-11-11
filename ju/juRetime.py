@@ -47,7 +47,21 @@ fpsEnd = 5
 
 #for i in range(frange):
 
-basename = "sm.%05d.png"
+
+if len(sys.argv) == 1 or len(sys.argv) > 4:
+	print "\nUSAGE: juRetime.py basename [basenameOut]"
+	sys.exit()
+
+
+baseIn = sys.argv[1]
+
+if len(sys.argv) == 3:
+	baseOut = sys.argv[2]
+else:
+	baseOut = baseIn
+
+basenameIn = baseIn + ".%05d.png"
+basenameOut = baseOut + ".%05d.png"
 #while frSrc < frange:
 frSrc = frStart
 while frSrc < frEnd:
@@ -72,9 +86,9 @@ while frSrc < frEnd:
 	frB = frA + 1
 	mixB = frSrc % 1
 	mixA = 1.0 - mixB
-	imgA = basename % frA
-	imgB = basename % frB
-	imgOut = "retime/" +  basename % frOut
+	imgA = basenameIn % frA
+	imgB = basenameIn % frB
+	imgOut = "retime/" +  basenameOut % frOut
 	cmd = "composite -dissolve " + str(int(100*mixA)) + "x" + \
 		str(int(100*mixB)) + " " + imgA + " " + imgB + " " + imgOut
 	print "frOut", frOut, "frSrc", frSrc, ":", cmd
