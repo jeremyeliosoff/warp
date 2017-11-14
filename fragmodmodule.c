@@ -125,13 +125,13 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 				);
 
 			for (int j=0; j<3; j++) {
-				int *b=((int *)PyArray_GETPTR3(out,x,y,j));
+				//int *b=((int *)PyArray_GETPTR3(out,x,y,j));
 				//*b = MIN(255, (int) (cTint[j]*tot[j]/count));
 				//*b = MIN(255, (int) (cCspaceIn[j]*tot[j]/count));
 
 				//*b = MIN(255, (int) (cTint[j]*255));
 				//*b = 100;
-				*b = MIN(255, (int) (cShadedI[j]));
+				int *b = MIN(255, (int) (cShadedI[j]));
 
 				//*b = MIN(255, (int) (cCspaceIn[j]*255));
 				//*b = MIN(255, (int) cAvg[j]);
