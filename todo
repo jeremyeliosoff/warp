@@ -79,16 +79,40 @@ Jeremy.
 
 
 
+What can he do to evict us?  Subdivide, combine, "enlarge", change destination?
+	Is there a moratorium on combining business basements with residences in Mile End?
+
+What defines harrassment?
+	Making N sign a paper that has no legal status
+	Saying he has a recording of above (irrelevant)
+	Threatening to evict bro
+	"98% chance I'm gonnna get you out of there" - would it be useful for me to have that recorded.
+
+I told him about broken lights a few weeks ago, he said he'd send someone last Friday, I stayed in all day, no one came; now he's saying he'll send someone next week.
+
+Can he evict N's bro from the garage?  Longstanding verbal agreement w prev landlord, transferred to new one, paid for this month.
+
+Are they allowed to do internal renovations without our consent (if we haven't been evicted)
+
+Are recordings admissable in court?  Should we be making them?
+
+What is the process of eviction?  Landlord sends letter, we contest (open a file?)
+
+Should we threaten telling new tenants prev rent?
+
 
 
 
 ?????? QUESTIONS FOR REGGIE ??????
 Can K turn our flats into offices (zoning, permits)
+
 If he does so just to get us out + then turns them back -> damages?
+
 Can K hold Nancy to the paper if her name's not on the lease?  What of the recording?
-Is there a moratorium on basements in Mile End?
-Can he evict N's bro from the garage?  Longstanding verbal agreement w prev landlord, transferred to new one, paid for this month.
+
+
 Can one lawyer represent multiple tenants? Yes
+
 What is a usual payout amount for our area?
 
 Enlarge
@@ -5075,14 +5099,13 @@ Arty
 	MUSIC!!!
 
 
-transition from reg to slo mo.
+#Dish# transition from reg to slo mo.
 
 Auto-fill frames:
 	If frIncRen > 1, when done, restart + change frIncRen to 0
 	If frIncRen == 0, fill frames
 
 
-*********** PLAN OF ATTACK *********** 
 colour:
 		#D# make a frag C module w cspace(clr, r, g, b [...])
 		#D# make cCommon.h shared between GPU + CPU c files.
@@ -5096,8 +5119,27 @@ colour:
 "flashing lights"
 "fill frames" mode (frIncRen = 0)
 
-smoother motion
+#Maybe not yet# smoother motion
 play with pygame deformer stuff / other warp, esp bg
 #Don't think so# pin face parts in place?
 
 
+*********** PLAN OF ATTACK *********** 
+
+Move clr lookup functionality to fragmodmodule, clrFromXyf()
+	Manual include system
+	which replaces ".... // __GLOBAL" with "__global ...."
+	included in debug image
+
+Bg + debug images
+
+Try again ripple:
+	[beforehand, calc prog to be later at edge]
+	frWOfs = fr + frOfs * smoothpulse(0, .2, .2, 1, prog)
+
+Output as AOV - dust off AOV system
+
+Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
+	frToLookup += k * progToNextLev
+
+Incl some kind of thumbnail in clr selecting UI

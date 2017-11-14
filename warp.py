@@ -93,6 +93,7 @@ class warpUi():
 			postC = self.parmDic(k)
 			print "_btn_getColor(): postC", postC
 			self.parmDic.parmDic[k]["uiElement"].configure(bg=color[1])
+		self.makeCInOutValsLs()
 	
 	def makeParmUi(self, startRow):
 		row = startRow
@@ -1033,6 +1034,19 @@ class warpUi():
 			self.setVal("anim", 1)
 			self.record = True
 
+	def makeCInOutValsLs(self):
+		cInOutNameVals = []
+		RGBto012 = {"R":"0R", "G":"1G", "B":"2B"}
+		for pmName,v in self.parmDic.parmDic.items():
+			if pmName[:3] == "cIn" or pmName[:4] == "cOut":
+				pmNameMod = pmName[:-1] + RGBto012[pmName[-1]]
+				cInOutNameVals.append((pmNameMod, v))
+
+		cInOutNameVals.sort()
+		self.cInOutVals = []
+		for i in cInOutNameVals:
+			for ss in i[1]["val"].split(","):
+				self.cInOutVals.append(float(ss))
 
 
 	def __init__(self, resumeMode=False):
@@ -1055,6 +1069,7 @@ class warpUi():
 
 		# THIS IS WHERE PARMS ARE INITIALLY LOADED
 		self.parmDic = ut.parmDic(parmPath)
+		self.makeCInOutValsLs()
 
 
 

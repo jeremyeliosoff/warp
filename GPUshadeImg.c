@@ -1,4 +1,5 @@
-#include "include/cCommon.h"
+//#include "include/cCommon.h"
+//JINCLUDE include/cCommon.h
 
 void convertTidToClr(int tid, int* ret) {
 	if (tid < 0) {
@@ -15,24 +16,6 @@ void convertTidToClr(int tid, int* ret) {
 		tDiv = tDiv/128;
 		int ocB = tDiv % 128 + 128*(octant/4 % 2); // This should never loop - till we get to tid = 256^3
 		ret[0] = 255-ocR; ret[1] = 255-ocG; ret[2] = 255-ocB;
-	}
-}
-
-float mixI(int a, int b, float m) {
-	return m*b + (1.0-m)*a;
-}
-
-void mix3(int* a, int* b, float m, int* ret) {
-	int i;
-	for (i = 0; i < 3; i++) {
-		ret[i] = mixI(a[i], b[i], m);
-	}
-}
-
-void mix3F(float* a, float* b, float m, float* ret) {
-	int i;
-	for (i = 0; i < 3; i++) {
-		ret[i] = mix(a[i], b[i], m);
 	}
 }
 
@@ -244,39 +227,6 @@ void filterImg  (int x, int y, int xres, int yres,
 }
 
 
-float getBreathFramesAndProg (int fr, __global int* breaths, int nBreaths,
-		int *nFrPvBreath, int *nFrNxBreath) {
-	float brProg = 0;
-	*nFrPvBreath = 0;
-	*nFrNxBreath = 1;
-
-	for (int i=0; i<nBreaths-1; i++) {
-		if (fr >= breaths[i] && fr < breaths[i+1]) {
-			*nFrPvBreath = i;
-			*nFrNxBreath = i+1;
-			brProg = fit(fr,
-				breaths[*nFrPvBreath], breaths[*nFrNxBreath], 0, 1);
-			//brProg = fit(fr, 2000, 2700, 0, 1);
-			break;
-		}
-	}
-	//return CLAMP(brProg, 0, 1);
-	return brProg;
-}
-
-void getCInOut(
-	__global float* cInOutVals,
-	int inOut,
-	int cNum,
-	int rgb,
-	float* out) {
-	int nBreaths = 4;
-	int i = 9*(inOut * nBreaths + cNum) + 3*rgb;
-	float* outF;
-	for (int j=0; j<3; j++) {
-		out[j] = cInOutVals[i + j];
-	}
-}
 
 __kernel void krShadeImg(
 			int xres,
@@ -306,7 +256,6 @@ __kernel void krShadeImg(
 	int tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
 
 	int bordNxNyPxPy[4];
-	// bordTotal NOT YET USED!!
 	int bordTotal = getBorders(x, y, xres, yres+1, tidPos,
 		tidPosGridThisLev, bordNxNyPxPy);
 
@@ -314,43 +263,35 @@ __kernel void krShadeImg(
 	int cent[2];
 	getBbxInfo(tidPos, bbxs, sz, cent);
 
-
+	// Get src colour from image.
 	int srcClr[3];
-	// TODO: I doing think you need NOUSEFILT anymore.
-	//USEFILT float xfx = xfs[tidPos*2]; float xfy = xfs[tidPos*2+1]; filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
-	/*NOUSEFILT*/getImageCell(x, y, xres, yres+1, srcImg, srcClr);
+	float xfx = xfs[tidPos*2];
+	float xfy = xfs[tidPos*2+1];
+	filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
 
+	// Get tid.
 	int tid = tids[tidPos];
 	int tidClr[] = {0, 0, 0};
 	convertTidToClr(tid, tidClr);
 
 	
+	// Get clrProg.
 	float tripGlobF = tripGlobPct*.01;
 	float tidTrip = ((float)tidTrips[tidPos])/100;
 	float clrProg = tripGlobF;//tidTrip;//smoothstep(0, .3, tidTrip);
 
-	// Vary colour from inner to outer
-	int cx = xres/2;	
-	int cy = yres/2;	
-	float dFromCent = g_dist(x, y, cx, cy);
-	//float dFromCent = g_dist(cent[0], cent[1], cx, cy);
-	float dNorm = dFromCent/cx;
-	dNorm = (float)smoothstep(0.0, 1.0, dNorm);
-	int inOutClr[3];
-	int tripClr[3];
 
-	mix3(tidClr, inOutClr, 1, tripClr);
-	assignIV(tidClr, tripClr);
 
+
+	// Get trippedClr = srcClr * tidClr * brightening
 	int trippedClr[3];
-	mult3_255(srcClr, tripClr, trippedClr);
+	mult3_255(srcClr, tidClr, trippedClr);
  
 	float intensMult = bordTotal > 0 ? 4 : 2;
 	mult3sc(trippedClr, intensMult, trippedClr);
 
-
 	int outClr[3];
-	mix3(srcClr, trippedClr, clrProg, outClr);
+	mix3I(srcClr, trippedClr, clrProg, outClr);
 
 	// Darken lower level when tripping.
 	float levPctF = levPct*.01;
@@ -367,67 +308,47 @@ __kernel void krShadeImg(
 	relsMod *= relsMod;
 	float bigKmult = mix(1.0, clrKBig, min(1.0, relsMod));
 
+	// Darken far from Center
+	int cx = xres/2;	
+	int cy = yres/2;	
+	float dFromCent = g_dist(x, y, cx, cy);
+	float dNorm = dFromCent/cx;
+	dNorm = (float)smoothstep(0.0, 1.0, dNorm);
 	float vignK = 1-dNorm;
 	vignK = 1-(1-vignK)*(1-vignK);
 	float vignKmult = mix(1, vignK, tripGlobF);
 	vignKmult = mix(vignKmult, 1, levPctF);
 
+	// Apply darkenings.
 	mult3sc(outClr, kLevPct*tripKmult*vignKmult*bigKmult, outClr);
 	
+
+
 	int nBreaths = 4;
-
 	
-	int pvInhFr, nxInhFr, pvExhFr, nxExhFr;
-	float inhProg = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
-	float exhProg = getBreathFramesAndProg (fr, exhFrames, nBreaths, &pvExhFr, &nxExhFr);
-
-	float pvCIn[3];
-	float pvCOut[3];
-	float nxCIn[3];
-	float nxCOut[3];
 	float outClrF[3];
 	outClrF[0] = outClr[0];
 	outClrF[1] = outClr[1];
 	outClrF[2] = outClr[2];
+
 	int cShadedI[3];
-	int cInRB[3];
 
-	int cNum = pvInhFr;
-	// 2 zones (in, out) * 3 clrs * 3 components.
-	float pvCInRGB[9];
-	float nxCInRGB[9];
-	float pvCOutRGB[9];
-	float nxCOutRGB[9];
+	getCspacePvNxInOut (
+		fr,
+		outClrF, 
+		cInOutVals,
+		inhFrames,
+		exhFrames,
+		nBreaths,
+		dNorm,
+		cShadedI
+		);
 
-	// Load all the cInOut parm colours 4 uber-arrays for: inPv, inNx, exPv, exNx
-	for (int rgb=0; rgb<3; rgb++) {
-		int index = rgb * 3;
-		getCInOut(cInOutVals, 0, pvInhFr, rgb, &pvCInRGB[index]);
-		getCInOut(cInOutVals, 0, nxInhFr, rgb, &nxCInRGB[index]);
-		getCInOut(cInOutVals, 1, pvExhFr, rgb, &pvCOutRGB[index]);
-		getCInOut(cInOutVals, 1, nxExhFr, rgb, &nxCOutRGB[index]);
-	}
+	//cShadedI[0] = (int) CLAMP(outClrF[0], 0, 255);
+	//cShadedI[1] = (int) CLAMP(outClrF[1], 0, 255);
+	//cShadedI[2] = (int) CLAMP(outClrF[2], 0, 255);
 
-
-
-	csFunc(&pvCInRGB[0], &pvCInRGB[3], &pvCInRGB[6], outClrF, pvCIn);
-	csFunc(&pvCOutRGB[0], &pvCOutRGB[3], &pvCOutRGB[6], outClrF, pvCOut);
-
-	csFunc(&nxCInRGB[0], &nxCInRGB[3], &nxCInRGB[6], outClrF, nxCIn);
-	csFunc(&nxCOutRGB[0], &nxCOutRGB[3], &nxCOutRGB[6], outClrF, nxCOut);
-
-	float mixedIn[3];
-	float mixedOut[3];
-	mix3F(pvCIn, nxCIn, inhProg, mixedIn);
-	mix3F(pvCOut, nxCOut, exhProg, mixedOut);
-
-	float cShadedF[3];	
-	mix3F(mixedIn, mixedOut, dNorm, cShadedF);
-	cShadedI[0] = (int) min(255.0f, cShadedF[0]*255.0);
-	cShadedI[1] = (int) min(255.0f, cShadedF[1]*255.0);
-	cShadedI[2] = (int) min(255.0f, cShadedF[2]*255.0);
-
-	mix3(srcClr, cShadedI, clrProg, cShadedI);
+	mix3I(srcClr, cShadedI, clrProg, cShadedI);
 
 	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
 }

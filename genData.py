@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import pygame, math, ut, os, pprint, sys, random, time, shutil, glob, fragmod
+import pygame, math, ut, os, pprint, sys, random, time, shutil, glob, importlib
+import fragmod
 import cPickle as pickle
 # OpenCl stuff!
 import pyopencl as cl
@@ -1341,11 +1342,15 @@ def renClrTest(warpUi):
 	cOut0R = np.array(warpUi.parmDic("cOut0R"), dtype=np.float32)
 	cOut0G = np.array(warpUi.parmDic("cOut0G"), dtype=np.float32)
 	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
-	print "\n\n\n****************"
-	print "cIn0R", cIn0R
-	print "cIn0G", cIn0G
-	print "cIn0B", cIn0B, "\n"
-	ret = fragmod.cspaceImg(srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1])
+	#print "\n\n\n****************"
+	#print "cIn0R", cIn0R
+	#print "cIn0G", cIn0G
+	#print "cIn0B", cIn0B, "\n"
+	#print "\n_renClrTest(): ************** reloading fragmod...."
+	print "\n\n\n********** warpUi.cInOutVals, len", len(warpUi.cInOutVals)
+	print warpUi.cInOutVals
+	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1])
 	csImg = pygame.surfarray.make_surface(csImgAr)
 	print "\n_renClrTest(): saving srcImg to", destPath
 	pygame.image.save(csImg, destPath)
@@ -1445,21 +1450,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	tidTrips_buf = makeBuffer(warpUi, tidTrips, dtype=np.intc)
 	xfs_buf = makeBuffer(warpUi, xfs, dtype=np.float32)
 
-
-	cInOutNameVals = []
-	RGBto012 = {"R":"0R", "G":"1G", "B":"2B"}
-	for pmName,v in warpUi.parmDic.parmDic.items():
-		if pmName[:3] == "cIn" or pmName[:4] == "cOut":
-			pmNameMod = pmName[:-1] + RGBto012[pmName[-1]]
-			cInOutNameVals.append((pmNameMod, v))
-
-	cInOutNameVals.sort()
-	cInOutVals = []
-	for i in cInOutNameVals:
-		for ss in i[1]["val"].split(","):
-			cInOutVals.append(float(ss))
-
-	cInOutVals_buf = makeBuffer(warpUi, cInOutVals, dtype=np.float32)
+	cInOutVals_buf = makeBuffer(warpUi, warpUi.cInOutVals, dtype=np.float32)
 
 
 	# Breaths.
@@ -1486,8 +1477,26 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
 
 	kernelPath = ut.projDir + "/GPUshadeImg.c"
+	kernel = ""
+	jIncludeToken = "//JINCLUDE"
+	globalToken = "__GLOBAL"
 	with open(kernelPath) as f:
-		kernel = "".join(f.readlines())
+		#kernel = "".join(f.readlines())
+		for ln in f.readlines():
+			if ln[:len(jIncludeToken)] == jIncludeToken:
+				includePath = ut.projDir + "/" + ln.strip().split(" ")[1]
+				print "\n\n\n_shadedImg(): line \"", ln.strip(), "\" has JINCLUDE, path:", includePath
+				with open(includePath) as incl:
+					for lnIncl in incl.readlines():
+						if lnIncl.strip()[-len(globalToken):] == globalToken:
+							print "\n\n\n XXXXXXXXXXXXx GLOBAL LINE:"
+							print "\t\t before:", lnIncl
+							lnIncl = "__global " + lnIncl
+							print "\t\t afterr:", lnIncl
+						kernel += lnIncl
+					#kernel += "".join(incl.readlines())
+			else:
+				kernel += ln
 	
 	if warpUi.parmDic("useFilt") > 0:
 		kernel = kernel.replace("//USEFILT", "")
