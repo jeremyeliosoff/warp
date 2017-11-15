@@ -19,14 +19,15 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 	PyArrayObject *cOutBPtr=NULL;
 	int xr;
 	int yr;
+	int fr;
 
     //if (!PyArg_ParseTuple(args, "OOii", &in, &out, &xr, &yr)) return NULL;
-    if (!PyArg_ParseTuple(args, "OOOOOOOOOii",
+    if (!PyArg_ParseTuple(args, "OOOOOOOOOiii",
 			&cInOutValsPtr,
 			&in, &out,
 			&cInRPtr, &cInGPtr, &cInBPtr,
 			&cOutRPtr, &cOutGPtr, &cOutBPtr,
-			&xr, &yr)) return NULL;
+			&xr, &yr, &fr)) return NULL;
 	float cInR[3] = {0, 0, 0};
 	float cInG[3] = {0, 0, 0};
 	float cInB[3] = {0, 0, 0};
@@ -69,8 +70,9 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			float b[3] = {0, 0, 1};
 
 			float cAvg[3] = {0, 0, 0};
+			float lumLift = 70;
 			for (int j=0; j<3; j++) {
-				cAvg[j] = tot[j]/count;
+				cAvg[j] = (lumLift + tot[j])/count;
 			}
 
 			float cCspaceIn[3] = {0, 0, 0};
@@ -78,39 +80,14 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			csFunc(cInR, cInG, cInB, cAvg, cCspaceIn);
 			csFunc(cOutR, cOutG, cOutB, cAvg, cCspaceOut);
 			float cTint[3];
-			float mxInOut = CLAMP(dist(x, y, xr/2, yr/2)/(xr/2), 0, 1);
+			float dNorm = CLAMP(dist(x, y, xr/2, yr/2)/(xr/2), 0, 1);
 
-			mix3F(cCspaceIn, cCspaceOut, mxInOut, cTint);
+			mix3F(cCspaceIn, cCspaceOut, dNorm, cTint);
 			// TEMP
-			int fr = 10;
-			float cInOutValsOLD[] = {
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0,
-				0, 1, 0};
-			int inhFrames[] = {1, 3, 3, 4};
-			int exhFrames[] = {1, 3, 3, 4};
-			float dNorm = .5;
+			int inhFrames[] = {1840, 2270, 2700, 3080};
+			int exhFrames[] = {2090, 2510, 2940, 3350};
+
+
 			int cShadedI[3];
 			int nBreaths = 4;
 			getCspacePvNxInOut (
@@ -125,21 +102,9 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 				);
 
 			for (int j=0; j<3; j++) {
-				//int *b=((int *)PyArray_GETPTR3(out,x,y,j));
-				//*b = MIN(255, (int) (cTint[j]*tot[j]/count));
-				//*b = MIN(255, (int) (cCspaceIn[j]*tot[j]/count));
-
-				//*b = MIN(255, (int) (cTint[j]*255));
-				//*b = 100;
-				int *b = MIN(255, (int) (cShadedI[j]));
-
-				//*b = MIN(255, (int) (cCspaceIn[j]*255));
-				//*b = MIN(255, (int) cAvg[j]);
-				//*b = MIN(255, (int) cCspace[j]);
-				//if (j == 0) *b *= mxInOut;
-
+				int *b=((int *)PyArray_GETPTR3(out,x,y,j));
+				*b = MIN(255, MAX(0, 1-dNorm)*6*(int) (cShadedI[j]));
 			}
-
 		}
 	}
 	double foo = 8;

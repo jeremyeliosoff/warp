@@ -3,8 +3,8 @@ import sys, os, random, re, glob, pprint, inspect, math, time, psutil, pygame
 
 # GLOBAL VARIABLES
 projDir = "/home/jeremy/dev/warp"
-dataDir = projDir + "/data"
-#dataDir = "/media/jeremy/My Passport/dev/warp/data" #TEMP
+#dataDir = projDir + "/data"
+dataDir = "/media/jeremy/My Passport/dev/warp/data" #TEMP
 renDir = projDir + "/ren"
 framesDir = dataDir + "/frames"
 parmsPath = projDir + "/parms"

@@ -1329,8 +1329,8 @@ def renClrTest(warpUi):
 	destDir = warpUi.seqRenVDir + "/CLR"
 	ut.mkDirSafe(destDir)
 
-
-	destPath = destDir + ("/CLR.%05d.png" % warpUi.parmDic("fr"))
+	fr = warpUi.parmDic("fr")
+	destPath = destDir + ("/CLR.%05d.png" % fr)
 
 	print "\n_renClrTest():processing image...."
 	res = srcImg.get_size()
@@ -1350,7 +1350,7 @@ def renClrTest(warpUi):
 	print "\n\n\n********** warpUi.cInOutVals, len", len(warpUi.cInOutVals)
 	print warpUi.cInOutVals
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
-	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1])
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
 	csImg = pygame.surfarray.make_surface(csImgAr)
 	print "\n_renClrTest(): saving srcImg to", destPath
 	pygame.image.save(csImg, destPath)
@@ -1405,7 +1405,7 @@ __kernel void krShadeBg(
 	float dFromCent = dist(x, y, cx, cy);
 	float dNorm = min(1.0, dFromCent/cx);
 
-	uchar red[] = {20, 0, 0};
+	uchar red[] = {200, 0, 0};
 	uchar black[] = {0, 0, 0};
 	mix3(red, black, dNorm, outClr);
 	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
@@ -1481,20 +1481,18 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	jIncludeToken = "//JINCLUDE"
 	globalToken = "__GLOBAL"
 	with open(kernelPath) as f:
-		#kernel = "".join(f.readlines())
 		for ln in f.readlines():
 			if ln[:len(jIncludeToken)] == jIncludeToken:
 				includePath = ut.projDir + "/" + ln.strip().split(" ")[1]
-				print "\n\n\n_shadedImg(): line \"", ln.strip(), "\" has JINCLUDE, path:", includePath
+				#print "\n\n\n_shadedImg(): line \"", ln.strip(), "\" has JINCLUDE, path:", includePath
 				with open(includePath) as incl:
 					for lnIncl in incl.readlines():
 						if lnIncl.strip()[-len(globalToken):] == globalToken:
-							print "\n\n\n XXXXXXXXXXXXx GLOBAL LINE:"
-							print "\t\t before:", lnIncl
+							#print "\n\n\n XXXXXXXXXXXXx GLOBAL LINE:"
+							#print "\t\t before:", lnIncl
 							lnIncl = "__global " + lnIncl
-							print "\t\t afterr:", lnIncl
+							#print "\t\t afterr:", lnIncl
 						kernel += lnIncl
-					#kernel += "".join(incl.readlines())
 			else:
 				kernel += ln
 	
@@ -1741,10 +1739,23 @@ def renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev):
 def renSprites(warpUi, srcImg, res, fr):
 	print "\n_renSprites(): BEGIN, fr", fr
 	# Initialize canvas
-	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
-	canvas.fill((0, 0, 0))
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
-	canvas = shadeBg(warpUi, srcImg)
+	srcImgAr = pygame.surfarray.pixels3d(srcImg)
+	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
+	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
+	cIn0G = np.array(warpUi.parmDic("cIn0G"), dtype=np.float32)
+	cIn0B = np.array(warpUi.parmDic("cIn0B"), dtype=np.float32)
+	cOut0R = np.array(warpUi.parmDic("cOut0R"), dtype=np.float32)
+	cOut0G = np.array(warpUi.parmDic("cOut0G"), dtype=np.float32)
+	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
+
+	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
+	canvas = pygame.surfarray.make_surface(csImgAr)
+
+	#canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
+	#canvas.fill((0, 0, 0))
+	#canvas = shadeBg(warpUi, srcImg)
 	#for spritesThisLev in spritesThisFr:
 	nLevels = warpUi.parmDic("nLevels")
 
@@ -1793,8 +1804,9 @@ def renSprites(warpUi, srcImg, res, fr):
 					#red.fill(0)
 					#pygame.surfarray.pixels3d(spriteImg)[0][:,:] = (255, 0, 0)
 					bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-					canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-					canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+					if lev > 1:
+						canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+						canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 				#if not warpUi.parmDic("iso_cs") == "s":
 				#	renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev)
 
