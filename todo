@@ -5124,20 +5124,22 @@ play with pygame deformer stuff / other warp, esp bg
 #Don't think so# pin face parts in place?
 
 
+
+#Move clr lookup functionality to fragmodmodule, clrFromXyf()
+#	Manual include system
+#	which replaces ".... // __GLOBAL" with "__global ...."
+#	included in debug image
+
 *********** PLAN OF ATTACK *********** 
 
-Move clr lookup functionality to fragmodmodule, clrFromXyf()
-	Manual include system
-	which replaces ".... // __GLOBAL" with "__global ...."
-	included in debug image
-
-Bg + debug images
+Dust off AOV system
+	Output CLR img as AOV (with toggle)
+	CLR also outputs other AOVs eg. ripple.
 
 Try again ripple:
 	[beforehand, calc prog to be later at edge]
 	frWOfs = fr + frOfs * smoothpulse(0, .2, .2, 1, prog)
 
-Output as AOV - dust off AOV system
 
 Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
 	frToLookup += k * progToNextLev

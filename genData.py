@@ -1010,44 +1010,15 @@ __kernel void setSidPostAr(
 		sidPostImgs[lev].save(imgPath)
 
 
-		#for sid in sidToCvs[lev].keys():
-		#	drawBbx(warpUi, sidToCvs[lev][sid]["bbx"], "sid", dbImgDic, lev, nLevels, ut.intToClr(sid))
-		#for tid, turfData in warpUi.tidToSids[lev].items():
-		#	if "bbx" in turfData.keys(): # TODO should bbx always be in turfData.keys()?
-		#		drawBbx(warpUi, turfData["bbx"], "sid", dbImgDic, lev, nLevels, ut.intToClr(tid))
-		#				#sidToCvs[lev][sidToMergeTo]["cvs"] += sidToCvs[lev][sid]["cvs"]
-
-
 	# Save db image with new sids.
 	print "_growCurves(): Saving debug images", dbImgDic.keys()
-	for debugInfo,imgs in dbImgDic.items():
-		if not debugInfo == "sidPost":
+	for aovName,imgs in dbImgDic.items():
+		if not aovName == "sidPost":
 			for lev in range(nLevels+1):
 				levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-				levDir,imgPath = warpUi.getDebugDirAndImg(debugInfo, levStr)
+				levDir,imgPath = warpUi.getDebugDirAndImg(aovName, levStr)
 				ut.mkDirSafe(levDir)
 				pygame.image.save(imgs[lev], imgPath)
-
-	#inSurfGridStr = "POS inSurfGrid:\n"	
-	#for y in range(res[1]):
-	#	for x in range(res[0]):
-	#		inSurfGridStr += str(inSurfGrid[1][x][y]) + " "
-	#	inSurfGridStr += "\n"
-	#inSurfGridStr += "\n\n"
-	#frDirDebug.write(inSurfGridStr)
-	#frDirDebug.write("POS warpUi.nextSid:" + str(warpUi.nextSid) + "\n\n")
-	#tidToSidsStr = "POS warpUi.tidToSids:\n"
-	#ks = warpUi.tidToSids[1].keys()
-	#ks.sort()
-	#for k in ks:
-	#	kks = warpUi.tidToSids[1][k].keys()
-	#	kks.sort()
-	#	for kk in kks:
-	#		tidToSidsStr += str(k) + ":" + str(kk) + ":" + str(warpUi.tidToSids[1][k][kk]) + "\n"
-	#	tidToSidsStr += "\n"
-
-	#frDirDebug.write(tidToSidsStr)
-	#frDirDebug.close()
 
 	ut.timerStop(warpUi, "growC_save")
 	return inSurfGrid, sidToCvs
@@ -1321,16 +1292,18 @@ def makeBuffer(warpUi, inputList, dtype=None):
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=ar)
 	
 	
-def renClrTest(warpUi):
+def renBg(warpUi):
 	print "\n_renClrTest(): BEGIN\n"
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
 	#srcImg.fill((255, 0, 255), None, pygame.BLEND_MULT)
 	# TODO integrate CLR into AOV system
-	destDir = warpUi.seqRenVDir + "/CLR"
-	ut.mkDirSafe(destDir)
+	#destDir = warpUi.seqRenVDir + "/CLR"
 
 	fr = warpUi.parmDic("fr")
-	destPath = destDir + ("/CLR.%05d.png" % fr)
+	#destPath = destDir + ("/CLR.%05d.png" % fr)
+
+	destDir, destPath = warpUi.getDebugDirAndImg("bg", -1)
+	ut.mkDirSafe(destDir)
 
 	print "\n_renClrTest():processing image...."
 	res = srcImg.get_size()
@@ -1841,6 +1814,8 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 
 
 def renWrapper(warpUi):
+
+
 	renWrapperStartTime = time.time()
 	print "\n_renWrapper(): BEGIN"
 	fr, frameDir = warpUi.makeFramesDataDir(doMake=False)

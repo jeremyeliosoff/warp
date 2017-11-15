@@ -136,7 +136,7 @@ class warpUi():
 
 			thisRow = row
 			colOfs = 0
-			print "KKKKKKKKKKKKKKK thisStage", thisStage
+			#print "KKKKKKKKKKKKKKK thisStage", thisStage
 			if thisStage == "CLR":
 				if parmName[:3] == "cIn":
 					colOfs = 2
@@ -149,7 +149,7 @@ class warpUi():
 				maxCNum = max(maxCNum, cNum)
 
 				thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
-				print "\n GGGGGGGGGGGG parmName", parmName, "cNum", cNum, "cRGB", cRGB, "thisRow", thisRow, "colOfs", colOfs, "\n"
+				#print "\n GGGGGGGGGGGG parmName", parmName, "cNum", cNum, "cRGB", cRGB, "thisRow", thisRow, "colOfs", colOfs, "\n"
 
 			lab.grid(row=thisRow, column=colOfs, sticky=E)
 
@@ -255,7 +255,6 @@ class warpUi():
 
 		self.images["anim"] = {"pImg":self.staticImages["play"]}
 		self.images["rec"] = {"pImg":self.staticImages["recOff"]}
-		#self.images["rew"] = {"path":self.images["rew"]["path"]}
 
 		print "_loadImages(): images:"
 		for i,k in self.images.items():
@@ -309,11 +308,11 @@ class warpUi():
 		self.sortStats()
 
 	def setFrAndUpdate(self, fr):
-		# This is what generates data/renders for each fr.
 		self.setStatus("busy")
 		self.setVal("fr", fr)
 		self.saveParmDic()
 		self.updateRenAndDataDirs() # TODO - must this be here?
+		# This is what generates data/renders for each fr.
 		self.updateCurImg()
 		self.updateDebugImg()
 		Tk.update_idletasks(self.root)
@@ -341,7 +340,7 @@ class warpUi():
 		self.frameMaster.focus_set()
 
 	def shiftReturnCmd(self):
-		genData.renClrTest(self)
+		genData.renBg(self)
 		self.updateDebugImg()
 
 	def returnCmd(self):
@@ -554,13 +553,27 @@ class warpUi():
 		print "_updateCurImg(): self.images[source][path]:", self.images["source"]["path"]
 		dud, renImgPath = self.getRenDirAndImgPath("ren", "ALL")
 		self.images["ren"]["path"] = renImgPath
+		print "\n_updateCurImg(): PATH TO RENDER:", renImgPath
+		print "\n_updateCurImg(): self.fillMode:", self.fillMode
+		skip = False
+		if self.fillMode:
+			print "_updateCurImg():\tChecking existence of renderered image...",
+			if os.path.exists(renImgPath):
+				print "Exists.  Skipping render..."
+				skip = True
+			else:
+				print "Doesn't exist, rendering..."
+
 
 		print "\n_updateCurImg(): self.record", self.record
 
 		ut.safeRemove(genData.outFile)
 		genData.pOut("\nPRE genData")
 
-		if self.record or forceRecord:
+		# Render BG img.
+		if self.record: genData.renBg(self)
+
+		if ((not skip) and self.record) or forceRecord:
 			genData.pOut("doing genData")
 			reload(genData)
 			self.setStatus("busy", "Doing genData...")
@@ -820,8 +833,14 @@ class warpUi():
 
 
 	def updateRenAndDataDirs(self):
+		# TODO possibly only needed when changing img.
 		ut.printFrameStack()
-		print "_updateRenAndDataDirs(): OLD:\n_updateRenAndDataDirs(): \tseqDataDir:", self.seqDataDir, "\n_updateRenAndDataDirs():\tseqDataVDir:", self.seqDataVDir, "\n_updateRenAndDataDirs():\tseqRenDir", self.seqRenDir, "\n_updateRenAndDataDirs():\tseqRenVDir", self.seqRenVDir
+
+		seqDataDirOLD = self.seqDataDir
+		seqDataVDirOLD = self.seqDataVDir
+		seqRenDirOLD = self.seqRenDir
+		seqRenVDirOLD = self.seqRenVDir
+
 		self.seqDataDir = ut.dataDir + "/" + self.parmDic("image")
 		ut.mkDirSafe(self.seqDataDir)
 		self.seqDataVDir = self.seqDataDir + "/" + self.parmDic("dataVer")
@@ -830,12 +849,30 @@ class warpUi():
 		self.seqRenDir = ut.renDir + "/" + self.parmDic("image")
 		ut.mkDirSafe(self.seqRenDir)
 		self.seqRenVDir = self.seqRenDir + "/" + self.parmDic("renVer")
-		print "\n_updateRenAndDataDirs(): NEW:\n_updateRenAndDataDirs():\tseqDataDir:", self.seqDataDir, "\n_updateRenAndDataDirs():\tseqDataVDir:", self.seqDataVDir, "\n_updateRenAndDataDirs():\tseqRenDir", self.seqRenDir, "\n_updateRenAndDataDirs():\tseqRenVDir", self.seqRenVDir
+
+		print "\n\n_updateRenAndDataDirs():"
+		print "\tself.seqDataDir:", self.seqDataDir,
+		if seqDataDirOLD == self.seqDataDir: print
+		else: print "-- CHANGED FROM", seqDataDirOLD
+
+		print "\tself.seqDataVDir:", self.seqDataVDir,
+		if seqDataVDirOLD == self.seqDataVDir: print
+		else: print "-- CHANGED FROM", seqDataVDirOLD
+
+		print "\tself.seqRenDir:", self.seqRenDir,
+		if seqRenDirOLD == self.seqRenDir: print
+		else: print "-- CHANGED FROM", seqRenDirOLD
+
+		print "\tself.seqRenVDir:", self.seqRenVDir,
+		if seqRenVDirOLD == self.seqRenVDir: print
+		else: print "-- CHANGED FROM", seqRenVDirOLD
+		print
 
 	def getDebugDirAndImg(self, AOVname, lev):
+		renAovs = ["bg"]
 		fr = self.parmDic("fr")
-		if AOVname == "CLR":
-			levDir = self.seqRenVDir + "/CLR"
+		if AOVname in renAovs:
+			levDir = self.seqRenVDir + "/AOV/" + AOVname
 			imgPath = levDir + ("/" + AOVname + (".%05d" + self.seqImgExt) % fr)
 		else:
 			levDir = self.seqDataVDir + "/debugImg/" + AOVname + "/" + lev # TODO: v00
@@ -1129,9 +1166,7 @@ class warpUi():
 		self.chkVars = {}
 		self.displayNaturalRes = 0
 		self.genRen1fr = 0
-
-		sourceImages = os.listdir(ut.imgIn)
-		sourceImages.sort()
+		self.fillMode = self.parmDic("frIncRen") < 1
 
 		if resumeMode:
 			self.setupResumeMode()
@@ -1275,7 +1310,7 @@ class warpUi():
 			vers = self.getSeqVersions(verType)
 			print "\n__init__(): " + verType + " vers:", vers
 
-			print "\n\n__init__(): YYYYY setting up OptionMenu for", verType
+			print "\n\n__init__(): setting up OptionMenu for", verType
 			self.verUI[verType]["OptionMenu"] = OptionMenu(frameImgVmenu, self.verUI[verType]["menuVar"], *vers, command=lambda selection, thisVerType=verType : self.menuVChooser(selection, thisVerType))
 			self.verUI[verType]["OptionMenu"].grid(row=verRow, column=0, sticky=EW)
 
@@ -1394,22 +1429,37 @@ class warpUi():
 
 		# Debug images.
 		path = self.seqDataVDir + "/debugImg"
-		print "_warpUi.__init__(): =========== PATH", path
+		sourceImagesGen = []
 		if os.path.exists(path):
-			sourceImages = os.listdir(path)
-		else:
-			sourceImages = []
+			sourceImagesGen = os.listdir(path)
+			sourceImagesGen.sort()
+		print "\n\n\n XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesGen
+
+		path = self.seqRenVDir + "/AOV"
+		sourceImagesRen = []
+		if os.path.exists(path):
+			sourceImagesRen = os.listdir(path)
+			sourceImagesRen.sort()
+		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesRen
+
+		sourceImages = sourceImagesGen + sourceImagesRen
+
+		print "_warpUi.__init__(): all images loaded:", sourceImages
+
+
 		if sourceImages == []:
 			sourceImages = ["----"]
 
-		sourceImages.sort()
-
-		if not "CLR" in sourceImages:
-			sourceImages.insert(0, "CLR")
+		#if not "CLR" in sourceImages:
+		#	sourceImages.insert(0, "CLR")
 
 		self.dbMenus = {}
 		col = 0
-		for dbImgName in self.getDbImgParmNames():
+
+		dbImgParmNames = self.getDbImgParmNames()
+		print "\n\nYYYYYYYYYYYYYY _warpUi.__init__(): dbImgParmNames", dbImgParmNames
+		for dbImgName in dbImgParmNames:
 			print "_warpUi.__init__(): \\\\\\\\\\\\ col", col, "dbImgName", dbImgName
 			frameDbParm = Frame(self.frameImg)
 			thisButton = self.makeImgButton(dbImgName, frameDbParm)
@@ -1426,11 +1476,13 @@ class warpUi():
 			varLev = StringVar(self.frameParm)
 			varLev.set(self.parmDic("lev_" + dbImgName))
 			levs = ["lev%02d" % i for i in range(self.parmDic("nLevels"))] + ["ALL"]
-			levChooser = OptionMenu(frameDbMenus, varLev, *levs, command=self.getImgDebugFunctions["lev"][col])
+			levChooser = OptionMenu(frameDbMenus, varLev, *levs,
+				command=self.getImgDebugFunctions["lev"][col])
 			levChooser.grid(row=0,column=1)
 
 			# TODO: varName and varLev are not yet used.
-			self.dbMenus[dbImgName] = {"menu":imgChooser, "varName":varLev, "varLev":varLev}
+			self.dbMenus[dbImgName] = {"menu":imgChooser,
+				"varName":varLev, "varLev":varLev}
 			frameDbParm.grid(row=row,column=col)
 			col += 1
 
@@ -1450,7 +1502,14 @@ class warpUi():
 
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
 				if newFr > fr:		
-					inc = 1 if self.parmDic("doRenCv") == 0 else self.parmDic("frIncRen")
+					inc = 1
+					self.fillMode = False
+					if self.parmDic("doRenCv") == 1:
+						frIncRen = self.parmDic("frIncRen")
+						if frIncRen > 0:
+							inc = frIncRen
+						else:
+							self.fillMode = True
 					fr = min(fr + inc, newFr)
 					framesPassed = fr - self.frStartAnim
 					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed
@@ -1502,7 +1561,7 @@ class warpUi():
 
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
 							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
-								# You're set to do render, but doRenCv is 0 (not yet done).
+								# You're set to do render, but doRenCv = 0 (not yet done).
 								# Restart and do renCv
 
 								# Write stats

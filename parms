@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1851
+val 3402
 
 fps
 val 52
@@ -25,7 +25,7 @@ image
 val lgP6
 
 dbImg1
-val CLR
+val bg
 
 lev_dbImg1
 val ALL
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v014
+val v015bg
 
 frStart
 val 1830
@@ -89,7 +89,7 @@ dataVer
 val v000
 
 frIncRen
-val 4
+val 0
 
 useFilt
 val 1
@@ -272,7 +272,7 @@ val 3350
 ---AOV---
 
 aov_perLev
-val 0
+val 1
 
 aov_inSurfNow
 val 0
