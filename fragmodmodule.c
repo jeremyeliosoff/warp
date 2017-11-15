@@ -70,7 +70,8 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			float b[3] = {0, 0, 1};
 
 			float cAvg[3] = {0, 0, 0};
-			float lumLift = 70;
+			float dNorm = CLAMP(dist(x, y, xr/2, yr/2)/(xr/2), 0, 1);
+			float lumLift = mixF(90, 10, dNorm);
 			for (int j=0; j<3; j++) {
 				cAvg[j] = (lumLift + tot[j])/count;
 			}
@@ -80,7 +81,6 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			csFunc(cInR, cInG, cInB, cAvg, cCspaceIn);
 			csFunc(cOutR, cOutG, cOutB, cAvg, cCspaceOut);
 			float cTint[3];
-			float dNorm = CLAMP(dist(x, y, xr/2, yr/2)/(xr/2), 0, 1);
 
 			mix3F(cCspaceIn, cCspaceOut, dNorm, cTint);
 			// TEMP
