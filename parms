@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2259
+val 2187
 
 fps
 val 52
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v029hi2out10brite0
+val v030niceClrs
 
 frStart
-val 2255
+val 1600
 
 frEnd
-val 2280
+val 3509
 
 doGen
 val 1
@@ -89,7 +89,7 @@ dataVer
 val v000
 
 frIncRen
-val 0
+val 2
 
 useFilt
 val 1
@@ -148,76 +148,76 @@ val .5
 ---CLR---
 
 cIn0R
-val 1,0,0
+val 0.8156862745098039,0.13725490196078433,0.0
 
 cIn0G
-val 1,0,0
+val 0.0,0.10588235294117647,0.5686274509803921
 
 cIn0B
-val 1,0,0
+val 0.6,0.5647058823529412,0.4196078431372549
 
 cOut0R
-val 1,0,0
+val 0.6431372549019608,1.0,0.3607843137254902
 
 cOut0G
-val 1,0,0
+val 0.1607843137254902,0.33725490196078434,0.4980392156862745
 
 cOut0B
-val 1,0,0
+val 0.8,0.0,0.48627450980392156
 
 cIn1R
-val 0,1,0
+val .5,0,.3
 
 cIn1G
-val 0,1,0
+val 0,.9,.8
 
 cIn1B
-val 0,1,0
+val .5,.8,0
 
 cOut1R
-val 0,1,0
+val .3,0,.5
 
 cOut1G
-val 0,1,0
+val 0,.5,1
 
 cOut1B
-val 0,1,0
+val .5,0,.5
 
 cIn2R
-val 0,0,1
+val .9,0,.1
 
 cIn2G
-val 0,0,1
+val .3,0,0
 
 cIn2B
-val 0,0,1
+val .5,.2,0
 
 cOut2R
-val 0,0,1
+val 1,0,.8
 
 cOut2G
-val 0,0,1
+val 0,.5,0
 
 cOut2B
-val 0,0,1
+val 1,.8,0
 
 cIn3R
-val 1,0,0
+val 1.0,0.5647058823529412,0.0
 
 cIn3G
-val 1,0,0
+val 0.0,0.6588235294117647,0.38823529411764707
 
 cIn3B
-val 1,0,0
+val 0.6509803921568628,0.0,0.2549019607843137
 
 cOut3R
-val 1,0,0
+val 0.0,0.1411764705882353,1.0
 
 cOut3G
-val 1,0,0
+val 0.47058823529411764,0.0,0.10980392156862745
 
 cOut3B
-val 1,0,0
+val 0.0,0.5803921568627451,0.0
 
 
 

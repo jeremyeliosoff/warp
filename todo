@@ -5160,5 +5160,14 @@ Refine RGB:
 	Somehow, the first ripple should transition from regular rgb to first cSpace
 	Maybe explicitly choose progressively trippy colours, instead of 
 
-Reimplement "3-4" capability in isoLev.
+Do something about lower levs:
+	if used, make transparent to let bg in
+	if not, don't render
 
+Reimplement "3-4" capability in isoLev.
+rip goes from lightest to darkest w/in sid (we're trying this with progToNextLev, soso)
+Do thicker edge detection in addition to/instead of above.
+These will be used to make the "flashing lightbulbs", that go off + on in alternatong groups like a marquee;  sids qualifying as lightbulbs are of certain size and sx/sy ~ 1. 
+"Waves of sheen" passing over sids: white added to/replaces clr.
+
+	

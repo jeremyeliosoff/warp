@@ -327,6 +327,7 @@ __kernel void krShadeImg(
 	float hiLevSooner = 2;
 	float outerSooner = 10;
 	float brighterSooner = 0;
+	float edgeSooner = 50;
 
 	float lum = ((float)(srcClr[0] + srcClr[1] + srcClr[2]))/(255*3);
 	float lumFromLevPct = MAX(0, lum - levPct);
@@ -334,7 +335,7 @@ __kernel void krShadeImg(
 
 	float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
 	fr += hiLevSooner * lev + (1-sidFarFromCent) *
-		outerSooner + brighterSooner*lumFromLevPct;
+		outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal;
 
 
 

@@ -555,14 +555,12 @@ class warpUi():
 		dud, renImgPath = self.getRenDirAndImgPath("ren", "ALL")
 		self.images["ren"]["path"] = renImgPath
 		print "\n_updateCurImg(): PATH TO RENDER:", renImgPath
-
-		# Set fill mode.
+		self.setFillMode()
 		self.fillMode = "overwrite"
 		if self.parmDic("frIncRen") == 0:
 			self.fillMode = "fill"
 		elif self.parmDic("frIncRen") < 0:
 			self.fillMode = "onlyBg"
-
 		print "\n_updateCurImg(): self.fillMode:", self.fillMode
 		skip = False
 		if self.fillMode == "onlyBg":
@@ -1097,6 +1095,14 @@ class warpUi():
 			for ss in i[1]["val"].split(","):
 				self.cInOutVals.append(float(ss))
 
+	def setFillMode(self):
+		self.fillMode = "overwrite"
+		if self.parmDic("frIncRen") == 0:
+			self.fillMode = "fill"
+		elif self.parmDic("frIncRen") < 0:
+			self.fillMode = "onlyBg"
+
+
 	def __init__(self, resumeMode=False):
 		print "_warpUi.__init__(): resumeMode =", resumeMode
 
@@ -1513,7 +1519,7 @@ class warpUi():
 
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
 				if newFr > fr:		
-					inc = 1
+					inc = 1 if self.parmDic("doRenCv") <= 0 else self.parmDic("frIncRen")
 					fr = min(fr + inc, newFr)
 					framesPassed = fr - self.frStartAnim
 					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed

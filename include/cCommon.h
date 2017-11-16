@@ -178,7 +178,7 @@ void getCspacePvNxInOut (
 	int pvInhFr, nxInhFr, pvExhFr, nxExhFr;
 	float inhProgForRipple = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
 	int ripFfw = 200;
-	float ripSpeed = 30;
+	float ripSpeed = 15;
 	float ripTime = 1.0/ripSpeed;
 	float ripEdge = .003;
 	float ofs = ripTime*dNorm;
