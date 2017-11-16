@@ -389,31 +389,35 @@ def initJtGrid(img, warpUi):
 
 	return jtGrid, tholds
 
-def setAOV(warpUi, name, dbImgDic, lev, nLevels, x, y, val):
-	prevVal = ut.black
+def setAovFullImg(warpUi, name, img):
+	destDir, destPath = warpUi.getDebugDirAndImg(name, -1)
+	print "\n_setAovFullImg(): saving aov img to", destPath
+	ut.mkDirSafe(destDir)
+	pygame.image.save(img, destPath)
+
+def setAovXy(warpUi, name, lev, nLevels, x, y, val):
 	aovParmName = "aov_" + name	
-	if aovParmName in warpUi.parmDic.parmDic.keys() and warpUi.parmDic(aovParmName) == 1 and lev <= len(dbImgDic[name]): # TODO: Won't last cond always be true?
-		res = dbImgDic[name][lev].get_size()
+	if aovParmName in warpUi.parmDic.parmDic.keys() and warpUi.parmDic(aovParmName) == 1 and lev <= len(warpUi.aovDic[name]): # TODO: Won't last cond always be true?
+		res = warpUi.aovDic[name][lev].get_size()
 		if x < res[0] and y < res[1]:
-			#prevVal = dbImgDic[name][lev].get_at((x,y))
 			newVal = tuple(list(val))
 			newVal = ut.clampVSc(newVal, 0, 255)
-			dbImgDic[name][lev].set_at((x,y), newVal)
-			dbImgDic[name][nLevels].set_at((x,y), newVal)
+			warpUi.aovDic[name][lev].set_at((x,y), newVal)
+			warpUi.aovDic[name][nLevels].set_at((x,y), newVal)
 
 
-def drawBbx(warpUi, bbx, dbName, dbImgDic, lev, nLevels, clr):
+def drawBbx(warpUi, bbx, dbName, lev, nLevels, clr):
 	# Draw cvBbx
 	xmn, ymn = bbx[0]
 	xmx, ymx = bbx[1]
 	# Vertical lines
 	for xx in range(xmn, xmx):
-		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xx, ymn, clr)
-		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xx, ymx, clr)
+		setAovXy(warpUi, dbName, lev, nLevels, xx, ymn, clr)
+		setAovXy(warpUi, dbName, lev, nLevels, xx, ymx, clr)
 	# Horizontal lines
 	for yy in range(ymn, ymx):
-		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xmn, yy, clr)
-		setAOV(warpUi, dbName, dbImgDic, lev, nLevels, xmx, yy, clr)
+		setAovXy(warpUi, dbName, lev, nLevels, xmn, yy, clr)
+		setAovXy(warpUi, dbName, lev, nLevels, xmx, yy, clr)
 	
 # From neighboursToConns:
 decodeCons = ((),
@@ -559,18 +563,6 @@ def growCurves(warpUi, jtGrid, frameDir):
 
 	inSurfGrid = [[[None for yy in range(res[1])] for xx in range(res[0])] for lev in range(nLevels)] # inSurfGridASSIGN!
 
-	# AOVs.
-	#dbImgs = ["inSurfNow", "surfsAndHoles", "inPrev", "cid", "cvSid", "cidPost", "sid", "sidPost"]
-	dbImgs = []
-	for parmName in warpUi.parmDic.parmDic.keys():
-		if parmName[:4] == "aov_" and warpUi.parmDic(parmName) == 1:
-			dbImgs.append(parmName[4:])
-
-	dbImgDic = {}
-	for dbi in dbImgs:
-		# The last cell - that is, [nLevels] - is reserved for "all"
-		dbImgDic[dbi] = [pygame.Surface(res) for i in range(nLevels+1)][:]
-
 
 
 	# Grow curves following the con(nection)s in _jtGrid
@@ -610,7 +602,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 							xTot += xx
 							yTot += yy
 							nJoints += 1
-							setAOV(warpUi, "cid", dbImgDic, lev, nLevels, xx, yy, cvClr)
+							setAovXy(warpUi, "cid", lev, nLevels, xx, yy, cvClr)
 							thisJt.cv = jt.cv
 							jt.cv.add(thisJt)
 							xx += thisJt.cons[1][0]
@@ -736,15 +728,15 @@ def growCurves(warpUi, jtGrid, frameDir):
 			sfClr = ut.intToClr(jt.cv.surf.sid)
 			while True:
 				xx, yy = jt.xy
-				setAOV(warpUi, "cvSid", dbImgDic, lev, nLevels, xx, yy, sfClr)
+				setAovXy(warpUi, "cvSid", lev, nLevels, xx, yy, sfClr)
 				sfClr = ut.intToClr(jt.cv.cid)
-				setAOV(warpUi, "cidPost", dbImgDic, lev, nLevels, xx, yy, sfClr)
+				setAovXy(warpUi, "cidPost", lev, nLevels, xx, yy, sfClr)
 				jt = jt.pv
 				if jt == None:
 					break
 
 			# Draw cvBbx
-			drawBbx(warpUi, cv.bbx, "cidPost", dbImgDic, lev, nLevels, sfClr)
+			drawBbx(warpUi, cv.bbx, "cidPost", lev, nLevels, sfClr)
 	ut.timerStop(warpUi, "growC_aovs")
 
 
@@ -899,7 +891,6 @@ def growCurves(warpUi, jtGrid, frameDir):
 						inSurfGrid[lev][x][y] = sidNew # inSurfGridASSIGN!
 					else:
 						sidNew = sidOld
-					#setAOV(warpUi, "sidPost", dbImgDic, lev, nLevels, x, y, ut.intToClr(sidNew))
 	
 	# Set sidPost AOV using GPU
 	print "_growCurves(): drawing sidPost AOV using GPU..."
@@ -1011,8 +1002,8 @@ __kernel void setSidPostAr(
 
 
 	# Save db image with new sids.
-	print "_growCurves(): Saving debug images", dbImgDic.keys()
-	for aovName,imgs in dbImgDic.items():
+	print "_growCurves(): Saving debug images", warpUi.aovDic.keys()
+	for aovName,imgs in warpUi.aovDic.items():
 		if not aovName == "sidPost":
 			for lev in range(nLevels+1):
 				levStr = "ALL" if lev == nLevels else "lev%02d" % lev
@@ -1097,15 +1088,7 @@ def genData(warpUi, statsDirDest):
 	print "_genData(): ### DOING genData ###"
 	print "_genData(): #####################"
 	print "_genData(): fr:", warpUi.parmDic("fr"), "\n" 
-
-	# Initialize GPU stuff.
-	# ut.indicateProjDirtyAs(warpUi, True, "createContextAndQueue_inProgress")
-	# print "_genData(): before _create_some_context()"
-	# warpUi.cntxt = cl.create_some_context()
-	# print "_genData(): after _create_some_context(); before _CommandQueue"
-	# warpUi.queue = cl.CommandQueue(warpUi.cntxt)
-	# print "_genData(): after _CommandQueue"
-	# ut.indicateProjDirtyAs(warpUi, False, "createContextAndQueue_inProgress")
+	renBg(warpUi)  
 
 	if warpUi.genRen1fr == 1:
 		genDataWrapper(warpUi)
@@ -1302,8 +1285,6 @@ def renBg(warpUi):
 	fr = warpUi.parmDic("fr")
 	#destPath = destDir + ("/CLR.%05d.png" % fr)
 
-	destDir, destPath = warpUi.getDebugDirAndImg("bg", -1)
-	ut.mkDirSafe(destDir)
 
 	print "\n_renClrTest():processing image...."
 	res = srcImg.get_size()
@@ -1316,25 +1297,21 @@ def renBg(warpUi):
 	cOut0R = np.array(warpUi.parmDic("cOut0R"), dtype=np.float32)
 	cOut0G = np.array(warpUi.parmDic("cOut0G"), dtype=np.float32)
 	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
-	#print "\n\n\n****************"
-	#print "cIn0R", cIn0R
-	#print "cIn0G", cIn0G
-	#print "cIn0B", cIn0B, "\n"
-	#print "\n_renClrTest(): ************** reloading fragmod...."
-	#print "\n\n\n********** warpUi.cInOutVals, len", len(warpUi.cInOutVals)
-	#print warpUi.cInOutVals
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
 		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
 	csImg = pygame.surfarray.make_surface(csImgAr)
-	print "\n_renBg(): saving srcImg to", destPath
-	pygame.image.save(csImg, destPath)
+	setAovFullImg(warpUi, "bg", csImg)
 
 	aovRipImg = pygame.surfarray.make_surface(aovRipAr)
-	destDir, destPath = warpUi.getDebugDirAndImg("rip", -1)
-	print "\n_renBg(): saving aovRipImg to", destPath
-	ut.mkDirSafe(destDir)
-	pygame.image.save(aovRipImg, destPath)
+	setAovFullImg(warpUi, "rip", aovRipImg)
+
+	# Refresh menus.
+	# col = 0
+	# for aovName in warpUi.getDbImgParmNames():
+	# 	warpUi.updateRenderedAovMenu(warpUi.dbMenus[aovName]["menu"], col)
+	# 	col += 1
+
 
 	print "\n_renBg(): END\n"
 

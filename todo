@@ -5136,10 +5136,14 @@ play with pygame deformer stuff / other warp, esp bg
 
 #D# when frIncRen > 1, loop back + set frIncRen = 0 (fill mode)
 
+#Dish?# Fix loop + fill system.
+
 *********** PLAN OF ATTACK *********** 
+
 
 Dust off AOV system
 	clean up/update aov toggles
+	make sure menus list proper things, eg. not "perLev", and are updated
 	fix sync of AOV ui + parms -- make persistent when restart
 	#Dish# CLR also outputs other AOVs eg. ripple.
 

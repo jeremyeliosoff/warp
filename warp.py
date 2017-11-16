@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import os, genData, ut, time, datetime, pprint, cProfile, shutil, glob
+import os, genData, ut, time, datetime, pprint, cProfile, shutil, glob, pygame
 import pyopencl as cl
 from Tkinter import *
 import Tkinter, ttk
@@ -223,14 +223,14 @@ class warpUi():
 
 
 	def getDbImgParmNames(self):
-		dbImgNames = []
+		aovNames = []
 		root = "dbImg"
 		for k in self.parmDic.parmDic.keys():
 			if k[:len(root)] == root:
-				dbImgNames.append(k)
-		print "\n_getDbImgParmNames() dbImgNames:", dbImgNames
-		dbImgNames.sort()
-		return dbImgNames
+				aovNames.append(k)
+		print "\n_getDbImgParmNames() aovNames:", aovNames
+		aovNames.sort()
+		return aovNames
 	
 	def reloadErrorImg(self):
 		errorImg = Image.open(self.errorImgPath)
@@ -270,10 +270,16 @@ class warpUi():
 				else:
 					self.images[img]["pImg"] = self.loadImgAndSetRes(path)
 
+		print "\n\n\n\n RES ********************** "
+		res = (self.images["source"]["pImg"].width(), self.images["source"]["pImg"].height())
+		print "RES ********************** ", res, "\n\n\n\n"
+
 		#image = self.images["source"]["pImg"]
 		#self.res = (image.width(), image.height())
 		
 		self.reloadErrorImg()
+
+		return res
 
 	def refreshPhotoImages(self):
 		# TODO you shouldn't have to reload ALL images eg. play, pause - maybe
@@ -341,7 +347,6 @@ class warpUi():
 		self.frameMaster.focus_set()
 
 	def shiftReturnCmd(self):
-		genData.renBg(self)
 		self.updateDebugImg()
 
 	def returnCmd(self):
@@ -881,7 +886,7 @@ class warpUi():
 		renAovs = ["bg", "rip"]
 		fr = self.parmDic("fr")
 		if AOVname in renAovs:
-			levDir = self.seqRenVDir + "/AOV/" + AOVname
+			levDir = self.seqRenVDir + "/aov/" + AOVname
 			imgPath = levDir + ("/" + AOVname + (".%05d" + self.seqImgExt) % fr)
 		else:
 			print "\n\nXXXXXUUUUUUUUUUUUU AOVname:", AOVname
@@ -1102,6 +1107,42 @@ class warpUi():
 		elif self.parmDic("frIncRen") < 0:
 			self.fillMode = "onlyBg"
 
+	def getRenderedAovNames(self):
+		# Debug images.
+		path = self.seqDataVDir + "/debugImg"
+		sourceImagesGen = []
+		if os.path.exists(path):
+			sourceImagesGen = os.listdir(path)
+			sourceImagesGen.sort()
+		print "\n\n\n XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesGen
+
+		path = self.seqRenVDir + "/aov"
+		sourceImagesRen = []
+		if os.path.exists(path):
+			sourceImagesRen = os.listdir(path)
+			sourceImagesRen.sort()
+		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesRen
+
+		sourceImages = sourceImagesGen + sourceImagesRen
+
+		print "_warpUi.__init__(): all images loaded:", sourceImages
+
+		if sourceImages == []:
+			sourceImages = ["----"]
+
+		return sourceImages
+
+	def updateRenderedAovMenu(self, opMenu, col, aovName):
+		varName = StringVar(self.frameParm)
+		varName.set(self.parmDic.parmDic[aovName]["val"])
+		opMenu['menu'].delete(0, 'end')
+		aovNames = self.getRenderedAovNames()
+		for aovName in aovNames:
+			#imgChooser['menu'].add_command(0, 'end')
+			opMenu['menu'].add_command(label=aovName,
+				command=self.getImgDebugFunctions["name"][col])
+
 
 	def __init__(self, resumeMode=False):
 		print "_warpUi.__init__(): resumeMode =", resumeMode
@@ -1124,7 +1165,6 @@ class warpUi():
 		# THIS IS WHERE PARMS ARE INITIALLY LOADED
 		self.parmDic = ut.parmDic(parmPath)
 		self.makeCInOutValsLs()
-
 
 
 		print "\n\n\n__init__():********** parmDic"
@@ -1162,7 +1202,6 @@ class warpUi():
 		#self.tholds = None
 		self.dataLoadedForFr = -1
 		self.setVal("anim", 0)
-		nLevels = self.parmDic("nLevels")
 		self.updateRenAndDataDirs()
 		self.nextSid = 0
 		self.tidToSids = None
@@ -1213,7 +1252,20 @@ class warpUi():
 			#res = loadedImg.size
 			self.staticImages[name] = ImageTk.PhotoImage(loadedImg)
 		self.images = {}
-		self.loadImages()
+		res = self.loadImages()
+
+		# AOVs.
+		aovNames = []
+		for parmName in self.parmDic.parmDic.keys():
+			if parmName[:4] == "aov_" and self.parmDic(parmName) == 1:
+				aovNames.append(parmName[4:])
+
+		nLevels = self.parmDic("nLevels")
+		self.aovDic = {}
+		for aovName in aovNames:
+			# The last cell - that is, [nLevels] - is reserved for "all"
+			self.aovDic[aovName] = [pygame.Surface(res) for i in range(nLevels+1)][:]
+
 
 
 		self.frameMaster = Frame(self.root)
@@ -1443,62 +1495,38 @@ class warpUi():
 		thisButton.grid(row=row+1, column=1)
 		row +=2
 
-
-		# Debug images.
-		path = self.seqDataVDir + "/debugImg"
-		sourceImagesGen = []
-		if os.path.exists(path):
-			sourceImagesGen = os.listdir(path)
-			sourceImagesGen.sort()
-		print "\n\n\n XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesGen
-
-		path = self.seqRenVDir + "/AOV"
-		sourceImagesRen = []
-		if os.path.exists(path):
-			sourceImagesRen = os.listdir(path)
-			sourceImagesRen.sort()
-		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesRen
-
-		sourceImages = sourceImagesGen + sourceImagesRen
-
-		print "_warpUi.__init__(): all images loaded:", sourceImages
-
-
-		if sourceImages == []:
-			sourceImages = ["----"]
-
-		#if not "CLR" in sourceImages:
-		#	sourceImages.insert(0, "CLR")
+		sourceImages = self.getRenderedAovNames()
 
 		self.dbMenus = {}
 		col = 0
 
-		dbImgParmNames = self.getDbImgParmNames()
-		print "\n\nYYYYYYYYYYYYYY _warpUi.__init__(): dbImgParmNames", dbImgParmNames
-		for dbImgName in dbImgParmNames:
-			print "_warpUi.__init__(): \\\\\\\\\\\\ col", col, "dbImgName", dbImgName
+		aovParmNames = self.getDbImgParmNames()
+		print "\n\nYYYYYYYYYYYYYY _warpUi.__init__(): aovParmNames", aovParmNames
+		for aovName in aovParmNames:
+			print "_warpUi.__init__(): \\\\\\\\\\\\ col", col, "aovName", aovName
 			frameDbParm = Frame(self.frameImg)
-			thisButton = self.makeImgButton(dbImgName, frameDbParm)
+			thisButton = self.makeImgButton(aovName, frameDbParm)
 			thisButton.grid()
 			
 			frameDbMenus = Frame(frameDbParm)
 			frameDbMenus.grid(row=1)
 			varName = StringVar(self.frameParm)
-			# TODO: Replace with parmDic(dbImgName) -- look for other instances that need similar replacement.
-			varName.set(self.parmDic.parmDic[dbImgName]["val"])
+			# TODO: Replace with parmDic(aovName) -- look for other instances that need similar replacement.
+			varName.set(self.parmDic.parmDic[aovName]["val"])
 			imgChooser = OptionMenu(frameDbMenus, varName, *sourceImages, command=self.getImgDebugFunctions["name"][col])
+
+			#self.updateRenderedAovMenu(imgChooser, col, aovName)
 			imgChooser.grid()
 
 			varLev = StringVar(self.frameParm)
-			varLev.set(self.parmDic("lev_" + dbImgName))
+			varLev.set(self.parmDic("lev_" + aovName))
 			levs = ["lev%02d" % i for i in range(self.parmDic("nLevels"))] + ["ALL"]
 			levChooser = OptionMenu(frameDbMenus, varLev, *levs,
 				command=self.getImgDebugFunctions["lev"][col])
 			levChooser.grid(row=0,column=1)
 
 			# TODO: varName and varLev are not yet used.
-			self.dbMenus[dbImgName] = {"menu":imgChooser,
+			self.dbMenus[aovName] = {"menu":imgChooser,
 				"varName":varLev, "varLev":varLev}
 			frameDbParm.grid(row=row,column=col)
 			col += 1
@@ -1519,7 +1547,7 @@ class warpUi():
 
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
 				if newFr > fr:		
-					inc = 1 if self.parmDic("doRenCv") <= 0 else self.parmDic("frIncRen")
+					inc = 1 if self.parmDic("frIncRen") <= 0 else self.parmDic("frIncRen")
 					fr = min(fr + inc, newFr)
 					framesPassed = fr - self.frStartAnim
 					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed

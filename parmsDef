@@ -362,27 +362,11 @@ val 3320
 
 ---AOV---
 
-aov_perLev
-type bool
-val 1
-
-aov_inSurfNow
-type bool
-val 0
-
-aov_surfsAndHoles
-type bool
-val 0
-
 aov_cid
 type bool
 val 0
 
 aov_sid
-type bool
-val 0
-
-aov_inPrev
 type bool
 val 0
 

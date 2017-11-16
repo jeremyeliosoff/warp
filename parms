@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2187
+val 2871
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
@@ -89,10 +89,10 @@ dataVer
 val v000
 
 frIncRen
-val 2
+val 0
 
 useFilt
-val 1
+val 0
 
 isoLev
 val -1
@@ -271,22 +271,10 @@ val 3350
 
 ---AOV---
 
-aov_perLev
-val 1
-
-aov_inSurfNow
-val 0
-
-aov_surfsAndHoles
-val 0
-
 aov_cid
 val 0
 
 aov_sid
-val 0
-
-aov_inPrev
 val 0
 
 aov_cvSid
