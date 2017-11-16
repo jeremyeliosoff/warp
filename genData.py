@@ -389,11 +389,20 @@ def initJtGrid(img, warpUi):
 
 	return jtGrid, tholds
 
-def setAovFullImg(warpUi, name, img):
-	destDir, destPath = warpUi.getDebugDirAndImg(name, -1)
-	print "\n_setAovFullImg(): saving aov img to", destPath
-	ut.mkDirSafe(destDir)
-	pygame.image.save(img, destPath)
+def setAovFullImg(warpUi, aovName, img):
+	aovParmName = "aov_" + aovName	
+	if aovParmName in warpUi.parmDic.parmDic.keys() and warpUi.parmDic(aovParmName) == 1:
+		destDir, destPath = warpUi.getDebugDirAndImg(aovName, -1)
+		print "_setAovFullImg(): saving aov img to", destPath
+		ut.mkDirSafe(destDir)
+		pygame.image.save(img, destPath)
+	else:
+		print "_setAovFullImg(): aov doesn't exist or is not on!!", aovName, aovParmName
+		pd = warpUi.parmDic.parmDic.keys()
+		pd.sort()
+		print pd
+		print "val", warpUi.parmDic(aovParmName)
+		print "\n\nXX\n\n"
 
 def setAovXy(warpUi, name, lev, nLevels, x, y, val):
 	aovParmName = "aov_" + name	
@@ -1286,7 +1295,7 @@ def renBg(warpUi):
 	#destPath = destDir + ("/CLR.%05d.png" % fr)
 
 
-	print "\n_renClrTest():processing image...."
+	print "\n_renBg():processing image...."
 	res = srcImg.get_size()
 	srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
@@ -1300,6 +1309,7 @@ def renBg(warpUi):
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
 		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
+
 	csImg = pygame.surfarray.make_surface(csImgAr)
 	setAovFullImg(warpUi, "bg", csImg)
 
@@ -1584,7 +1594,7 @@ def genSprites(warpUi, srcImg):
 			else:
 				xfs.append((0.0,0.0)) # To keep tidPos synched.
 
-		if warpUi.parmDic("iso_cs") == "c":
+		if warpUi.parmDic("iso_cs") == "c":  #TODO rm iso_cs
 			shadedImg = None
 		else:
 			shadedImg = shadeImg(warpUi, lev, srcImg, tidImg,
@@ -1695,6 +1705,7 @@ def renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev):
 
 def renSprites(warpUi, srcImg, res, fr):
 	print "\n_renSprites(): BEGIN, fr", fr
+
 	# Initialize canvas
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
 	srcImgAr = pygame.surfarray.pixels3d(srcImg)
@@ -1724,50 +1735,37 @@ def renSprites(warpUi, srcImg, res, fr):
 	else:
 		levsToRen = range(nLevels)
 	for lev in levsToRen:
-		if False and warpUi.parmDic("iso_cs") == "c":
-			for tid in warpUi.tidToSids[lev].keys():
-				renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev)
-		else:
-			spritesThisLev = warpUi.spritesThisFr[lev]
-			print "_renSprites(): fr", fr, "lev", lev, "len(spritesThisLev)", len(spritesThisLev)
-			canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
-			canvasLev.fill((0, 0, 0))
-			for spriteDic in spritesThisLev:
-				xf = spriteDic["xf"]
-				tid = spriteDic["tid"]
-				if not warpUi.parmDic("iso_cs") == "c":
-					bbx = spriteDic["bbx"]
-					spriteImg = spriteDic["spriteImg"].copy()
-					tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
-					tidTrip = .01*spriteDic["tidTrip"] # tidTrip is int in range (0,100)
+		spritesThisLev = warpUi.spritesThisFr[lev]
+		print "_renSprites(): fr", fr, "lev", lev, "len(spritesThisLev)", len(spritesThisLev)
+		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
+		canvasLev.fill((0, 0, 0))
+		for spriteDic in spritesThisLev:
+			xf = spriteDic["xf"]
+			tid = spriteDic["tid"]
+			if not warpUi.parmDic("iso_cs") == "c":
+				bbx = spriteDic["bbx"]
+				spriteImg = spriteDic["spriteImg"].copy()
+				tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
 
+				sfFdIn = .2
+				sfFdOut = .3
+				sfA = warpUi.parmDic("sfA")
+				sfK = warpUi.parmDic("sfK")
 
-					sfFdIn = .2
-					sfFdOut = .3
-					sfA = warpUi.parmDic("sfA")
-					sfK = warpUi.parmDic("sfK")
+				levProg = warpUi.getOfsWLev(lev) % 1.0
+				surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
+				surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
+				#surfAlpha = 1 # TEMP!!!!
+				#surfAlpha *= sfA # *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, .01*tidProg)
+				pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
+					mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 
-					levProg = warpUi.getOfsWLev(lev) % 1.0
-					surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
-					surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
-					#surfAlpha = 1 # TEMP!!!!
-					#surfAlpha *= sfA # *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, .01*tidProg)
-					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
-						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
-
-					#spriteImg.fill((225, 0, 0))
-					#for dr in dir(pygame.surfarray):
-					#	print "\t", dr
-					#res = warpUi.res
-					#red = np.empty((res[0], res[1]))#, dtype=np.intc)
-					#red.fill(0)
-					#pygame.surfarray.pixels3d(spriteImg)[0][:,:] = (255, 0, 0)
-					bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-					if lev > 1:
-						canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-						canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-				#if not warpUi.parmDic("iso_cs") == "s":
-				#	renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev)
+				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+				if lev > 1:
+					canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+					canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+			#if not warpUi.parmDic("iso_cs") == "s":
+			#	renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev)
 
 		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
 		levDir,imgPath = warpUi.getRenDirAndImgPath("ren", levStr)

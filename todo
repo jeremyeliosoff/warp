@@ -1,3 +1,6 @@
+
+sudo rm /var/crash/*
+
 ffmpeg -i /home/jeremy/retimeBells/export/session.wav -i ren.ALL.avi -codec copy -shortest wSound.avi
 
 Dear Harold Klein,
@@ -5138,17 +5141,12 @@ play with pygame deformer stuff / other warp, esp bg
 
 #Dish?# Fix loop + fill system.
 
-*********** PLAN OF ATTACK *********** 
-
-
-Dust off AOV system
-	clean up/update aov toggles
-	make sure menus list proper things, eg. not "perLev", and are updated
-	fix sync of AOV ui + parms -- make persistent when restart
+#Dish# Dust off AOV system
+	#Still can't make dynamic menus, mind you.....#
+	#Dissssh..??# clean up/update aov toggles
+	#Dissssh..??# make sure menus list proper things, eg. not "perLev", and are updated
+	#Dissssh..??# fix sync of AOV ui + parms -- make persistent when restart
 	#Dish# CLR also outputs other AOVs eg. ripple.
-
-Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
-	frToLookup += k * progToNextLev
 
 #Dish# Refine ripple/transition to next breath - should depend on :
 #Dish# 	(done) dist from pixel to imgCent
@@ -5159,19 +5157,34 @@ Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 
 
 
 
+*********** PLAN OF ATTACK *********** 
+
+AOV: Add _pl (per level)
+Reimplement "3-4" capability in isoLev.
+BEER
+Pick nice clrs
+Music
+
+Fix up Temp Big D:
+	Access Passport
+	Render?  Try different sizes...
+
+Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
+	frToLookup += k * progToNextLev
+
+
 Refine RGB:
 	Incl some kind of thumbnail in clr selecting UI?
 	Somehow, the first ripple should transition from regular rgb to first cSpace
 	Maybe explicitly choose progressively trippy colours, instead of 
+	Black point?
 
 Do something about lower levs:
 	if used, make transparent to let bg in
 	if not, don't render
 
-Reimplement "3-4" capability in isoLev.
 rip goes from lightest to darkest w/in sid (we're trying this with progToNextLev, soso)
 Do thicker edge detection in addition to/instead of above.
 These will be used to make the "flashing lightbulbs", that go off + on in alternatong groups like a marquee;  sids qualifying as lightbulbs are of certain size and sx/sy ~ 1. 
 "Waves of sheen" passing over sids: white added to/replaces clr.
 
-	

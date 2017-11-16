@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2871
+val 3338
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
@@ -271,6 +271,15 @@ val 3350
 
 ---AOV---
 
+aov_sidPost
+val 1
+
+aov_rip
+val 1
+
+aov_bg
+val 1
+
 aov_cid
 val 0
 
@@ -279,9 +288,6 @@ val 0
 
 aov_cvSid
 val 0
-
-aov_sidPost
-val 1
 
 aov_cidPost
 val 0

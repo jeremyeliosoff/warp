@@ -348,6 +348,8 @@ class warpUi():
 
 	def shiftReturnCmd(self):
 		self.updateDebugImg()
+		genData.renBg(self)
+		self.refreshButtonImages()
 
 	def returnCmd(self):
 		self.frameMaster.focus_set()

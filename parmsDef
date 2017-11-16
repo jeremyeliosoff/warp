@@ -362,6 +362,18 @@ val 3320
 
 ---AOV---
 
+aov_sidPost
+type bool
+val 0
+
+aov_rip
+type bool
+val 0
+
+aov_bg
+type bool
+val 0
+
 aov_cid
 type bool
 val 0
@@ -371,10 +383,6 @@ type bool
 val 0
 
 aov_cvSid
-type bool
-val 0
-
-aov_sidPost
 type bool
 val 0
 
