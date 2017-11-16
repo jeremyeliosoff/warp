@@ -42,6 +42,21 @@ void csFunc(float* r, float* g, float* b, float* in, float* out) {
 	vAdd(out, toAdd, out);
 }
 
+float jSmoothstep(float edge0, float edge1, float x) {
+	// Scale, bias and saturate x to 0..1 range
+	float ret = edge1;
+	if (edge1 > edge0) {
+		ret = CLAMP((x - edge0)/(edge1 - edge0), 0.0, 1.0); 
+		//Evaluate polynomial
+		ret = ret*ret*(3 - 2*ret);
+	}
+	return ret;
+}
+
+float smoothpulse(float edge0, float edge1, float edge2, float edge3, float x) {
+	return jSmoothstep(edge0, edge1, x) - jSmoothstep(edge2, edge3, x);
+}
+
 float dist(float x0, float y0, float x1, float y1) {
 	float dx = x1-x0;
 	float dy = y1-y0;
@@ -156,12 +171,22 @@ void getCspacePvNxInOut (
 	int* exhFrames,  // __GLOBAL
 	int nBreaths,
 	float dNorm,
+	int* aovRip,
 	int* cShadedI
 
 ) {
 	int pvInhFr, nxInhFr, pvExhFr, nxExhFr;
-	float inhProg = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
-	float exhProg = getBreathFramesAndProg (fr, exhFrames, nBreaths, &pvExhFr, &nxExhFr);
+	float inhProgForRipple = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
+	int ripFfw = 200;
+	float ripSpeed = 30;
+	float ripTime = 1.0/ripSpeed;
+	float ripEdge = .003;
+	float ofs = ripTime*dNorm;
+	float edge = ofs + ripEdge * (1-ripTime);
+	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
+	int frWOfs = fr + ripFfw * inRip;
+	float inhProg = getBreathFramesAndProg (frWOfs, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
+	float exhProg = getBreathFramesAndProg (frWOfs, exhFrames, nBreaths, &pvExhFr, &nxExhFr);
 
 	// Load all the cInOut parm colours 4 uber-arrays for: inPv, inNx, exPv, exNx
 	float pvCInRGB[9];
@@ -196,8 +221,15 @@ void getCspacePvNxInOut (
 
 	float cShadedF[3];	
 	mix3F(mixedIn, mixedOut, dNorm, cShadedF);
+	//mix3F(mixedIn, mixedOut, 0, cShadedF); // TEMP
 
 	cShadedI[0] = (int) MIN(255.0f, cShadedF[0]*255.0);
 	cShadedI[1] = (int) MIN(255.0f, cShadedF[1]*255.0);
 	cShadedI[2] = (int) MIN(255.0f, cShadedF[2]*255.0);
+	
+	if (aovRip != 0) {
+		aovRip[0] = 255 * inRip;
+		aovRip[1] = 255 * (1-inRip);
+		aovRip[2] = 0;
+	}
 }

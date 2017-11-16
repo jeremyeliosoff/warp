@@ -5130,18 +5130,33 @@ play with pygame deformer stuff / other warp, esp bg
 #	which replaces ".... // __GLOBAL" with "__global ...."
 #	included in debug image
 
+#Dish# Try again ripple:
+#Dish# 	[beforehand, calc prog to be later at edge]
+#Dish# 	frWOfs = fr + frOfs * smoothpulse(0, .2, .2, 1, prog)
+
 *********** PLAN OF ATTACK *********** 
 
 Dust off AOV system
-	Output CLR img as AOV (with toggle)
-	CLR also outputs other AOVs eg. ripple.
-
-Try again ripple:
-	[beforehand, calc prog to be later at edge]
-	frWOfs = fr + frOfs * smoothpulse(0, .2, .2, 1, prog)
-
+	clean up/update aov toggles
+	fix sync of AOV ui + parms -- make persistent when restart
+	#Dish# CLR also outputs other AOVs eg. ripple.
 
 Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
 	frToLookup += k * progToNextLev
 
-Incl some kind of thumbnail in clr selecting UI
+Refine ripple/transition to next breath - should depend on :
+	(done) dist from pixel to imgCent
+	(just for shading, not bg) dist from sidCent to imgCent
+	(just for shading, not bg) lev
+	(just for shading, not bg) progToNextLev
+
+
+when frIncRen > 1, loop back + set frIncRen = 0 (fill mode)
+
+Refine RGB:
+	Incl some kind of thumbnail in clr selecting UI?
+	Somehow, the first ripple should transition from regular rgb to first cSpace
+	Maybe explicitly choose progressively trippy colours, instead of 
+
+Reimplement "3-4" capability in isoLev.
+

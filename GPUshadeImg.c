@@ -50,16 +50,6 @@ float jRand(int seed) {
 	return ((seed + 11)*(seed + 1321) % 1000)/1000.0;
 }
 
-float ssmoothstep(float edge0, float edge1, float x) {
-	// Scale, bias and saturate x to 0..1 range
-	float ret = edge1;
-	if (edge1 > edge0) {
-		ret = clamp((x - edge0)/(edge1 - edge0), 0.0, 1.0); 
-		//Evaluate polynomial
-		ret = ret*ret*(3 - 2*ret);
-	}
-	return ret;
-}
 
 void getImageCell(int x, int y, int xres, int yres,
   __global int* img,
@@ -231,11 +221,11 @@ void filterImg  (int x, int y, int xres, int yres,
 __kernel void krShadeImg(
 			int xres,
 			int yres,
-			int levPct,
+			int lev,
+			float levPct,
 			int tripGlobPct,
 			float clrKBig,
 			int fr,
-			//__global int* breaths,
 			__global int* inhFrames,
 			__global int* exhFrames,
 			__global float* cInOutVals,
@@ -246,7 +236,6 @@ __kernel void krShadeImg(
 			__global int* bbxs,
 			__global float* xfs,
 			__global int* tidTrips,
-			//__global int* cents,
 			__global uchar* shadedImg)
 {
 	unsigned int x = get_global_id(0);
@@ -260,8 +249,8 @@ __kernel void krShadeImg(
 		tidPosGridThisLev, bordNxNyPxPy);
 
 	int sz[2];
-	int cent[2];
-	getBbxInfo(tidPos, bbxs, sz, cent);
+	int sidCent[2];
+	getBbxInfo(tidPos, bbxs, sz, sidCent);
 
 	// Get src colour from image.
 	int srcClr[3];
@@ -294,8 +283,8 @@ __kernel void krShadeImg(
 	mix3I(srcClr, trippedClr, clrProg, outClr);
 
 	// Darken lower level when tripping.
-	float levPctF = levPct*.01;
-	float levPctK = 1.0-(1.0-levPctF)*(1.0-levPctF);
+	//float levPctF = levPct*.01;
+	float levPctK = 1.0-(1.0-levPct)*(1.0-levPct);
 	float levKmix = .2;
 	float kLevPct = mix(1, levPctK, tripGlobF*levKmix);
 
@@ -312,12 +301,14 @@ __kernel void krShadeImg(
 	int cx = xres/2;	
 	int cy = yres/2;	
 	float dFromCent = g_dist(x, y, cx, cy);
-	float dNorm = dFromCent/cx;
+	//float dNorm = dFromCent/cx;
+	float cornerToCent = g_dist(0, 0, cx, cy);
+	float dNorm = dFromCent/cornerToCent;
 	dNorm = (float)smoothstep(0.0, 1.0, dNorm);
 	float vignK = 1-dNorm;
 	vignK = 1-(1-vignK)*(1-vignK);
 	float vignKmult = mix(1, vignK, tripGlobF);
-	vignKmult = mix(vignKmult, 1, levPctF);
+	vignKmult = mix(vignKmult, 1, levPct);
 
 	// Apply darkenings.
 	mult3sc(outClr, kLevPct*tripKmult*vignKmult*bigKmult, outClr);
@@ -333,6 +324,11 @@ __kernel void krShadeImg(
 
 	int cShadedI[3];
 
+	float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
+	float hiLevSooner = 2;
+	float outerSooner = 0;
+	fr += hiLevSooner * lev + (1-sidFarFromCent) * outerSooner;
+
 	getCspacePvNxInOut (
 		fr,
 		outClrF, 
@@ -341,6 +337,7 @@ __kernel void krShadeImg(
 		exhFrames,
 		nBreaths,
 		dNorm,
+		0,
 		cShadedI
 		);
 

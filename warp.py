@@ -17,6 +17,7 @@ class warpUi():
 	def rebuildUI(self):
 		print "\n_rebuildUI(): Reloading........"
 		self.saveParmDic()
+		ut.exeCmd("python setupFragmod.py build; sudo python setupFragmod.py install")
 		ut.exeCmd("killall warp.py; /home/jeremy/dev/warp/warp.py")
 		
 	def putParmDicInUI(self):
@@ -556,7 +557,9 @@ class warpUi():
 		print "\n_updateCurImg(): PATH TO RENDER:", renImgPath
 		print "\n_updateCurImg(): self.fillMode:", self.fillMode
 		skip = False
-		if self.fillMode:
+		if self.fillMode == "onlyBg":
+			skip = True
+		elif self.fillMode == "fill":
 			print "_updateCurImg():\tChecking existence of renderered image...",
 			if os.path.exists(renImgPath):
 				print "Exists.  Skipping render..."
@@ -565,7 +568,7 @@ class warpUi():
 				print "Doesn't exist, rendering..."
 
 
-		print "\n_updateCurImg(): self.record", self.record
+		print "\n_updateCurImg(): self.record", self.record, "; skip", skip
 
 		ut.safeRemove(genData.outFile)
 		genData.pOut("\nPRE genData")
@@ -869,12 +872,13 @@ class warpUi():
 		print
 
 	def getDebugDirAndImg(self, AOVname, lev):
-		renAovs = ["bg"]
+		renAovs = ["bg", "rip"]
 		fr = self.parmDic("fr")
 		if AOVname in renAovs:
 			levDir = self.seqRenVDir + "/AOV/" + AOVname
 			imgPath = levDir + ("/" + AOVname + (".%05d" + self.seqImgExt) % fr)
 		else:
+			print "\n\nXXXXXUUUUUUUUUUUUU AOVname:", AOVname
 			levDir = self.seqDataVDir + "/debugImg/" + AOVname + "/" + lev # TODO: v00
 			imgPath = levDir + ("/" + AOVname + "." + lev + (".%05d" + self.seqImgExt) % fr)
 		return levDir,imgPath
@@ -1085,6 +1089,13 @@ class warpUi():
 			for ss in i[1]["val"].split(","):
 				self.cInOutVals.append(float(ss))
 
+	def setFillMode(self):
+		self.fillMode = "overwrite"
+		if self.parmDic("frIncRen") == 0:
+			self.fillMode = "fill"
+		elif self.parmDic("frIncRen") < 0:
+			self.fillMode = "onlyBg"
+
 
 	def __init__(self, resumeMode=False):
 		print "_warpUi.__init__(): resumeMode =", resumeMode
@@ -1166,7 +1177,8 @@ class warpUi():
 		self.chkVars = {}
 		self.displayNaturalRes = 0
 		self.genRen1fr = 0
-		self.fillMode = self.parmDic("frIncRen") < 1
+
+		self.setFillMode()
 
 		if resumeMode:
 			self.setupResumeMode()
@@ -1176,6 +1188,7 @@ class warpUi():
 		self.root.bind('<Return>', lambda e: self.returnCmd())
 		self.root.bind('<Control-Return>', lambda e: self.ctlReturnCmd())
 		self.root.bind('<Shift-Return>', lambda e: self.shiftReturnCmd())
+		self.root.bind('<Control-Shift-Return>', lambda e: self.rebuildUI())
 		#self.root.bind('<KeyPress>', self.keyPress)
 		for kk in ["Left", "Right", "Escape", "Control-Left", "Control-Right", "space", "c", "r", "x", "g"]:
 			self.root.bind('<' + kk + '>', self.execHotkey)
@@ -1503,13 +1516,7 @@ class warpUi():
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
 				if newFr > fr:		
 					inc = 1
-					self.fillMode = False
-					if self.parmDic("doRenCv") == 1:
-						frIncRen = self.parmDic("frIncRen")
-						if frIncRen > 0:
-							inc = frIncRen
-						else:
-							self.fillMode = True
+					self.setFillMode()
 					fr = min(fr + inc, newFr)
 					framesPassed = fr - self.frStartAnim
 					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed

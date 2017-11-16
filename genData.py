@@ -1309,6 +1309,7 @@ def renBg(warpUi):
 	res = srcImg.get_size()
 	srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
+	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
 	cIn0G = np.array(warpUi.parmDic("cIn0G"), dtype=np.float32)
 	cIn0B = np.array(warpUi.parmDic("cIn0B"), dtype=np.float32)
@@ -1320,14 +1321,22 @@ def renBg(warpUi):
 	#print "cIn0G", cIn0G
 	#print "cIn0B", cIn0B, "\n"
 	#print "\n_renClrTest(): ************** reloading fragmod...."
-	print "\n\n\n********** warpUi.cInOutVals, len", len(warpUi.cInOutVals)
-	print warpUi.cInOutVals
+	#print "\n\n\n********** warpUi.cInOutVals, len", len(warpUi.cInOutVals)
+	#print warpUi.cInOutVals
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
-	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
+		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
 	csImg = pygame.surfarray.make_surface(csImgAr)
-	print "\n_renClrTest(): saving srcImg to", destPath
+	print "\n_renBg(): saving srcImg to", destPath
 	pygame.image.save(csImg, destPath)
-	print "\n_renClrTest(): END\n"
+
+	aovRipImg = pygame.surfarray.make_surface(aovRipAr)
+	destDir, destPath = warpUi.getDebugDirAndImg("rip", -1)
+	print "\n_renBg(): saving aovRipImg to", destPath
+	ut.mkDirSafe(destDir)
+	pygame.image.save(aovRipImg, destPath)
+
+	print "\n_renBg(): END\n"
 
 def shadeBg(warpUi, srcImg):
 	kernel = """
@@ -1475,21 +1484,20 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 	
 	ofs = warpUi.getOfsWLev(lev) % 1.0
-	levPct = int(100*(lev+ofs)/warpUi.parmDic("nLevels")) #int((warpUi.getOfsWLev(lev)*100.0)%100)
+	levPct = (lev+ofs)/warpUi.parmDic("nLevels") #int((warpUi.getOfsWLev(lev)*100.0)%100)
 	tripGlobPct = int(tripFrK*100)
 
 	bld = cl.Program(warpUi.cntxt, kernel).build()
 	print "_shadeImg(): lev", lev, "levPct", levPct
 	launch = bld.krShadeImg(
 			warpUi.queue,
-			#srcImgAr.shape,
 			warpUi.res,
 			None,
 			np.int32(warpUi.res[0]),
 			np.int32(warpUi.res[1]),
-			np.int32(levPct),
+			np.int32(lev),
+			np.float32(levPct),
 			np.int32(tripGlobPct),
-			#np.int32(warpUi.parmDic("useFilt")),
 			np.float32(warpUi.parmDic("clrKBig")),
 			np.int32(warpUi.parmDic("fr")),
 			inhFrames_buf,
@@ -1502,7 +1510,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			bbxs_buf,
 			xfs_buf,
 			tidTrips_buf,
-			#cents_buf,
 			shadedImg_buf)
 	launch.wait()
 	
@@ -1715,6 +1722,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
 	srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
+	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
 	cIn0G = np.array(warpUi.parmDic("cIn0G"), dtype=np.float32)
 	cIn0B = np.array(warpUi.parmDic("cIn0B"), dtype=np.float32)
@@ -1723,7 +1731,8 @@ def renSprites(warpUi, srcImg, res, fr):
 	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
 
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
-	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
+		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
 	canvas = pygame.surfarray.make_surface(csImgAr)
 
 	#canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
