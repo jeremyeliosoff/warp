@@ -555,6 +555,14 @@ class warpUi():
 		dud, renImgPath = self.getRenDirAndImgPath("ren", "ALL")
 		self.images["ren"]["path"] = renImgPath
 		print "\n_updateCurImg(): PATH TO RENDER:", renImgPath
+
+		# Set fill mode.
+		self.fillMode = "overwrite"
+		if self.parmDic("frIncRen") == 0:
+			self.fillMode = "fill"
+		elif self.parmDic("frIncRen") < 0:
+			self.fillMode = "onlyBg"
+
 		print "\n_updateCurImg(): self.fillMode:", self.fillMode
 		skip = False
 		if self.fillMode == "onlyBg":
@@ -1089,14 +1097,6 @@ class warpUi():
 			for ss in i[1]["val"].split(","):
 				self.cInOutVals.append(float(ss))
 
-	def setFillMode(self):
-		self.fillMode = "overwrite"
-		if self.parmDic("frIncRen") == 0:
-			self.fillMode = "fill"
-		elif self.parmDic("frIncRen") < 0:
-			self.fillMode = "onlyBg"
-
-
 	def __init__(self, resumeMode=False):
 		print "_warpUi.__init__(): resumeMode =", resumeMode
 
@@ -1177,8 +1177,6 @@ class warpUi():
 		self.chkVars = {}
 		self.displayNaturalRes = 0
 		self.genRen1fr = 0
-
-		self.setFillMode()
 
 		if resumeMode:
 			self.setupResumeMode()
@@ -1516,7 +1514,6 @@ class warpUi():
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
 				if newFr > fr:		
 					inc = 1
-					self.setFillMode()
 					fr = min(fr + inc, newFr)
 					framesPassed = fr - self.frStartAnim
 					secPerFr = 0 if framesPassed == 0 else secondsPassed/framesPassed
@@ -1559,7 +1556,9 @@ class warpUi():
 							# Global varable needed for final stats
 							statsDirDest = self.seqRenVDir 
 
-							if self.parmDic("doRenCv") == 0:
+							doRenCv = self.parmDic("doRenCv")
+							frIncRen = self.parmDic("frIncRen")
+							if doRenCv == 0 and frIncRen == 0:
 								self.setVal("fr", frEnd)
 								# Back up tidToSids for final frame, if not already done.
 								if not frEnd % self.parmDic("backupDataEvery") == 0:
@@ -1567,9 +1566,11 @@ class warpUi():
 									genData.saveTidToSid(self)
 
 							# TODO: rename - for now doRenCv=currently doing ren; doRen=you should do ren
-							if self.parmDic("doRenCv") == 0 and self.parmDic("doRen") == 1:
-								# You're set to do render, but doRenCv = 0 (not yet done).
-								# Restart and do renCv
+							if (doRenCv==0 and self.parmDic("doRen")==1) or \
+								(doRenCv==1 and self.parmDic("doRen")==1
+									and (not frIncRen == 0)):
+								# You're set to do render, but doRenCv=0 (not yet done),
+								# or you haven't filled the seq yet (frIncRen != 0)
 
 								# Write stats
 								secondsPassed = time.time() - self.timeStart
@@ -1577,10 +1578,14 @@ class warpUi():
 								ut.writeTime(self, "totalTimeOfAnim", hmsPassed)
 
 								print "_warpUi.__init__(): Turning on doRenCv"
-								self.setVal("doRenCv", 1)
+								if doRenCv==0: # ren not done; set doRenCv on
+									self.setVal("doRenCv", 1)
+								else: # frIncRen > 1; set to 0 for fill mode.
+									self.setVal("frIncRen", 0)
 								self.chk_doRenCv_var.set(1)
 								self.setRenCvUIClr()
 								print "_warpUi.__init__(): Returning to", self.parmDic("frStart")
+								# Restart
 								fr = self.parmDic("frStart")
 							elif self.parmDic("image") in self.renQLs and not self.parmDic("image") == self.renQLs[-1]:
 								# If recording and in renQ but not last,

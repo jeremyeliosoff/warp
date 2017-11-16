@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2273
+val 2259
 
 fps
 val 52
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v025ffwHi2
+val v029hi2out10brite0
 
 frStart
 val 2255
 
 frEnd
-val 2304
+val 2280
 
 doGen
 val 1
@@ -89,7 +89,7 @@ dataVer
 val v000
 
 frIncRen
-val 1
+val 0
 
 useFilt
 val 1
@@ -157,13 +157,13 @@ cIn0B
 val 1,0,0
 
 cOut0R
-val 0,0,1
+val 1,0,0
 
 cOut0G
-val 0,0,1
+val 1,0,0
 
 cOut0B
-val 0,0,1
+val 1,0,0
 
 cIn1R
 val 0,1,0
@@ -175,13 +175,13 @@ cIn1B
 val 0,1,0
 
 cOut1R
-val 1,0,0
+val 0,1,0
 
 cOut1G
-val 1,0,0
+val 0,1,0
 
 cOut1B
-val 1,0,0
+val 0,1,0
 
 cIn2R
 val 0,0,1
@@ -193,13 +193,13 @@ cIn2B
 val 0,0,1
 
 cOut2R
-val 0,1,0
+val 0,0,1
 
 cOut2G
-val 0,1,0
+val 0,0,1
 
 cOut2B
-val 0,1,0
+val 0,0,1
 
 cIn3R
 val 1,0,0
@@ -211,13 +211,13 @@ cIn3B
 val 1,0,0
 
 cOut3R
-val 0,0,1
+val 1,0,0
 
 cOut3G
-val 0,0,1
+val 1,0,0
 
 cOut3B
-val 0,0,1
+val 1,0,0
 
 
 

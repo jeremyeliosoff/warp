@@ -5134,6 +5134,8 @@ play with pygame deformer stuff / other warp, esp bg
 #Dish# 	[beforehand, calc prog to be later at edge]
 #Dish# 	frWOfs = fr + frOfs * smoothpulse(0, .2, .2, 1, prog)
 
+#D# when frIncRen > 1, loop back + set frIncRen = 0 (fill mode)
+
 *********** PLAN OF ATTACK *********** 
 
 Dust off AOV system
@@ -5144,14 +5146,14 @@ Dust off AOV system
 Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
 	frToLookup += k * progToNextLev
 
-Refine ripple/transition to next breath - should depend on :
-	(done) dist from pixel to imgCent
-	(just for shading, not bg) dist from sidCent to imgCent
-	(just for shading, not bg) lev
+#Dish# Refine ripple/transition to next breath - should depend on :
+#Dish# 	(done) dist from pixel to imgCent
+#Dish# 	(just for shading, not bg) dist from sidCent to imgCent
+	^randomize a bit.
+#Dish# 	(just for shading, not bg) lev
 	(just for shading, not bg) progToNextLev
 
 
-when frIncRen > 1, loop back + set frIncRen = 0 (fill mode)
 
 Refine RGB:
 	Incl some kind of thumbnail in clr selecting UI?
