@@ -389,20 +389,17 @@ def initJtGrid(img, warpUi):
 
 	return jtGrid, tholds
 
-def setAovFullImg(warpUi, aovName, img):
+def setAovFullImg(warpUi, aovName, img, lev, sfx=""):
 	aovParmName = "aov_" + aovName	
 	if aovParmName in warpUi.parmDic.parmDic.keys() and warpUi.parmDic(aovParmName) == 1:
-		destDir, destPath = warpUi.getDebugDirAndImg(aovName, -1)
-		print "_setAovFullImg(): saving aov img to", destPath
+		destDir, destPath = warpUi.getDebugDirAndImg(aovName, lev, sfx=sfx)
 		ut.mkDirSafe(destDir)
 		pygame.image.save(img, destPath)
 	else:
-		print "_setAovFullImg(): aov doesn't exist or is not on!!", aovName, aovParmName
+		print "_setAovFullImg(): aov doesn't exist or is not on!!", aovName, aovParmName,
 		pd = warpUi.parmDic.parmDic.keys()
 		pd.sort()
 		print pd
-		print "val", warpUi.parmDic(aovParmName)
-		print "\n\nXX\n\n"
 
 def setAovXy(warpUi, name, lev, nLevels, x, y, val):
 	aovParmName = "aov_" + name	
@@ -881,11 +878,6 @@ def growCurves(warpUi, jtGrid, frameDir):
 				warpUi.tidToSids[lev][tid]["level"] = firstCurve.level
 
 	ut.timerStop(warpUi, "growC_doMerge")
-	
-	#for lev in range(warpUi.parmDic("nLevels")):
-	#	dr, imgPath = warpUi.getDebugDirAndImg("preMrgInSurfGrid", "lev%02d" % lev)
-	#	ut.mkDirSafe(dr)
-	#	ut.intGridToImg(inSurfGrid[lev], imgPath)
 
 
 	print "_growCurves(): updating sids to merged..."
@@ -1059,18 +1051,6 @@ def genDataWrapper(warpUi):
 		print "_genData(): BACKING UP tidToSids :"
 		saveTidToSid(warpUi)
 
-	# TEMP - aovs to compare prev + cur inSurfGrids.
-	#for lev in range(warpUi.parmDic("nLevels")):
-	#	if not warpUi.inSurfGridPrev == None:
-	#		dr, imgPath = warpUi.getDebugDirAndImg("inSurfGridPrev", "lev%02d" % lev)
-	#		ut.mkDirSafe(dr)
-	#		ut.intGridToImg(warpUi.inSurfGridPrev[lev], imgPath)
-
-	#	dr, imgPath = warpUi.getDebugDirAndImg("inSurfGrid", "lev%02d" % lev)
-	#	ut.mkDirSafe(dr)
-	#	ut.intGridToImg(inSurfGrid[lev], imgPath)
-
-
 	warpUi.inSurfGridPrev = inSurfGrid[:]
 
 	# Record stats
@@ -1222,19 +1202,15 @@ mult255V = np.vectorize(mult255)
 
 
 
-def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs):
+def makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs):
 	tid = tids[tidPos]
 	if "bbx" in tidToSidsThisLev[tid]:
-		tidProg = tidProgs[tidPos]
-		tidTrip = tidTrips[tidPos]
-		xf = xfs[tidPos]
-		bbx = tidToSidsThisLev[tid]["bbx"]
-		if warpUi.parmDic("iso_cs") == "c":
-			# Only render curves, no sprite
-			spriteImg = None
-		else:
-		#regen = True
-		#if regen:
+		spriteNamesAndImgs = []
+		for srcName, srcImg in shadedNamesAndImgs:
+			tidProg = tidProgs[tidPos]
+			tidTrip = tidTrips[tidPos]
+			xf = xfs[tidPos]
+			bbx = tidToSidsThisLev[tid]["bbx"]
 			sz=(bbx[1][0]-bbx[0][0], bbx[1][1]-bbx[0][1])
 
 			# +1 totally trial + error. ***********???????? maybe not needed?
@@ -1268,20 +1244,33 @@ def makeSpriteDic(warpUi, lev, srcImg, tidImg, tids, tidPos, tidToSidsThisLev, t
 			# Copy colours from src.
 			pygame.surfarray.pixels3d(spriteImg)[:,:] = \
 				pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
+			spriteNamesAndImgs.append((srcName, spriteImg))
 
 
-		return {"spriteImg":spriteImg, "bbx":bbx, "tid":tid,
+		return {"spriteNamesAndImgs":spriteNamesAndImgs, "bbx":bbx, "tid":tid,
 			"tidProg":tidProg, "tidTrip":tidTrip, "xf":xf}
 	else:
 		return None
 
-def makeBuffer(warpUi, inputList, dtype=None):
+
+def makeBufferInput(warpUi, inputList, dtype=None):
 	if dtype == None:
 		ar = np.array(inputList)
 	else:
 		ar = np.array(inputList, dtype=dtype)
 	return cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
+
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=ar)
+
+
+def makeBufferOutput(warpUi, shape, dtype=None):
+	if dtype:
+		img = np.zeros(shape, dtype=dtype)
+	else:
+		img = np.zeros(shape, dtype=np.intc)
+	buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
+		cl.mem_flags.COPY_HOST_PTR,hostbuf=img)
+	return img, buf
 	
 	
 def renBg(warpUi):
@@ -1311,10 +1300,10 @@ def renBg(warpUi):
 		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
 
 	csImg = pygame.surfarray.make_surface(csImgAr)
-	setAovFullImg(warpUi, "bg", csImg)
+	setAovFullImg(warpUi, "bg", csImg, -1, sfx="_ctest")
 
 	aovRipImg = pygame.surfarray.make_surface(aovRipAr)
-	setAovFullImg(warpUi, "rip", aovRipImg)
+	setAovFullImg(warpUi, "rip", aovRipImg, -1, sfx="_ctest")
 
 	# Refresh menus.
 	# col = 0
@@ -1383,7 +1372,7 @@ __kernel void krShadeBg(
 
 """
 	srcImgLs = list(pygame.surfarray.array3d(srcImg))
-	srcImgAr_buf = makeBuffer(warpUi, srcImgLs)
+	srcImgAr_buf = makeBufferInput(warpUi, srcImgLs)
 	# Outputs
 	shadedImg = np.zeros((len(srcImgLs), len(srcImgLs[0]), len(srcImgLs[0][0])), dtype=np.uint8)
 	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
@@ -1411,15 +1400,15 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 	# Inputs
 		
-	srcImgAr_buf = makeBuffer(warpUi, list(pygame.surfarray.array3d(srcImg)), dtype=np.intc)
-	tidImgAr_buf = makeBuffer(warpUi, tidImgLs, dtype=np.intc)
-	tidPosGridThisLev_buf = makeBuffer(warpUi, tidPosGridThisLev, dtype=np.intc)
-	bbxs_buf = makeBuffer(warpUi, bbxs, dtype=np.intc)
-	tids_buf = makeBuffer(warpUi, tids, dtype=np.intc)
-	tidTrips_buf = makeBuffer(warpUi, tidTrips, dtype=np.intc)
-	xfs_buf = makeBuffer(warpUi, xfs, dtype=np.float32)
+	srcImgAr_buf = makeBufferInput(warpUi, list(pygame.surfarray.array3d(srcImg)), dtype=np.intc)
+	tidImgAr_buf = makeBufferInput(warpUi, tidImgLs, dtype=np.intc)
+	tidPosGridThisLev_buf = makeBufferInput(warpUi, tidPosGridThisLev, dtype=np.intc)
+	bbxs_buf = makeBufferInput(warpUi, bbxs, dtype=np.intc)
+	tids_buf = makeBufferInput(warpUi, tids, dtype=np.intc)
+	tidTrips_buf = makeBufferInput(warpUi, tidTrips, dtype=np.intc)
+	xfs_buf = makeBufferInput(warpUi, xfs, dtype=np.float32)
 
-	cInOutVals_buf = makeBuffer(warpUi, warpUi.cInOutVals, dtype=np.float32)
+	cInOutVals_buf = makeBufferInput(warpUi, warpUi.cInOutVals, dtype=np.float32)
 
 
 	# Breaths.
@@ -1437,13 +1426,17 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	dud,inhFrames = zip(*inhParms)
 	dud,exhFrames = zip(*exhParms)
 
-	inhFrames_buf = makeBuffer(warpUi, inhFrames, dtype=np.intc)
-	exhFrames_buf = makeBuffer(warpUi, exhFrames, dtype=np.intc)
+	inhFrames_buf = makeBufferInput(warpUi, inhFrames, dtype=np.intc)
+	exhFrames_buf = makeBufferInput(warpUi, exhFrames, dtype=np.intc)
 
 	# Outputs
-	shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
-	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
+	#shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
+	#shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
+	#	cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
+	shape = (len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0]))
+	shadedImg, shadedImg_buf = makeBufferOutput(warpUi, shape)
+	aovRipImg, aovRipImg_buf = makeBufferOutput(warpUi, shape)
+
 
 	kernelPath = ut.projDir + "/GPUshadeImg.c"
 	kernel = ""
@@ -1497,14 +1490,20 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			bbxs_buf,
 			xfs_buf,
 			tidTrips_buf,
+			aovRipImg_buf,
 			shadedImg_buf)
 	launch.wait()
 	
 
 	cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
+	cl.enqueue_read_buffer(warpUi.queue, aovRipImg_buf, aovRipImg).wait()
 	#print "\n-------------shadedImg[10][10]:", shadedImg[10][10], "\n"
 		
-	return pygame.surfarray.make_surface(shadedImg)
+	#return pygame.surfarray.make_surface(shadedImg)
+	return [
+		("ren", pygame.surfarray.make_surface(shadedImg)), 
+		("rip", pygame.surfarray.make_surface(aovRipImg))]
+
 
 def genSprites(warpUi, srcImg): 
 	spritesThisFr = []
@@ -1594,15 +1593,12 @@ def genSprites(warpUi, srcImg):
 			else:
 				xfs.append((0.0,0.0)) # To keep tidPos synched.
 
-		if warpUi.parmDic("iso_cs") == "c":  #TODO rm iso_cs
-			shadedImg = None
-		else:
-			shadedImg = shadeImg(warpUi, lev, srcImg, tidImg,
-				tidPosGridThisLev, tids, bbxs, cents, xfs, tidTrips, tripFrK)
+		shadedNamesAndImgs = shadeImg(warpUi, lev, srcImg, tidImg,
+			tidPosGridThisLev, tids, bbxs, cents, xfs, tidTrips, tripFrK)
 
 		spritesThisLev = []
 		for tidPos in range(len(tids)):
-			spriteDic = makeSpriteDic(warpUi, lev, shadedImg, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs)
+			spriteDic = makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs)
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
@@ -1721,12 +1717,9 @@ def renSprites(warpUi, srcImg, res, fr):
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
 		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
-	canvas = pygame.surfarray.make_surface(csImgAr)
 
-	#canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
-	#canvas.fill((0, 0, 0))
-	#canvas = shadeBg(warpUi, srcImg)
-	#for spritesThisLev in spritesThisFr:
+	
+	# Find first non empty level, count outputs.
 	nLevels = warpUi.parmDic("nLevels")
 
 	if warpUi.parmDic("isoLev") > -1:
@@ -1734,48 +1727,81 @@ def renSprites(warpUi, srcImg, res, fr):
 		print "\n_renSprites(): ISOLATING LEVEL", levsToRen[0]
 	else:
 		levsToRen = range(nLevels)
+
+	nOutputs = len(warpUi.spritesThisFr[levsToRen[0]][0]['spriteNamesAndImgs'])
+
+
+	canvases = []
+	for dud in range(nOutputs):
+		nextCanvas = pygame.surfarray.make_surface(csImgAr)
+		if dud > 0:
+			nextCanvas.fill((0, 0, 0))
+		canvases.append(nextCanvas)
+
 	for lev in levsToRen:
 		spritesThisLev = warpUi.spritesThisFr[lev]
 		print "_renSprites(): fr", fr, "lev", lev, "len(spritesThisLev)", len(spritesThisLev)
-		canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
-		canvasLev.fill((0, 0, 0))
+		canvasLevs = []
+		for dud in range(nOutputs):
+			canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
+			canvasLev.fill((0, 0, 0))
+			canvasLevs.append(canvasLev)
+
 		for spriteDic in spritesThisLev:
 			xf = spriteDic["xf"]
 			tid = spriteDic["tid"]
-			if not warpUi.parmDic("iso_cs") == "c":
-				bbx = spriteDic["bbx"]
-				spriteImg = spriteDic["spriteImg"].copy()
-				tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
+			bbx = spriteDic["bbx"]
 
-				sfFdIn = .2
-				sfFdOut = .3
-				sfA = warpUi.parmDic("sfA")
-				sfK = warpUi.parmDic("sfK")
+			# Start aov stuff.
+			i = -1
+			names = []
+			for spriteNameAndImg in spriteDic["spriteNamesAndImgs"]:
+				i += 1
+				spriteName = spriteNameAndImg[0]
+				#print "spriteName", spriteName, "i", i
+				if not spriteName in names:
+					names.append(spriteName)
+				if not (spriteName == "ren" or ("aov_" + spriteName) in warpUi.aovNames):
+					continue
+				spriteImg = spriteNameAndImg[1].copy()
+				if i == 0:
+					tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
 
-				levProg = warpUi.getOfsWLev(lev) % 1.0
-				surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
-				surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
-				#surfAlpha = 1 # TEMP!!!!
-				#surfAlpha *= sfA # *  ut.smoothpulse(0, sfFdIn, 1-sfFdOut, 1, .01*tidProg)
-				pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
-					mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
+					sfFdIn = .2
+					sfFdOut = .3
+					levProg = warpUi.getOfsWLev(lev) % 1.0
+					surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
+					surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
+					#surfAlpha = 1 # TEMP!!!!
+					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
+						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 
 				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-				if lev > 1:
-					canvas.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-					canvasLev.blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-			#if not warpUi.parmDic("iso_cs") == "s":
-			#	renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev)
+				if lev > 1:  #TODO make this kosher!!!
+					canvases[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+					canvasLevs[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 
-		levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-		levDir,imgPath = warpUi.getRenDirAndImgPath("ren", levStr)
-		ut.mkDirSafe(levDir)
-		pygame.image.save(canvasLev, imgPath)
+			#print "\n\n\nVVVVVVVVVVVVVVVVVVVv warpUi.aovNames", warpUi.aovNames, "names", names
+		for i in range(nOutputs):
+			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
+			name = warpUi.spritesThisFr[levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
+			if name == "ren":
+				levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
+				ut.mkDirSafe(levDir)
+				pygame.image.save(canvasLevs[i], imgPath)
+			#elif ("aov_" + name) in warpUi.aovNames:
+			#	print "\n\n\nxxxxx name", name
+			#	setAovFullImg(warpUi, name, canvasLevs[i], "lev%02d" % lev)
 
-	renPath = warpUi.images["ren"]["path"]
-	renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
-	ut.mkDirSafe(renSeqDir)
-	pygame.image.save(canvas, renPath)
+	for i in range(nOutputs):
+		name = warpUi.spritesThisFr[levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
+		if name == "ren":
+			renPath = warpUi.images[name]["path"]
+			renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
+			ut.mkDirSafe(renSeqDir)
+			pygame.image.save(canvases[0], renPath)
+		#elif ("aov_" + name) in warpUi.aovNames:
+		#	setAovFullImg(warpUi, name, canvases[i], "ALL")
 
 
 
@@ -1837,7 +1863,7 @@ def renWrapper(warpUi):
 		tidPosGridPath = warpUi.framesDataDir + ("/%05d/tidPosGrid" % fr)
 		print "_renWrapper(): Checking for existence of", tidPosGridPath, "..."
 		sidToCvDicPath = frameDir + "/sidToCvDic"
-		if not warpUi.parmDic("iso_cs") == "s" and os.path.exists(sidToCvDicPath):
+		if os.path.exists(sidToCvDicPath):  # TODO remove all sidToCvDicPath (cv) stuff?
 			warpUi.sidToCvDic = pickleLoad(sidToCvDicPath)
 		#tholds = pickleLoad(frameDir + "/tholds")
 		if forceGenTidPosGrid == False and os.path.exists(tidPosGridPath):
@@ -1907,14 +1933,17 @@ def inSurfGridToTidGrid(warpUi):
 		sidSet = set(sidToTidPos[lev].keys())
 		for xx in range(res[0]):
 			for yy in range(res[1]):
-				sid = inSurfGrid[lev][xx][yy]
-				if sid == None:
+				if inSurfGrid == None or inSurfGrid[lev] == None:
 					tidPosGridThisLev[xx][yy] = -1
-				elif sid in sidSet:
-					tidPosGridThisLev[xx][yy] = sidToTidPos[lev][sid]
-					maxTid = max(maxTid, tidPosGridThisLev[xx][yy])
 				else:
-					tidPosGridThisLev[xx][yy] = 0
+					sid = inSurfGrid[lev][xx][yy]
+					if sid == None:
+						tidPosGridThisLev[xx][yy] = -1
+					elif sid in sidSet:
+						tidPosGridThisLev[xx][yy] = sidToTidPos[lev][sid]
+						maxTid = max(maxTid, tidPosGridThisLev[xx][yy])
+					else:
+						tidPosGridThisLev[xx][yy] = 0
 		tidPosGrid.append(tidPosGridThisLev)
 	
 	return tidPosGrid

@@ -236,6 +236,7 @@ __kernel void krShadeImg(
 			__global int* bbxs,
 			__global float* xfs,
 			__global int* tidTrips,
+			__global uchar* aovRipImg,
 			__global uchar* shadedImg)
 {
 	unsigned int x = get_global_id(0);
@@ -322,7 +323,6 @@ __kernel void krShadeImg(
 	outClrF[1] = outClr[1];
 	outClrF[2] = outClr[2];
 
-	int cShadedI[3];
 
 	float hiLevSooner = 2;
 	float outerSooner = 10;
@@ -338,6 +338,8 @@ __kernel void krShadeImg(
 		outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal;
 
 
+	int cShadedI[3];
+	int cAovRip[3];
 
 	getCspacePvNxInOut (
 		fr,
@@ -347,7 +349,7 @@ __kernel void krShadeImg(
 		exhFrames,
 		nBreaths,
 		dNorm,
-		0,
+		cAovRip,
 		cShadedI
 		);
 
@@ -358,4 +360,5 @@ __kernel void krShadeImg(
 	mix3I(srcClr, cShadedI, clrProg, cShadedI);
 
 	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
+	setArrayCell(x, y, xres, yres+1, cAovRip, aovRipImg);
 }

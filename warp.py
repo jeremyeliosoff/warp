@@ -270,9 +270,7 @@ class warpUi():
 				else:
 					self.images[img]["pImg"] = self.loadImgAndSetRes(path)
 
-		print "\n\n\n\n RES ********************** "
 		res = (self.images["source"]["pImg"].width(), self.images["source"]["pImg"].height())
-		print "RES ********************** ", res, "\n\n\n\n"
 
 		#image = self.images["source"]["pImg"]
 		#self.res = (image.width(), image.height())
@@ -304,8 +302,11 @@ class warpUi():
 	def refreshButtonImages(self): 
 		self.refreshPhotoImages()
 		dontChange = self.staticImages.keys() + self.varyingStaticImageNames 
+		#print "_refreshPhotoImages(): dontChange", dontChange
 		for butName,butDic in self.images.items():
+			#print "_refreshPhotoImages(): butName:", butName, "butDic", butDic
 			if not butName in dontChange and "button" in butDic.keys():
+				#print "_refreshPhotoImages(): B"
 				butDic["button"].configure(image=butDic["pImg"])
 
 
@@ -519,7 +520,7 @@ class warpUi():
 		print "\n_updateDebugImg(): BEGIN"
 		for i in range(2):
 			img = self.parmDic("dbImg" + str(i+1))
-			lev = self.parmDic("lev_dbImg" + str(i+1))
+			lev = -1 if img[-6:] == "_ctest" else self.parmDic("lev_dbImg" + str(i+1))
 			dbImgPath = self.getDebugDirAndImg(img, lev)[1]
 			print "\n\n ************** img", img, "lev", lev, "dbImgPath", dbImgPath, "\n\n"
 			self.images["dbImg" + str(i+1)]["path"] = dbImgPath
@@ -884,16 +885,21 @@ class warpUi():
 		else: print "-- CHANGED FROM", seqRenVDirOLD
 		print
 
-	def getDebugDirAndImg(self, AOVname, lev):
-		renAovs = ["bg", "rip"]
+	def getDebugDirAndImg(self, AOVname, lev, sfx=""):
+		renAovs = ["bg", "rip", "bg_ctest", "rip_ctest"]
 		fr = self.parmDic("fr")
+		aovNameWSfx = AOVname + sfx
 		if AOVname in renAovs:
-			levDir = self.seqRenVDir + "/aov/" + AOVname
-			imgPath = levDir + ("/" + AOVname + (".%05d" + self.seqImgExt) % fr)
+			levDir = self.seqRenVDir + "/aov/" + aovNameWSfx
 		else:
-			print "\n\nXXXXXUUUUUUUUUUUUU AOVname:", AOVname
-			levDir = self.seqDataVDir + "/debugImg/" + AOVname + "/" + lev # TODO: v00
-			imgPath = levDir + ("/" + AOVname + "." + lev + (".%05d" + self.seqImgExt) % fr)
+			levDir = self.seqDataVDir + "/debugImg/" + aovNameWSfx
+	
+		preFfStr = ""
+		if not lev == -1:
+			levDir += "/" + lev
+			preFfStr = "." + lev 
+
+		imgPath = levDir + ("/" + aovNameWSfx + preFfStr + (".%05d" + self.seqImgExt) % fr)
 		return levDir,imgPath
 
 	def getRenDirAndImgPath(self, outputName, lev=None):
@@ -1257,14 +1263,14 @@ class warpUi():
 		res = self.loadImages()
 
 		# AOVs.
-		aovNames = []
+		self.aovNames = []
 		for parmName in self.parmDic.parmDic.keys():
 			if parmName[:4] == "aov_" and self.parmDic(parmName) == 1:
-				aovNames.append(parmName[4:])
+				self.aovNames.append(parmName[4:])
 
 		nLevels = self.parmDic("nLevels")
 		self.aovDic = {}
-		for aovName in aovNames:
+		for aovName in self.aovNames:
 			# The last cell - that is, [nLevels] - is reserved for "all"
 			self.aovDic[aovName] = [pygame.Surface(res) for i in range(nLevels+1)][:]
 
