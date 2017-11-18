@@ -86,6 +86,13 @@ void mix3F(float* a, float* b, float m, float* ret) {
 	}
 }
 
+void mix3FItoI(float* a, int* b, float m, int* ret) {
+	int i;
+	for (i = 0; i < 3; i++) {
+		ret[i] = (int) mixF(a[i], (float)((int)b[i]), m);
+	}
+}
+
 
 void assignFV(
 	float* src,

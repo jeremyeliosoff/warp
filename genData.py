@@ -1297,7 +1297,7 @@ def renBg(warpUi):
 	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
-		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
+		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr, 1)
 
 	csImg = pygame.surfarray.make_surface(csImgAr)
 	setAovFullImg(warpUi, "bg", csImg, -1, sfx="_ctest")
@@ -1505,17 +1505,12 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		("rip", pygame.surfarray.make_surface(aovRipImg))]
 
 
-def genSprites(warpUi, srcImg): 
-	spritesThisFr = []
-
-	# Adjust by global seq prog.
-	#tripFrStart = 1605
-	#tripFrMid = 1640
-	#tripFrEnd = 1850
+def getTripFrK(warpUi): 
 	tripFrStart = warpUi.parmDic("tripFrStart")
 	tripFrMid = warpUi.parmDic("tripFrMid")
 	tripFrEnd = warpUi.parmDic("tripFrEnd")
-	tripKMid = .2
+	#tripKMid = .2
+	tripKMid = warpUi.parmDic("tripKMid")
 	if warpUi.parmDic("tripAlwaysOn") == 1:
 		tripFrK = 1
 	else:
@@ -1525,8 +1520,18 @@ def genSprites(warpUi, srcImg):
 			tripFrK = tripKMid * ut.smoothstep(tripFrStart, tripFrMid, fr)
 		else:
 			tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
-	print "_genSprites(): tripFrK:", tripFrK
+	return tripFrK
+
+def genSprites(warpUi, srcImg): 
+	spritesThisFr = []
+
+	# Adjust by global seq prog.
+	#tripFrStart = 1605
+	#tripFrMid = 1640
+	#tripFrEnd = 1850
 	#tripFrK = 1 # TEMP
+	tripFrK = getTripFrK(warpUi)
+	print "_genSprites(): tripFrK:", tripFrK
 
 	for lev in range(warpUi.parmDic("nLevels")):
 		if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
@@ -1715,8 +1720,10 @@ def renSprites(warpUi, srcImg, res, fr):
 	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
 
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
+
+	trip = getTripFrK(warpUi)
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
-		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr)
+		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr, trip)
 
 	
 	# Find first non empty level, count outputs.
@@ -1732,9 +1739,9 @@ def renSprites(warpUi, srcImg, res, fr):
 
 
 	canvases = []
-	for dud in range(nOutputs):
+	for outputNum in range(nOutputs):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if dud > 0:
+		if outputNum > 0:
 			nextCanvas.fill((0, 0, 0))
 		canvases.append(nextCanvas)
 

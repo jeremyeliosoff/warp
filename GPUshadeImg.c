@@ -335,7 +335,7 @@ __kernel void krShadeImg(
 
 	float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
 	fr += hiLevSooner * lev + (1-sidFarFromCent) *
-		outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal;
+		outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
 
 
 	int cShadedI[3];

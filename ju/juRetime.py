@@ -49,7 +49,7 @@ fpsEnd = 5
 
 
 if len(sys.argv) == 1 or len(sys.argv) > 4:
-	print "\nUSAGE: juRetime.py basename [basenameOut]"
+	print "\nUSAGE: juRetime.py basename [basenameOut]\n"
 	sys.exit()
 
 
@@ -88,6 +88,20 @@ while frSrc < frEnd:
 	mixA = 1.0 - mixB
 	imgA = basenameIn % frA
 	imgB = basenameIn % frB
+
+	while (not os.path.exists(imgA)) and frA <= frEnd:
+		print "\t!!!!", imgA, "does not exist! checking next frame..."
+		frA += 1
+		imgA = basenameIn % frA
+
+	while (not os.path.exists(imgB)) and frB <= frEnd:
+		print "\t!!!!", imgB, "does not exist! checking next frame..."
+		frB += 1
+		imgB = basenameIn % frB
+
+	if not os.path.exists("retime"):
+		os.makedirs("retime")
+
 	imgOut = "retime/" +  basenameOut % frOut
 	cmd = "composite -dissolve " + str(int(100*mixA)) + "x" + \
 		str(int(100*mixB)) + " " + imgA + " " + imgB + " " + imgOut

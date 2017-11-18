@@ -5176,7 +5176,8 @@ Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 
 Refine RGB:
 	Incl some kind of thumbnail in clr selecting UI?
 	Somehow, the first ripple should transition from regular rgb to first cSpace
-	Maybe explicitly choose progressively trippy colours, instead of 
+	Maybe explicitly choose progressively trippy colours, instead of fading colour blend to "on"
+	MmmmAYbe (contrary to above) have 
 	Black point?
 
 Do something about lower levs:

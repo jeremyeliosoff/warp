@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1782
+val 1637
 
 fps
 val 52
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v030niceClrs
+val v034tryTurnTripOff
 
 frStart
 val 1600
@@ -89,7 +89,7 @@ dataVer
 val v000
 
 frIncRen
-val 1
+val 0
 
 useFilt
 val 0
@@ -228,7 +228,7 @@ moveDirOverride
 val n
 
 tripAlwaysOn
-val 1
+val 0
 
 tripFrStart
 val 1605
@@ -240,7 +240,7 @@ tripFrEnd
 val 3000
 
 tripKMid
-val .3
+val .4
 
 inh0
 val 1840
@@ -272,7 +272,7 @@ val 3350
 ---AOV---
 
 aov_sidPost
-val 1
+val 0
 
 aov_rip
 val 1
