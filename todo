@@ -5034,7 +5034,6 @@ Look into networking 2 laptops/using Big D as server.
 Maybe look into actual timewarp stuff
 
 
----------- CURRENT ----------
 
 
 
@@ -5157,11 +5156,8 @@ play with pygame deformer stuff / other warp, esp bg
 
 
 
-*********** PLAN OF ATTACK *********** 
+---------- CURRENT ----------
 
-AOV: Add _pl (per level)
-Reimplement "3-4" capability in isoLev.
-BEER
 Pick nice clrs
 Music
 
@@ -5174,18 +5170,37 @@ Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 
 
 
 Refine RGB:
-	Incl some kind of thumbnail in clr selecting UI?
 	Somehow, the first ripple should transition from regular rgb to first cSpace
 	Maybe explicitly choose progressively trippy colours, instead of fading colour blend to "on"
-	MmmmAYbe (contrary to above) have 
+	MmmmAYbe (contrary to above) have a clr loop, when clrLookupFr > frEnd, it loops back to beginning and interpolates to cIn0/cOut0
 	Black point?
 
 Do something about lower levs:
-	if used, make transparent to let bg in
 	if not, don't render
 
+
+AOVS
+	have separate switches for rip_ctest and rip (real)
+
+*********** PLAN OF ATTACK *********** 
+DOESN'T AFFECT LOOK:
+#Dish, enfin# Make updated juProcessRen - retime, make avi, add sound
+#Disssh# Test AOVs again
+#Dish it seems?# Test loop/fill when there are no data files
+Reimplement "3-4" capability in isoLev.
+Incl some kind of thumbnail in clr selecting UI?
+For fill mode, speed up fr skipping.
+
+AFFECT LOOK:
+#Better, but needs work# Match trip=0 to src, ffs
+Make trip transition more gradual for clr
+Make lower levels transparent to let bg in
 rip goes from lightest to darkest w/in sid (we're trying this with progToNextLev, soso)
 Do thicker edge detection in addition to/instead of above.
 These will be used to make the "flashing lightbulbs", that go off + on in alternatong groups like a marquee;  sids qualifying as lightbulbs are of certain size and sx/sy ~ 1. 
 "Waves of sheen" passing over sids: white added to/replaces clr.
 
+BIG-D-TEMP -- BEFORE OTTAWA
+	MAKE SURE YOU CAN GET data/ OFF 
+	Ren a few frames on Little-D
+	Render 60fpc w fade out

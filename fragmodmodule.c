@@ -56,8 +56,8 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 		for (int y=0; y < yr; y ++) {
 			int tot[3] = {0, 0, 0};
 			int count = 0;
-			for (int xx=x; xx < MIN(x+2, xr); xx ++) {
-				for (int yy=y; yy < MIN(y+2, yr); yy ++) {
+			for (int xx=x; xx < MIN(x+1, xr); xx ++) {
+				for (int yy=y; yy < MIN(y+1, yr); yy ++) {
 					count += 1;
 					//unsigned char a=*((unsigned char *)PyArray_GETPTR3(in,xx,yy,0));
 					//tot += a;
@@ -67,17 +67,12 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 				}
 			}
 
-			//float mxInOut = 1.0-(float)y/yr;
-			float r[3] = {1, 0, 0};
-			float g[3] = {0, 1, 0};
-			float b[3] = {0, 0, 1};
-
 			float cAvg[3] = {0, 0, 0};
 			//float dNorm = CLAMP(dist(x, y, xr/2, yr/2)/(xr/2), 0, 1);
 			float dNorm = CLAMP(dist(x, y, xr/2, yr/2)/dist(0, 0, xr/2, yr/2), 0, 1);
 			// TODO: Make sure you keep track of lumLift, kIntens, kVign -
 			// maybe add a fade to grey?
-			float lumLift = mixF(90, 10, dNorm)*trip;
+			float lumLift = mixF(10, 2, pow(dNorm, .5))*trip;
 			for (int j=0; j<3; j++) {
 				cAvg[j] = (lumLift + tot[j])/count;
 			}
@@ -111,11 +106,12 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			float kVign = MAX(0, 1-dNorm*trip);
 			for (int j=0; j<3; j++) {
 				int *a = ((int *)PyArray_GETPTR3(out,x,y,j));
+				//*a = MIN(255, kVign*kIntens*(int) (cShadedI[j]));
 				*a = MIN(255, kVign*kIntens*(int) (cShadedI[j]));
 
 				int *b = ((int *)PyArray_GETPTR3(aovRipPtr,x,y,j));
 				*b = MIN(255, (int) aovRip[j]);
-				//if (j == 0) *b = 255;
+				//if (j == 0) *a = 255;
 			}
 		}
 	}

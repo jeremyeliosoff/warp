@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1637
+val 3197
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
@@ -25,25 +25,25 @@ image
 val lgP6
 
 dbImg1
-val rip
+val rip_ctest
 
 lev_dbImg1
 val ALL
 
 dbImg2
-val bg
+val sidPost
 
 lev_dbImg2
 val lev03
 
 renVer
-val v034tryTurnTripOff
+val v036slowerAttack
 
 frStart
 val 1600
 
 frEnd
-val 3509
+val 3409
 
 doGen
 val 1
@@ -89,7 +89,7 @@ dataVer
 val v000
 
 frIncRen
-val 0
+val 2
 
 useFilt
 val 0
@@ -275,10 +275,10 @@ aov_sidPost
 val 0
 
 aov_rip
-val 1
+val 0
 
 aov_bg
-val 1
+val 0
 
 aov_cid
 val 0

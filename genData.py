@@ -1520,7 +1520,13 @@ def getTripFrK(warpUi):
 			tripFrK = tripKMid * ut.smoothstep(tripFrStart, tripFrMid, fr)
 		else:
 			tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
+	tripFrK *= tripFrK
 	return tripFrK
+
+
+def generalTripToClrTrip(trip):
+	return trip
+
 
 def genSprites(warpUi, srcImg): 
 	spritesThisFr = []
@@ -1599,7 +1605,8 @@ def genSprites(warpUi, srcImg):
 				xfs.append((0.0,0.0)) # To keep tidPos synched.
 
 		shadedNamesAndImgs = shadeImg(warpUi, lev, srcImg, tidImg,
-			tidPosGridThisLev, tids, bbxs, cents, xfs, tidTrips, tripFrK)
+			tidPosGridThisLev, tids, bbxs, cents, xfs,
+				tidTrips, generalTripToClrTrip(tripFrK))
 
 		spritesThisLev = []
 		for tidPos in range(len(tids)):
@@ -1722,6 +1729,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
 
 	trip = getTripFrK(warpUi)
+	trip = generalTripToClrTrip(trip)
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
 		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr, trip)
 
@@ -1796,9 +1804,9 @@ def renSprites(warpUi, srcImg, res, fr):
 				levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
 				ut.mkDirSafe(levDir)
 				pygame.image.save(canvasLevs[i], imgPath)
-			#elif ("aov_" + name) in warpUi.aovNames:
-			#	print "\n\n\nxxxxx name", name
-			#	setAovFullImg(warpUi, name, canvasLevs[i], "lev%02d" % lev)
+			elif ("aov_" + name) in warpUi.aovNames:
+				print "\n\n\nxxxxx name", name
+				setAovFullImg(warpUi, name, canvasLevs[i], "lev%02d" % lev)
 
 	for i in range(nOutputs):
 		name = warpUi.spritesThisFr[levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
@@ -1807,8 +1815,11 @@ def renSprites(warpUi, srcImg, res, fr):
 			renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
 			ut.mkDirSafe(renSeqDir)
 			pygame.image.save(canvases[0], renPath)
-		#elif ("aov_" + name) in warpUi.aovNames:
-		#	setAovFullImg(warpUi, name, canvases[i], "ALL")
+			cmd = "convert " + renPath + " " + renPath
+			print "_renSprites(): for some reason this cmd seems necessary:\n\t", cmd
+			ut.exeCmd(cmd)
+		elif ("aov_" + name) in warpUi.aovNames:
+			setAovFullImg(warpUi, name, canvases[i], "ALL")
 
 
 

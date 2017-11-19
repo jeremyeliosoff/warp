@@ -42,6 +42,8 @@ frange = 50
 
 frStart = 1600
 frEnd = 3400
+#frStart = 3300 # TEMP
+#frEnd = 3370 # TEMP
 fpsStart = 30
 fpsEnd = 5
 
@@ -53,15 +55,38 @@ if len(sys.argv) == 1 or len(sys.argv) > 4:
 	sys.exit()
 
 
-baseIn = sys.argv[1]
 
-if len(sys.argv) == 3:
-	baseOut = sys.argv[2]
-else:
+baseInOut = []
+
+makeMov=True
+addSound=True
+
+for arg in sys.argv[1:]:
+	if "=" in arg:
+		k,v = arg.split("=")
+		if k == "makeMov":
+			if v == "False":
+				makeMov=False
+			continue
+		if k == "addSound":
+			if v == "addSound":
+				addSound=False
+			continue
+	else:
+		baseInOut.append(arg)
+
+
+baseIn = "ren.ALL"
+
+if len(baseInOut) > 0:
+	baseIn = baseInOut[0]
 	baseOut = baseIn
+if len(baseInOut) == 2:
+	baseOut = baseInOut[1]
 
-basenameIn = baseIn + ".%05d.png"
-basenameOut = baseOut + ".%05d.png"
+
+formatIn = baseIn + ".%05d.png"
+formatOut = baseOut + ".%05d.png"
 #while frSrc < frange:
 frSrc = frStart
 while frSrc < frEnd:
@@ -86,28 +111,54 @@ while frSrc < frEnd:
 	frB = frA + 1
 	mixB = frSrc % 1
 	mixA = 1.0 - mixB
-	imgA = basenameIn % frA
-	imgB = basenameIn % frB
+	imgA = formatIn % frA
+	imgB = formatIn % frB
 
 	while (not os.path.exists(imgA)) and frA <= frEnd:
 		print "\t!!!!", imgA, "does not exist! checking next frame..."
 		frA += 1
-		imgA = basenameIn % frA
+		imgA = formatIn % frA
 
 	while (not os.path.exists(imgB)) and frB <= frEnd:
 		print "\t!!!!", imgB, "does not exist! checking next frame..."
 		frB += 1
-		imgB = basenameIn % frB
+		imgB = formatIn % frB
 
 	if not os.path.exists("retime"):
 		os.makedirs("retime")
 
-	imgOut = "retime/" +  basenameOut % frOut
+	imgOut = "retime/" +  formatOut % frOut
 	cmd = "composite -dissolve " + str(int(100*mixA)) + "x" + \
 		str(int(100*mixB)) + " " + imgA + " " + imgB + " " + imgOut
 	print "frOut", frOut, "frSrc", frSrc, ":", cmd
 	#print "frOut", frOut, "i", i, "fpsPrev", fpsPrev, "fpsNext", fpsNext, "fps", fps, "incr", incr, "frSrc", frSrc
 	os.system(cmd)
 	frOut += 1
+
+if makeMov:
+
+	retimeDirPath = os.getcwd() + "/retime"
+	aviNoSoundPath = retimeDirPath + "/" + baseOut + ".avi"
+	print "baseOut:", baseOut
+	cmd = "ffmpeg -framerate 30 -i " + retimeDirPath + "/" + baseOut \
+		+ ".%05d.png -vcodec libx264 -b 5000k " + aviNoSoundPath
+	print "\nExecuting:", cmd, "...\n\n"
+	os.system(cmd)
+
+	if addSound:
+		ardUberDir = "/home/jeremy/dev/warp/audio/ardour"
+		ardDirs = glob.glob(ardUberDir + "/*")
+		ardDirs.sort(key=os.path.getmtime)
+		latestArDir=ardDirs[-1]
+		print "\nardDirs:", ardDirs
+		print "latestArDir:", latestArDir
+		print
+		latestExport=latestArDir + "/export/session.wav"
+		aviWSoundPath = retimeDirPath + "/" + baseOut + "_wSound.avi"
+		cmd="ffmpeg -i " + latestExport + " -i " + aviNoSoundPath + \
+			" -codec copy -shortest " + aviWSoundPath
+		print "\nExecuting:", cmd, "...\n"
+		os.system(cmd)
+
 
 
