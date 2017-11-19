@@ -132,7 +132,7 @@ type bool
 val 0
 
 isoLev
-type int
+type str
 val -1
 
 iso_cs

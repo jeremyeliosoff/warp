@@ -1540,7 +1540,8 @@ def genSprites(warpUi, srcImg):
 	print "_genSprites(): tripFrK:", tripFrK
 
 	for lev in range(warpUi.parmDic("nLevels")):
-		if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
+		#if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
+		if not lev in warpUi.levsToRen:
 			spritesThisFr.append({})
 			continue
 
@@ -1554,7 +1555,7 @@ def genSprites(warpUi, srcImg):
 			spritesThisFr.append({})
 			continue
 		tids.sort()
-		print "_genSprites(): Doing lev", lev, "len(tids) =", len(tids)
+		print "_genSprites(): Generating sprites for lev", lev, "len(tids) =", len(tids)
 
 		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
 		tidImg = pygame.surfarray.make_surface(tidClrGrid)
@@ -1737,13 +1738,13 @@ def renSprites(warpUi, srcImg, res, fr):
 	# Find first non empty level, count outputs.
 	nLevels = warpUi.parmDic("nLevels")
 
-	if warpUi.parmDic("isoLev") > -1:
-		levsToRen = [warpUi.parmDic("isoLev")]
-		print "\n_renSprites(): ISOLATING LEVEL", levsToRen[0]
-	else:
-		levsToRen = range(nLevels)
+	#if warpUi.parmDic("isoLev") > -1:
+	#	levsToRen = [warpUi.parmDic("isoLev")]
+	#	print "\n_renSprites(): ISOLATING LEVEL", levsToRen[0]
+	#else:
+	#	levsToRen = range(nLevels)
 
-	nOutputs = len(warpUi.spritesThisFr[levsToRen[0]][0]['spriteNamesAndImgs'])
+	nOutputs = len(warpUi.spritesThisFr[warpUi.levsToRen[0]][0]['spriteNamesAndImgs'])
 
 
 	canvases = []
@@ -1753,7 +1754,7 @@ def renSprites(warpUi, srcImg, res, fr):
 			nextCanvas.fill((0, 0, 0))
 		canvases.append(nextCanvas)
 
-	for lev in levsToRen:
+	for lev in warpUi.levsToRen:
 		spritesThisLev = warpUi.spritesThisFr[lev]
 		print "_renSprites(): fr", fr, "lev", lev, "len(spritesThisLev)", len(spritesThisLev)
 		canvasLevs = []
@@ -1799,7 +1800,7 @@ def renSprites(warpUi, srcImg, res, fr):
 			#print "\n\n\nVVVVVVVVVVVVVVVVVVVv warpUi.aovNames", warpUi.aovNames, "names", names
 		for i in range(nOutputs):
 			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-			name = warpUi.spritesThisFr[levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
+			name = warpUi.spritesThisFr[warpUi.levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
 			if name == "ren":
 				levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
 				ut.mkDirSafe(levDir)
@@ -1809,7 +1810,7 @@ def renSprites(warpUi, srcImg, res, fr):
 				setAovFullImg(warpUi, name, canvasLevs[i], "lev%02d" % lev)
 
 	for i in range(nOutputs):
-		name = warpUi.spritesThisFr[levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
+		name = warpUi.spritesThisFr[warpUi.levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
 		if name == "ren":
 			renPath = warpUi.images[name]["path"]
 			renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
@@ -1942,7 +1943,8 @@ def inSurfGridToTidGrid(warpUi):
 	tidPosGrid = []
 	maxTid = -1
 	for lev in range(nLevels):
-		if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
+		#if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
+		if not lev in warpUi.levsToRen:
 			tidPosGrid.append(None)
 			continue
 

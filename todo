@@ -5187,13 +5187,13 @@ DOESN'T AFFECT LOOK:
 #Dish, enfin# Make updated juProcessRen - retime, make avi, add sound
 #Disssh# Test AOVs again
 #Dish it seems?# Test loop/fill when there are no data files
-Reimplement "3-4" capability in isoLev.
+#Dish# Reimplement "3-4" capability in isoLev.
 Incl some kind of thumbnail in clr selecting UI?
 For fill mode, speed up fr skipping.
 
 AFFECT LOOK:
 #Better, but needs work# Match trip=0 to src, ffs
-Make trip transition more gradual for clr
+#Dish# Make trip transition more gradual for clr
 Make lower levels transparent to let bg in
 rip goes from lightest to darkest w/in sid (we're trying this with progToNextLev, soso)
 Do thicker edge detection in addition to/instead of above.

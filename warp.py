@@ -557,6 +557,21 @@ class warpUi():
 		return ut.seqDir + "/" + self.parmDic("image") + "/" + imgWithFrame
 
 	def updateCurImg(self, forceRecord=False):
+
+		# Get levsToRen
+		nLevels = self.parmDic("nLevels")
+		isoLevStr = self.parmDic("isoLev")
+		if "-" in isoLevStr:  # TODO maybe add , syntax: 1-3,5
+			if isoLevStr[0] == "-":
+				self.levsToRen = range(nLevels)
+			else:
+				mn,mx = isoLevStr.split("-")
+				self.levsToRen = range(int(mn), int(mx) +1)
+		else:
+			self.levsToRen = [int(isoLevStr)]
+		print "_updateCurImg(): self.levsToRen:", self.levsToRen
+
+
 		print "_updateCurImg(): self.parmDic(image)", self.parmDic("image")
 		self.images["source"]["path"] = self.getSourceImgPath()
 		print "_updateCurImg(): self.images[source][path]:", self.images["source"]["path"]
@@ -1546,11 +1561,11 @@ class warpUi():
 		while not self.rootDestroyed:
 			anim = self.parmDic("anim")
 			if anim == 1:
+				nLevels = self.parmDic("nLevels")
 				frStart = self.parmDic("frStart")
 				frEnd = self.parmDic("frEnd")
 				fr = self.parmDic("fr")
 				frPerCycle = self.parmDic("frPerCycle")
-				nLevels = self.parmDic("nLevels")
 				secondsPassed = time.time() - self.timeStart
 
 				newFr = self.frStartAnim + int(secondsPassed*self.parmDic("fps"))
