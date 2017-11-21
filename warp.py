@@ -96,11 +96,16 @@ class warpUi():
 			self.parmDic.parmDic[k]["uiElement"].configure(bg=color[1])
 		self.makeCInOutValsLs()
 	
+	def notebookTabChange(self, event):
+		print "Tab Changed.", event
+		self.frameMaster.focus_set()
+
 	def makeParmUi(self, startRow):
 		row = startRow
 		self.nbExclude = ttk.Frame(self.frameParmAndControls)
 		self.nbExclude.grid(row=1)
 		self.nbParm = ttk.Notebook(self.frameParmAndControls)
+		self.nbParm.bind("<<NotebookTabChanged>>", self.notebookTabChange)
 		self.nbParm.grid(row=2)
 		self.nbFrames = {}
 		#stages = self.parmDic.parmStages.keys()
@@ -120,12 +125,6 @@ class warpUi():
 				print "_makeParmUi(): HIDDEN, skipping..."
 				continue
 
-			#for stage,parmNames in self.parmDic.parmStages.items():
-			#	if stage == "META":
-			#		thisFrame = self.nbExclude
-			#	elif parmName in parmNames:
-			#		thisFrame = self.nbFrames[stage]
-			#lab = Label(self.frameParm, text=parmName)
 			thisStage = thisParmDic["stage"]
 			print "_makeParmUi(): \t thisStage:", thisStage
 			if thisStage == "META":
@@ -137,7 +136,7 @@ class warpUi():
 
 			thisRow = row
 			colOfs = 0
-			#print "KKKKKKKKKKKKKKK thisStage", thisStage
+
 			if thisStage == "CLR":
 				if parmName[:3] == "cIn":
 					colOfs = 2
@@ -150,24 +149,21 @@ class warpUi():
 				maxCNum = max(maxCNum, cNum)
 
 				thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
-				#print "\n GGGGGGGGGGGG parmName", parmName, "cNum", cNum, "cRGB", cRGB, "thisRow", thisRow, "colOfs", colOfs, "\n"
-
-			lab.grid(row=thisRow, column=colOfs, sticky=E)
-
-
-			if thisParmDic["type"] == "clr":
 				clrTuple = self.parmDic(parmName)
 				hx = ut.rgb_to_hex(clrTuple)
-				#ent = Button(self.frameParm, width=10, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
-				ent = Button(thisFrame, width=1, bg=hx,command=lambda args=(parmName,clrTuple): self.btn_getColor(args))
-			elif thisParmDic["type"] == "bool":
-				self.chkVars[parmName] = IntVar()
-				self.chkVars[parmName].set(self.parmDic(parmName))
-				ent = Checkbutton(thisFrame, variable=self.chkVars[parmName], command=lambda pn=parmName: self.chk_cmd(pn))
-		#self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Do renCv", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
+				ent = Button(thisFrame, width=1, bg=hx,command=lambda
+					args=(parmName,clrTuple): self.btn_getColor(args))
 			else:
-				#ent = Entry(self.frameParm)
-				ent = Entry(thisFrame)
+				if thisParmDic["type"] == "bool":
+					self.chkVars[parmName] = IntVar()
+					self.chkVars[parmName].set(self.parmDic(parmName))
+					ent = Checkbutton(thisFrame, variable=self.chkVars[parmName], command=lambda pn=parmName: self.chk_cmd(pn))
+			#self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Do renCv", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
+				else:
+					#ent = Entry(self.frameParm)
+					ent = Entry(thisFrame)
+
+			lab.grid(row=thisRow, column=colOfs, sticky=E)
 			ent.grid(row=thisRow, column=(colOfs+1), sticky=W)
 			thisParmDic["uiElement"] = ent
 
@@ -198,6 +194,7 @@ class warpUi():
 		for k,v in self.parmDic.parmDic.items():
 			print "_makeParmUi(): \t", k, v["val"]
 		#print "\n\n_makeParmUi(): parmLs:", self.parmDic.parmLs
+		self.nbParm.select(2)
 		return row
 		
 
@@ -385,8 +382,8 @@ class warpUi():
 				self.animButCmd()
 			elif key == "r":
 				self.recButCmd()
-			elif key == "c":
-				self.toggleDoRenCv()
+			#elif key == "c":  # TEMPORARILY DISABLED TO AVOID OVERWRITING data
+			#	self.toggleDoRenCv()
 			elif key == "g":
 				self.toggleGenRen1fr()
 			elif key == "x":

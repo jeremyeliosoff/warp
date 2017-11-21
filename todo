@@ -5188,8 +5188,11 @@ DOESN'T AFFECT LOOK:
 #Disssh# Test AOVs again
 #Dish it seems?# Test loop/fill when there are no data files
 #Dish# Reimplement "3-4" capability in isoLev.
-Incl some kind of thumbnail in clr selecting UI?
-For fill mode, speed up fr skipping.
+#GAAAARRRR!!!!!# For fill mode, speed up fr skipping.
+REJIG CLR UI
+	Have clr tab slected by default (eventually: save selection)
+	Add black, white point
+	Incl some kind of thumbnail in clr selecting UI?
 
 AFFECT LOOK:
 #Better, but needs work# Match trip=0 to src, ffs
