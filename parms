@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1600
+val 3409
 
 fps
 val 52
@@ -22,10 +22,10 @@ doRenCv
 val 1
 
 image
-val zP5
+val lgP6
 
 dbImg1
-val CLR
+val rip_ctest
 
 lev_dbImg1
 val ALL
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v000
+val v037testQuickerFill
 
 frStart
 val 1600
 
 frEnd
-val 3509
+val 3409
 
 doGen
 val 1
@@ -60,7 +60,7 @@ nLevels
 val 10
 
 frPerCycle
-val 60
+val 30
 
 kSurf
 val 1
@@ -86,16 +86,16 @@ val 1
 ---REN---
 
 dataVer
-val v001
+val v000
 
 frIncRen
-val 1
+val 0
 
 useFilt
-val 1
+val 0
 
 isoLev
-val -1
+val 7
 
 iso_cs
 val b
@@ -148,22 +148,22 @@ val .5
 ---CLR---
 
 cIn0R
-val 1,.5,0
+val 0.8156862745098039,0.13725490196078433,0.0
 
 cIn0G
-val 0,.8,.8
+val 0.0,0.10588235294117647,0.5686274509803921
 
 cIn0B
-val 0,1,1
+val 0.6,0.5647058823529412,0.4196078431372549
 
 cOut0R
-val 0,1,.3
+val 0.6431372549019608,1.0,0.3607843137254902
 
 cOut0G
-val .3,0,.5
+val 0.1607843137254902,0.33725490196078434,0.4980392156862745
 
 cOut0B
-val .8,0,.9
+val 0.8,0.0,0.48627450980392156
 
 cIn1R
 val .5,0,.3
@@ -228,7 +228,7 @@ moveDirOverride
 val n
 
 tripAlwaysOn
-val 1
+val 0
 
 tripFrStart
 val 1605
@@ -240,7 +240,7 @@ tripFrEnd
 val 3000
 
 tripKMid
-val .3
+val .4
 
 inh0
 val 1840

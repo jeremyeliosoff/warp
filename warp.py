@@ -117,6 +117,8 @@ class warpUi():
 				self.nbFrames[stage] = ttk.Frame(self.nbParm)
 				self.nbParm.add(self.nbFrames[stage], text=stage)
 		maxCNum = 0
+
+		clrParmDicDic = {}
 		for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
 			thisParmDic = self.parmDic.parmDic[parmName]
 			print "_makeParmUi(): parmName:", parmName, ", thisParmDic:", thisParmDic
@@ -138,21 +140,22 @@ class warpUi():
 			colOfs = 0
 
 			if thisStage == "CLR":
-				if parmName[:3] == "cIn":
-					colOfs = 2
-					cNum = int(parmName[3])
-					cRGB = parmName[4]
-				else: # presumably starts with "cOut"
-					colOfs = 0
-					cNum = int(parmName[4])
-					cRGB = parmName[5]
-				maxCNum = max(maxCNum, cNum)
+				clrParmDicDic[parmName] = dic
+				#if parmName[:3] == "cIn":
+				#	colOfs = 2
+				#	cNum = int(parmName[3])
+				#	cRGB = parmName[4]
+				#else: # presumably starts with "cOut"
+				#	colOfs = 0
+				#	cNum = int(parmName[4])
+				#	cRGB = parmName[5]
+				#maxCNum = max(maxCNum, cNum)
 
-				thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
-				clrTuple = self.parmDic(parmName)
-				hx = ut.rgb_to_hex(clrTuple)
-				ent = Button(thisFrame, width=1, bg=hx,command=lambda
-					args=(parmName,clrTuple): self.btn_getColor(args))
+				#thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
+				#clrTuple = self.parmDic(parmName)
+				#hx = ut.rgb_to_hex(clrTuple)
+				#ent = Button(thisFrame, width=1, bg=hx,command=lambda
+				#	args=(parmName,clrTuple): self.btn_getColor(args))
 			else:
 				if thisParmDic["type"] == "bool":
 					self.chkVars[parmName] = IntVar()
@@ -163,30 +166,113 @@ class warpUi():
 					#ent = Entry(self.frameParm)
 					ent = Entry(thisFrame)
 
-			lab.grid(row=thisRow, column=colOfs, sticky=E)
-			ent.grid(row=thisRow, column=(colOfs+1), sticky=W)
-			thisParmDic["uiElement"] = ent
+				# <<< BELOW WAS INDENTED
 
-			# Add entry to dic of corresponding types.
-			if thisParmDic["type"] in self.parmEntries.keys():
-				self.parmEntries[thisParmDic["type"]].append(ent)
-			else:
-				self.parmEntries[thisParmDic["type"]] = [ent]
+				lab.grid(row=thisRow, column=colOfs, sticky=E)
+				ent.grid(row=thisRow, column=(colOfs+1), sticky=W)
+				thisParmDic["uiElement"] = ent
 
-			if not thisParmDic["type"] in ["clr", "bool"]:
-				sv = StringVar()
-				sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
+				# Add entry to dic of corresponding types.
+				if thisParmDic["type"] in self.parmEntries.keys():
+					self.parmEntries[thisParmDic["type"]].append(ent)
+				else:
+					self.parmEntries[thisParmDic["type"]] = [ent]
 
-				thisParmDic["uiElement"].configure(textvariable=sv)
-				thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
+				if not thisParmDic["type"] in ["clr", "bool"]:
+					sv = StringVar()
+					sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
 
-			row += 1
+					thisParmDic["uiElement"].configure(textvariable=sv)
+					thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
-		for dividerNum in range(maxCNum+1):
-			thisFrame = self.nbFrames["CLR"]
-			lab = Label(thisFrame, font=("Helvetica", 4), text="-")
-			#print "\n UUUUUUUUUUUUUUUU font", lab.font
-			lab.grid(row=(dividerNum+1)*4)
+				row += 1
+
+			# CLRs
+		row = startRow
+		clrGrpRow = 0
+		thisFrame = self.nbFrames["CLR"]
+		#for parmName,dic in clrParmDicDic:
+
+		path = self.images["source"]["path"]
+		print "\n\n\n\n jJJJJJJJJJJJJJJJJJJJJJ opening", path
+		path = "/home/jeremy/dev/warp/seq/lgP6/lgP6.03409.png"
+		img = Image.open(path)
+		#print "jJJJJJJJJJJJJJJJJJJJJJ img", img, "\n\n\n"
+		img = img.resize((100, 60), Image.ANTIALIAS)
+		#self.pImg = ImageTk.PhotoImage(Image.open(path))
+		self.pImg = ImageTk.PhotoImage(img)
+
+		for breath in range(4):
+			for inOut in ["In", "Out"]:
+				parmNameNoRGB = "c" + inOut + str(breath)
+				clrGrpFrame = Frame(thisFrame)
+				clrGrpFrame.grid(row=clrGrpRow, column=1)
+				rowFrameTop = Frame(clrGrpFrame)
+				rowFrameTop.grid(row=0, column=1)
+				lab = Label(thisFrame, text=parmNameNoRGB)
+				lab.grid(row=clrGrpRow, column=0, sticky=E)
+				col = 1
+				for rgb in "RGB":
+					parmName = parmNameNoRGB + rgb
+					#thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
+					clrTuple = self.parmDic(parmName)
+					hx = ut.rgb_to_hex(clrTuple)
+					ent = Button(rowFrameTop, width=1, bg=hx,command=lambda
+						args=(parmName,clrTuple): self.btn_getColor(args))
+
+					#lab.grid(row=thisRow, column=colOfs, sticky=E)
+					ent.grid(row=0, column=(col), sticky=W)
+					thisParmDic["uiElement"] = ent
+					col += 1
+
+					# Add entry to dic of corresponding types.
+					if thisParmDic["type"] in self.parmEntries.keys():
+						self.parmEntries[thisParmDic["type"]].append(ent)
+					else:
+						self.parmEntries[thisParmDic["type"]] = [ent]
+
+				# Add black and white.
+				rowFrameBot = Frame(clrGrpFrame)
+				rowFrameBot.grid(row=1, column=1)
+
+				col = 1
+				hx = ut.rgb_to_hex((0, 0, 0))
+				ent = Button(rowFrameBot, width=3, bg=hx,command=lambda
+					args=(parmName,clrTuple): self.btn_getColor(args))
+				ent.grid(row=1, column=col, sticky=W)
+
+				col += 1
+				hx = ut.rgb_to_hex((.5, .5, .5))
+				ent = Button(rowFrameBot, width=3, bg=hx,command=lambda
+					args=(parmName,clrTuple): self.btn_getColor(args))
+				ent.grid(row=1, column=col, sticky=W)
+
+
+				# Add thumbnail
+				# loadedImg = Image.open(path)
+				# loadedImg = loadedImg.resize((res[0], res[1]))
+				# img = ImageTk.PhotoImage(loadedImg)
+
+				#ht = self.images["source"]["pImg"].height()
+				#sc = float(30)/ht
+				#pImg.resize((50, 30))
+				#pImg = self.images["source"]["pImg"].zoom(sc,sc)
+
+				ent = Button(thisFrame, image=self.pImg)
+				#ent = Label(thisFrame, image=pImg)
+				ent.grid(row=clrGrpRow, column=2)
+
+
+
+
+				clrGrpRow += 1
+
+
+		#for dividerNum in range(maxCNum+1):
+		#	thisFrame = self.nbFrames["CLR"]
+		#	lab = Label(thisFrame, font=("Helvetica", 4), text="-")
+		#	#print "\n UUUUUUUUUUUUUUUU font", lab.font
+		#	lab.grid(row=(dividerNum+1)*4)
 
 
 
@@ -931,16 +1017,8 @@ class warpUi():
 		if os.path.exists(path):
 			loadedImg = Image.open(path)
 			res = loadedImg.size
-			#print "\n\n----------- setting res", res
 			if setRes:
 				self.res = (res[0]-1, res[1]-1)
-			#maxXres = 520
-			#maxYres = 400
-			#maxXres = 720
-			#maxYres = 600
-			#infoObj = pygame.display.Info()
-			#maxXres = infoObj.current_w
-			#maxYres = infoObj.current_h
 			maxXres = int(.37*self.root.winfo_screenwidth())
 			maxYres = int(.37*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:
@@ -1426,17 +1504,18 @@ class warpUi():
 		frameRenQueue = Frame(self.frameParmAndControls)
 		frameRenQueue.grid(row=row, sticky=S) # Not convinced sticky does anything here.
 
-		thisLabel = Label(frameRenQueue, text="RenQ", justify="left")
-		thisLabel.grid(row=row, column=0)
+		if False: # No queue for now...
+			thisLabel = Label(frameRenQueue, text="RenQ", justify="left")
+			thisLabel.grid(row=row, column=0)
 
-		thisButton = Button(frameRenQueue, text="+", command=lambda:self.addToRenQButCmd())
-		thisButton.grid(row=row, column=1)
+			thisButton = Button(frameRenQueue, text="+", command=lambda:self.addToRenQButCmd())
+			thisButton.grid(row=row, column=1)
 
-		thisButton = Button(frameRenQueue, text="-", command=lambda:self.rmFromRenQButCmd())
-		thisButton.grid(row=row, column=2)
+			thisButton = Button(frameRenQueue, text="-", command=lambda:self.rmFromRenQButCmd())
+			thisButton.grid(row=row, column=2)
 
-		self.renQListbox = Listbox(frameRenQueue, height=4)
-		self.renQListbox.grid(row=row, column=3)
+			self.renQListbox = Listbox(frameRenQueue, height=4)
+			self.renQListbox.grid(row=row, column=3)
 
 		#for item in ["one", "two", "three", "four", "fv", "sx", "sv"]:
 		#	self.renQListbox.insert(END, item)

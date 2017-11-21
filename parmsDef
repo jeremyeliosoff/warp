@@ -8,6 +8,7 @@ type int
 val 8
 
 fps
+hidden True
 type int
 val 52
 
@@ -70,10 +71,12 @@ type int
 val 2
 
 doGen
+hidden True
 type int
 val 1
 
 doRen
+hidden True
 type int
 val 1
 
