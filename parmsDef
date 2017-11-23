@@ -81,6 +81,10 @@ type int
 val 1
 
 
+frIncRen
+type int
+val 1
+
 
 
 ---GEN---
@@ -122,9 +126,9 @@ hidden True
 type str
 val v031testGenRen
 
-frIncRen
-type int
-val 1
+tripAlwaysOn
+type bool
+val 0
 
 isoLev
 type str
@@ -275,10 +279,6 @@ val 0,0,1
 moveDirOverride
 type str
 val n
-
-tripAlwaysOn
-type bool
-val 0
 
 tripFrStart
 type int

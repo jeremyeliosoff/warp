@@ -100,6 +100,29 @@ class warpUi():
 		print "Tab Changed.", event
 		self.frameMaster.focus_set()
 
+	def makeParmUiElement(self, parmName, thisFrame, thisRow, thisCol):
+		thisParmDic = self.parmDic.parmDic[parmName]
+		if thisParmDic["type"] == "bool":
+			self.chkVars[parmName] = IntVar()
+			self.chkVars[parmName].set(self.parmDic(parmName))
+			ent = Checkbutton(thisFrame, variable=self.chkVars[parmName], command=lambda pn=parmName: self.chk_cmd(pn))
+		else:
+			ent = Entry(thisFrame, width=8)
+			sv = StringVar()
+			sv.trace("w", lambda name, index, mode, sv=sv,
+				pn=parmName: self.saveUIToParmsAndFile(pn, sv))
+			ent.configure(textvariable=sv)
+			ent.insert(0, str(thisParmDic["val"]))
+
+		lab = Label(thisFrame, text=parmName)
+		lab.grid(row=thisRow, column=thisCol, sticky=E)
+		ent.grid(row=thisRow, column=(thisCol+1), sticky=W)
+
+		thisParmDic["uiElement"] = ent
+
+		return ent
+
+
 	def makeParmUi(self, startRow):
 		row = startRow
 		self.nbExclude = ttk.Frame(self.frameParmAndControls)
@@ -112,6 +135,7 @@ class warpUi():
 		#stages.sort() # Just to get GEN in front of REN
 		#TODO make this dynamically depend on parms file
 		stages = ["META", "GEN", "REN", "CLR", "SEQ", "AOV"]
+		parmsToShowInMeta = ["isoLev", "tripAlwaysOn"]
 		for stage in stages:
 			if not stage == "META":
 				self.nbFrames[stage] = ttk.Frame(self.nbParm)
@@ -119,6 +143,7 @@ class warpUi():
 		maxCNum = 0
 
 		clrParmDicDic = {}
+		rClmMetaRow = row
 		for parmName,dic in self.parmDic.parmLs: # Recall: parmLs = [("parmName", {'key':val...}]
 			thisParmDic = self.parmDic.parmDic[parmName]
 			print "_makeParmUi(): parmName:", parmName, ", thisParmDic:", thisParmDic
@@ -127,7 +152,18 @@ class warpUi():
 				print "_makeParmUi(): HIDDEN, skipping..."
 				continue
 
-			thisStage = thisParmDic["stage"]
+			thisRow = row
+			colOfs = 0
+
+			isRClmMetaParm = (parmName in parmsToShowInMeta or parmName == "frIncRen")
+
+			if isRClmMetaParm:
+				thisStage = "META"
+				colOfs = 2
+				thisRow = rClmMetaRow
+			else:
+				thisStage = thisParmDic["stage"]
+
 			print "_makeParmUi(): \t thisStage:", thisStage
 			if thisStage == "META":
 				thisFrame = self.nbExclude
@@ -135,29 +171,12 @@ class warpUi():
 				thisFrame = self.nbFrames[thisStage]
 
 
-			thisRow = row
-			colOfs = 0
 
 			if thisStage == "CLR":
 				clrParmDicDic[parmName] = dic
 			else:
-				if thisParmDic["type"] == "bool":
-					self.chkVars[parmName] = IntVar()
-					self.chkVars[parmName].set(self.parmDic(parmName))
-					ent = Checkbutton(thisFrame, variable=self.chkVars[parmName], command=lambda pn=parmName: self.chk_cmd(pn))
-				else:
-					ent = Entry(thisFrame)
-					sv = StringVar()
-					sv.trace("w", lambda name, index, mode, sv=sv,
-						pn=parmName: self.saveUIToParmsAndFile(pn, sv))
-					ent.configure(textvariable=sv)
-					ent.insert(0, str(thisParmDic["val"]))
 
-				lab = Label(thisFrame, text=parmName)
-				lab.grid(row=thisRow, column=colOfs, sticky=E)
-				ent.grid(row=thisRow, column=(colOfs+1), sticky=W)
-				thisParmDic["uiElement"] = ent
-
+				ent = self.makeParmUiElement(parmName, thisFrame, thisRow, colOfs)
 
 				# Add entry to dic of corresponding types.
 				if thisParmDic["type"] in self.parmEntries.keys():
@@ -165,14 +184,10 @@ class warpUi():
 				else:
 					self.parmEntries[thisParmDic["type"]] = [ent]
 
-				#if not thisParmDic["type"] in ["clr", "bool"]:
-				#	sv = StringVar()
-				#	sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
-
-				#	thisParmDic["uiElement"].configure(textvariable=sv)
-				#	thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
-
-				row += 1
+				if isRClmMetaParm:
+					rClmMetaRow += 1
+				else:
+					row += 1
 
 		# CLRs
 		row = startRow
@@ -221,7 +236,7 @@ class warpUi():
 						args=(parmName,clrTuple): self.btn_getColor(args))
 
 					#lab.grid(row=thisRow, column=colOfs, sticky=E)
-					ent.grid(row=0, column=(col), sticky=W)
+					ent.grid(row=0, column=(col), sticky=E)
 					thisParmDic["uiElement"] = ent
 					col += 1
 

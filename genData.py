@@ -1446,14 +1446,11 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		for ln in f.readlines():
 			if ln[:len(jIncludeToken)] == jIncludeToken:
 				includePath = ut.projDir + "/" + ln.strip().split(" ")[1]
-				#print "\n\n\n_shadedImg(): line \"", ln.strip(), "\" has JINCLUDE, path:", includePath
 				with open(includePath) as incl:
 					for lnIncl in incl.readlines():
+						# Prepend specially commented __GLOBAL parms with __global.
 						if lnIncl.strip()[-len(globalToken):] == globalToken:
-							#print "\n\n\n XXXXXXXXXXXXx GLOBAL LINE:"
-							#print "\t\t before:", lnIncl
 							lnIncl = "__global " + lnIncl
-							#print "\t\t afterr:", lnIncl
 						kernel += lnIncl
 			else:
 				kernel += ln
