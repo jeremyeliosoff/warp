@@ -134,43 +134,30 @@ class warpUi():
 			else:
 				thisFrame = self.nbFrames[thisStage]
 
-			lab = Label(thisFrame, text=parmName)
 
 			thisRow = row
 			colOfs = 0
 
 			if thisStage == "CLR":
 				clrParmDicDic[parmName] = dic
-				#if parmName[:3] == "cIn":
-				#	colOfs = 2
-				#	cNum = int(parmName[3])
-				#	cRGB = parmName[4]
-				#else: # presumably starts with "cOut"
-				#	colOfs = 0
-				#	cNum = int(parmName[4])
-				#	cRGB = parmName[5]
-				#maxCNum = max(maxCNum, cNum)
-
-				#thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
-				#clrTuple = self.parmDic(parmName)
-				#hx = ut.rgb_to_hex(clrTuple)
-				#ent = Button(thisFrame, width=1, bg=hx,command=lambda
-				#	args=(parmName,clrTuple): self.btn_getColor(args))
 			else:
 				if thisParmDic["type"] == "bool":
 					self.chkVars[parmName] = IntVar()
 					self.chkVars[parmName].set(self.parmDic(parmName))
 					ent = Checkbutton(thisFrame, variable=self.chkVars[parmName], command=lambda pn=parmName: self.chk_cmd(pn))
-			#self.chk_doRenCv = Checkbutton(self.frameTopControls, text="Do renCv", variable=self.chk_doRenCv_var, command=self.chk_doRenCv_cmd)
 				else:
-					#ent = Entry(self.frameParm)
 					ent = Entry(thisFrame)
+					sv = StringVar()
+					sv.trace("w", lambda name, index, mode, sv=sv,
+						pn=parmName: self.saveUIToParmsAndFile(pn, sv))
+					ent.configure(textvariable=sv)
+					ent.insert(0, str(thisParmDic["val"]))
 
-				# <<< BELOW WAS INDENTED
-
+				lab = Label(thisFrame, text=parmName)
 				lab.grid(row=thisRow, column=colOfs, sticky=E)
 				ent.grid(row=thisRow, column=(colOfs+1), sticky=W)
 				thisParmDic["uiElement"] = ent
+
 
 				# Add entry to dic of corresponding types.
 				if thisParmDic["type"] in self.parmEntries.keys():
@@ -178,16 +165,16 @@ class warpUi():
 				else:
 					self.parmEntries[thisParmDic["type"]] = [ent]
 
-				if not thisParmDic["type"] in ["clr", "bool"]:
-					sv = StringVar()
-					sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
+				#if not thisParmDic["type"] in ["clr", "bool"]:
+				#	sv = StringVar()
+				#	sv.trace("w", lambda name, index, mode, sv=sv, pn=parmName: self.saveUIToParmsAndFile(pn, sv))
 
-					thisParmDic["uiElement"].configure(textvariable=sv)
-					thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
+				#	thisParmDic["uiElement"].configure(textvariable=sv)
+				#	thisParmDic["uiElement"].insert(0, str(thisParmDic["val"]))
 
 				row += 1
 
-			# CLRs
+		# CLRs
 		row = startRow
 		clrGrpRow = 0
 		thisFrame = self.nbFrames["CLR"]
@@ -208,16 +195,29 @@ class warpUi():
 				clrGrpFrame = Frame(thisFrame)
 				clrGrpFrame.grid(row=clrGrpRow, column=1)
 				rowFrameTop = Frame(clrGrpFrame)
-				rowFrameTop.grid(row=0, column=1)
-				lab = Label(thisFrame, text=parmNameNoRGB)
-				lab.grid(row=clrGrpRow, column=0, sticky=E)
+				rowFrameTop.grid(row=0, column=1, sticky=EW)
+
+				frEnt = Label(rowFrameTop, text="Fr")
+				frEnt.grid(row=0, column=0, sticky=E)
+
+				frEnt = Entry(rowFrameTop, width=5)
+				frEnt.grid(row=0, column=1, sticky=E)
+
+				frEnt = Label(rowFrameTop, text="Intens")
+				frEnt.grid(row=0, column=2, sticky=W)
+
+				frEnt = Entry(rowFrameTop, width=5)
+				frEnt.grid(row=0, column=3, sticky=W)
+
+				rowFrameBot = Frame(clrGrpFrame)
+				rowFrameBot.grid(row=1, column=1)
 				col = 1
 				for rgb in "RGB":
 					parmName = parmNameNoRGB + rgb
 					#thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
 					clrTuple = self.parmDic(parmName)
 					hx = ut.rgb_to_hex(clrTuple)
-					ent = Button(rowFrameTop, width=1, bg=hx,command=lambda
+					ent = Button(rowFrameBot, width=1, bg=hx,command=lambda
 						args=(parmName,clrTuple): self.btn_getColor(args))
 
 					#lab.grid(row=thisRow, column=colOfs, sticky=E)
@@ -232,20 +232,18 @@ class warpUi():
 						self.parmEntries[thisParmDic["type"]] = [ent]
 
 				# Add black and white.
-				rowFrameBot = Frame(clrGrpFrame)
-				rowFrameBot.grid(row=1, column=1)
 
-				col = 1
+				#col = 1
 				hx = ut.rgb_to_hex((0, 0, 0))
-				ent = Button(rowFrameBot, width=3, bg=hx,command=lambda
+				ent = Button(rowFrameBot, width=1, bg=hx,command=lambda
 					args=(parmName,clrTuple): self.btn_getColor(args))
-				ent.grid(row=1, column=col, sticky=W)
+				ent.grid(row=0, column=col, sticky=W)
 
 				col += 1
 				hx = ut.rgb_to_hex((.5, .5, .5))
-				ent = Button(rowFrameBot, width=3, bg=hx,command=lambda
+				ent = Button(rowFrameBot, width=1, bg=hx,command=lambda
 					args=(parmName,clrTuple): self.btn_getColor(args))
-				ent.grid(row=1, column=col, sticky=W)
+				ent.grid(row=0, column=col, sticky=W)
 
 
 				# Add thumbnail
@@ -1213,18 +1211,18 @@ class warpUi():
 			sourceImagesGen = os.listdir(path)
 			sourceImagesGen.sort()
 		print "\n\n\n XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesGen
+		print "_getRenderedAovNames(): images loaded from", path + ":", sourceImagesGen
 
 		path = self.seqRenVDir + "/aov"
 		sourceImagesRen = []
 		if os.path.exists(path):
 			sourceImagesRen = os.listdir(path)
 			sourceImagesRen.sort()
-		print "_warpUi.__init__(): images loaded from", path + ":", sourceImagesRen
+		print "_getRenderedAovNames(): images loaded from", path + ":", sourceImagesRen
 
 		sourceImages = sourceImagesGen + sourceImagesRen
 
-		print "_warpUi.__init__(): all images loaded:", sourceImages
+		print "_getRenderedAovNames(): all images loaded:", sourceImages
 
 		if sourceImages == []:
 			sourceImages = ["----"]

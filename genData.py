@@ -1458,10 +1458,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			else:
 				kernel += ln
 	
-	if warpUi.parmDic("useFilt") > 0:
-		kernel = kernel.replace("//USEFILT", "")
-		kernel = kernel.replace("/*NOUSEFILT*/", "//")
-
 	
 	ofs = warpUi.getOfsWLev(lev) % 1.0
 	levPct = (lev+ofs)/warpUi.parmDic("nLevels") #int((warpUi.getOfsWLev(lev)*100.0)%100)

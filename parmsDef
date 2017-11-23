@@ -93,10 +93,6 @@ frPerCycle
 type int
 val 30
 
-kSurf
-type float
-val 1
-
 gamma
 type float
 val 1
@@ -130,17 +126,9 @@ frIncRen
 type int
 val 1
 
-useFilt
-type bool
-val 0
-
 isoLev
 type str
 val -1
-
-iso_cs
-type str
-val b
 
 moveK
 type float
@@ -175,29 +163,9 @@ progDurTop
 type float
 val .5
 
-sfA
-type float
-val .5
-
-sfK
-type float
-val .2
-
-cvA
-type float
-val .8
-
-cvK
-type float
-val .8
-
 clrKBig
 type float
 val 0
-
-cTripMix
-type float
-val .5
 
 
 ---CLR---
