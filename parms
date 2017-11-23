@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3409
+val 2382
 
 fps
 val 52
@@ -16,16 +16,16 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
 
 image
-val lgP6
+val p3zpw2
 
 dbImg1
-val rip_ctest
+val bg_ctest
 
 lev_dbImg1
 val ALL
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v037testQuickerFill
+val v000
 
 frStart
 val 1600
 
 frEnd
-val 3409
+val 3430
 
 doGen
 val 1
@@ -60,7 +60,7 @@ nLevels
 val 10
 
 frPerCycle
-val 30
+val 60
 
 kSurf
 val 1
@@ -86,16 +86,16 @@ val 1
 ---REN---
 
 dataVer
-val v000
+val v000fpc60
 
 frIncRen
-val 0
+val 8
 
 useFilt
 val 0
 
 isoLev
-val 7
+val -1
 
 iso_cs
 val b
@@ -187,7 +187,7 @@ cIn2R
 val .9,0,.1
 
 cIn2G
-val .3,0,0
+val 0.2980392156862745,0.5803921568627451,0.0
 
 cIn2B
 val .5,.2,0
@@ -228,7 +228,7 @@ moveDirOverride
 val n
 
 tripAlwaysOn
-val 0
+val 1
 
 tripFrStart
 val 1605
@@ -275,10 +275,10 @@ aov_sidPost
 val 0
 
 aov_rip
-val 0
+val 1
 
 aov_bg
-val 0
+val 1
 
 aov_cid
 val 0

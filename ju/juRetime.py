@@ -50,8 +50,8 @@ fpsEnd = 5
 #for i in range(frange):
 
 
-if len(sys.argv) == 1 or len(sys.argv) > 4:
-	print "\nUSAGE: juRetime.py basename [basenameOut]\n"
+if len(sys.argv) > 4:
+	print "\nUSAGE: juRetime.py [basename [basenameOut]]\n"
 	sys.exit()
 
 
@@ -75,12 +75,18 @@ for arg in sys.argv[1:]:
 	else:
 		baseInOut.append(arg)
 
+cwd = os.getcwd()
+cwdSplit = cwd.split("/")
+
+seq = cwdSplit[6]
+ver = cwdSplit[7]
+
 
 baseIn = "ren.ALL"
+baseOut = seq + "_" + ver
 
 if len(baseInOut) > 0:
 	baseIn = baseInOut[0]
-	baseOut = baseIn
 if len(baseInOut) == 2:
 	baseOut = baseInOut[1]
 
@@ -137,7 +143,7 @@ while frSrc < frEnd:
 
 if makeMov:
 
-	retimeDirPath = os.getcwd() + "/retime"
+	retimeDirPath = cwd + "/retime"
 	aviNoSoundPath = retimeDirPath + "/" + baseOut + ".avi"
 	print "baseOut:", baseOut
 	cmd = "ffmpeg -framerate 30 -i " + retimeDirPath + "/" + baseOut \

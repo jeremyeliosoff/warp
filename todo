@@ -5155,6 +5155,12 @@ play with pygame deformer stuff / other warp, esp bg
 	(just for shading, not bg) progToNextLev
 
 
+#Dish, enfin# Make updated juProcessRen - retime, make avi, add sound
+#Disssh# Test AOVs again
+#Dish it seems?# Test loop/fill when there are no data files
+#Dish# Reimplement "3-4" capability in isoLev.
+
+#Dish# Make trip transition more gradual for clr
 
 ---------- CURRENT ----------
 
@@ -5182,16 +5188,28 @@ Do something about lower levs:
 AOVS
 	have separate switches for rip_ctest and rip (real)
 
+BIG-D-TEMP -- BEFORE OTTAWA
+	MAKE SURE YOU CAN GET data/ OFF 
+	Ren a few frames on Little-D
+	Render 60fpc w fade out
+
+
+STONNNNNED
+CLR -> BRE
+Each "Breath" (CLR) UI has:
+
+
+
+#GAAAARRRR!!!!!# For fill mode, speed up fr skipping.
+
+eventually: save parm tab selection
+
 *********** PLAN OF ATTACK *********** 
 DOESN'T AFFECT LOOK:
-#Dish, enfin# Make updated juProcessRen - retime, make avi, add sound
-#Disssh# Test AOVs again
-#Dish it seems?# Test loop/fill when there are no data files
-#Dish# Reimplement "3-4" capability in isoLev.
-#GAAAARRRR!!!!!# For fill mode, speed up fr skipping.
 REJIG CLR UI
-	Have clr tab slected by default (eventually: save selection)
-	Make clrgroup ui component thing
+	Make clrgroup ui component thing:
+		fr | trip intens	| img:			| img:			|
+		R	G	B	W	K	| just this br  | Approx bty	|
 	Add black, white point
 	Incl some kind of thumbnail in clr selecting UI?
 
@@ -5199,7 +5217,6 @@ REJIG CLR UI
 AFFECT LOOK:
 #Better, but needs work# Match trip=0 to src, ffs
 
-#Dish# Make trip transition more gradual for clr
 
 Make lower levels transparent to let bg in
 
@@ -5211,12 +5228,11 @@ These will be used to make the "FLASHING LIGHTBULBS", that go off + on in altern
 
 "WAVES OF SHEEN" passing over sids: white added to/replaces clr.
 
-Sync retime fps changes with breaths
-
 Similar thing ALONG EDGES
 
+Sync retime fps changes with breaths
 
-BIG-D-TEMP -- BEFORE OTTAWA
-	MAKE SURE YOU CAN GET data/ OFF 
-	Ren a few frames on Little-D
-	Render 60fpc w fade out
+
+
+
+
