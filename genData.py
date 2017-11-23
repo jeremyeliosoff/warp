@@ -1272,6 +1272,28 @@ def makeBufferOutput(warpUi, shape, dtype=None):
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=img)
 	return img, buf
 	
+
+def imgToCspace(warpUi, srcImg, srcImgPath, frIn=None):
+	fr = frIn
+	if fr == None:
+		fr = warpUi.parmDic("fr")
+	print "\n\nBBBBBBBBB srcImg.get_size()", srcImg.get_size()
+	res = srcImg.get_size()
+	srcImgAr = imageToArray3d(srcImg, srcImgPath)
+
+	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
+	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
+	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
+	cIn0G = np.array(warpUi.parmDic("cIn0G"), dtype=np.float32)
+	cIn0B = np.array(warpUi.parmDic("cIn0B"), dtype=np.float32)
+	cOut0R = np.array(warpUi.parmDic("cOut0R"), dtype=np.float32)
+	cOut0G = np.array(warpUi.parmDic("cOut0G"), dtype=np.float32)
+	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
+	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
+		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr, 1)
+
+	return pygame.surfarray.make_surface(csImgAr)
 	
 def renBg(warpUi):
 	print "\n_renClrTest(): BEGIN\n"
@@ -1287,8 +1309,8 @@ def renBg(warpUi):
 
 
 	print "\n_renBg():processing image", srcImgPath, "...."
-	res = srcImg.get_size()
-	print "srcImg", srcImg
+	#res = srcImg.get_size()
+	#print "srcImg", srcImg
 	#info = subprocess.check_output(["identify", srcImgPath]).split(" ")
 	#if info[6] == "2c": # This means it's a black image, can't use pixels3d
 	#	srcImgAr = np.zeros((res + (3,)), dtype=np.intc)
@@ -1296,23 +1318,27 @@ def renBg(warpUi):
 	#	srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	#	#srcImgAr = pygame.surfarray.array3d(srcImg)
 
-	srcImgAr = imageToArray3d(srcImg, srcImgPath)
+	#srcImgAr = imageToArray3d(srcImg, srcImgPath)
 
-	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
-	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
-	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
-	cIn0G = np.array(warpUi.parmDic("cIn0G"), dtype=np.float32)
-	cIn0B = np.array(warpUi.parmDic("cIn0B"), dtype=np.float32)
-	cOut0R = np.array(warpUi.parmDic("cOut0R"), dtype=np.float32)
-	cOut0G = np.array(warpUi.parmDic("cOut0G"), dtype=np.float32)
-	cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
-	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
-	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
-		cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr, 1)
+	#csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
+	#aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
+	#cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
+	#cIn0G = np.array(warpUi.parmDic("cIn0G"), dtype=np.float32)
+	#cIn0B = np.array(warpUi.parmDic("cIn0B"), dtype=np.float32)
+	#cOut0R = np.array(warpUi.parmDic("cOut0R"), dtype=np.float32)
+	#cOut0G = np.array(warpUi.parmDic("cOut0G"), dtype=np.float32)
+	#cOut0B = np.array(warpUi.parmDic("cOut0B"), dtype=np.float32)
+	#cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
+	#ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
+	#	cIn0R, cIn0G, cIn0B, cOut0R, cOut0G, cOut0B, res[0], res[1], fr, 1)
 
-	csImg = pygame.surfarray.make_surface(csImgAr)
+	#csImg = pygame.surfarray.make_surface(csImgAr)
+	print "\n\nAAAAa srcImg.get_size()", srcImg.get_size()
+	csImg = imgToCspace(warpUi, srcImg, srcImgPath)
 	setAovFullImg(warpUi, "bg", csImg, -1, sfx="_ctest")
 
+	#srcImgAr = imageToArray3d(srcImg, srcImgPath)
+	aovRipAr = np.zeros(srcImg.get_size() + (3,), dtype=np.intc)
 	aovRipImg = pygame.surfarray.make_surface(aovRipAr)
 	setAovFullImg(warpUi, "rip", aovRipImg, -1, sfx="_ctest")
 
@@ -1424,6 +1450,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	srcImgPath = warpUi.images["source"]["path"]
 
 	#srcImgAr = pygame.surfarray.array3d(srcImg)
+	print "\n\nDDDDDDD srcImg.get_size()", srcImg.get_size()
 	srcImgAr = imageToArray3d(srcImg, srcImgPath)
 
 
@@ -1443,10 +1470,11 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	exhParms = []
 	for pd in warpUi.parmDic.parmDic.items():
 		parmName = pd[0]
-		if parmName[:3] == "inh":
-			inhParms.append((parmName, int(pd[1]["val"])))
-		elif parmName[:3] == "exh":
-			exhParms.append((parmName, int(pd[1]["val"])))
+		if not parmName[-4:] == "trip":
+			if parmName[:3] == "inh":
+				inhParms.append((parmName, int(pd[1]["val"])))
+			elif parmName[:3] == "exh":
+				exhParms.append((parmName, int(pd[1]["val"])))
 	
 	inhParms.sort()
 	exhParms.sort()
@@ -1738,6 +1766,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	# Initialize canvas
 	srcImgPath = warpUi.images["source"]["path"]
 	srcImg = pygame.image.load(srcImgPath)
+	print "\n\nCCCCCCCC srcImg.get_size()", srcImg.get_size()
 	srcImgAr = imageToArray3d(srcImg, srcImgPath)
 	#srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)

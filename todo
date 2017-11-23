@@ -5209,10 +5209,11 @@ DOESN'T AFFECT LOOK:
 REJIG CLR UI Make clrgroup ui component thing:
 		fr | trip intens	| img:			| img:			|
 		R	G	B	W	K	| just this br  | Approx bty	|
-	Set up actual inh, exh frame parms; rejig/discard SEQ parms
+	#Dish# Set up actual inh, exh frame parms; rejig/discard SEQ parms
 	Make thumbnails show actual frames
 	Clr treat thumbnails
 	Add black, white point
+	See that clrs (incl breath parms) are saved in ren
 
 
 AFFECT LOOK:

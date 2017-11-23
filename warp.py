@@ -100,21 +100,22 @@ class warpUi():
 		print "Tab Changed.", event
 		self.frameMaster.focus_set()
 
-	def makeParmUiElement(self, parmName, thisFrame, thisRow, thisCol):
+	def makeParmUiElement(self, parmName, thisFrame, thisRow, thisCol, labTxt=None):
 		thisParmDic = self.parmDic.parmDic[parmName]
 		if thisParmDic["type"] == "bool":
 			self.chkVars[parmName] = IntVar()
 			self.chkVars[parmName].set(self.parmDic(parmName))
 			ent = Checkbutton(thisFrame, variable=self.chkVars[parmName], command=lambda pn=parmName: self.chk_cmd(pn))
 		else:
-			ent = Entry(thisFrame, width=8)
+			ent = Entry(thisFrame, width=5)
 			sv = StringVar()
 			sv.trace("w", lambda name, index, mode, sv=sv,
 				pn=parmName: self.saveUIToParmsAndFile(pn, sv))
 			ent.configure(textvariable=sv)
 			ent.insert(0, str(thisParmDic["val"]))
 
-		lab = Label(thisFrame, text=parmName)
+		txt = parmName if labTxt == None else labTxt
+		lab = Label(thisFrame, text=txt)
 		lab.grid(row=thisRow, column=thisCol, sticky=E)
 		ent.grid(row=thisRow, column=(thisCol+1), sticky=W)
 
@@ -134,7 +135,7 @@ class warpUi():
 		#stages = self.parmDic.parmStages.keys()
 		#stages.sort() # Just to get GEN in front of REN
 		#TODO make this dynamically depend on parms file
-		stages = ["META", "GEN", "REN", "CLR", "SEQ", "AOV"]
+		stages = ["META", "GEN", "REN", "CLR", "AOV"]
 		parmsToShowInMeta = ["isoLev", "tripAlwaysOn"]
 		for stage in stages:
 			if not stage == "META":
@@ -195,14 +196,18 @@ class warpUi():
 		thisFrame = self.nbFrames["CLR"]
 		#for parmName,dic in clrParmDicDic:
 
-		path = self.images["source"]["path"]
-		print "\n\n\n\n jJJJJJJJJJJJJJJJJJJJJJ opening", path
-		path = "/home/jeremy/dev/warp/seq/lgP6/lgP6.03409.png"
-		img = Image.open(path)
-		#print "jJJJJJJJJJJJJJJJJJJJJJ img", img, "\n\n\n"
-		img = img.resize((100, 60), Image.ANTIALIAS)
-		#self.pImg = ImageTk.PhotoImage(Image.open(path))
-		self.pImg = ImageTk.PhotoImage(img)
+		srcPath = self.images["source"]["path"]
+		#path = "/home/jeremy/dev/warp/seq/lgP6/lgP6.03409.png"
+		pathSpl = srcPath.split("/")
+		leaf = pathSpl[-1]
+		leafSpl = leaf.split(".")
+
+		thumbYRes = 60
+		thumbResRatio = float(thumbYRes)/self.res[1]
+		thumbRes = (int(self.res[0]*thumbResRatio), thumbYRes)
+
+		self.pImgs = []
+
 
 		for breath in range(4):
 			for inOut in ["In", "Out"]:
@@ -212,17 +217,12 @@ class warpUi():
 				rowFrameTop = Frame(clrGrpFrame)
 				rowFrameTop.grid(row=0, column=1, sticky=EW)
 
-				frEnt = Label(rowFrameTop, text="Fr")
-				frEnt.grid(row=0, column=0, sticky=E)
+				inhExh = "inh" if inOut == "In" else "exh"
+				parmNameFr = inhExh + str(breath)
+				ent = self.makeParmUiElement(parmNameFr, rowFrameTop, 0, 0)
 
-				frEnt = Entry(rowFrameTop, width=5)
-				frEnt.grid(row=0, column=1, sticky=E)
-
-				frEnt = Label(rowFrameTop, text="Intens")
-				frEnt.grid(row=0, column=2, sticky=W)
-
-				frEnt = Entry(rowFrameTop, width=5)
-				frEnt.grid(row=0, column=3, sticky=W)
+				parmNameFrTrip = parmNameFr + "trip"
+				ent = self.makeParmUiElement(parmNameFrTrip, rowFrameTop, 0, 2, labTxt="trp")
 
 				rowFrameBot = Frame(clrGrpFrame)
 				rowFrameBot.grid(row=1, column=1)
@@ -270,8 +270,30 @@ class warpUi():
 				#sc = float(30)/ht
 				#pImg.resize((50, 30))
 				#pImg = self.images["source"]["pImg"].zoom(sc,sc)
+				brFr = self.parmDic(parmNameFr)
+				leafSpl[-2] = "%05d" % brFr
+				leafThisBr = ".".join(leafSpl)
+				pathSpl[-1] = leafThisBr
+				pathThisBr = "/".join(pathSpl)
+				img = Image.open(pathThisBr)
+				print "\n\njJJJJJJJJJJJJJJJJJJJJJ pathThisBr", pathThisBr, "\n\n\n"
 
-				ent = Button(thisFrame, image=self.pImg)
+				img = img.resize(thumbRes, Image.ANTIALIAS)
+
+				imgSrf = pygame.image.load(pathThisBr)
+				imgSrf = pygame.transform.scale(imgSrf, thumbRes)
+				#self.pImg = ImageTk.PhotoImage(Image.open(path))
+				#print "\n\nAAAAa srcImg.get_size()", srcImg.get_size()
+				csImg = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
+
+				imgPath = ut.imgDir + "/" + parmNameNoRGB + ".png"
+				print "\n\n\n VVVVVVVVVVVVV saving imgPath", imgPath, "..."
+				pygame.image.save(csImg, imgPath)
+				#pImg = ImageTk.PhotoImage(csImg)
+				pImg = ImageTk.PhotoImage(Image.open(imgPath))
+
+				ent = Label(thisFrame, image=pImg)
+				self.pImgs.append(pImg)
 				#ent = Label(thisFrame, image=pImg)
 				ent.grid(row=clrGrpRow, column=2)
 
@@ -566,7 +588,7 @@ class warpUi():
 		# TODO THIS GETS CALLED WAY TOO MUCH
 		print "_saveParmDic(): BEGIN"
 		# TODO Maybe don't hardwire this, user can config it in parmfile
-		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "CLR", "SEQ", "AOV"])]
+		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "CLR", "AOV"])]
 		print "_saveParmDic(): self.seqDataVDir:", self.seqDataVDir, "for GEN -- ",
 		# TODO Shouldn't seqDataVDir and seqRenVDir always exist?
 		if os.path.exists(self.seqDataVDir):
@@ -577,7 +599,7 @@ class warpUi():
 
 		print "_saveParmDic(): self.seqRenVDir:", self.seqRenVDir, "for REN -- ",
 		if os.path.exists(self.seqRenVDir):
-			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN", "CLR", "SEQ"]))
+			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN", "CLR"]))
 			print "EXISTS"
 		else:
 			print "DOES NOT EXIST"

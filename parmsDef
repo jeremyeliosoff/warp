@@ -171,6 +171,11 @@ clrKBig
 type float
 val 0
 
+moveDirOverride
+type str
+val n
+
+
 
 ---CLR---
 
@@ -274,12 +279,6 @@ type clr
 val 0,0,1
 
 
----SEQ---
-
-moveDirOverride
-type str
-val n
-
 tripFrStart
 type int
 val 1605
@@ -301,33 +300,65 @@ inh0
 type int
 val 1980
 
+inh0trip
+type float
+val 0.0
+
 exh0
 type int
 val 2280
+
+exh0trip
+type float
+val 0.1
 
 inh1
 type int
 val 2400
 
+inh1trip
+type float
+val 0.2
+
 exh1
 type int
 val 2580
+
+exh1trip
+type float
+val 0.4
 
 inh2
 type int
 val 2820
 
+inh2trip
+type float
+val 0.6
+
 exh2
 type int
 val 3000
+
+exh2trip
+type float
+val 0.8
 
 inh3
 type int
 val 3120
 
+inh3trip
+type float
+val 0.9
+
 exh3
 type int
 val 3320
+
+exh3trip
+type float
+val 1.0
 
 
 
