@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2470
+val 1738
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1

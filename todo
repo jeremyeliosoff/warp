@@ -1,4 +1,13 @@
 
+================
+== THU NOV 23 ==
+================
+Email:
+	Jason Ang
+	RVCQ re. Nov 31
+
+
+
 sudo rm /var/crash/*
 
 ffmpeg -i /home/jeremy/retimeBells/export/session.wav -i ren.ALL.avi -codec copy -shortest wSound.avi
@@ -5162,13 +5171,17 @@ play with pygame deformer stuff / other warp, esp bg
 
 #Dish# Make trip transition more gradual for clr
 
+#Nah# MmmmAYbe (contrary to above) have a clr loop, when clrLookupFr > frEnd, it loops back to beginning and interpolates to cIn0/cOut0
+
+eventually: save parm tab selection
+
 ---------- CURRENT ----------
 
 Pick nice clrs
 Music
 
 Fix up Temp Big D:
-	Access Passport
+	#D!# Access Passport
 	Render?  Try different sizes...
 
 Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
@@ -5178,7 +5191,6 @@ Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 
 Refine RGB:
 	Somehow, the first ripple should transition from regular rgb to first cSpace
 	Maybe explicitly choose progressively trippy colours, instead of fading colour blend to "on"
-	MmmmAYbe (contrary to above) have a clr loop, when clrLookupFr > frEnd, it loops back to beginning and interpolates to cIn0/cOut0
 	Black point?
 
 Do something about lower levs:
@@ -5188,30 +5200,19 @@ Do something about lower levs:
 AOVS
 	have separate switches for rip_ctest and rip (real)
 
-BIG-D-TEMP -- BEFORE OTTAWA
-	MAKE SURE YOU CAN GET data/ OFF 
-	Ren a few frames on Little-D
-	Render 60fpc w fade out
-
-
-STONNNNNED
-CLR -> BRE
-Each "Breath" (CLR) UI has:
-
-
 
 #GAAAARRRR!!!!!# For fill mode, speed up fr skipping.
 
-eventually: save parm tab selection
 
 *********** PLAN OF ATTACK *********** 
 DOESN'T AFFECT LOOK:
-REJIG CLR UI
-	Make clrgroup ui component thing:
+REJIG CLR UI Make clrgroup ui component thing:
 		fr | trip intens	| img:			| img:			|
 		R	G	B	W	K	| just this br  | Approx bty	|
+	Set up actual inh, exh frame parms; rejig/discard SEQ parms
+	Make thumbnails show actual frames
+	Clr treat thumbnails
 	Add black, white point
-	Incl some kind of thumbnail in clr selecting UI?
 
 
 AFFECT LOOK:
@@ -5235,4 +5236,17 @@ Sync retime fps changes with breaths
 
 
 
+!!!!!!!!!!!!!!
+LAST DAYS PLAN
+!!!!!!!!!!!!!!
 
+Gen parms still to figure out: fpc, zoom, fade time
+
+
+Thu 23 Finish clr ui
+Fri 24 BUSY W OLSENS
+Sat 25 Clr flourishes: bulbs, sheen, edge; fix ripple
+Sun 26
+Mon 27 
+Tue 28 
+Wed 29 FINAL RENDER

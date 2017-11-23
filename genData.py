@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pygame, math, ut, os, pprint, sys, random, time, shutil, glob, importlib
+import pygame, math, ut, os, pprint, sys, random, time, shutil, glob, importlib, subprocess
 import fragmod
 import cPickle as pickle
 # OpenCl stuff!
@@ -1275,7 +1275,9 @@ def makeBufferOutput(warpUi, shape, dtype=None):
 	
 def renBg(warpUi):
 	print "\n_renClrTest(): BEGIN\n"
-	srcImg = pygame.image.load(warpUi.images["source"]["path"])
+	srcImgPath = warpUi.images["source"]["path"]
+
+	srcImg = pygame.image.load(srcImgPath)
 	#srcImg.fill((255, 0, 255), None, pygame.BLEND_MULT)
 	# TODO integrate CLR into AOV system
 	#destDir = warpUi.seqRenVDir + "/CLR"
@@ -1284,9 +1286,18 @@ def renBg(warpUi):
 	#destPath = destDir + ("/CLR.%05d.png" % fr)
 
 
-	print "\n_renBg():processing image...."
+	print "\n_renBg():processing image", srcImgPath, "...."
 	res = srcImg.get_size()
-	srcImgAr = pygame.surfarray.pixels3d(srcImg)
+	print "srcImg", srcImg
+	#info = subprocess.check_output(["identify", srcImgPath]).split(" ")
+	#if info[6] == "2c": # This means it's a black image, can't use pixels3d
+	#	srcImgAr = np.zeros((res + (3,)), dtype=np.intc)
+	#else:
+	#	srcImgAr = pygame.surfarray.pixels3d(srcImg)
+	#	#srcImgAr = pygame.surfarray.array3d(srcImg)
+
+	srcImgAr = imageToArray3d(srcImg, srcImgPath)
+
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
@@ -1394,13 +1405,29 @@ __kernel void krShadeBg(
 		
 	return pygame.surfarray.make_surface(shadedImg)
 
+def imageToArray3d(srcImg, srcImgPath):
+	res = srcImg.get_size()
+	info = subprocess.check_output(["identify", srcImgPath]).split(" ")
+	if info[6] == "2c": # This means it's a black image, can't use pixels3d
+		srcImgAr = np.zeros((res + (3,)), dtype=np.intc)
+	else:
+		#srcImgAr = pygame.surfarray.array3d(srcImg)
+		srcImgAr = pygame.surfarray.pixels3d(srcImg)
+	return srcImgAr
+
 def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		tids, bbxs, cents, xfs, tidTrips, tripFrK):
 	tidImgLs = list(pygame.surfarray.array3d(tidImg))
 
 	# Inputs
 		
-	srcImgAr_buf = makeBufferInput(warpUi, list(pygame.surfarray.array3d(srcImg)), dtype=np.intc)
+	srcImgPath = warpUi.images["source"]["path"]
+
+	#srcImgAr = pygame.surfarray.array3d(srcImg)
+	srcImgAr = imageToArray3d(srcImg, srcImgPath)
+
+
+	srcImgAr_buf = makeBufferInput(warpUi, list(srcImgAr), dtype=np.intc)
 	tidImgAr_buf = makeBufferInput(warpUi, tidImgLs, dtype=np.intc)
 	tidPosGridThisLev_buf = makeBufferInput(warpUi, tidPosGridThisLev, dtype=np.intc)
 	bbxs_buf = makeBufferInput(warpUi, bbxs, dtype=np.intc)
@@ -1709,8 +1736,10 @@ def renSprites(warpUi, srcImg, res, fr):
 	print "\n_renSprites(): BEGIN, fr", fr
 
 	# Initialize canvas
-	srcImg = pygame.image.load(warpUi.images["source"]["path"])
-	srcImgAr = pygame.surfarray.pixels3d(srcImg)
+	srcImgPath = warpUi.images["source"]["path"]
+	srcImg = pygame.image.load(srcImgPath)
+	srcImgAr = imageToArray3d(srcImg, srcImgPath)
+	#srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	cIn0R = np.array(warpUi.parmDic("cIn0R"), dtype=np.float32)
