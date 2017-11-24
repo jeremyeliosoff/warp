@@ -5210,8 +5210,9 @@ REJIG CLR UI Make clrgroup ui component thing:
 		fr | trip intens	| img:			| img:			|
 		R	G	B	W	K	| just this br  | Approx bty	|
 	#Dish# Set up actual inh, exh frame parms; rejig/discard SEQ parms
-	Make thumbnails show actual frames
-	Clr treat thumbnails
+	#D# Make thumbnails show actual frames
+	#D# Clr treat thumbnails
+	Clr treat thumbnails, iso in, out
 	Add black, white point
 	See that clrs (incl breath parms) are saved in ren
 

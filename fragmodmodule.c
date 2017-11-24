@@ -12,46 +12,29 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 	PyArrayObject *in=NULL;
 	PyArrayObject *out=NULL;
 	PyArrayObject *aovRipPtr=NULL;
-	PyArrayObject *cInRPtr=NULL;
-	PyArrayObject *cInGPtr=NULL;
-	PyArrayObject *cInBPtr=NULL;
-	PyArrayObject *cOutRPtr=NULL;
-	PyArrayObject *cOutGPtr=NULL;
-	PyArrayObject *cOutBPtr=NULL;
 	int xr;
 	int yr;
 	int fr;
+	int inOutBoth;
 	float trip;
 
     //if (!PyArg_ParseTuple(args, "OOii", &in, &out, &xr, &yr)) return NULL;
-    if (!PyArg_ParseTuple(args, "OOOOOOOOOOiiif",
+    if (!PyArg_ParseTuple(args, "OOOOiiiif",
 			&cInOutValsPtr,
 			&in, &out,
 			&aovRipPtr,
-			&cInRPtr, &cInGPtr, &cInBPtr,
-			&cOutRPtr, &cOutGPtr, &cOutBPtr,
-			&xr, &yr, &fr, &trip)) return NULL;
-	float cInR[3] = {0, 0, 0};
-	float cInG[3] = {0, 0, 0};
-	float cInB[3] = {0, 0, 0};
-	float cOutR[3] = {0, 0, 0};
-	float cOutG[3] = {0, 0, 0};
-	float cOutB[3] = {0, 0, 0};
+			&xr, &yr, &fr, &inOutBoth, &trip)) return NULL;
+	// 4 breaths * 2 inOuts * 3 rgbs * 3 comps per rgb
 	float cInOutVals[24*3];
 	for (int i=0; i < 24*3; i++) {
 		cInOutVals[i] = *((float *)PyArray_GETPTR1(cInOutValsPtr, i));
+		int inOut = (i/36) % 2; // 0 : inClr, 1 : outClr
+		if ((inOut == 0 && inOutBoth == 1) || (inOut == 1 && inOutBoth == 0)) {
+			cInOutVals[i] = 0;
+		}
 	}
 
 
-	for (int i=0; i < 3; i++) {
-		cInR[i] = *((float *)PyArray_GETPTR1(cInRPtr, i));
-		cInG[i] = *((float *)PyArray_GETPTR1(cInGPtr, i));
-		cInB[i] = *((float *)PyArray_GETPTR1(cInBPtr, i));
-		cOutR[i] = *((float *)PyArray_GETPTR1(cOutRPtr, i));
-		cOutG[i] = *((float *)PyArray_GETPTR1(cOutGPtr, i));
-		cOutB[i] = *((float *)PyArray_GETPTR1(cOutBPtr, i));
-	}
-	
 	for (int x=0; x < xr; x ++) {
 		for (int y=0; y < yr; y ++) {
 			int tot[3] = {0, 0, 0};

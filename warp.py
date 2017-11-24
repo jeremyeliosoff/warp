@@ -282,21 +282,31 @@ class warpUi():
 
 				imgSrf = pygame.image.load(pathThisBr)
 				imgSrf = pygame.transform.scale(imgSrf, thumbRes)
-				#self.pImg = ImageTk.PhotoImage(Image.open(path))
-				#print "\n\nAAAAa srcImg.get_size()", srcImg.get_size()
+
+				# Just in/out clr approximation
+				inOutBoth = 1 if inOut == "Out" else 0
+				csImg = genData.imgToCspace(self, imgSrf, pathThisBr,
+					frIn=brFr, inOutBoth=inOutBoth)
+
+				imgPath = ut.imgDir + "/" + parmNameNoRGB + "_justInOrOut.png"
+				pygame.image.save(csImg, imgPath)
+				pImg = ImageTk.PhotoImage(Image.open(imgPath))
+				self.pImgs.append(pImg)
+
+				ent = Label(thisFrame, image=pImg)
+				ent.grid(row=clrGrpRow, column=2)
+
+
+				# Full clr approximation
 				csImg = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
 
 				imgPath = ut.imgDir + "/" + parmNameNoRGB + ".png"
-				print "\n\n\n VVVVVVVVVVVVV saving imgPath", imgPath, "..."
 				pygame.image.save(csImg, imgPath)
-				#pImg = ImageTk.PhotoImage(csImg)
 				pImg = ImageTk.PhotoImage(Image.open(imgPath))
+				self.pImgs.append(pImg)
 
 				ent = Label(thisFrame, image=pImg)
-				self.pImgs.append(pImg)
-				#ent = Label(thisFrame, image=pImg)
-				ent.grid(row=clrGrpRow, column=2)
-
+				ent.grid(row=clrGrpRow, column=3)
 
 
 
@@ -383,10 +393,9 @@ class warpUi():
 			if not img in (self.staticImageNames + self.varyingStaticImageNames):
 				path = self.images[img]["path"]
 				print "_loadImages(): Checking existence of", path
-				if img == "source":
-					self.images[img]["pImg"] = self.loadImgAndSetRes(path, setRes=True)
-				else:
-					self.images[img]["pImg"] = self.loadImgAndSetRes(path)
+				setRes = img == "source"
+				big = img in ["source", "ren"]
+				self.images[img]["pImg"] = self.loadImgAndSetRes(path, setRes=setRes, big=big)
 
 		res = (self.images["source"]["pImg"].width(), self.images["source"]["pImg"].height())
 
@@ -402,7 +411,8 @@ class warpUi():
 		# keep those images "on hand" as PhotoImages that you switch between
 		for k,thisDic in self.images.items():
 			if not k in (self.staticImageNames + self.varyingStaticImageNames):
-				pImg = self.loadImgAndSetRes(thisDic["path"])
+				big = k in ["source", "ren"]
+				pImg = self.loadImgAndSetRes(thisDic["path"], big=big)
 				if k in self.images.keys():
 					self.images[k]["pImg"] = pImg
 				else:
@@ -1046,7 +1056,7 @@ class warpUi():
 				(".%05d" + self.seqImgExt) % fr)
 		return levDir, imgPath
 
-	def loadImgAndSetRes(self, path, setRes=False):
+	def loadImgAndSetRes(self, path, setRes=False, big=False):
 		#ut.printFrameStack()
 		print "_safeLoad(): Attempting to load", path, "...",
 		if os.path.exists(path):
@@ -1054,8 +1064,9 @@ class warpUi():
 			res = loadedImg.size
 			if setRes:
 				self.res = (res[0]-1, res[1]-1)
-			maxXres = int(.37*self.root.winfo_screenwidth())
-			maxYres = int(.37*self.root.winfo_screenheight())
+			maxResMult = .4 if big else .28
+			maxXres = int(maxResMult*self.root.winfo_screenwidth())
+			maxYres = int(maxResMult*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:
 				y = int(res[1] * float(maxXres)/res[0])
 				x = maxXres
@@ -1229,9 +1240,11 @@ class warpUi():
 
 		cInOutNameVals.sort()
 		self.cInOutVals = []
+
 		for i in cInOutNameVals:
 			for ss in i[1]["val"].split(","):
 				self.cInOutVals.append(float(ss))
+
 
 	def setFillMode(self):
 		self.fillMode = "overwrite"
@@ -1615,19 +1628,23 @@ class warpUi():
 		# Make picture (button) UI
 		self.frameImg = Frame(self.frameMaster)
 		self.frameImg.grid(row=0, column=1)
-		row = 0
-
-		thisLabel = Label(self.frameImg, text="source")
-		thisLabel.grid(row=row)
-		thisButton = self.makeImgButton("source", self.frameImg)
-		thisButton.grid(row=row+1)
 
 
-		thisLabel = Label(self.frameImg, text="ren")
-		thisLabel.grid(row=row,column=1)
-		thisButton = self.makeImgButton("ren", self.frameImg)
-		thisButton.grid(row=row+1, column=1)
-		row +=2
+		frameRen = Frame(self.frameImg)
+		thisLabel = Label(frameRen, text="ren")
+		thisLabel.grid(row=0)
+		thisButton = self.makeImgButton("ren", frameRen)
+		thisButton.grid(row=1)
+		frameRen.grid(row=0)
+
+		frameSrc = Frame(self.frameImg)
+		thisLabel = Label(frameSrc, text="source")
+		thisLabel.grid(row=1)
+		thisButton = self.makeImgButton("source", frameSrc)
+		thisButton.grid(row=0)
+		frameSrc.grid(row=1)
+
+
 
 		sourceImages = self.getRenderedAovNames()
 
@@ -1636,14 +1653,15 @@ class warpUi():
 
 		aovParmNames = self.getDbImgParmNames()
 		print "\n\nYYYYYYYYYYYYYY _warpUi.__init__(): aovParmNames", aovParmNames
+		aovNum = 0
 		for aovName in aovParmNames:
 			print "_warpUi.__init__(): \\\\\\\\\\\\ col", col, "aovName", aovName
 			frameDbParm = Frame(self.frameImg)
 			thisButton = self.makeImgButton(aovName, frameDbParm)
-			thisButton.grid()
+			thisButton.grid(row=(1-aovNum))
 			
 			frameDbMenus = Frame(frameDbParm)
-			frameDbMenus.grid(row=1)
+			frameDbMenus.grid(row=aovNum)
 			varName = StringVar(self.frameParm)
 			# TODO: Replace with parmDic(aovName) -- look for other instances that need similar replacement.
 			varName.set(self.parmDic.parmDic[aovName]["val"])
@@ -1662,8 +1680,8 @@ class warpUi():
 			# TODO: varName and varLev are not yet used.
 			self.dbMenus[aovName] = {"menu":imgChooser,
 				"varName":varLev, "varLev":varLev}
-			frameDbParm.grid(row=row,column=col)
-			col += 1
+			frameDbParm.grid(row=aovNum,column=1)
+			aovNum += 1
 
 
 		# Update menu-dependent images to reflect current selection.
