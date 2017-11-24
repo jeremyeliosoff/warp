@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import os, genData, ut, time, datetime, pprint, cProfile, shutil, glob, pygame
+import os, genData, ut, time, datetime, pprint, cProfile, shutil, glob, pygame, fragmod
+import numpy as np
 import pyopencl as cl
 from Tkinter import *
 import Tkinter, ttk
@@ -227,10 +228,13 @@ class warpUi():
 				rowFrameBot = Frame(clrGrpFrame)
 				rowFrameBot.grid(row=1, column=1)
 				col = 1
+
+				rgbVals = []
 				for rgb in "RGB":
 					parmName = parmNameNoRGB + rgb
 					#thisRow = cNum * 4 + ("RGB".index(cRGB) + 1)
 					clrTuple = self.parmDic(parmName)
+					rgbVals.append(clrTuple)
 					hx = ut.rgb_to_hex(clrTuple)
 					ent = Button(rowFrameBot, width=1, bg=hx,command=lambda
 						args=(parmName,clrTuple): self.btn_getColor(args))
@@ -255,7 +259,17 @@ class warpUi():
 				ent.grid(row=0, column=col, sticky=W)
 
 				col += 1
-				hx = ut.rgb_to_hex((.5, .5, .5))
+				white = [0,0,0]
+				rAr = np.array(rgbVals[0], dtype=np.float32)
+				gAr = np.array(rgbVals[1], dtype=np.float32)
+				bAr = np.array(rgbVals[2], dtype=np.float32)
+				whiteAr = np.array(white, dtype=np.float32)
+
+				print "\n\n\n LLLLLLLLLLLLLL before whiteAr", whiteAr
+				fragmod.cspace(rAr, gAr, bAr, whiteAr)
+				print "\n\n\n LLLLLLLLLLLLLL after whiteAr", whiteAr
+				#hx = ut.rgb_to_hex((.5, .5, .5))
+				hx = ut.rgb_to_hex(whiteAr)
 				ent = Button(rowFrameBot, width=1, bg=hx,command=lambda
 					args=(parmName,clrTuple): self.btn_getColor(args))
 				ent.grid(row=0, column=col, sticky=W)
@@ -1652,7 +1666,6 @@ class warpUi():
 		col = 0
 
 		aovParmNames = self.getDbImgParmNames()
-		print "\n\nYYYYYYYYYYYYYY _warpUi.__init__(): aovParmNames", aovParmNames
 		aovNum = 0
 		for aovName in aovParmNames:
 			print "_warpUi.__init__(): \\\\\\\\\\\\ col", col, "aovName", aovName

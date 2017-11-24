@@ -6,6 +6,42 @@
 // Define a new exception object for our module.
 static PyObject *fragmodError;
 
+static PyObject* fragmod_cspace(PyObject* self, PyObject* args) {
+	PyArrayObject *rPtr=NULL;
+	PyArrayObject *gPtr=NULL;
+	PyArrayObject *bPtr=NULL;
+	PyArrayObject *outPtr=NULL;
+    if (!PyArg_ParseTuple(args, "OOOO",
+			&rPtr, &gPtr, &bPtr, &outPtr)) return NULL;
+
+	float r[3];
+	float g[3];
+	float b[3];
+	float out[3];
+
+	for (int i=0; i < 3; i++) {
+		r[i] = *((float *)PyArray_GETPTR1(rPtr, i));
+		g[i] = *((float *)PyArray_GETPTR1(gPtr, i));
+		b[i] = *((float *)PyArray_GETPTR1(bPtr, i));
+		//out[i] = *((float *)PyArray_GETPTR1(outPtr, i));
+	}
+
+	float white[3] = {255, 255, 255};
+	csFunc(r, g, b, white, out);
+
+	float mx = MAX(out[0], out[1]);
+	mx = MAX(mx, out[2]);
+
+	for (int i=0; i < 3; i++) {
+		float *a = ((float *)PyArray_GETPTR1(outPtr,i));
+		//*a = CLAMP((float) out[i]/mx, 0, 1);
+		*a = (float) out[i]/mx;
+	}
+
+	// No idea what this stuff is for.
+	double foo = 8;
+	return Py_BuildValue("d", foo);
+}
 
 static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 	PyArrayObject *cInOutValsPtr=NULL;
@@ -106,6 +142,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 static PyMethodDef fragmod_methods[] = {
 	// PythonName,	 C-function name,	argument presentation,	description
 	{"cspaceImg",	fragmod_cspaceImg,	METH_VARARGS,	"Test ls 3d"},
+	{"cspace",	fragmod_cspace,	METH_VARARGS,	"Test ls 3d"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 

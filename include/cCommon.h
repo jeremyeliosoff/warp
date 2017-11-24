@@ -163,7 +163,6 @@ void getCInOut(
 	float* out) {
 	int nBreaths = 4;
 	int i = 9*(inOut * nBreaths + cNum) + 3*rgb;
-	float* outF;
 	for (int j=0; j<3; j++) {
 		out[j] = cInOutVals[i + j];
 	}
