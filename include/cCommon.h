@@ -192,7 +192,7 @@ void getCspacePvNxInOut (
 	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
 
 	int inFfw = 600;
-	int frWOfs = fr + ripFfw * inRip + ((float)inFfw) * (1.0-dNorm);
+	int frWOfs = fr + ripFfw * inRip - ((float)inFfw) * -dNorm;
 
 	float inhProg = getBreathFramesAndProg (frWOfs, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
 	float exhProg = getBreathFramesAndProg (frWOfs, exhFrames, nBreaths, &pvExhFr, &nxExhFr);

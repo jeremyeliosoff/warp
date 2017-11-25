@@ -258,21 +258,23 @@ class warpUi():
 					args=(parmName,clrTuple): self.btn_getColor(args))
 				ent.grid(row=0, column=col, sticky=W)
 
-				col += 1
 				white = [0,0,0]
 				rAr = np.array(rgbVals[0], dtype=np.float32)
 				gAr = np.array(rgbVals[1], dtype=np.float32)
 				bAr = np.array(rgbVals[2], dtype=np.float32)
 				whiteAr = np.array(white, dtype=np.float32)
 
-				print "\n\n\n LLLLLLLLLLLLLL before whiteAr", whiteAr
 				fragmod.cspace(rAr, gAr, bAr, whiteAr)
-				print "\n\n\n LLLLLLLLLLLLLL after whiteAr", whiteAr
 				#hx = ut.rgb_to_hex((.5, .5, .5))
 				hx = ut.rgb_to_hex(whiteAr)
-				ent = Button(rowFrameBot, width=1, bg=hx,command=lambda
+				butThumFrame = Frame(thisFrame)
+				butThumFrame.grid(row=clrGrpRow, column=2)
+				ent = Button(butThumFrame, height=3, width=1, bg=hx,command=lambda
 					args=(parmName,clrTuple): self.btn_getColor(args))
-				ent.grid(row=0, column=col, sticky=W)
+				#ent.grid(row=0, column=col, sticky=W)
+				
+				col = 0 if inOut == "In" else 1
+				ent.grid(row=0, column=col)
 
 
 				# Add thumbnail
@@ -290,7 +292,6 @@ class warpUi():
 				pathSpl[-1] = leafThisBr
 				pathThisBr = "/".join(pathSpl)
 				img = Image.open(pathThisBr)
-				print "\n\njJJJJJJJJJJJJJJJJJJJJJ pathThisBr", pathThisBr, "\n\n\n"
 
 				img = img.resize(thumbRes, Image.ANTIALIAS)
 
@@ -307,8 +308,9 @@ class warpUi():
 				pImg = ImageTk.PhotoImage(Image.open(imgPath))
 				self.pImgs.append(pImg)
 
-				ent = Label(thisFrame, image=pImg)
-				ent.grid(row=clrGrpRow, column=2)
+				ent = Label(butThumFrame, image=pImg)
+				col = 1 if inOut == "In" else 0
+				ent.grid(row=0, column=col)
 
 
 				# Full clr approximation
@@ -321,7 +323,6 @@ class warpUi():
 
 				ent = Label(thisFrame, image=pImg)
 				ent.grid(row=clrGrpRow, column=3)
-
 
 
 				clrGrpRow += 1
@@ -543,6 +544,25 @@ class warpUi():
 	def ffwButCmd(self):
 		self.setFrAndUpdate(self.parmDic("frEnd"))
 
+	def shiftLeftCmd(self):
+		thisFr = self.parmDic("fr")
+
+		breathFramesRev = self.breathFrames[:]
+		breathFramesRev.reverse()
+		for fr in breathFramesRev:
+			if fr < thisFr:
+				thisFr = fr
+				break
+		self.setFrAndUpdate(thisFr)
+
+	def shiftRightCmd(self):
+		thisFr = self.parmDic("fr")
+
+		for fr in self.breathFrames:
+			if fr > thisFr:
+				thisFr = fr
+				break
+		self.setFrAndUpdate(thisFr)
 
 	def animButCmd(self):
 		if self.parmDic("anim") == 0:
@@ -1326,9 +1346,34 @@ class warpUi():
 		self.parmDic = ut.parmDic(parmPath)
 		self.makeCInOutValsLs()
 
+		# Breaths.
+		inhParms = []
+		exhParms = []
+		for pd in self.parmDic.parmDic.items():
+			parmName = pd[0]
+			if not parmName[-4:] == "trip":
+				if parmName[:3] == "inh":
+					inhParms.append((parmName, int(pd[1]["val"])))
+				elif parmName[:3] == "exh":
+					exhParms.append((parmName, int(pd[1]["val"])))
+		
+		inhParms.sort()
+		exhParms.sort()
+		dud,self.inhFrames = zip(*inhParms)
+		dud,self.exhFrames = zip(*exhParms)
+		self.breathFrames = []
+		for i in range(len(self.inhFrames)):
+			self.breathFrames.append(self.inhFrames[i])
+			self.breathFrames.append(self.exhFrames[i])
 
-		print "\n\n\n__init__():********** parmDic"
-		print self.parmDic
+		print "\n\n\n ZZZZZZZZZZZZZZZZZZZZZ"
+		print "self.inhFrames", self.inhFrames
+		print "self.exhFrames", self.exhFrames
+		print "self.breathFrames", self.breathFrames
+		print "ZZZZZZZZZZZZZZZZZZZZZ\n\n\n"
+
+		#print "\n\n\n__init__():********** parmDic"
+		#print self.parmDic
 		self.pauseSaveUIToParmsAndFile = False
 		self.parmEntries = {}
 		self.renQLs = []
@@ -1397,6 +1442,8 @@ class warpUi():
 			self.root.bind('<' + kk + '>', self.execHotkey)
 		self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
 		self.root.bind('<Control-Right>', lambda e: self.ffwButCmd())
+		self.root.bind('<Shift-Right>', lambda e: self.shiftRightCmd())
+		self.root.bind('<Shift-Left>', lambda e: self.shiftLeftCmd())
 		self.root.bind('<Alt-Return>', lambda e: self.imgButCmd())
 
 		#self.root.bind('<Control-Left>', lambda e: self.rewButCmd())
