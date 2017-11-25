@@ -264,9 +264,9 @@ class warpUi():
 				bAr = np.array(rgbVals[2], dtype=np.float32)
 				whiteAr = np.array(white, dtype=np.float32)
 
-				fragmod.cspace(rAr, gAr, bAr, whiteAr)
-				#hx = ut.rgb_to_hex((.5, .5, .5))
-				hx = ut.rgb_to_hex(whiteAr)
+				# TEMP fragmod.cspace(rAr, gAr, bAr, whiteAr)
+				#hx = ut.rgb_to_hex(whiteAr)
+				hx = ut.rgb_to_hex((.5, .5, .5))
 				butThumFrame = Frame(thisFrame)
 				butThumFrame.grid(row=clrGrpRow, column=2)
 				ent = Button(butThumFrame, height=3, width=1, bg=hx,command=lambda
@@ -300,8 +300,9 @@ class warpUi():
 
 				# Just in/out clr approximation
 				inOutBoth = 1 if inOut == "Out" else 0
-				csImg = genData.imgToCspace(self, imgSrf, pathThisBr,
-					frIn=brFr, inOutBoth=inOutBoth)
+				csImg = imgSrf
+				# TEMP csImg = genData.imgToCspace(self, imgSrf, pathThisBr,
+				#	frIn=brFr, inOutBoth=inOutBoth)
 
 				imgPath = ut.imgDir + "/" + parmNameNoRGB + "_justInOrOut.png"
 				pygame.image.save(csImg, imgPath)
@@ -314,7 +315,7 @@ class warpUi():
 
 
 				# Full clr approximation
-				csImg = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
+				# TEMP csImg = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
 
 				imgPath = ut.imgDir + "/" + parmNameNoRGB + ".png"
 				pygame.image.save(csImg, imgPath)
