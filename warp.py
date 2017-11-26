@@ -250,6 +250,8 @@ class warpUi():
 					else:
 						self.parmEntries[thisParmDic["type"]] = [ent]
 
+					self.parmDic.parmDic[parmName]["uiElement"] = ent
+
 				# Add black and white.
 
 				#col = 1
@@ -264,9 +266,9 @@ class warpUi():
 				bAr = np.array(rgbVals[2], dtype=np.float32)
 				whiteAr = np.array(white, dtype=np.float32)
 
-				# TEMP fragmod.cspace(rAr, gAr, bAr, whiteAr)
-				#hx = ut.rgb_to_hex(whiteAr)
-				hx = ut.rgb_to_hex((.5, .5, .5))
+				fragmod.cspace(rAr, gAr, bAr, whiteAr)
+				hx = ut.rgb_to_hex(whiteAr)
+				#hx = ut.rgb_to_hex((.5, .5, .5))
 				butThumFrame = Frame(thisFrame)
 				butThumFrame.grid(row=clrGrpRow, column=2)
 				ent = Button(butThumFrame, height=3, width=1, bg=hx,command=lambda
@@ -300,9 +302,9 @@ class warpUi():
 
 				# Just in/out clr approximation
 				inOutBoth = 1 if inOut == "Out" else 0
-				csImg = imgSrf
-				# TEMP csImg = genData.imgToCspace(self, imgSrf, pathThisBr,
-				#	frIn=brFr, inOutBoth=inOutBoth)
+				#csImg = imgSrf
+				csImg = genData.imgToCspace(self, imgSrf, pathThisBr,
+					frIn=brFr, inOutBoth=inOutBoth)
 
 				imgPath = ut.imgDir + "/" + parmNameNoRGB + "_justInOrOut.png"
 				pygame.image.save(csImg, imgPath)
@@ -315,7 +317,7 @@ class warpUi():
 
 
 				# Full clr approximation
-				# TEMP csImg = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
+				csImg = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
 
 				imgPath = ut.imgDir + "/" + parmNameNoRGB + ".png"
 				pygame.image.save(csImg, imgPath)
@@ -349,21 +351,21 @@ class warpUi():
 		#w = 1800 # width for the Tk root
 		#h = 950 # height for the Tk root
 		w = 1800 # width for the Tk root
-		h = 1000 # height for the Tk root
+		h = 1200 # height for the Tk root
 
 		# get screen width and height
 		ws = self.root.winfo_screenwidth() # width of the screen
 		hs = self.root.winfo_screenheight() # height of the screen
 
 		# calculate x and y coordinates for the Tk root window
-		x = ws/8
-		y = hs/12
+		x = 0
+		y = 0
 		#x = ws - (w/2)
 		#y = hs - (h/2)
 
 		# set the dimensions of the screen 
 		# and where it is placed
-		self.root.geometry('%dx%d+%d+%d' % (w, h, x, y))
+		self.root.geometry('%dx%d+%d+%d' % (ws, hs, x, y))
 
 
 	def getDbImgParmNames(self):
@@ -545,24 +547,31 @@ class warpUi():
 	def ffwButCmd(self):
 		self.setFrAndUpdate(self.parmDic("frEnd"))
 
-	def shiftLeftCmd(self):
-		thisFr = self.parmDic("fr")
-
+	def getPrevBr(self, fr):
+		thisFr = fr
 		breathFramesRev = self.breathFrames[:]
 		breathFramesRev.reverse()
-		for fr in breathFramesRev:
-			if fr < thisFr:
-				thisFr = fr
+		for br in breathFramesRev:
+			if br < thisFr:
+				thisFr = br
 				break
+		return thisFr
+
+	def shiftLeftCmd(self):
+		thisFr = self.parmDic("fr")
+		thisFr = self.getPrevBr(thisFr)
 		self.setFrAndUpdate(thisFr)
 
-	def shiftRightCmd(self):
-		thisFr = self.parmDic("fr")
-
-		for fr in self.breathFrames:
-			if fr > thisFr:
-				thisFr = fr
+	def getNextBr(self, fr):
+		thisFr = fr
+		for br in self.breathFrames:
+			if br > thisFr:
+				thisFr = br
 				break
+		return thisFr
+
+	def shiftRightCmd(self):
+		thisFr = self.getNextBr(self.parmDic("fr"))
 		self.setFrAndUpdate(thisFr)
 
 	def animButCmd(self):
@@ -1099,7 +1108,7 @@ class warpUi():
 			res = loadedImg.size
 			if setRes:
 				self.res = (res[0]-1, res[1]-1)
-			maxResMult = .4 if big else .28
+			maxResMult = .38 if big else .28
 			maxXres = int(maxResMult*self.root.winfo_screenwidth())
 			maxYres = int(maxResMult*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:

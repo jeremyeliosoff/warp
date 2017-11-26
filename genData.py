@@ -1528,6 +1528,14 @@ def getTripFrK(warpUi):
 		tripFrK = 1
 	else:
 		fr = warpUi.parmDic("fr")
+		# TODO Incorporate trip lev into breath.
+		#nx = self.getNextBr(fr)
+		#pv = self.getPrevBr(fr)
+
+
+
+
+
 		if fr < tripFrMid:
 			print "_genSprites(): fr:", fr, "sm:", ut.smoothstep(tripFrStart, tripFrMid, fr)
 			tripFrK = tripKMid * ut.smoothstep(tripFrStart, tripFrMid, fr)

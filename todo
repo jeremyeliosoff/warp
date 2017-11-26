@@ -1,16 +1,5 @@
 
 ================
-== SAT NOV 25 ==
-================
-Reinstall windows on loaner
-Test un-comment frag stuff
-Get Big-D!
-Make clr button work
-Work on clr transition
-Bulbs
-Waves
-
-================
 == THU NOV 23 ==
 ================
 Email:
@@ -5185,83 +5174,19 @@ play with pygame deformer stuff / other warp, esp bg
 
 eventually: save parm tab selection
 
----------- CURRENT ----------
 
-Pick nice clrs
-Music
+================
+== SAT NOV 25 ==
+================
+#Dish# Reinstall windows on loaner
+#Dish?# Test un-comment frag stuff
+#D!!# Get Big-D!
+#D!!# Make clr button work
+Work on clr transition
 
-Fix up Temp Big D:
+#Nah# Fix up Temp Big D:
 	#D!# Access Passport
-	Render?  Try different sizes...
-
-Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
-	frToLookup += k * progToNextLev
-
-
-Refine RGB:
-	Somehow, the first ripple should transition from regular rgb to first cSpace
-	Maybe explicitly choose progressively trippy colours, instead of fading colour blend to "on"
-	Black point?
-
-Do something about lower levs:
-	if not, don't render
-
-
-AOVS
-	have separate switches for rip_ctest and rip (real)
-
-
-#GAAAARRRR!!!!!# For fill mode, speed up fr skipping.
-
-
-*********** PLAN OF ATTACK *********** 
-DOESN'T AFFECT LOOK:
-REJIG CLR UI Make clrgroup ui component thing:
-		fr | trip intens	| img:			| img:			|
-		R	G	B	W	K	| just this br  | Approx bty	|
-	#Dish# Set up actual inh, exh frame parms; rejig/discard SEQ parms
-	#D# Make thumbnails show actual frames
-	#D# Clr treat thumbnails
-	Clr treat thumbnails, iso in, out
-	Add black, white point
-	See that clrs (incl breath parms) are saved in ren
-
-
-AFFECT LOOK:
-#Better, but needs work# Match trip=0 to src, ffs
-
-
-Make lower levels transparent to let bg in
-
-rip goes from LIGHTEST TO DARKEST w/in sid (we're trying this with progToNextLev, soso)
-
-Do THICKER EDGE detection in addition to/instead of above.
-
-These will be used to make the "FLASHING LIGHTBULBS", that go off + on in alternatong groups like a marquee;  sids qualifying as lightbulbs are of certain size and sx/sy ~ 1. 
-
-"WAVES OF SHEEN" passing over sids: white added to/replaces clr.
-
-Similar thing ALONG EDGES
-
-Sync retime fps changes with breaths
-
-
-
-
-!!!!!!!!!!!!!!
-LAST DAYS PLAN
-!!!!!!!!!!!!!!
-
-Gen parms still to figure out: fpc, zoom, fade time
-
-
-Thu 23 Finish clr ui
-Fri 24 BUSY W OLSENS
-Sat 25 Clr flourishes: bulbs, sheen, edge; fix ripple
-Sun 26
-Mon 27 
-Tue 28 
-Wed 29 FINAL RENDER
+	#Nah# Render?  Try different sizes...
 
 
 STONED
@@ -5283,4 +5208,96 @@ exh3
 
 
 
+REJIG CLR UI Make clrgroup ui component thing:
+		fr | trip intens	| img:			| img:			|
+		R	G	B	W	K	| just this br  | Approx bty	|
+	#Dish# Set up actual inh, exh frame parms; rejig/discard SEQ parms
+	#D# Make thumbnails show actual frames
+	#D# Clr treat thumbnails
+	#D# Clr treat thumbnails, iso in, out
 
+
+---------- CURRENT ----------
+
+Pick nice clrs
+Music
+
+Calc another variable progToNextLev = fit(lum, thisLumThresh, nextLumThresh, 0, 1)
+	frToLookup += k * progToNextLev
+
+
+Refine RGB:
+	#Don't think so# Somehow, the first ripple should transition from regular rgb to first cSpace
+	Maybe explicitly choose progressively trippy colours, instead of fading colour blend to "on"
+	Black point?
+
+Do something about lower levs:
+	if not, don't render
+
+
+AOVS: have separate switches for rip_ctest and rip (real)
+
+
+#GAAAARRRR!!!!!# For fill mode, speed up fr skipping.
+
+
+AFFECT LOOK:
+#Better, but needs work# Match trip=0 to src, ffs
+
+
+
+!!!!!!!!!!!!!!
+LAST DAYS PLAN
+!!!!!!!!!!!!!!
+
+Gen parms still to figure out: fpc, zoom, fade time
+
+
+Sun 26 Clr flourishes: bulbs, sheen, edge; fix ripple
+Mon 27 
+Tue 28 
+Wed 29 FINAL RENDER
+
+
+
+
+*********** PLAN OF ATTACK *********** 
+Set up Little-D better:
+	Clear up space
+	Copy over lo res data
+	Test ren time
+
+Test hi-res on Big-D (on 64s, then on 1s)
+
+Connect tripLev to breath
+
+Ensure that trip transitions well
+	Fix trobbing bg near beginning
+
+See that clrs (incl breath parms) are saved in ren
+
+Choose nice clrs, render seq on Big-D
+
+bulbs?
+
+
+DOESN'T AFFECT LOOK:
+	Add black, white point
+
+
+Make lower levels transparent to let bg in
+
+rip goes from LIGHTEST TO DARKEST w/in sid (we're trying this with progToNextLev, soso)
+
+Do THICKER EDGE detection in addition to/instead of above.
+
+These will be used to make the "FLASHING LIGHTBULBS", that go off + on in alternatong groups like a marquee;  sids qualifying as lightbulbs are of certain size and sx/sy ~ 1. 
+
+"WAVES OF SHEEN" passing over sids: white added to/replaces clr.
+
+Similar thing ALONG EDGES
+
+Sync retime fps changes with breaths
+
+
+** TEST CHANGE FOR GIT **
