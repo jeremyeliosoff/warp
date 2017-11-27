@@ -1741,7 +1741,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	canvases = []
 	for outputNum in range(nOutputs):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if outputNum > -1: # TEMP
+		if outputNum > 0:
 			nextCanvas.fill((0, 0, 0))
 		#else:
 		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!
@@ -1785,13 +1785,14 @@ def renSprites(warpUi, srcImg, res, fr):
 
 					# Lower levels become more opaque as trip progresses.
 					levRel = float(lev)/(nLevels-1)
-					surfAlpha *= ut.mix(trip, 1, levRel)
+					bottomMaxAlpha = .5
+					surfAlpha *= ut.mix(trip*bottomMaxAlpha, 1, levRel)
 
 					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 
 				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-				if lev > 1:  #TODO make this kosher!!!
+				if lev > 0:  #TODO make this kosher!!!
 					canvases[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 					canvasLevs[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 

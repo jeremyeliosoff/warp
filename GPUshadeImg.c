@@ -332,7 +332,7 @@ __kernel void krShadeImg(
 	int trippedClr[3];
 	mult3_255(srcClr, tidClr, trippedClr);
  
-	float intensMult = bordTotal > 0 ? 4 : 2 + isBulb * 60;
+	float intensMult = bordTotal > 0 ? 4 : 2 + isBulb * 2;
 	mult3sc(trippedClr, intensMult, trippedClr);
 
 	int outClr[3];
@@ -363,12 +363,21 @@ __kernel void krShadeImg(
 
 
 	float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
-	fr += hiLevSooner * lev + (1-sidFarFromCent) *
+	float bulbAdd = 500;
+	fr += isBulb * bulbAdd + hiLevSooner * lev + (1-sidFarFromCent) *
 		outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
 
 
 	int cShadedI[3];
 	int cAovRip[3];
+
+	//float segClr[3] = {1, .95, .8};
+	float segClr[3] = {255, 225, 155};
+		mix3F(outClrF, segClr, isBulb*.5, outClrF);
+		float toAdd[3];
+		vSMult(outClrF, isBulb*2, toAdd);
+
+		vAdd(cShadedI, toAdd, outClrF);
 
 	getCspacePvNxInOut (
 		fr,
@@ -388,15 +397,9 @@ __kernel void krShadeImg(
 
 	//ALWAYS FULLY MIX cSpace dIlr, don't -> mix3I(srcClr, cShadedI, clrProg, cShadedI);
 
-	int red[3] = {255, 255, 255};
 	int green[3] = {0, 255, 0};
 	//assignIV(green, cShadedI);
 	//if (bordTotal == 0) { // TEMP!
-		mix3I(cShadedI, red, isBulb, cShadedI);
-		int toAdd[3];
-		vSMult(cShadedI, isBulb*5, toAdd);
-
-		vIAdd(cShadedI, toAdd, cShadedI);
 
 	//}
 	//if (isBulb) {

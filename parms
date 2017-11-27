@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1953
+val 1781
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
 
 image
-val p3zpw2
+val p3z35pw2
 
 dbImg1
 val bg_ctest
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v007testBulbs
+val v000fpc45
 
 frStart
 val 1600
 
 frEnd
-val 3430
+val 3399
 
 doGen
 val 1
@@ -52,7 +52,7 @@ doRen
 val 1
 
 frIncRen
-val 1
+val 0
 
 
 
@@ -63,7 +63,7 @@ nLevels
 val 10
 
 frPerCycle
-val 60
+val 45
 
 gamma
 val .5
@@ -86,13 +86,13 @@ val 1
 ---REN---
 
 dataVer
-val v000fpc60
+val v000fpc45
 
 tripAlwaysOn
 val 1
 
 isoLev
-val 3-4
+val -1
 
 moveK
 val .4
@@ -178,10 +178,10 @@ cOut2R
 val 0.6588235294117647,0.6,0.0
 
 cOut2G
-val 0.0,0.4627450980392157,0.611764705882353
+val 0.611764705882353,0.03137254901960784,0.2196078431372549
 
 cOut2B
-val 0.0,0.5333333333333333,0.49411764705882355
+val 0.611764705882353,0.08627450980392157,0.49411764705882355
 
 cIn3R
 val 0.0,0.4392156862745098,0.7019607843137254
@@ -229,25 +229,25 @@ inh1
 val 2270
 
 inh1trip
-val 0.3
+val 0.35
 
 exh1
 val 2510
 
 exh1trip
-val 0.6
+val 0.8
 
 inh2
 val 2700
 
 inh2trip
-val 0.7
+val 0.9
 
 exh2
 val 2940
 
 exh2trip
-val 0.9
+val 0.95
 
 inh3
 val 3080

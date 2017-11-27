@@ -122,6 +122,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			//cShadedI[1] = 0;//cAvg[1];
 			//cShadedI[2] = 255;//cAvg[2];
 			float kIntens = 1+5*trip;
+			//float kIntens = 1;//-.8*trip;
 			float kVign = MAX(0, 1-dNorm*trip);
 			for (int j=0; j<3; j++) {
 				int *a = ((int *)PyArray_GETPTR3(out,x,y,j));
