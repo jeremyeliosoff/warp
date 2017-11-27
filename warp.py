@@ -52,7 +52,7 @@ class warpUi():
 			typ = thisDic["type"]
 			if typ == "int":
 				for v in val:
-					print "_saveUIToParmsAndFile(): v", v
+					#print "_saveUIToParmsAndFile(): v", v
 					if not v in ints:
 						print "_saveUIToParmsAndFile(): ERROR: bad character entered", v
 						setVal = False
@@ -76,6 +76,7 @@ class warpUi():
 				self.parmDic.parmDic[parmName]["uiElement"].insert(0, str(val))
 			print "\n\n_saveUIToParmsAndFile(): END, about to do saveParmDic"
 			self.saveParmDic()
+		self.updateBreaths()
 
 
 	def btn_getColor(self, args):
@@ -549,29 +550,36 @@ class warpUi():
 
 	def getPrevBr(self, fr):
 		thisFr = fr
-		breathFramesRev = self.breathFrames[:]
-		breathFramesRev.reverse()
-		for br in breathFramesRev:
-			if br < thisFr:
-				thisFr = br
+		thisTripVal = self.breathsNameFrTrip[0][2]
+		#breathFramesRev = self.breathFrames[:]
+		breathsNameFrTripRev = self.breathsNameFrTrip[:]
+		breathsNameFrTripRev.reverse()
+		for br in breathsNameFrTripRev:
+			brFr = br[1]
+			if brFr < thisFr:
+				thisFr = brFr
+				thisTripVal = br[2]
 				break
-		return thisFr
+		return thisFr, thisTripVal
 
 	def shiftLeftCmd(self):
 		thisFr = self.parmDic("fr")
-		thisFr = self.getPrevBr(thisFr)
+		thisFr,dud = self.getPrevBr(thisFr)
 		self.setFrAndUpdate(thisFr)
 
 	def getNextBr(self, fr):
 		thisFr = fr
-		for br in self.breathFrames:
-			if br > thisFr:
-				thisFr = br
+		thisTripVal = self.breathsNameFrTrip[-1][2]
+		for br in self.breathsNameFrTrip:
+			brFr = br[1]
+			if brFr > thisFr:
+				thisFr = brFr
+				thisTripVal = br[2]
 				break
-		return thisFr
+		return thisFr, thisTripVal
 
 	def shiftRightCmd(self):
-		thisFr = self.getNextBr(self.parmDic("fr"))
+		thisFr, dud = self.getNextBr(self.parmDic("fr"))
 		self.setFrAndUpdate(thisFr)
 
 	def animButCmd(self):
@@ -640,27 +648,27 @@ class warpUi():
 
 	def saveParmDic(self):
 		# TODO THIS GETS CALLED WAY TOO MUCH
-		print "_saveParmDic(): BEGIN"
+		#print "_saveParmDic(): BEGIN"
 		# TODO Maybe don't hardwire this, user can config it in parmfile
 		pathsAndStages = [(parmPath, ["META", "GEN", "REN", "CLR", "AOV"])]
-		print "_saveParmDic(): self.seqDataVDir:", self.seqDataVDir, "for GEN -- ",
+		#print "_saveParmDic(): self.seqDataVDir:", self.seqDataVDir, "for GEN -- ",
 		# TODO Shouldn't seqDataVDir and seqRenVDir always exist?
 		if os.path.exists(self.seqDataVDir):
 			pathsAndStages.append((self.seqDataVDir + "/parms", ["GEN"]))
-			print "EXISTS"
-		else:
-			print "DOES NOT EXIST"
+		#	print "EXISTS"
+		#else:
+		#	print "DOES NOT EXIST"
 
-		print "_saveParmDic(): self.seqRenVDir:", self.seqRenVDir, "for REN -- ",
+		#print "_saveParmDic(): self.seqRenVDir:", self.seqRenVDir, "for REN -- ",
 		if os.path.exists(self.seqRenVDir):
 			pathsAndStages.append((self.seqRenVDir + "/parms", ["META", "REN", "CLR"]))
-			print "EXISTS"
-		else:
-			print "DOES NOT EXIST"
+		#	print "EXISTS"
+		#else:
+		#	print "DOES NOT EXIST"
 
-		print "_saveParmDic(): self.parmDic.parmStages:"
-		for k,v in self.parmDic.parmStages.items():
-			print "_saveParmDic():\t", k, ":", v
+		#print "_saveParmDic(): self.parmDic.parmStages:"
+		#for k,v in self.parmDic.parmStages.items():
+		#	print "_saveParmDic():\t", k, ":", v
 
 		#print "\n\n_saveParmDic(): parmLs:"
 		#for pm in self.parmDic.parmLs:
@@ -685,7 +693,7 @@ class warpUi():
 								if not attr in ["uiElement", "stage", "type", "hidden"]:
 									 f.write(attr + " " + str(thisDic[attr]) + "\n")
 							f.write("\n")
-		print "_saveParmDic(): END"
+		#print "_saveParmDic(): END"
 
 
 	def updateDebugImg(self):
@@ -1332,6 +1340,26 @@ class warpUi():
 			#imgChooser['menu'].add_command(0, 'end')
 			opMenu['menu'].add_command(label=aovName,
 				command=self.getImgDebugFunctions["name"][col])
+	def updateBreaths(self):
+		print "_updateBreaths()"
+		self.inhParms = []
+		self.exhParms = []
+		for pd in self.parmDic.parmDic.items():
+			parmName = pd[0]
+			if not parmName[-4:] == "trip":
+				if parmName[:3] == "inh":
+					self.inhParms.append((parmName, int(pd[1]["val"])))
+				elif parmName[:3] == "exh":
+					self.exhParms.append((parmName, int(pd[1]["val"])))
+		
+		self.inhParms.sort()
+		self.exhParms.sort()
+		self.breathsNameFrTrip = []
+		for i in range(len(self.inhParms)):
+			inhTripVal = self.parmDic(self.inhParms[i][0] + "trip")
+			self.breathsNameFrTrip.append(self.inhParms[i] + (inhTripVal,))
+			exhTripVal = self.parmDic(self.exhParms[i][0] + "trip")
+			self.breathsNameFrTrip.append(self.exhParms[i] + (exhTripVal,))
 
 
 	def __init__(self, resumeMode=False):
@@ -1356,31 +1384,10 @@ class warpUi():
 		self.parmDic = ut.parmDic(parmPath)
 		self.makeCInOutValsLs()
 
-		# Breaths.
-		inhParms = []
-		exhParms = []
-		for pd in self.parmDic.parmDic.items():
-			parmName = pd[0]
-			if not parmName[-4:] == "trip":
-				if parmName[:3] == "inh":
-					inhParms.append((parmName, int(pd[1]["val"])))
-				elif parmName[:3] == "exh":
-					exhParms.append((parmName, int(pd[1]["val"])))
-		
-		inhParms.sort()
-		exhParms.sort()
-		dud,self.inhFrames = zip(*inhParms)
-		dud,self.exhFrames = zip(*exhParms)
-		self.breathFrames = []
-		for i in range(len(self.inhFrames)):
-			self.breathFrames.append(self.inhFrames[i])
-			self.breathFrames.append(self.exhFrames[i])
+		self.updateBreaths()
 
-		print "\n\n\n ZZZZZZZZZZZZZZZZZZZZZ"
-		print "self.inhFrames", self.inhFrames
-		print "self.exhFrames", self.exhFrames
-		print "self.breathFrames", self.breathFrames
-		print "ZZZZZZZZZZZZZZZZZZZZZ\n\n\n"
+
+		print "_warpUi.__init__(): self.breathsNameFrTrip", self.breathsNameFrTrip
 
 		#print "\n\n\n__init__():********** parmDic"
 		#print self.parmDic

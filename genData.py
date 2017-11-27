@@ -1277,7 +1277,6 @@ def imgToCspace(warpUi, srcImg, srcImgPath, frIn=None, inOutBoth=2):
 	fr = frIn
 	if fr == None:
 		fr = warpUi.parmDic("fr")
-	print "\n\nBBBBBBBBB srcImg.get_size()", srcImg.get_size()
 	res = srcImg.get_size()
 	srcImgAr = imageToArray3d(srcImg, srcImgPath)
 
@@ -1429,25 +1428,11 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 	cInOutVals_buf = makeBufferInput(warpUi, warpUi.cInOutVals, dtype=np.float32)
 
+	dud,inhFrames = zip(*warpUi.inhParms)
+	dud,exhFrames = zip(*warpUi.exhParms)
 
-	## Breaths.
-	#inhParms = []
-	#exhParms = []
-	#for pd in warpUi.parmDic.parmDic.items():
-	#	parmName = pd[0]
-	#	if not parmName[-4:] == "trip":
-	#		if parmName[:3] == "inh":
-	#			inhParms.append((parmName, int(pd[1]["val"])))
-	#		elif parmName[:3] == "exh":
-	#			exhParms.append((parmName, int(pd[1]["val"])))
-	#
-	#inhParms.sort()
-	#exhParms.sort()
-	#dud,inhFrames = zip(*inhParms)
-	#dud,exhFrames = zip(*exhParms)
-
-	inhFrames_buf = makeBufferInput(warpUi, warpUi.inhFrames, dtype=np.intc)
-	exhFrames_buf = makeBufferInput(warpUi, warpUi.exhFrames, dtype=np.intc)
+	inhFrames_buf = makeBufferInput(warpUi, inhFrames, dtype=np.intc)
+	exhFrames_buf = makeBufferInput(warpUi, exhFrames, dtype=np.intc)
 
 	# Outputs
 	#shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
@@ -1478,7 +1463,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	
 	ofs = warpUi.getOfsWLev(lev) % 1.0
 	levPct = (lev+ofs)/warpUi.parmDic("nLevels") #int((warpUi.getOfsWLev(lev)*100.0)%100)
-	tripGlobPct = int(tripFrK*100)
 
 	bld = cl.Program(warpUi.cntxt, kernel).build()
 	print "_shadeImg(): lev", lev, "levPct", levPct
@@ -1490,7 +1474,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(warpUi.res[1]),
 			np.int32(lev),
 			np.float32(levPct),
-			np.int32(tripGlobPct),
+			np.float32(tripFrK),
 			np.float32(warpUi.parmDic("clrKBig")),
 			np.int32(warpUi.parmDic("fr")),
 			inhFrames_buf,
@@ -1529,18 +1513,13 @@ def getTripFrK(warpUi):
 	else:
 		fr = warpUi.parmDic("fr")
 		# TODO Incorporate trip lev into breath.
-		#nx = self.getNextBr(fr)
-		#pv = self.getPrevBr(fr)
+		nxFr,nxVal = warpUi.getNextBr(fr)
+		pvFr,pvVal = warpUi.getPrevBr(fr)
 
+		tripFrK = ut.mix(pvVal, nxVal, ut.smoothstep(pvFr, nxFr, fr))
+		print "\n\n_getTripFrK(): fr", fr, "pvFr", pvFr, "nxFr", nxFr
+		print "_getTripFrK(): tripFrK", tripFrK, "pvVal", pvVal, "nxVal", nxVal
 
-
-
-
-		if fr < tripFrMid:
-			print "_genSprites(): fr:", fr, "sm:", ut.smoothstep(tripFrStart, tripFrMid, fr)
-			tripFrK = tripKMid * ut.smoothstep(tripFrStart, tripFrMid, fr)
-		else:
-			tripFrK = ut.mix(tripKMid, 1.0, ut.smoothstep(tripFrMid, tripFrEnd, fr))
 	tripFrK *= tripFrK
 	return tripFrK
 
@@ -1552,11 +1531,6 @@ def generalTripToClrTrip(trip):
 def genSprites(warpUi, srcImg): 
 	spritesThisFr = []
 
-	# Adjust by global seq prog.
-	#tripFrStart = 1605
-	#tripFrMid = 1640
-	#tripFrEnd = 1850
-	#tripFrK = 1 # TEMP
 	tripFrK = getTripFrK(warpUi)
 	print "_genSprites(): tripFrK:", tripFrK
 
@@ -1769,6 +1743,8 @@ def renSprites(warpUi, srcImg, res, fr):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
 		if outputNum > 0:
 			nextCanvas.fill((0, 0, 0))
+		#else:
+		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!
 		canvases.append(nextCanvas)
 
 	for lev in warpUi.levsToRen:
@@ -1797,7 +1773,7 @@ def renSprites(warpUi, srcImg, res, fr):
 				if not (spriteName == "ren" or ("aov_" + spriteName) in warpUi.aovNames):
 					continue
 				spriteImg = spriteNameAndImg[1].copy()
-				if i == 0:
+				if i == 0: # Means this is "ren" canvas (not aov)
 					tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
 
 					sfFdIn = .2
@@ -1806,6 +1782,11 @@ def renSprites(warpUi, srcImg, res, fr):
 					surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
 					surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
 					#surfAlpha = 1 # TEMP!!!!
+
+					# Lower levels become more opaque as trip progresses.
+					levRel = float(lev)/(nLevels-1)
+					surfAlpha *= ut.mix(trip, 1, levRel)
+
 					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 

@@ -223,7 +223,7 @@ __kernel void krShadeImg(
 			int yres,
 			int lev,
 			float levPct,
-			int tripGlobPct,
+			float tripGlobF,
 			float clrKBig,
 			int fr,
 			__global int* inhFrames,
@@ -266,7 +266,7 @@ __kernel void krShadeImg(
 
 	
 	// Get clrProg.
-	float tripGlobF = tripGlobPct*.01;
+	//float tripGlobF = tripGlobPct*.01;
 	float tidTrip = ((float)tidTrips[tidPos])/100;
 	float clrProg = tripGlobF;//tidTrip;//smoothstep(0, .3, tidTrip);
 
@@ -357,8 +357,7 @@ __kernel void krShadeImg(
 	//cShadedI[1] = (int) CLAMP(outClrF[1], 0, 255);
 	//cShadedI[2] = (int) CLAMP(outClrF[2], 0, 255);
 
-	//mix3I(srcClr, cShadedI, clrProg, cShadedI);
-	mix3I(srcClr, cShadedI, 1, cShadedI);
+	//ALWAYS FULLY MIX cSpace clr, don't -> mix3I(srcClr, cShadedI, clrProg, cShadedI);
 
 	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
 	setArrayCell(x, y, xres, yres+1, cAovRip, aovRipImg);

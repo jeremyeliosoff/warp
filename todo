@@ -5216,6 +5216,12 @@ REJIG CLR UI Make clrgroup ui component thing:
 	#D# Clr treat thumbnails
 	#D# Clr treat thumbnails, iso in, out
 
+#D# Set up Little-D better:
+#D# 	Clear up space
+#D# 	Copy over lo res data
+#D# 	Test ren time
+
+#D# Test hi-res on Big-D (on 64s, then on 1s)
 
 ---------- CURRENT ----------
 
@@ -5262,30 +5268,26 @@ Wed 29 FINAL RENDER
 
 
 *********** PLAN OF ATTACK *********** 
-Set up Little-D better:
-	Clear up space
-	Copy over lo res data
-	Test ren time
 
-Test hi-res on Big-D (on 64s, then on 1s)
-
-Connect tripLev to breath
+#D# Connect tripLev to breath
 
 Ensure that trip transitions well
-	Fix trobbing bg near beginning
+	Fix throbbing bg near beginning
+		Make lower levels transparent to let bg in
+
+
+Fix rip
 
 See that clrs (incl breath parms) are saved in ren
 
 Choose nice clrs, render seq on Big-D
 
-bulbs?
+bulbs
 
 
-DOESN'T AFFECT LOOK:
-	Add black, white point
+Add black point?
 
 
-Make lower levels transparent to let bg in
 
 rip goes from LIGHTEST TO DARKEST w/in sid (we're trying this with progToNextLev, soso)
 
@@ -5297,7 +5299,4 @@ These will be used to make the "FLASHING LIGHTBULBS", that go off + on in altern
 
 Similar thing ALONG EDGES
 
-Sync retime fps changes with breaths
 
-
-** TEST CHANGE FOR GIT **
