@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1768
+val 1953
 
 fps
 val 52
@@ -16,7 +16,7 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v006testLowLevTransparentEtc
+val v007testBulbs
 
 frStart
 val 1600
@@ -52,7 +52,7 @@ doRen
 val 1
 
 frIncRen
-val 8
+val 1
 
 
 
@@ -89,10 +89,10 @@ dataVer
 val v000fpc60
 
 tripAlwaysOn
-val 0
+val 1
 
 isoLev
-val -1
+val 3-4
 
 moveK
 val .4

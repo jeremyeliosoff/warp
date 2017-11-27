@@ -273,16 +273,6 @@ __kernel void krShadeImg(
 
 
 
-	// Get trippedClr = srcClr * tidClr * brightening
-	int trippedClr[3];
-	mult3_255(srcClr, tidClr, trippedClr);
- 
-	float intensMult = bordTotal > 0 ? 4 : 2;
-	mult3sc(trippedClr, intensMult, trippedClr);
-
-	int outClr[3];
-	mix3I(srcClr, trippedClr, clrProg, outClr);
-
 	// Darken lower level when tripping.
 	//float levPctF = levPct*.01;
 	float levPctK = 1.0-(1.0-levPct)*(1.0-levPct);
@@ -293,7 +283,8 @@ __kernel void krShadeImg(
 	float tripKmult = mix(1, tripK, tripGlobF);
 
 	// Darken bigger
-	float rels = ((float)sz[0]/xres) * ((float)sz[1]/yres);
+	float szRel[2] = {(float)sz[0]/xres, (float)sz[1]/yres};
+	float rels = szRel[0] * szRel[1];
 	float relsMod = rels*rels;
 	relsMod *= relsMod;
 	float bigKmult = mix(1.0, clrKBig, min(1.0, relsMod));
@@ -311,9 +302,47 @@ __kernel void krShadeImg(
 	float vignKmult = mix(1, vignK, tripGlobF);
 	vignKmult = mix(vignKmult, 1, levPct);
 
+
+
+	
+
+	// Bulb
+	float bulbSzMin = .005;
+	float bulbSzMax = .02;
+	int bulbFrPeriod = 10;
+	float bulbDistPeriod = .25;
+	int bulbDistSegments = 3;
+	float bulbFade = .2;
+	float bulbSquareTolerance = .1;
+
+	float isBulb = 0;
+	float szRatio = szRel[0]/szRel[1];
+	if (szRel[0] > bulbSzMin && szRel[0] < bulbSzMax &&
+			szRel[0] > bulbSzMin && szRel[0] < bulbSzMax &&
+			szRatio < 1 + bulbSquareTolerance && szRatio < 1 - bulbSquareTolerance) {
+		float dSegment = floor(dNorm/bulbDistPeriod);
+		int frBulb = fr + bulbFrPeriod*dSegment/bulbDistSegments;
+
+		float inPeriod = ((float)(frBulb % bulbFrPeriod))/bulbFrPeriod;
+		isBulb = smoothpulse(0, bulbFade, 1-bulbFade, 1, inPeriod) * tripGlobF;
+	}
+
+
+	// Get trippedClr = srcClr * tidClr * brightening
+	int trippedClr[3];
+	mult3_255(srcClr, tidClr, trippedClr);
+ 
+	float intensMult = bordTotal > 0 ? 4 : 2 + isBulb * 60;
+	mult3sc(trippedClr, intensMult, trippedClr);
+
+	int outClr[3];
+	mix3I(srcClr, trippedClr, clrProg, outClr);
+
+
 	// Apply darkenings.
 	mult3sc(outClr, kLevPct*tripKmult*vignKmult*bigKmult, outClr);
-	
+
+
 
 
 	int nBreaths = 4;
@@ -353,11 +382,28 @@ __kernel void krShadeImg(
 		cShadedI
 		);
 
-	//cShadedI[0] = (int) CLAMP(outClrF[0], 0, 255);
-	//cShadedI[1] = (int) CLAMP(outClrF[1], 0, 255);
-	//cShadedI[2] = (int) CLAMP(outClrF[2], 0, 255);
+	cShadedI[0] = CLAMP(cShadedI[0], 0, 255);
+	cShadedI[1] = CLAMP(cShadedI[1], 0, 255);
+	cShadedI[2] = CLAMP(cShadedI[2], 0, 255);
 
-	//ALWAYS FULLY MIX cSpace clr, don't -> mix3I(srcClr, cShadedI, clrProg, cShadedI);
+	//ALWAYS FULLY MIX cSpace dIlr, don't -> mix3I(srcClr, cShadedI, clrProg, cShadedI);
+
+	int red[3] = {255, 255, 255};
+	int green[3] = {0, 255, 0};
+	//assignIV(green, cShadedI);
+	//if (bordTotal == 0) { // TEMP!
+		mix3I(cShadedI, red, isBulb, cShadedI);
+		int toAdd[3];
+		vSMult(cShadedI, isBulb*5, toAdd);
+
+		vIAdd(cShadedI, toAdd, cShadedI);
+
+	//}
+	//if (isBulb) {
+		//assignIS (255*(1-isBulb), isBulb*255, 0, cShadedI);
+	//} else {
+		//assignIS (255, 0, 0, cShadedI);
+	//}
 
 	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
 	setArrayCell(x, y, xres, yres+1, cAovRip, aovRipImg);

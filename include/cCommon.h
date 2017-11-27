@@ -21,6 +21,12 @@ void vAdd(float* a, float* b, float* out) {
 	}
 }
 
+void vIAdd(int* a, int* b, int* out) {
+	for (int i=0; i<3; i++) {
+		out[i] = a[i] + b[i];
+	}
+}
+
 float fit(float v, float omn, float omx, float nmn, float nmx) {
 	float prog = (v-omn)/(omx-omn);
 	return nmn + prog * (nmx-nmn);
