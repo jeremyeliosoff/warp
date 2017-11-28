@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2304
+val 1696
 
 fps
 val 52
@@ -22,7 +22,7 @@ doRenCv
 val 1
 
 image
-val p3zpw2
+val p3z35pw2
 
 dbImg1
 val bg_ctest
@@ -37,7 +37,7 @@ lev_dbImg2
 val lev03
 
 renVer
-val v013realClrsLtsFadeQuicker
+val v003radiateTimeHack
 
 frStart
 val 1600
@@ -63,7 +63,7 @@ nLevels
 val 10
 
 frPerCycle
-val 60
+val 45
 
 gamma
 val .5
@@ -86,13 +86,16 @@ val 1
 ---REN---
 
 dataVer
-val v000fpc60
+val v000fpc45
 
 tripAlwaysOn
-val 0
+val 1
 
 isoLev
-val -1
+val 3-4
+
+radiateTime
+val 100
 
 moveK
 val .4
@@ -178,10 +181,10 @@ cOut2R
 val 0.6588235294117647,0.6,0.0
 
 cOut2G
-val 0.611764705882353,0.03137254901960784,0.2196078431372549
+val 0.0,0.4627450980392157,0.611764705882353
 
 cOut2B
-val 0.611764705882353,0.08627450980392157,0.49411764705882355
+val 0.0,0.5333333333333333,0.49411764705882355
 
 cIn3R
 val 0.0,0.4392156862745098,0.7019607843137254
@@ -217,19 +220,19 @@ inh0
 val 1840
 
 inh0trip
-val 0.1
+val 0
 
 exh0
 val 2090
 
 exh0trip
-val 0.2
+val 0.1
 
 inh1
 val 2270
 
 inh1trip
-val 0.4
+val 0.35
 
 exh1
 val 2510

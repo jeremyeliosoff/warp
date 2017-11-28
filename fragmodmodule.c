@@ -51,15 +51,16 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 	int xr;
 	int yr;
 	int fr;
+	int radiateTime;
 	int inOutBoth;
 	float trip;
 
     //if (!PyArg_ParseTuple(args, "OOii", &in, &out, &xr, &yr)) return NULL;
-    if (!PyArg_ParseTuple(args, "OOOOiiiif",
+    if (!PyArg_ParseTuple(args, "OOOOiiiiif",
 			&cInOutValsPtr,
 			&in, &out,
 			&aovRipPtr,
-			&xr, &yr, &fr, &inOutBoth, &trip)) return NULL;
+			&xr, &yr, &fr, &radiateTime, &inOutBoth, &trip)) return NULL;
 	// 4 breaths * 2 inOuts * 3 rgbs * 3 comps per rgb
 	float cInOutVals[24*3];
 	for (int i=0; i < 24*3; i++) {
@@ -106,6 +107,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			int nBreaths = 4;
 			getCspacePvNxInOut (
 				fr,
+				radiateTime,
 				cAvg, //outClrF, 
 				cInOutVals,
 				inhFrames,

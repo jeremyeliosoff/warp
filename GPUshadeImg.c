@@ -225,19 +225,21 @@ __kernel void krShadeImg(
 			float levPct,
 			float tripGlobF,
 			float clrKBig,
+			int radiateTime,
 			int fr,
 			__global int* inhFrames,
 			__global int* exhFrames,
 			__global float* cInOutVals,
-			__global uchar* srcImg,
-			__global uchar* tidImg,
+			__global int* srcImg,
+			__global int* tidImg,
 			__global int* tidPosGridThisLev,
 			__global int* tids,
 			__global int* bbxs,
 			__global float* xfs,
 			__global int* tidTrips,
-			__global uchar* aovRipImg,
-			__global uchar* shadedImg)
+			__global int* aovRipImg,
+			__global int* alphaBoost,
+			__global int* shadedImg)
 {
 	unsigned int x = get_global_id(0);
 	unsigned int y = get_global_id(1);
@@ -318,8 +320,12 @@ __kernel void krShadeImg(
 	float isBulb = 0;
 	float szRatio = szRel[0]/szRel[1];
 	if (szRel[0] > bulbSzMin && szRel[0] < bulbSzMax &&
-			szRel[0] > bulbSzMin && szRel[0] < bulbSzMax &&
-			szRatio < 1 + bulbSquareTolerance && szRatio < 1 - bulbSquareTolerance) {
+			szRel[0] > bulbSzMin &&
+			szRel[0] < bulbSzMax &&
+			szRatio < 1 + bulbSquareTolerance &&
+			szRatio < 1 - bulbSquareTolerance &&
+			bordTotal < 1
+			) {
 		float dSegment = floor(dNorm/bulbDistPeriod);
 		int frBulb = fr + bulbFrPeriod*dSegment/bulbDistSegments;
 
@@ -367,13 +373,16 @@ __kernel void krShadeImg(
 	//fr += isBulb * bulbAdd + hiLevSooner * lev + (1-sidFarFromCent) *
 	//	outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
 
+	int red[] = {255, 0, 0};
 
 	int cShadedI[3];
 	int cShadedIBulb[3];
 	int cAovRip[3];
 	getCspacePvNxInOut (
 		fr+bulbAdd,
-		outClrF, 
+		radiateTime,
+		//outClrF, 
+		red, 
 		cInOutVals,
 		inhFrames,
 		exhFrames,
@@ -385,6 +394,7 @@ __kernel void krShadeImg(
 
 	getCspacePvNxInOut (
 		fr,
+		radiateTime,
 		outClrF, 
 		cInOutVals,
 		inhFrames,

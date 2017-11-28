@@ -134,6 +134,10 @@ isoLev
 type str
 val -1
 
+radiateTime
+type int
+val 600
+
 moveK
 type float
 val 0

@@ -1283,7 +1283,8 @@ def imgToCspace(warpUi, srcImg, srcImgPath, frIn=None, inOutBoth=2):
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
-	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr, res[0], res[1], fr, inOutBoth, 1)
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
+		res[0], res[1], fr, warpUi.parmDic("radiateTime"), inOutBoth, 1)
 
 	return pygame.surfarray.make_surface(csImgAr)
 	
@@ -1438,9 +1439,11 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	#shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
 	#shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
 	#	cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
-	shape = (len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0]))
-	shadedImg, shadedImg_buf = makeBufferOutput(warpUi, shape)
-	aovRipImg, aovRipImg_buf = makeBufferOutput(warpUi, shape)
+	shape3d = (len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0]))
+	shape2d = (len(tidImgLs), len(tidImgLs[0]))
+	shadedImg, shadedImg_buf = makeBufferOutput(warpUi, shape3d)
+	aovRipImg, aovRipImg_buf = makeBufferOutput(warpUi, shape3d)
+	alphaBoostImg, alphaBoostImg_buf = makeBufferOutput(warpUi, shape2d)
 
 
 	kernelPath = ut.projDir + "/GPUshadeImg.c"
@@ -1476,6 +1479,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.float32(levPct),
 			np.float32(tripFrK),
 			np.float32(warpUi.parmDic("clrKBig")),
+			np.float32(warpUi.parmDic("radiateTime")),
 			np.int32(warpUi.parmDic("fr")),
 			inhFrames_buf,
 			exhFrames_buf,
@@ -1488,12 +1492,14 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			xfs_buf,
 			tidTrips_buf,
 			aovRipImg_buf,
+			alphaBoostImg_buf,
 			shadedImg_buf)
 	launch.wait()
 	
 
 	cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
 	cl.enqueue_read_buffer(warpUi.queue, aovRipImg_buf, aovRipImg).wait()
+	cl.enqueue_read_buffer(warpUi.queue, alphaBoostImg_buf, alphaBoostImg).wait()
 	#print "\n-------------shadedImg[10][10]:", shadedImg[10][10], "\n"
 		
 	#return pygame.surfarray.make_surface(shadedImg)
@@ -1723,7 +1729,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	trip = getTripFrK(warpUi)
 	trip = generalTripToClrTrip(trip)
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
-		res[0], res[1], fr, 2, trip)
+		res[0], res[1], fr, warpUi.parmDic("radiateTime"), 2, trip)
 
 	
 	# Find first non empty level, count outputs.

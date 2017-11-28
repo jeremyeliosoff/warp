@@ -1,3 +1,37 @@
+================
+== MON NOV 27 ==
+================
+
+#Rens/gens today:
+#	Little-D: GEN p3, 90fpc
+#		Currently rendering, doesn't need to finish, just get an idea
+#	Little-D: REN p3, 90fpc
+#		Start after lunch
+#	Big-D: REN p3, 45fpc
+#		Currently rendering
+#	
+#SCHEDULE:
+#D# 1:30 - return from lunch
+#D# 	kick off Little-D REN
+#D# 	Really view the latest movies
+
+#NOTES FROM VIEWING:
+#	Sooner trip - maybe:
+#		i0 .00 -> .1 (make sure it fades from frStart)
+#		e0 .10 -> .2
+#		i1 .35 -> .4
+#		e1 .80 -> .8
+#	Figure out ripple
+#	Really wanting more colour variation - work on bulbs
+#	Work on edge spread
+
+
+
+#3pm - start getting all stuff off laptop
+#4pm - reinstall windows
+#5pm - BestReturn
+
+
 TO GET OFF RENTAL time allowing:
 
 p3zpw2: v001fpc30 v002fpc90
@@ -5232,6 +5266,8 @@ REJIG CLR UI Make clrgroup ui component thing:
 
 #D# Test hi-res on Big-D (on 64s, then on 1s)
 
+Add black point?
+
 ---------- CURRENT ----------
 
 Pick nice clrs
@@ -5277,35 +5313,32 @@ Tue 28
 Wed 29 FINAL RENDER
 
 
+rip goes from LIGHTEST TO DARKEST w/in sid (we're trying this with progToNextLev, soso)
 
+STONED
+Overall more colour variation eg in bulbs + edges
+"Peel away" layers, new clr glowing beneath - MAKE RIPPLE WORK!
+Maybe try mixing in/out, along with across time
+Connect bulbiness to alpha - maybe calc in python
+Get psudo random clr in fr-offset clr space for all bulbs/edges
+Fade BG out more
+Fix throbbing bg near beginning
+
+
+#Dish# See that clrs (incl breath parms) are saved in ren
 
 *********** PLAN OF ATTACK *********** 
 
-Fix rip
-	Copy
-Test while removing stuff from Temp-D
+Change uchar to int
 
-Ensure that trip transitions well
-	Fix throbbing bg near beginning
-		Make lower levels transparent to let bg in
+
+Connect bulb to opacity:
+	Although this could be done in python, we want to be open to controlling A in shader eg. edges.
 
 
 
-See that clrs (incl breath parms) are saved in ren
-
-Choose nice clrs, render seq on Big-D
-
-bulbs
-
-
-Add black point?
-
-
-rip goes from LIGHTEST TO DARKEST w/in sid (we're trying this with progToNextLev, soso)
 
 Do THICKER EDGE detection in addition to/instead of above.
-
-These will be used to make the "FLASHING LIGHTBULBS", that go off + on in alternatong groups like a marquee;  sids qualifying as lightbulbs are of certain size and sx/sy ~ 1. 
 
 "WAVES OF SHEEN" passing over sids: white added to/replaces clr.
 
@@ -5313,36 +5346,8 @@ Similar thing ALONG EDGES
 
 
 
+
 ================
-== MON NOV 27 ==
+== TUE NOV 28 ==
 ================
-
-Rens/gens today:
-	Little-D: GEN p3, 90fpc
-		Currently rendering, doesn't need to finish, just get an idea
-	Little-D: REN p3, 90fpc
-		Start after lunch
-	Big-D: REN p3, 45fpc
-		Currently rendering
-	
-SCHEDULE:
-#D# 1:30 - return from lunch
-#D# 	kick off Little-D REN
-#D# 	Really view the latest movies
-
-NOTES FROM VIEWING:
-	Sooner trip - maybe:
-		i0 .00 -> .1 (make sure it fades from frStart)
-		e0 .10 -> .2
-		i1 .35 -> .4
-		e1 .80 -> .8
-	Figure out ripple
-	Really wanting more colour variation - work on bulbs
-	Work on edge spread
-
-
-
-3pm - start getting all stuff off laptop
-4pm - reinstall windows
-5pm - BestReturn
 

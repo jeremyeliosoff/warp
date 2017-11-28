@@ -189,6 +189,7 @@ void getCInOut(
 
 void getCspacePvNxInOut (
 	int fr,
+	int radiateTime,// = 600;
 	float* outClrF, 
 	float* cInOutVals,  // __GLOBAL
 	int* inhFrames,  // __GLOBAL
@@ -209,49 +210,58 @@ void getCspacePvNxInOut (
 	float edge = ofs + ripEdge * (1-ripTime);
 	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
 
-	int inFfw = 600;
 	//inRip = 0;
-	int frWOfs = fr + ripFfw * inRip - ((float)inFfw) * dNorm;
-	frWOfs = MAX(0, fr);
-	//int frWOfs = fr;// - ((float)inFfw) * dNorm;
+	//int frWOfs = fr + ripFfw * inRip - ((float)inFfw) * dNorm;
+	int frWOfs = fr + ripFfw;// * inRip;// - radiateTime * dNorm;
+	frWOfs = MAX(0, frWOfs);
+	float mixSampsIn[3]; float mixSampsOut[3];
 
-	float inhProg = getBreathFramesAndProg (frWOfs, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
-	float exhProg = getBreathFramesAndProg (frWOfs, exhFrames, nBreaths, &pvExhFr, &nxExhFr);
+	for (int sampleNum = 0; sampleNum < 2; sampleNum += 1) {
+		//frWOfs = 3100;
+		//int frWOfs = fr;// - ((float)radiateTime) * dNorm;
+		frWOfs = fr - radiateTime * sampleNum;
 
-	// Load all the cInOut parm colours 4 uber-arrays for: inPv, inNx, exPv, exNx
-	float pvCInRGB[9];
-	float nxCInRGB[9];
-	float pvCOutRGB[9];
-	float nxCOutRGB[9];
+		float inhProg = getBreathFramesAndProg (frWOfs, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
+		float exhProg = getBreathFramesAndProg (frWOfs, exhFrames, nBreaths, &pvExhFr, &nxExhFr);
 
-	for (int rgb=0; rgb<3; rgb++) {
-		int index = rgb * 3;
-		getCInOut(cInOutVals, 0, pvInhFr, rgb, &pvCInRGB[index]);
-		getCInOut(cInOutVals, 0, nxInhFr, rgb, &nxCInRGB[index]);
-		getCInOut(cInOutVals, 1, pvExhFr, rgb, &pvCOutRGB[index]);
-		getCInOut(cInOutVals, 1, nxExhFr, rgb, &nxCOutRGB[index]);
+		// Load all the cInOut parm colours 4 uber-arrays for: inPv, inNx, exPv, exNx
+		float pvCInRGB[9]; float nxCInRGB[9]; float pvCOutRGB[9]; float nxCOutRGB[9];
+
+		for (int rgb=0; rgb<3; rgb++) {
+			int index = rgb * 3;
+			getCInOut(cInOutVals, 0, pvInhFr, rgb, &pvCInRGB[index]);
+			getCInOut(cInOutVals, 0, nxInhFr, rgb, &nxCInRGB[index]);
+			getCInOut(cInOutVals, 1, pvExhFr, rgb, &pvCOutRGB[index]);
+			getCInOut(cInOutVals, 1, nxExhFr, rgb, &nxCOutRGB[index]);
+		}
+
+		float pvCIn[3]; float pvCOut[3]; float nxCIn[3]; float nxCOut[3];
+
+		csFunc(&pvCInRGB[0], &pvCInRGB[3], &pvCInRGB[6], outClrF, pvCIn);
+		csFunc(&pvCOutRGB[0], &pvCOutRGB[3], &pvCOutRGB[6], outClrF, pvCOut);
+
+		csFunc(&nxCInRGB[0], &nxCInRGB[3], &nxCInRGB[6], outClrF, nxCIn);
+		csFunc(&nxCOutRGB[0], &nxCOutRGB[3], &nxCOutRGB[6], outClrF, nxCOut);
+
+
+		float mixPvNxIn[3];
+		float mixPvNxOut[3];
+		mix3F(pvCIn, nxCIn, inhProg, mixPvNxIn);
+		mix3F(pvCOut, nxCOut, exhProg, mixPvNxOut);
+		if (sampleNum == 0) {
+			assignFV(mixPvNxIn, mixSampsIn);
+			assignFV(mixPvNxOut, mixSampsOut);
+		} else {
+			// Blend time-offset sample away from center.
+			mix3F(mixSampsIn, mixPvNxIn, dNorm, mixSampsIn);
+			mix3F(mixSampsOut, mixPvNxOut, 1.0f-dNorm, mixSampsOut);
+		}
 	}
 
-	float pvCIn[3];
-	float pvCOut[3];
-	float nxCIn[3];
-	float nxCOut[3];
-
-	csFunc(&pvCInRGB[0], &pvCInRGB[3], &pvCInRGB[6], outClrF, pvCIn);
-	csFunc(&pvCOutRGB[0], &pvCOutRGB[3], &pvCOutRGB[6], outClrF, pvCOut);
-
-	csFunc(&nxCInRGB[0], &nxCInRGB[3], &nxCInRGB[6], outClrF, nxCIn);
-	csFunc(&nxCOutRGB[0], &nxCOutRGB[3], &nxCOutRGB[6], outClrF, nxCOut);
-
-
-	float mixedIn[3];
-	float mixedOut[3];
-	mix3F(pvCIn, nxCIn, inhProg, mixedIn);
-	mix3F(pvCOut, nxCOut, exhProg, mixedOut);
-
 	float cShadedF[3];	
-	mix3F(mixedIn, mixedOut, dNorm, cShadedF);
-	//mix3F(mixedIn, mixedOut, 0, cShadedF); // TEMP
+	mix3F(mixSampsIn, mixSampsOut, dNorm, cShadedF);
+	//mix3F(mixPvNxIn, mixPvNxOut, dNorm, cShadedF);
+	//mix3F(mixPvNxIn, mixPvNxOut, 0, cShadedF); // TEMP
 
 	cShadedI[0] = (int) MIN(255.0f, cShadedF[0]*255.0);
 	cShadedI[1] = (int) MIN(255.0f, cShadedF[1]*255.0);
