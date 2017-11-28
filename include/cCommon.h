@@ -153,7 +153,7 @@ float getBreathFramesAndProg (int fr,
 		brProg = 0;
 		*nFrPvBreath = 0;
 		*nFrNxBreath = 0;
-	} else if (fr >= breaths[1]) {
+	} else if (fr >= breaths[nBreaths-1]) {
 		brProg = 0;
 		*nFrPvBreath = nBreaths-1;
 		*nFrNxBreath = nBreaths-1;
