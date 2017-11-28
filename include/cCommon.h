@@ -207,7 +207,7 @@ void getCspacePvNxInOut (
 	float ripEdge = .003;
 	float ofs = ripTime*dNorm;
 	float edge = ofs + ripEdge * (1-ripTime);
-	float inRip = 0;//smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
+	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
 
 	int inFfw = 600;
 	//inRip = 0;

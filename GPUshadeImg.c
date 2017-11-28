@@ -307,8 +307,8 @@ __kernel void krShadeImg(
 	
 
 	// Bulb
-	float bulbSzMin = .005;
-	float bulbSzMax = .02;
+	float bulbSzMin = .01;
+	float bulbSzMax = .03;
 	int bulbFrPeriod = 10;
 	float bulbDistPeriod = .25;
 	int bulbDistSegments = 3;
@@ -363,21 +363,25 @@ __kernel void krShadeImg(
 
 
 	float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
-	float bulbAdd = 500;
+	int bulbAdd = 1000;
 	//fr += isBulb * bulbAdd + hiLevSooner * lev + (1-sidFarFromCent) *
 	//	outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
 
 
 	int cShadedI[3];
+	int cShadedIBulb[3];
 	int cAovRip[3];
-
-	//float segClr[3] = {1, .95, .8};
-	//float segClr[3] = {255, 225, 155};
-	//	mix3F(outClrF, segClr, isBulb*.5, outClrF);
-	//	float toAdd[3];
-	//	vSMult(outClrF, isBulb*2, toAdd);
-
-	//	vAdd(cShadedI, toAdd, outClrF);
+	getCspacePvNxInOut (
+		fr+bulbAdd,
+		outClrF, 
+		cInOutVals,
+		inhFrames,
+		exhFrames,
+		nBreaths,
+		dNorm,
+		cAovRip,
+		cShadedIBulb
+		);
 
 	getCspacePvNxInOut (
 		fr,
@@ -390,6 +394,22 @@ __kernel void krShadeImg(
 		cAovRip,
 		cShadedI
 		);
+
+
+	//float segClr[3] = {1, .95, .8};
+	//float segClr[3] = {255, 225, 155};
+	int bulbClr[3] = {0, 255, 0};
+	int notBulbClr[3] = {255, 0, 0};
+		mix3I(cShadedI, cShadedIBulb, isBulb, cShadedI);
+		//mix3F(notBulbClr, bulbClr, isBulb, outClrF);
+		float toAdd[3];
+		vSMult(outClrF, isBulb*10, toAdd);
+
+		//vAdd(outClrF, toAdd, outClrF);
+
+	//cShadedI[0] = CLAMP((int) outClrF[0], 0, 255);
+	//cShadedI[1] = CLAMP((int) outClrF[1], 0, 255);
+	//cShadedI[2] = CLAMP((int) outClrF[2], 0, 255);
 
 	cShadedI[0] = CLAMP(cShadedI[0], 0, 255);
 	cShadedI[1] = CLAMP(cShadedI[1], 0, 255);

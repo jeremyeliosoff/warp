@@ -549,18 +549,21 @@ class warpUi():
 		self.setFrAndUpdate(self.parmDic("frEnd"))
 
 	def getPrevBr(self, fr):
-		thisFr = fr
-		thisTripVal = self.breathsNameFrTrip[0][2]
+		prevFr = fr
+		prevTripVal = self.breathsNameFrTrip[0][2]
 		#breathFramesRev = self.breathFrames[:]
 		breathsNameFrTripRev = self.breathsNameFrTrip[:]
 		breathsNameFrTripRev.reverse()
+		# Append implicit first breath at start of seq.
+		breathsNameFrTripRev.append(("dudName", self.parmDic("frStart"), 0))
+		#print "\n\n\n HHHHHHHHHHHHHHHH breathsNameFrTripRev", breathsNameFrTripRev
 		for br in breathsNameFrTripRev:
 			brFr = br[1]
-			if brFr < thisFr:
-				thisFr = brFr
-				thisTripVal = br[2]
+			if brFr < prevFr:
+				prevFr = brFr
+				prevTripVal = br[2]
 				break
-		return thisFr, thisTripVal
+		return prevFr, prevTripVal
 
 	def shiftLeftCmd(self):
 		thisFr = self.parmDic("fr")
@@ -568,15 +571,15 @@ class warpUi():
 		self.setFrAndUpdate(thisFr)
 
 	def getNextBr(self, fr):
-		thisFr = fr
-		thisTripVal = self.breathsNameFrTrip[-1][2]
+		nextBrFr = fr
+		nextTripVal = self.breathsNameFrTrip[-1][2]
 		for br in self.breathsNameFrTrip:
 			brFr = br[1]
-			if brFr > thisFr:
-				thisFr = brFr
-				thisTripVal = br[2]
+			if brFr > nextBrFr:
+				nextBrFr = brFr
+				nextTripVal = br[2]
 				break
-		return thisFr, thisTripVal
+		return nextBrFr, nextTripVal
 
 	def shiftRightCmd(self):
 		thisFr, dud = self.getNextBr(self.parmDic("fr"))
