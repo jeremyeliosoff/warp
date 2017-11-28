@@ -144,18 +144,30 @@ float getBreathFramesAndProg (int fr,
 	int nBreaths,
 		int *nFrPvBreath, int *nFrNxBreath) {
 	float brProg = 0;
-	*nFrPvBreath = 0;
-	*nFrNxBreath = 1;
 
-	for (int i=0; i<nBreaths-1; i++) {
-		if (fr >= breaths[i] && fr < breaths[i+1]) {
-			*nFrPvBreath = i;
-			*nFrNxBreath = i+1;
-			brProg = fit(fr,
-				breaths[*nFrPvBreath], breaths[*nFrNxBreath], 0, 1);
-			//brProg = fit(fr, 2000, 2700, 0, 1);
-			break;
+	// Default to last bracket.
+	*nFrPvBreath = nBreaths-2;
+	*nFrNxBreath = nBreaths-1;
+
+	if (fr <= breaths[0]) {
+		brProg = 0;
+		*nFrPvBreath = 0;
+		*nFrNxBreath = 0;
+	} else if (fr >= breaths[1]) {
+		brProg = 0;
+		*nFrPvBreath = nBreaths-1;
+		*nFrNxBreath = nBreaths-1;
+	} else {
+		for (int i=0; i<nBreaths-1; i++) {
+			if (fr >= breaths[i] && fr < breaths[i+1]) {
+				*nFrPvBreath = i;
+				*nFrNxBreath = i+1;
+				//*nFrNxBreath = 1;
+				//brProg = fit(fr, 2000, 2700, 0, 1);
+				break;
+			}
 		}
+		brProg = fit(fr, breaths[*nFrPvBreath], breaths[*nFrNxBreath], 0, 1);
 	}
 	//return CLAMP(brProg, 0, 1);
 	return brProg;
@@ -195,10 +207,13 @@ void getCspacePvNxInOut (
 	float ripEdge = .003;
 	float ofs = ripTime*dNorm;
 	float edge = ofs + ripEdge * (1-ripTime);
-	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
+	float inRip = 0;//smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
 
 	int inFfw = 600;
+	//inRip = 0;
 	int frWOfs = fr + ripFfw * inRip - ((float)inFfw) * dNorm;
+	frWOfs = MAX(0, fr);
+	//int frWOfs = fr;// - ((float)inFfw) * dNorm;
 
 	float inhProg = getBreathFramesAndProg (frWOfs, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
 	float exhProg = getBreathFramesAndProg (frWOfs, exhFrames, nBreaths, &pvExhFr, &nxExhFr);

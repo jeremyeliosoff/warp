@@ -1,3 +1,12 @@
+TO GET OFF RENTAL time allowing:
+
+p3zpw2: v001fpc30 v002fpc90
+zP5
+
+SEQ:
+p3z35pw2
+
+
 
 ================
 == THU NOV 23 ==
@@ -5272,14 +5281,15 @@ Wed 29 FINAL RENDER
 
 *********** PLAN OF ATTACK *********** 
 
-#D# Connect tripLev to breath
+Fix rip
+	Copy
+Test while removing stuff from Temp-D
 
 Ensure that trip transitions well
 	Fix throbbing bg near beginning
 		Make lower levels transparent to let bg in
 
 
-Fix rip
 
 See that clrs (incl breath parms) are saved in ren
 
@@ -5289,7 +5299,6 @@ bulbs
 
 
 Add black point?
-
 
 
 rip goes from LIGHTEST TO DARKEST w/in sid (we're trying this with progToNextLev, soso)
@@ -5303,6 +5312,37 @@ These will be used to make the "FLASHING LIGHTBULBS", that go off + on in altern
 Similar thing ALONG EDGES
 
 
-STONED
-More colourful bulbs
-Maybe more colourful small tids in general
+
+================
+== MON NOV 27 ==
+================
+
+Rens/gens today:
+	Little-D: GEN p3, 90fpc
+		Currently rendering, doesn't need to finish, just get an idea
+	Little-D: REN p3, 90fpc
+		Start after lunch
+	Big-D: REN p3, 45fpc
+		Currently rendering
+	
+SCHEDULE:
+#D# 1:30 - return from lunch
+#D# 	kick off Little-D REN
+#D# 	Really view the latest movies
+
+NOTES FROM VIEWING:
+	Sooner trip - maybe:
+		i0 .00 -> .1 (make sure it fades from frStart)
+		e0 .10 -> .2
+		i1 .35 -> .4
+		e1 .80 -> .8
+	Figure out ripple
+	Really wanting more colour variation - work on bulbs
+	Work on edge spread
+
+
+
+3pm - start getting all stuff off laptop
+4pm - reinstall windows
+5pm - BestReturn
+

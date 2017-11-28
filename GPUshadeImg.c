@@ -364,20 +364,20 @@ __kernel void krShadeImg(
 
 	float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
 	float bulbAdd = 500;
-	fr += isBulb * bulbAdd + hiLevSooner * lev + (1-sidFarFromCent) *
-		outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
+	//fr += isBulb * bulbAdd + hiLevSooner * lev + (1-sidFarFromCent) *
+	//	outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
 
 
 	int cShadedI[3];
 	int cAovRip[3];
 
 	//float segClr[3] = {1, .95, .8};
-	float segClr[3] = {255, 225, 155};
-		mix3F(outClrF, segClr, isBulb*.5, outClrF);
-		float toAdd[3];
-		vSMult(outClrF, isBulb*2, toAdd);
+	//float segClr[3] = {255, 225, 155};
+	//	mix3F(outClrF, segClr, isBulb*.5, outClrF);
+	//	float toAdd[3];
+	//	vSMult(outClrF, isBulb*2, toAdd);
 
-		vAdd(cShadedI, toAdd, outClrF);
+	//	vAdd(cShadedI, toAdd, outClrF);
 
 	getCspacePvNxInOut (
 		fr,
