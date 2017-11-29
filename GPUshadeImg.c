@@ -104,60 +104,27 @@ int getCellScalar(int x, int y, int yres,
 	return tidPosGridThisLev[i];
 }
 
-int getBorders(int x, int y, int xres, int yres, int thisTidPos,
+int getBorders(int edgeThick, int x, int y, int xres, int yres, int thisTidPos,
   __global int* tidPosGridThisLev,
   int* bordNxNyPxPy)
 {
 	int bordTotal = 0;	
+	for (int xx=-edgeThick; xx<=edgeThick; xx++) {
+		for (int yy=-edgeThick; yy<=edgeThick; yy++) {
 
-	int bordIndex;
-	for (bordIndex=0; bordIndex<4; bordIndex++) {
-		int xx;
-		int yy;
-		if (bordIndex < 2) {
-			xx = x-1 + 2*bordIndex;
-			yy = y;
-		} else {
-			xx = x;
-			yy = y-1 + 2*(bordIndex-2);
+			int xxx = x + xx;
+			int yyy = y + yy;
+			int i = xxx * yres + yyy;
+
+			if (xxx == x && yyy == y) {  // WITHOUT THIS BIG D SEG-FAULTS!!!
+				continue;
+			} else if (xxx < 0 || yyy < 0 ||
+				xxx >= xres-1 || yyy >= yres-1 ||
+				thisTidPos != tidPosGridThisLev[i]) {
+				bordTotal += 1;
+			}
 		}
-		int i = xx * yres + yy;
-		if (xx < 0 || yy < 0 ||
-			xx > xres-1 || yy > yres-1 ||
-			thisTidPos != tidPosGridThisLev[i]) {
-			bordNxNyPxPy[bordIndex] = 1;
-			bordTotal += 1;
-		} else {
-			bordNxNyPxPy[bordIndex] = 0;
-		}
-		
 	}
-	//int xx;
-	//int yy;
-	//int radius = 1;
-	////for (xx=-radius; xx<=radius; xx++) {
-	//	//for (yy=-radius; yy<=radius; yy++) {
-	//int root = 1+2*radius;
-	//for (int bordIndex=0; bordIndex <= root*root; bordIndex++) {
-	//		int xx = bordIndex/root - radius;
-	//		int yy = bordIndex%root - radius;
-	//		int xxx = x + xx;
-	//		int yyy = y + yy;
-
-	//		int i = xxx * yres + yyy;
-	//		if (xxx < 0 || yyy < 0 ||
-	//			xxx >= xres-1 || yyy >= yres-1) {
-	//			//if (1 == 1) 
-	//			bordTotal += 1;
-	//		} else {
-	//			int test = (int) tidPosGridThisLev[i];
-	//			if (test == thisTidPos) {
-	//				bordTotal += 1;
-	//			}
-	//		}
-	//	//}
-	//	
-	//}
 	return bordTotal;
 }
 
@@ -257,6 +224,7 @@ __kernel void krShadeImg(
 			// Parms
 			float clrKBig,
 			int radiateTime,
+			int edgeThick,
 			int fr,
 
 
@@ -282,8 +250,15 @@ __kernel void krShadeImg(
 	int tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
 
 	int bordNxNyPxPy[4];
-	int bordTotal = getBorders(x, y, xres, yres+1, tidPos,
-		tidPosGridThisLev, bordNxNyPxPy);
+	int bordTotal = 0;
+	
+	// For some totally fucked up reason, skipping or joining these conditionals seg-faults.
+	if (edgeThick == 1) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	if (edgeThick == 2) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	if (edgeThick == 3) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	if (edgeThick == 4) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	if (edgeThick == 5) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	if (edgeThick == 6) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
 
 	int sz[2];
 	int sidCent[2];

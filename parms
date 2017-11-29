@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 3020
+val 2076
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 1
+val 0
 
 doRenCv
 val 1
 
 image
-val p75z35pw2
+val p3z35pw2
 
 dbImg1
 val bg_ctest
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v003bulbsBetter
+val v007thickBorders
 
 frStart
 val 1600
 
 frEnd
-val 3399
+val 3349
 
 doGen
 val 1
@@ -52,7 +52,7 @@ doRen
 val 1
 
 frIncRen
-val 16
+val 1
 
 
 
@@ -86,16 +86,19 @@ val 1
 ---REN---
 
 dataVer
-val v000fpc60
+val v000fpc45
 
 tripAlwaysOn
-val 0
+val 1
 
 isoLev
-val -1
+val 3-4
+
+edgeThick
+val 4
 
 radiateTime
-val 500
+val 100
 
 moveK
 val .4
@@ -256,7 +259,7 @@ inh3
 val 3080
 
 inh3trip
-val 0.9
+val 1
 
 exh3
 val 3350

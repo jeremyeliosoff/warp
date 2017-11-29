@@ -1483,6 +1483,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.float32(tripFrK),
 			np.float32(warpUi.parmDic("clrKBig")),
 			np.float32(warpUi.parmDic("radiateTime")),
+			np.int32(warpUi.parmDic("edgeThick")),
 			np.int32(warpUi.parmDic("fr")),
 			inhFrames_buf,
 			exhFrames_buf,
@@ -1797,7 +1798,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	canvases = []
 	for outputNum in range(nOutputs):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if outputNum > 0:
+		if outputNum > -1:
 			nextCanvas.fill((0, 0, 0))
 		#else:
 		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!

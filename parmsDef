@@ -134,6 +134,10 @@ isoLev
 type str
 val -1
 
+edgeThick
+type int
+val 1
+
 radiateTime
 type int
 val 600
