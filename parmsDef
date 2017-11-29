@@ -142,6 +142,19 @@ radiateTime
 type int
 val 600
 
+
+fadeOutStart
+type int
+val 3160
+
+fadeOutDur
+type int
+val 10
+
+fadeOutDelPerLev
+type int
+val 8
+
 moveK
 type float
 val 0

@@ -251,14 +251,31 @@ __kernel void krShadeImg(
 
 	int bordNxNyPxPy[4];
 	int bordTotal = 0;
+	int bordTotalBulb = 0;
+	float isBulb = isBulbs[tidPos];
 	
 	// For some totally fucked up reason, skipping or joining these conditionals seg-faults.
-	if (edgeThick == 1) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	if (edgeThick == 2) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	if (edgeThick == 3) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	if (edgeThick == 4) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	if (edgeThick == 5) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	if (edgeThick == 6) bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	//if (edgeThick == 1) {
+	//	bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	//	bordTotalBulb = getBorders(edgeThick*2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy); }
+	//if (edgeThick == 2) {
+	//	bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	//	bordTotalBulb = getBorders(edgeThick*2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy); }
+	//if (edgeThick == 3) {
+	//	bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	//	bordTotalBulb = getBorders(edgeThick*2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy); }
+	//if (edgeThick == 4) {
+	//	bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	//	bordTotalBulb = getBorders(edgeThick*2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy); }
+	//if (edgeThick == 5) {
+	//	bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	//	bordTotalBulb = getBorders(edgeThick*2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy); }
+
+	bordTotal = getBorders(1, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	bordTotalBulb = getBorders(2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	
+	//if (isBulb > .5)
+		//bordTotal += bordTotalBulb * isBulb;
 
 	int sz[2];
 	int sidCent[2];
@@ -268,7 +285,6 @@ __kernel void krShadeImg(
 	int srcClr[3];
 	float xfx = xfs[tidPos*2];
 	float xfy = xfs[tidPos*2+1];
-	float isBulb = isBulbs[tidPos];
 	filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
 
 	// Get tid.
@@ -316,9 +332,14 @@ __kernel void krShadeImg(
 
 
 
+	int inBorder = bordTotal > 0;
+	int inBorderBulb = bordTotalBulb > 0;
 	
-	if (bordTotal > 0) {
+	// If this is a bulb, but your in the bulb border, turn off
+	// bulb here, and use bordTotalBulb as bordTotal.
+	if (inBorderBulb && isBulb > 0) {
 		isBulb = 0;
+		bordTotal = bordTotalBulb;
 	}
 
 
@@ -326,7 +347,7 @@ __kernel void krShadeImg(
 	int trippedClr[3];
 	mult3_255(srcClr, tidClr, trippedClr);
  
-	float intensMult = bordTotal > 0 ? 4 : 2;// + isBulb * 2;
+	float intensMult = bordTotal > 0 ? 3 : 2;// + isBulb * 2;
 	mult3sc(trippedClr, intensMult, trippedClr);
 
 	int outClr[3];
@@ -335,8 +356,6 @@ __kernel void krShadeImg(
 
 	// Apply darkenings.
 	mult3sc(outClr, kLevPct*tripKmult*vignKmult*bigKmult, outClr);
-
-
 
 
 	int nBreaths = 4;
@@ -385,46 +404,34 @@ __kernel void krShadeImg(
 	float maxComp = 0;
 	float cShadedIBulbF[3];
 
-	//cShadedIBulb[0] = 0;
-	//cShadedIBulb[1] = 255;
-	//cShadedIBulb[2] = 255;
-
 	for (int i = 0; i < 3; i++) {
 		cShadedIBulbF[i] = MAX(0, 1.0-((float)cShadedIBulb[i])/255.0);
 		maxComp = MAX(maxComp, cShadedIBulbF[i]);
 	}
 	for (int i = 0; i < 3; i++) {
 		cShadedIBulbF[i] = cShadedIBulbF[i]/maxComp;
-		//cShadedIBulbF[i] *= cShadedIBulbF[i]*cShadedIBulbF[i]*cShadedIBulbF[i];
-		//cShadedIBulbF[i] = MAX(0, fit(cShadedIBulbF[i], 0, 1, -5, 1));
-		//if (cShadedIBulbF[i] < .95) cShadedIBulbF[i] = 0;
 	}
-
-	//cShadedIBulbF[0] = 1;
-	//cShadedIBulbF[1] = 0;
-	//cShadedIBulbF[2] = 0;
 
 	for (int i = 0; i < 3; i++) {
 		cShadedIBulb[i] = (int)(cShadedIBulbF[i]*255.0f);
 	}
 
 
+	int borderAdd = 500;
+	int cShadedIEdge[3];
+	getCspacePvNxInOut (
+		fr + borderAdd,
+		radiateTime,
+		outClrF, 
+		cInOutVals,
+		inhFrames,
+		exhFrames,
+		nBreaths,
+		dNorm,
+		cAovRip,
+		cShadedIEdge
+		);
 
-	//for (int i = 0; i < 3; i++) {
-	//	//cShadedIBulb[i] = 255-cShadedIBulb[i];
-	//	float f = ((float)cShadedIBulb[i])/255;
-	//	f = 1.0f-f;
-	//	f *= f*f;
-	//	maxComp = MAX(maxComp, f);
-	//	cShadedIBulb[i] = (int) (f * 255);
-	//}
-
-	//for (int i = 0; i < 3; i++) {
-	//	cShadedIBulb[i] = cShadedIBulb[i]*(1.0/((float)maxComp));
-	//}
-	//cShadedIBulb[0] = 255-cShadedIBulb[0];
-	//cShadedIBulb[1] = 255-cShadedIBulb[1];
-	//cShadedIBulb[2] = 255-cShadedIBulb[2];
 
 	getCspacePvNxInOut (
 		fr,
@@ -444,8 +451,12 @@ __kernel void krShadeImg(
 	//float segClr[3] = {255, 225, 155};
 	int bulbClr[3] = {0, 255, 0};
 	int notBulbClr[3] = {255, 0, 0};
-		mix3I(cShadedI, cShadedIBulb, isBulb, cShadedI);
-		//mix3I(cShadedI, notBulbClr, isBulb, cShadedI);
+	mix3I(cShadedI, cShadedIBulb, isBulb, cShadedI);
+	int withBorderBulb[3]; int withBorderNoBulb[3];
+	mix3I(cShadedI, cShadedIEdge, inBorderBulb*tripGlobF, withBorderBulb);
+	mix3I(cShadedI, cShadedIEdge, inBorder*tripGlobF, withBorderNoBulb);
+	mix3I(withBorderNoBulb, withBorderBulb, isBulb, cShadedI);
+	//mix3I(notBulbClr, bulbClr, isBulb, cShadedI);
 		//mix3I(notBulbClr, bulbClr, isBulb, cShadedI);
 		//float toAdd[3];
 		//vSMult(outClrF, isBulb*10, toAdd);

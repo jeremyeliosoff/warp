@@ -5268,6 +5268,14 @@ REJIG CLR UI Make clrgroup ui component thing:
 
 Add black point?
 
+Bulbs
+	#Dish# Although this could be done in python, we want to be open to controlling A in shader eg. edges.
+	#Dish int-float issue# Colours still annoyingly unsaturated.
+
+Fade BG out more?
+
+#D# Check whether you are rendering lev 0 and not using it.
+
 ---------- CURRENT ----------
 
 Pick nice clrs
@@ -5329,24 +5337,24 @@ Fix throbbing bg near beginning
 *********** PLAN OF ATTACK *********** 
 
 
+
+#Dish# Check ending
+#Dish# 	Implement fadeStart, fadeDur, fadeDelPerLev
+		Check BG
+
+
+MAKE RIPPLE WORK!  "Peel away" layers, new clr glowing beneath
+
+EDGES:
+	Electric pattern radiating out - possibly incorporated with ripple
+
 Connect bulb to opacity:
-	#Dish# Although this could be done in python, we want to be open to controlling A in shader eg. edges.
-	#Dish int-float issue# Colours still annoyingly unsaturated.
 	Randomize - not every qualifying bulb is a bulb
 	Perhaps vary colours, eg. per segment (also play with brightness)
 	Rings should not always be in same place.
 
-
-
-EDGES:
-	Thicker
-	Electric pattern radiating out
-
 "WAVES OF SHEEN" passing over sids: white added to/replaces clr.
 
-MAKE RIPPLE WORK!  "Peel away" layers, new clr glowing beneath
-
-Fade BG out more?
 
 
 

@@ -746,7 +746,7 @@ class warpUi():
 		isoLevStr = self.parmDic("isoLev")
 		if "-" in isoLevStr:  # TODO maybe add , syntax: 1-3,5
 			if isoLevStr[0] == "-":
-				self.levsToRen = range(nLevels)
+				self.levsToRen = range(1, nLevels) # 1 because we've decided to never ren 0 by default.
 			else:
 				mn,mx = isoLevStr.split("-")
 				self.levsToRen = range(int(mn), int(mx) +1)

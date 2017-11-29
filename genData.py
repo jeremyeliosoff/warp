@@ -1546,7 +1546,6 @@ def genSprites(warpUi, srcImg):
 	print "_genSprites(): tripFrK:", tripFrK
 
 	for lev in range(warpUi.parmDic("nLevels")):
-		#if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
 		if not lev in warpUi.levsToRen:
 			spritesThisFr.append({})
 			continue
@@ -1626,6 +1625,8 @@ def genSprites(warpUi, srcImg):
 				bulbOnPct = .6
 				bulbSquareTolerance = .1
 
+				yByXRes = float(res[1])/res[0]
+
 				sz = (bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1])
 				cent = ((bbx[1][0]+bbx[0][0])/2, (bbx[1][1]+bbx[0][1])/2)
 				isBulb = 0
@@ -1635,8 +1636,8 @@ def genSprites(warpUi, srcImg):
 					#print "\n XXXXXXXXXXXXXXXx bbx", bbx, "sz", sz, "szRel", szRel, "szRatio", szRatio, "cent", cent
 
 
-					if (szRel[0] > bulbSzMin and
-						szRel[0] < bulbSzMax and
+					if (szRel[0] > bulbSzMin*yByXRes and
+						szRel[0] < bulbSzMax*yByXRes and
 						szRel[1] > bulbSzMin and
 						szRel[1] < bulbSzMax and
 						szRatio < 1 + bulbSquareTolerance and
@@ -1655,6 +1656,8 @@ def genSprites(warpUi, srcImg):
 
 			else:
 				xfs.append((0.0,0.0)) # To keep tidPos synched.
+			# isBulb = 1 # TEMP
+			if isBulb > 0: isBulb = 1
 			isBulbs.append(isBulb)
 
 		shadedNamesAndImgs = shadeImg(warpUi, lev, srcImg, tidImg,
@@ -1786,12 +1789,6 @@ def renSprites(warpUi, srcImg, res, fr):
 	# Find first non empty level, count outputs.
 	nLevels = warpUi.parmDic("nLevels")
 
-	#if warpUi.parmDic("isoLev") > -1:
-	#	levsToRen = [warpUi.parmDic("isoLev")]
-	#	print "\n_renSprites(): ISOLATING LEVEL", levsToRen[0]
-	#else:
-	#	levsToRen = range(nLevels)
-
 	nOutputs = len(warpUi.spritesThisFr[warpUi.levsToRen[0]][0]['spriteNamesAndImgs'])
 
 
@@ -1841,6 +1838,10 @@ def renSprites(warpUi, srcImg, res, fr):
 					surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
 					#surfAlpha = 1 # TEMP!!!!
 
+					fadeStartThisLev = warpUi.parmDic("fadeOutStart") + warpUi.parmDic("fadeOutDelPerLev") * lev
+					fadeOut = 1-ut.smoothstep(fadeStartThisLev, fadeStartThisLev + warpUi.parmDic("fadeOutDur"), fr)
+					surfAlpha *= fadeOut
+
 					# Lower levels become more opaque as trip progresses.
 					levRel = float(lev)/(nLevels-1)
 					bottomMaxAlpha = .5
@@ -1851,9 +1852,9 @@ def renSprites(warpUi, srcImg, res, fr):
 						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
 
 				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-				if lev > 0:  #TODO make this kosher!!!
-					canvases[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-					canvasLevs[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+				#if lev > 0:  #TODO make this kosher!!!
+				canvases[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
+				canvasLevs[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
 
 			#print "\n\n\nVVVVVVVVVVVVVVVVVVVv warpUi.aovNames", warpUi.aovNames, "names", names
 		for i in range(nOutputs):
@@ -2001,7 +2002,6 @@ def inSurfGridToTidGrid(warpUi):
 	tidPosGrid = []
 	maxTid = -1
 	for lev in range(nLevels):
-		#if  warpUi.parmDic("isoLev") > -1 and not lev == warpUi.parmDic("isoLev"):
 		if not lev in warpUi.levsToRen:
 			tidPosGrid.append(None)
 			continue
