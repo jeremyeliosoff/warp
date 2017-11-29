@@ -394,7 +394,7 @@ __kernel void krShadeImg(
 	}
 	for (int i = 0; i < 3; i++) {
 		cShadedIBulbF[i] = cShadedIBulbF[i]/maxComp;
-		cShadedIBulbF[i] *= cShadedIBulbF[i]*cShadedIBulbF[i]*cShadedIBulbF[i];
+		//cShadedIBulbF[i] *= cShadedIBulbF[i]*cShadedIBulbF[i]*cShadedIBulbF[i];
 		//cShadedIBulbF[i] = MAX(0, fit(cShadedIBulbF[i], 0, 1, -5, 1));
 		//if (cShadedIBulbF[i] < .95) cShadedIBulbF[i] = 0;
 	}

@@ -1797,7 +1797,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	canvases = []
 	for outputNum in range(nOutputs):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if outputNum > -1:
+		if outputNum > 0:
 			nextCanvas.fill((0, 0, 0))
 		#else:
 		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!

@@ -5317,9 +5317,8 @@ rip goes from LIGHTEST TO DARKEST w/in sid (we're trying this with progToNextLev
 
 STONED
 Overall more colour variation eg in bulbs + edges
-"Peel away" layers, new clr glowing beneath - MAKE RIPPLE WORK!
 Maybe try mixing in/out, along with across time
-Connect bulbiness to alpha - maybe calc in python
+#Dish# Connect bulbiness to alpha - maybe calc in python
 Get psudo random clr in fr-offset clr space for all bulbs/edges
 Fade BG out more
 Fix throbbing bg near beginning
@@ -5332,17 +5331,22 @@ Fix throbbing bg near beginning
 
 Connect bulb to opacity:
 	#Dish# Although this could be done in python, we want to be open to controlling A in shader eg. edges.
-	Colours still annoyingly unsaturated.
+	#Dish int-float issue# Colours still annoyingly unsaturated.
+	Randomize - not every qualifying bulb is a bulb
+	Perhaps vary colours, eg. per segment (also play with brightness)
+	Rings should not always be in same place.
 
 
 
-
-Do THICKER EDGE detection in addition to/instead of above.
+EDGES:
+	Thicker
+	Electric pattern radiating out
 
 "WAVES OF SHEEN" passing over sids: white added to/replaces clr.
 
-Similar thing ALONG EDGES
+MAKE RIPPLE WORK!  "Peel away" layers, new clr glowing beneath
 
+Fade BG out more?
 
 
 

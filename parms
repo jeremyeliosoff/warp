@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2532
+val 2802
 
 fps
 val 52
@@ -92,7 +92,7 @@ tripAlwaysOn
 val 1
 
 isoLev
-val 3-4
+val -1
 
 radiateTime
 val 100
