@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1696
+val 2532
 
 fps
 val 52
@@ -37,13 +37,13 @@ lev_dbImg2
 val lev03
 
 renVer
-val v003radiateTimeHack
+val v006bulbTweaks
 
 frStart
 val 1600
 
 frEnd
-val 3399
+val 3349
 
 doGen
 val 1
@@ -52,7 +52,7 @@ doRen
 val 1
 
 frIncRen
-val 16
+val 1
 
 
 

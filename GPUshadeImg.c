@@ -219,14 +219,21 @@ void filterImg  (int x, int y, int xres, int yres,
 
 
 __kernel void krShadeImg(
+			// Const
 			int xres,
 			int yres,
+
+			// Per-obj varying attrs
 			int lev,
 			float levPct,
 			float tripGlobF,
+
+			// Parms
 			float clrKBig,
 			int radiateTime,
 			int fr,
+
+
 			__global int* inhFrames,
 			__global int* exhFrames,
 			__global float* cInOutVals,
@@ -236,6 +243,7 @@ __kernel void krShadeImg(
 			__global int* tids,
 			__global int* bbxs,
 			__global float* xfs,
+			__global float* isBulbs,
 			__global int* tidTrips,
 			__global int* aovRipImg,
 			__global int* alphaBoost,
@@ -259,6 +267,7 @@ __kernel void krShadeImg(
 	int srcClr[3];
 	float xfx = xfs[tidPos*2];
 	float xfy = xfs[tidPos*2+1];
+	float isBulb = isBulbs[tidPos];
 	filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
 
 	// Get tid.
@@ -307,30 +316,8 @@ __kernel void krShadeImg(
 
 
 	
-
-	// Bulb
-	float bulbSzMin = .01;
-	float bulbSzMax = .03;
-	int bulbFrPeriod = 10;
-	float bulbDistPeriod = .25;
-	int bulbDistSegments = 3;
-	float bulbFade = .2;
-	float bulbSquareTolerance = .1;
-
-	float isBulb = 0;
-	float szRatio = szRel[0]/szRel[1];
-	if (szRel[0] > bulbSzMin && szRel[0] < bulbSzMax &&
-			szRel[0] > bulbSzMin &&
-			szRel[0] < bulbSzMax &&
-			szRatio < 1 + bulbSquareTolerance &&
-			szRatio < 1 - bulbSquareTolerance &&
-			bordTotal < 1
-			) {
-		float dSegment = floor(dNorm/bulbDistPeriod);
-		int frBulb = fr + bulbFrPeriod*dSegment/bulbDistSegments;
-
-		float inPeriod = ((float)(frBulb % bulbFrPeriod))/bulbFrPeriod;
-		isBulb = smoothpulse(0, bulbFade, 1-bulbFade, 1, inPeriod) * tripGlobF;
+	if (bordTotal > 0) {
+		isBulb = 0;
 	}
 
 
@@ -338,7 +325,7 @@ __kernel void krShadeImg(
 	int trippedClr[3];
 	mult3_255(srcClr, tidClr, trippedClr);
  
-	float intensMult = bordTotal > 0 ? 4 : 2 + isBulb * 2;
+	float intensMult = bordTotal > 0 ? 4 : 2;// + isBulb * 2;
 	mult3sc(trippedClr, intensMult, trippedClr);
 
 	int outClr[3];
@@ -369,11 +356,13 @@ __kernel void krShadeImg(
 
 
 	float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
-	int bulbAdd = 1000;
+	int bulbAdd = 0;
 	//fr += isBulb * bulbAdd + hiLevSooner * lev + (1-sidFarFromCent) *
 	//	outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
 
-	int red[] = {255, 0, 0};
+	float bulbClrIn[] = {255, 0, 0};
+	//assignIV(outClrF,
+
 
 	int cShadedI[3];
 	int cShadedIBulb[3];
@@ -382,7 +371,7 @@ __kernel void krShadeImg(
 		fr+bulbAdd,
 		radiateTime,
 		//outClrF, 
-		red, 
+		bulbClrIn, 
 		cInOutVals,
 		inhFrames,
 		exhFrames,
@@ -391,6 +380,50 @@ __kernel void krShadeImg(
 		cAovRip,
 		cShadedIBulb
 		);
+
+	float maxComp = 0;
+	float cShadedIBulbF[3];
+
+	//cShadedIBulb[0] = 0;
+	//cShadedIBulb[1] = 255;
+	//cShadedIBulb[2] = 255;
+
+	for (int i = 0; i < 3; i++) {
+		cShadedIBulbF[i] = MAX(0, 1.0-((float)cShadedIBulb[i])/255.0);
+		maxComp = MAX(maxComp, cShadedIBulbF[i]);
+	}
+	for (int i = 0; i < 3; i++) {
+		cShadedIBulbF[i] = cShadedIBulbF[i]/maxComp;
+		cShadedIBulbF[i] *= cShadedIBulbF[i]*cShadedIBulbF[i]*cShadedIBulbF[i];
+		//cShadedIBulbF[i] = MAX(0, fit(cShadedIBulbF[i], 0, 1, -5, 1));
+		//if (cShadedIBulbF[i] < .95) cShadedIBulbF[i] = 0;
+	}
+
+	//cShadedIBulbF[0] = 1;
+	//cShadedIBulbF[1] = 0;
+	//cShadedIBulbF[2] = 0;
+
+	for (int i = 0; i < 3; i++) {
+		cShadedIBulb[i] = (int)(cShadedIBulbF[i]*255.0f);
+	}
+
+
+
+	//for (int i = 0; i < 3; i++) {
+	//	//cShadedIBulb[i] = 255-cShadedIBulb[i];
+	//	float f = ((float)cShadedIBulb[i])/255;
+	//	f = 1.0f-f;
+	//	f *= f*f;
+	//	maxComp = MAX(maxComp, f);
+	//	cShadedIBulb[i] = (int) (f * 255);
+	//}
+
+	//for (int i = 0; i < 3; i++) {
+	//	cShadedIBulb[i] = cShadedIBulb[i]*(1.0/((float)maxComp));
+	//}
+	//cShadedIBulb[0] = 255-cShadedIBulb[0];
+	//cShadedIBulb[1] = 255-cShadedIBulb[1];
+	//cShadedIBulb[2] = 255-cShadedIBulb[2];
 
 	getCspacePvNxInOut (
 		fr,
@@ -411,9 +444,12 @@ __kernel void krShadeImg(
 	int bulbClr[3] = {0, 255, 0};
 	int notBulbClr[3] = {255, 0, 0};
 		mix3I(cShadedI, cShadedIBulb, isBulb, cShadedI);
-		//mix3F(notBulbClr, bulbClr, isBulb, outClrF);
-		float toAdd[3];
-		vSMult(outClrF, isBulb*10, toAdd);
+		//mix3I(cShadedI, notBulbClr, isBulb, cShadedI);
+		//mix3I(notBulbClr, bulbClr, isBulb, cShadedI);
+		//float toAdd[3];
+		//vSMult(outClrF, isBulb*10, toAdd);
+		//vSMult(outClrF, isBulb*10, toAdd);
+		//vISMult(cShadedI, 1 + 3*isBulb, cShadedI);
 
 		//vAdd(outClrF, toAdd, outClrF);
 

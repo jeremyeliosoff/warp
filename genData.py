@@ -1202,12 +1202,14 @@ mult255V = np.vectorize(mult255)
 
 
 
-def makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs):
+def makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids,
+		tidPos, tidToSidsThisLev, tidProgs, tidTrips, isBulbs, xfs):
 	tid = tids[tidPos]
 	if "bbx" in tidToSidsThisLev[tid]:
 		spriteNamesAndImgs = []
 		for srcName, srcImg in shadedNamesAndImgs:
 			tidProg = tidProgs[tidPos]
+			isBulb = isBulbs[tidPos]
 			tidTrip = tidTrips[tidPos]
 			xf = xfs[tidPos]
 			bbx = tidToSidsThisLev[tid]["bbx"]
@@ -1248,7 +1250,7 @@ def makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids, tidPos, tidToSi
 
 
 		return {"spriteNamesAndImgs":spriteNamesAndImgs, "bbx":bbx, "tid":tid,
-			"tidProg":tidProg, "tidTrip":tidTrip, "xf":xf}
+			"tidProg":tidProg, "isBulb":isBulb, "tidTrip":tidTrip, "xf":xf}
 	else:
 		return None
 
@@ -1409,7 +1411,7 @@ def imageToArray3d(srcImg, srcImgPath):
 	return srcImgAr
 
 def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
-		tids, bbxs, cents, xfs, tidTrips, tripFrK):
+		tids, bbxs, xfs, tidTrips, tripFrK, isBulbs):
 	tidImgLs = list(pygame.surfarray.array3d(tidImg))
 
 	# Inputs
@@ -1424,6 +1426,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	tidPosGridThisLev_buf = makeBufferInput(warpUi, tidPosGridThisLev, dtype=np.intc)
 	bbxs_buf = makeBufferInput(warpUi, bbxs, dtype=np.intc)
 	tids_buf = makeBufferInput(warpUi, tids, dtype=np.intc)
+	isBulbs_buf = makeBufferInput(warpUi, isBulbs, dtype=np.float32)
 	tidTrips_buf = makeBufferInput(warpUi, tidTrips, dtype=np.intc)
 	xfs_buf = makeBufferInput(warpUi, xfs, dtype=np.float32)
 
@@ -1490,6 +1493,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			tids_buf,
 			bbxs_buf,
 			xfs_buf,
+			isBulbs_buf,
 			tidTrips_buf,
 			aovRipImg_buf,
 			alphaBoostImg_buf,
@@ -1569,6 +1573,11 @@ def genSprites(warpUi, srcImg):
 		xfs = []
 		tidProgs = []
 		tidTrips = []
+		isBulbs = []
+		res = warpUi.res
+		imgCent = (res[0]/2, res[1]/2)
+		#centToCnr = math.sqrt(imgCent[0]*imgCent[0] + imgCent[1]*imgCent[1])
+		centToCnr = ut.vLen(imgCent)
 		for tidPos,tid in enumerate(tids):
 
 			# Get tidProg.
@@ -1586,6 +1595,8 @@ def genSprites(warpUi, srcImg):
 			tidProgs.append(int(tidProg*100))
 			tidTrips.append(int(tidTrip*100))
 
+			isBulb = 0
+
 			if "bbx" in tidToSidsThisLev[tid]:
 				bbx = tidToSidsThisLev[tid]["bbx"]
 				#print "_genSprites() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
@@ -1595,24 +1606,63 @@ def genSprites(warpUi, srcImg):
 				#bbxs.append(tidPos)
 				#bbxs.append(bbx[0][0])
 				#bbxs.append(bbx[0][1])
-				cent = ((bbx[0][0] + bbx[0][1])/2, (bbx[1][0] + bbx[1][1])/2) 
+				#cent = ((bbx[0][0] + bbx[0][1])/2, (bbx[1][0] + bbx[1][1])/2) 
 
 				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 				xf = calcXf(warpUi, tidTrip, bbxTup)
 				#xf = calcXf(warpUi, levProg, bbxTup) # TEMP!!!
 
-				cents.append(cent)
 				xfs.append(xf)
+
+
+				# Bulb
+				bulbSzMin = .01# .01
+				bulbSzMax = .08# .1
+				bulbFrPeriod = 20
+				bulbDistPeriod = .25
+				bulbDistSegments = 3
+				bulbFade = .2
+				bulbOnPct = .6
+				bulbSquareTolerance = .1
+
+				sz = (bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1])
+				cent = ((bbx[1][0]+bbx[0][0])/2, (bbx[1][1]+bbx[0][1])/2)
+				isBulb = 0
+				if sz[0] > 0 and sz[1] > 0:
+					szRel = (float(sz[0])/res[0], float(sz[1])/res[1])
+					szRatio = szRel[0]/szRel[1]
+					#print "\n XXXXXXXXXXXXXXXx bbx", bbx, "sz", sz, "szRel", szRel, "szRatio", szRatio, "cent", cent
+
+
+					if (szRel[0] > bulbSzMin and
+						szRel[0] < bulbSzMax and
+						szRel[1] > bulbSzMin and
+						szRel[1] < bulbSzMax and
+						szRatio < 1 + bulbSquareTolerance and
+						szRatio < 1 - bulbSquareTolerance):
+							#bordTotal < 1: 
+						dToCent = ut.vDist(imgCent, cent)
+						dNorm = float(dToCent)/centToCnr
+						dSegment = math.floor((1-dNorm)/bulbDistPeriod)
+						fr = warpUi.parmDic("fr")
+						frBulb = fr + bulbFrPeriod*float(dSegment)/bulbDistSegments
+
+						inPeriod = float(frBulb % bulbFrPeriod)/bulbFrPeriod
+						isBulb = ut.smoothpulse(0, bulbFade*bulbOnPct, bulbOnPct-bulbFade*bulbOnPct, bulbOnPct, inPeriod) * tripFrK
+
+
+
 			else:
 				xfs.append((0.0,0.0)) # To keep tidPos synched.
+			isBulbs.append(isBulb)
 
 		shadedNamesAndImgs = shadeImg(warpUi, lev, srcImg, tidImg,
-			tidPosGridThisLev, tids, bbxs, cents, xfs,
-				tidTrips, generalTripToClrTrip(tripFrK))
+			tidPosGridThisLev, tids, bbxs, xfs,
+				tidTrips, generalTripToClrTrip(tripFrK), isBulbs)
 
 		spritesThisLev = []
 		for tidPos in range(len(tids)):
-			spriteDic = makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, xfs)
+			spriteDic = makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids, tidPos, tidToSidsThisLev, tidProgs, tidTrips, isBulbs, xfs)
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
@@ -1747,7 +1797,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	canvases = []
 	for outputNum in range(nOutputs):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if outputNum > 0:
+		if outputNum > -1:
 			nextCanvas.fill((0, 0, 0))
 		#else:
 		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!
@@ -1766,6 +1816,7 @@ def renSprites(warpUi, srcImg, res, fr):
 			xf = spriteDic["xf"]
 			tid = spriteDic["tid"]
 			bbx = spriteDic["bbx"]
+			isBulb = spriteDic["isBulb"]
 
 			# Start aov stuff.
 			i = -1
@@ -1793,6 +1844,7 @@ def renSprites(warpUi, srcImg, res, fr):
 					levRel = float(lev)/(nLevels-1)
 					bottomMaxAlpha = .5
 					surfAlpha *= ut.mix(trip*bottomMaxAlpha, 1, levRel)
+					surfAlpha = min(1, (1+3*isBulb)*surfAlpha)
 
 					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)

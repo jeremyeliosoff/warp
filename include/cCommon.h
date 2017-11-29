@@ -9,6 +9,13 @@ void vSMult(float* a, float b, float* out) {
 	}
 }
 
+void vISMult(int* a, float b, int* out) {
+	for (int i=0; i<3; i++) {
+		out[i] = ((int) (a[i]) * b);
+	}
+}
+
+
 void vMult(float* a, float* b, float* out) {
 	for (int i=0; i<3; i++) {
 		out[i] = a[i] * b[i];

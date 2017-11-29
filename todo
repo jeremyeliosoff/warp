@@ -5329,11 +5329,10 @@ Fix throbbing bg near beginning
 
 *********** PLAN OF ATTACK *********** 
 
-Change uchar to int
-
 
 Connect bulb to opacity:
-	Although this could be done in python, we want to be open to controlling A in shader eg. edges.
+	#Dish# Although this could be done in python, we want to be open to controlling A in shader eg. edges.
+	Colours still annoyingly unsaturated.
 
 
 
