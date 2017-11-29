@@ -132,6 +132,32 @@ int getBorders(int x, int y, int xres, int yres, int thisTidPos,
 		}
 		
 	}
+	//int xx;
+	//int yy;
+	//int radius = 1;
+	////for (xx=-radius; xx<=radius; xx++) {
+	//	//for (yy=-radius; yy<=radius; yy++) {
+	//int root = 1+2*radius;
+	//for (int bordIndex=0; bordIndex <= root*root; bordIndex++) {
+	//		int xx = bordIndex/root - radius;
+	//		int yy = bordIndex%root - radius;
+	//		int xxx = x + xx;
+	//		int yyy = y + yy;
+
+	//		int i = xxx * yres + yyy;
+	//		if (xxx < 0 || yyy < 0 ||
+	//			xxx >= xres-1 || yyy >= yres-1) {
+	//			//if (1 == 1) 
+	//			bordTotal += 1;
+	//		} else {
+	//			int test = (int) tidPosGridThisLev[i];
+	//			if (test == thisTidPos) {
+	//				bordTotal += 1;
+	//			}
+	//		}
+	//	//}
+	//	
+	//}
 	return bordTotal;
 }
 

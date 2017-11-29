@@ -95,51 +95,51 @@ formatIn = baseIn + ".%05d.png"
 formatOut = baseOut + ".%05d.png"
 #while frSrc < frange:
 frSrc = frStart
-#while frSrc < frEnd:
-#	prog = float(frSrc)/(frange-1)
-#	incr = mix(1, float(fpsEnd)/fpsStart, prog)
-#
-#	i = 0
-#	for fpsGrp in fpsGrps:
-#		#print "fpsGrp[0]", fpsGrp[0]
-#		if i >= (len(fpsGrps)-1) or fpsGrps[i+1][0] > frSrc:
-#			break
-#		i += 1
-#	prog = smoothstep(fpsGrp[0], fpsGrp[1], frSrc)
-#	fpsPrev = fpsStart if i == 0 else fpsGrps[i-1][2]
-#	fpsNext = fpsGrp[2]
-#	#print "fpsPrev", fpsPrev, "fpsNext", fpsNext, "prog", prog
-#	fps = mix(fpsPrev, fpsNext, prog)
-#	incr = float(fps)/fpsStart
-#
-#	frSrc += incr
-#	frA, mixB = divmod(frSrc, 1)
-#	frB = frA + 1
-#	mixB = frSrc % 1
-#	mixA = 1.0 - mixB
-#	imgA = formatIn % frA
-#	imgB = formatIn % frB
-#
-#	while (not os.path.exists(imgA)) and frA <= frEnd:
-#		print "\t!!!!", imgA, "does not exist! checking next frame..."
-#		frA += 1
-#		imgA = formatIn % frA
-#
-#	while (not os.path.exists(imgB)) and frB <= frEnd:
-#		print "\t!!!!", imgB, "does not exist! checking next frame..."
-#		frB += 1
-#		imgB = formatIn % frB
-#
-#	if not os.path.exists("retime"):
-#		os.makedirs("retime")
-#
-#	imgOut = "retime/" +  formatOut % frOut
-#	cmd = "composite -dissolve " + str(int(100*mixA)) + "x" + \
-#		str(int(100*mixB)) + " " + imgA + " " + imgB + " " + imgOut
-#	print "frOut", frOut, "frSrc", frSrc, ":", cmd
-#	#print "frOut", frOut, "i", i, "fpsPrev", fpsPrev, "fpsNext", fpsNext, "fps", fps, "incr", incr, "frSrc", frSrc
-#	os.system(cmd)
-#	frOut += 1
+while frSrc < frEnd:
+	prog = float(frSrc)/(frange-1)
+	incr = mix(1, float(fpsEnd)/fpsStart, prog)
+
+	i = 0
+	for fpsGrp in fpsGrps:
+		#print "fpsGrp[0]", fpsGrp[0]
+		if i >= (len(fpsGrps)-1) or fpsGrps[i+1][0] > frSrc:
+			break
+		i += 1
+	prog = smoothstep(fpsGrp[0], fpsGrp[1], frSrc)
+	fpsPrev = fpsStart if i == 0 else fpsGrps[i-1][2]
+	fpsNext = fpsGrp[2]
+	#print "fpsPrev", fpsPrev, "fpsNext", fpsNext, "prog", prog
+	fps = mix(fpsPrev, fpsNext, prog)
+	incr = float(fps)/fpsStart
+
+	frSrc += incr
+	frA, mixB = divmod(frSrc, 1)
+	frB = frA + 1
+	mixB = frSrc % 1
+	mixA = 1.0 - mixB
+	imgA = formatIn % frA
+	imgB = formatIn % frB
+
+	while (not os.path.exists(imgA)) and frA <= frEnd:
+		print "\t!!!!", imgA, "does not exist! checking next frame..."
+		frA += 1
+		imgA = formatIn % frA
+
+	while (not os.path.exists(imgB)) and frB <= frEnd:
+		print "\t!!!!", imgB, "does not exist! checking next frame..."
+		frB += 1
+		imgB = formatIn % frB
+
+	if not os.path.exists("retime"):
+		os.makedirs("retime")
+
+	imgOut = "retime/" +  formatOut % frOut
+	cmd = "composite -dissolve " + str(int(100*mixA)) + "x" + \
+		str(int(100*mixB)) + " " + imgA + " " + imgB + " " + imgOut
+	print "frOut", frOut, "frSrc", frSrc, ":", cmd
+	#print "frOut", frOut, "i", i, "fpsPrev", fpsPrev, "fpsNext", fpsNext, "fps", fps, "incr", incr, "frSrc", frSrc
+	os.system(cmd)
+	frOut += 1
 
 if makeMov:
 
