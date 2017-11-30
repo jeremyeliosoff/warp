@@ -1288,7 +1288,10 @@ def imgToCspace(warpUi, srcImg, srcImgPath, frIn=None, inOutBoth=2):
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
 		res[0], res[1], fr, warpUi.parmDic("radiateTime"), inOutBoth, 1)
 
-	return pygame.surfarray.make_surface(csImgAr)
+	csImg = pygame.surfarray.make_surface(csImgAr) 
+	aovRipImg = pygame.surfarray.make_surface(aovRipAr) 
+
+	return csImg, aovRipImg
 	
 def renBg(warpUi):
 	print "\n_renClrTest(): BEGIN\n"
@@ -1304,11 +1307,11 @@ def renBg(warpUi):
 
 
 	print "\n_renBg():processing image", srcImgPath, "...."
-	csImg = imgToCspace(warpUi, srcImg, srcImgPath)
+	csImg, aovRipImg = imgToCspace(warpUi, srcImg, srcImgPath)
 	setAovFullImg(warpUi, "bg", csImg, -1, sfx="_ctest")
 
-	aovRipAr = np.zeros(srcImg.get_size() + (3,), dtype=np.intc)
-	aovRipImg = pygame.surfarray.make_surface(aovRipAr)
+	#aovRipAr = np.zeros(srcImg.get_size() + (3,), dtype=np.intc)
+	#aovRipImg = pygame.surfarray.make_surface(aovRipAr)
 	setAovFullImg(warpUi, "rip", aovRipImg, -1, sfx="_ctest")
 
 	# Refresh menus.
@@ -1448,6 +1451,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	aovRipImg, aovRipImg_buf = makeBufferOutput(warpUi, shape3d)
 	alphaBoostImg, alphaBoostImg_buf = makeBufferOutput(warpUi, shape2d)
 
+	kRip = ut.mix(.1, 1, tripFrK);
 
 	kernelPath = ut.projDir + "/GPUshadeImg.c"
 	kernel = ""
@@ -1482,6 +1486,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.float32(levPct),
 			np.float32(tripFrK),
 			np.float32(warpUi.parmDic("clrKBig")),
+			np.float32(kRip),
 			np.float32(warpUi.parmDic("radiateTime")),
 			np.int32(warpUi.parmDic("edgeThick")),
 			np.int32(warpUi.parmDic("fr")),
@@ -1515,8 +1520,6 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 def getTripFrK(warpUi): 
 	tripFrStart = warpUi.parmDic("tripFrStart")
-	tripFrMid = warpUi.parmDic("tripFrMid")
-	tripFrEnd = warpUi.parmDic("tripFrEnd")
 	#tripKMid = .2
 	tripKMid = warpUi.parmDic("tripKMid")
 	if warpUi.parmDic("tripAlwaysOn") == 1:
@@ -1527,7 +1530,9 @@ def getTripFrK(warpUi):
 		nxFr,nxVal = warpUi.getNextBr(fr)
 		pvFr,pvVal = warpUi.getPrevBr(fr)
 
-		tripFrK = ut.mix(pvVal, nxVal, ut.smoothstep(pvFr, nxFr, fr))
+		sm = ut.smoothstep(pvFr, nxFr, fr)
+		sm *= sm*sm # Should make a more exlosive ramp up to breath.
+		tripFrK = ut.mix(pvVal, nxVal, sm)
 		print "\n\n_getTripFrK(): fr", fr, "pvFr", pvFr, "nxFr", nxFr
 		print "_getTripFrK(): tripFrK", tripFrK, "pvVal", pvVal, "nxVal", nxVal
 
@@ -1782,6 +1787,8 @@ def renSprites(warpUi, srcImg, res, fr):
 
 	trip = getTripFrK(warpUi)
 	trip = generalTripToClrTrip(trip)
+
+	# Render background behind layers.
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
 		res[0], res[1], fr, warpUi.parmDic("radiateTime"), 2, trip)
 
@@ -1795,7 +1802,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	canvases = []
 	for outputNum in range(nOutputs):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if outputNum > -1:
+		if outputNum > 0:
 			nextCanvas.fill((0, 0, 0))
 		#else:
 		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!

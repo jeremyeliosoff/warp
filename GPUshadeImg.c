@@ -223,6 +223,7 @@ __kernel void krShadeImg(
 
 			// Parms
 			float clrKBig,
+			float kRip,
 			int radiateTime,
 			int edgeThick,
 			int fr,
@@ -397,6 +398,7 @@ __kernel void krShadeImg(
 		exhFrames,
 		nBreaths,
 		dNorm,
+		kRip,
 		cAovRip,
 		cShadedIBulb
 		);
@@ -428,6 +430,7 @@ __kernel void krShadeImg(
 		exhFrames,
 		nBreaths,
 		dNorm,
+		kRip,
 		cAovRip,
 		cShadedIEdge
 		);
@@ -442,6 +445,7 @@ __kernel void krShadeImg(
 		exhFrames,
 		nBreaths,
 		dNorm,
+		kRip,
 		cAovRip,
 		cShadedI
 		);

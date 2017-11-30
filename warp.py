@@ -304,7 +304,7 @@ class warpUi():
 				# Just in/out clr approximation
 				inOutBoth = 1 if inOut == "Out" else 0
 				#csImg = imgSrf
-				csImg = genData.imgToCspace(self, imgSrf, pathThisBr,
+				csImg,dud = genData.imgToCspace(self, imgSrf, pathThisBr,
 					frIn=brFr, inOutBoth=inOutBoth)
 
 				imgPath = ut.imgDir + "/" + parmNameNoRGB + "_justInOrOut.png"
@@ -318,7 +318,7 @@ class warpUi():
 
 
 				# Full clr approximation
-				csImg = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
+				csImg,dud = genData.imgToCspace(self, imgSrf, pathThisBr, frIn=brFr)
 
 				imgPath = ut.imgDir + "/" + parmNameNoRGB + ".png"
 				pygame.image.save(csImg, imgPath)
@@ -1113,7 +1113,7 @@ class warpUi():
 
 	def loadImgAndSetRes(self, path, setRes=False, big=False):
 		#ut.printFrameStack()
-		print "_safeLoad(): Attempting to load", path, "...",
+		print "_loadImgAndSetRes(): Attempting to load", path, "...",
 		if os.path.exists(path):
 			loadedImg = Image.open(path)
 			res = loadedImg.size
@@ -1133,10 +1133,10 @@ class warpUi():
 			self.reloadErrorImg()
 			loadedImg = loadedImg.resize((res[0], res[1]))
 			img = ImageTk.PhotoImage(loadedImg)
-			print "_safeLoad(): success!"
+			print "_loadImgAndSetRes(): success!"
 		else:
 			img = self.staticImages["error"]
-			print "_safeLoad(): ********** FAIL! **********"
+			print "_loadImgAndSetRes(): ********** FAIL! **********"
 		return img
 
 	def getOfs(self, fr=None):

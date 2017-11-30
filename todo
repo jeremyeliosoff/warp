@@ -5344,6 +5344,11 @@ Fix throbbing bg near beginning
 
 
 MAKE RIPPLE WORK!  "Peel away" layers, new clr glowing beneath
+	Check parm: moveRippleSpeed
+
+Bulbs come on way too fast -- slow fade, and mult by trip
+
+Is srcImg bright enough?
 
 EDGES:
 	Electric pattern radiating out - possibly incorporated with ripple

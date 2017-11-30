@@ -193,6 +193,21 @@ void getCInOut(
 	}
 }
 
+float calcInRip(
+	int fr,
+	int* inhFrames, // __GLOBAL
+	int nBreaths, float dNorm, float kRip) {
+	int pvInhFr, nxInhFr, pvExhFr, nxExhFr;
+	float inhProgForRipple = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
+	float ripSpeed = 15;
+	float ripTime = 1.0/ripSpeed;
+	float ripEdge = .003;
+	float ofs = ripTime*dNorm;
+	float edge = ofs + ripEdge * (1-ripTime);
+	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
+	inRip *= kRip;
+	return inRip;
+}
 
 void getCspacePvNxInOut (
 	int fr,
@@ -203,30 +218,31 @@ void getCspacePvNxInOut (
 	int* exhFrames,  // __GLOBAL
 	int nBreaths,
 	float dNorm,
+	float kRip,
 	int* aovRip,
 	int* cShadedI
 
 ) {
 	int pvInhFr, nxInhFr, pvExhFr, nxExhFr;
-	float inhProgForRipple = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
-	int ripFfw = 200;
-	float ripSpeed = 15;
-	float ripTime = 1.0/ripSpeed;
-	float ripEdge = .003;
-	float ofs = ripTime*dNorm;
-	float edge = ofs + ripEdge * (1-ripTime);
-	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
+	//float inhProgForRipple = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
+	//float ripSpeed = 15;
+	//float ripTime = 1.0/ripSpeed;
+	//float ripEdge = .003;
+	//float ofs = ripTime*dNorm;
+	//float edge = ofs + ripEdge * (1-ripTime);
+	//float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
+	//inRip *= kRip;
+	
+	float inRip = calcInRip(fr, inhFrames, nBreaths, dNorm, kRip);
 
 	//inRip = 0;
 	//int frWOfs = fr + ripFfw * inRip - ((float)inFfw) * dNorm;
-	int frWOfs = fr + ripFfw;// * inRip;// - radiateTime * dNorm;
-	frWOfs = MAX(0, frWOfs);
 	float mixSampsIn[3]; float mixSampsOut[3];
 
 	for (int sampleNum = 0; sampleNum < 2; sampleNum += 1) {
 		//frWOfs = 3100;
 		//int frWOfs = fr;// - ((float)radiateTime) * dNorm;
-		frWOfs = fr - radiateTime * sampleNum;
+		int frWOfs = fr - radiateTime * sampleNum;
 
 		float inhProg = getBreathFramesAndProg (frWOfs, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
 		float exhProg = getBreathFramesAndProg (frWOfs, exhFrames, nBreaths, &pvExhFr, &nxExhFr);
@@ -260,8 +276,8 @@ void getCspacePvNxInOut (
 			assignFV(mixPvNxOut, mixSampsOut);
 		} else {
 			// Blend time-offset sample away from center.
-			mix3F(mixSampsIn, mixPvNxIn, dNorm, mixSampsIn);
-			mix3F(mixSampsOut, mixPvNxOut, 1.0f-dNorm, mixSampsOut);
+			mix3F(mixSampsIn, mixPvNxIn, MIN(1, dNorm + inRip), mixSampsIn);
+			mix3F(mixSampsOut, mixPvNxOut, MIN(1, 1.0f-dNorm + inRip), mixSampsOut);
 		}
 	}
 
@@ -274,9 +290,7 @@ void getCspacePvNxInOut (
 	cShadedI[1] = (int) MIN(255.0f, cShadedF[1]*255.0);
 	cShadedI[2] = (int) MIN(255.0f, cShadedF[2]*255.0);
 	
-	if (aovRip != 0) {
-		aovRip[0] = 255 * inRip;
-		aovRip[1] = 255 * (1-inRip);
-		aovRip[2] = 0;
-	}
+	aovRip[0] = (((float)cShadedI[2])/255.0)*100 + 155 * inRip;
+	aovRip[1] = (((float)cShadedI[2])/255.0)*100 + 155 * (1-inRip);
+	aovRip[2] = cShadedI[2];
 }

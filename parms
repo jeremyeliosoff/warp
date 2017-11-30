@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 2378
+val 2736
 
 fps
 val 52
@@ -31,13 +31,13 @@ lev_dbImg1
 val ALL
 
 dbImg2
-val rip_test
+val rip_ctest
 
 lev_dbImg2
-val lev03
+val ALL
 
 renVer
-val v011testRipAgain
+val v014moreRipTest
 
 frStart
 val 1600
@@ -52,7 +52,7 @@ doRen
 val 1
 
 frIncRen
-val 2
+val 0
 
 
 
