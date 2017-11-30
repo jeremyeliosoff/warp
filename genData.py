@@ -1295,6 +1295,8 @@ def imgToCspace(warpUi, srcImg, srcImgPath, frIn=None, inOutBoth=2):
 	
 def renBg(warpUi):
 	print "\n_renClrTest(): BEGIN\n"
+	#tripFrK = getTripFrK(warpUi)
+	#print "\nJJJJJJJJJJJ getTripFrK->", tripFrK
 	srcImgPath = warpUi.images["source"]["path"]
 
 	srcImg = pygame.image.load(srcImgPath)
@@ -1472,8 +1474,12 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	
 	
 	ofs = warpUi.getOfsWLev(lev) % 1.0
-	levPct = (lev+ofs)/warpUi.parmDic("nLevels") #int((warpUi.getOfsWLev(lev)*100.0)%100)
+	nLevels = warpUi.parmDic("nLevels")
+	levPct = (lev+ofs)/nLevels #int((warpUi.getOfsWLev(lev)*100.0)%100)
 
+	frOfsPerLev = 1
+	frLevOfs = (nLevels - 1 - lev) * frOfsPerLev
+	frWOfs = warpUi.parmDic("fr") + frLevOfs
 	bld = cl.Program(warpUi.cntxt, kernel).build()
 	print "_shadeImg(): lev", lev, "levPct", levPct
 	launch = bld.krShadeImg(
@@ -1489,7 +1495,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.float32(kRip),
 			np.float32(warpUi.parmDic("radiateTime")),
 			np.int32(warpUi.parmDic("edgeThick")),
-			np.int32(warpUi.parmDic("fr")),
+			np.int32(frWOfs),
 			inhFrames_buf,
 			exhFrames_buf,
 			cInOutVals_buf,
@@ -1527,7 +1533,7 @@ def getTripFrK(warpUi):
 	else:
 		fr = warpUi.parmDic("fr")
 		# TODO Incorporate trip lev into breath.
-		nxFr,nxVal = warpUi.getNextBr(fr)
+		nxFr,nxVal = warpUi.getNextBr(fr,incl=True)
 		pvFr,pvVal = warpUi.getPrevBr(fr)
 
 		sm = ut.smoothstep(pvFr, nxFr, fr)
@@ -1595,6 +1601,11 @@ def genSprites(warpUi, srcImg):
 			progStart = (1.0 - progDur) * random.random()
 			tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
 			
+			fr = warpUi.parmDic("fr")
+			dud,breaths,dud = zip(*warpUi.breathsNameFrTrip)
+			inhFrames = breaths[0::2]
+			breathsAr = np.array(inhFrames, dtype=np.intc)
+
 			tidTrip = tidProg * tripFrK
 
 			tidProgs.append(int(tidProg*100))
@@ -1604,19 +1615,29 @@ def genSprites(warpUi, srcImg):
 
 			if "bbx" in tidToSidsThisLev[tid]:
 				bbx = tidToSidsThisLev[tid]["bbx"]
+				sz = (bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1])
+				cent = ((bbx[1][0]+bbx[0][0])/2, (bbx[1][1]+bbx[0][1])/2)
+
+				dToCent = ut.vDist(imgCent, cent)
+				dNorm = float(dToCent)/centToCnr
+
 				#print "_genSprites() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
 				#bbxs.append(bbx)
 				bbxTup = (bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1])
 				bbxs.append(bbxTup)
-				#bbxs.append(tidPos)
-				#bbxs.append(bbx[0][0])
-				#bbxs.append(bbx[0][1])
-				#cent = ((bbx[0][0] + bbx[0][1])/2, (bbx[1][0] + bbx[1][1])/2) 
-
 				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-				xf = calcXf(warpUi, tidTrip, bbxTup)
-				#xf = calcXf(warpUi, levProg, bbxTup) # TEMP!!!
 
+				inRip = fragmod.calcInRip(fr, breathsAr, len(breathsAr), dNorm, 1)
+				kRip = 3
+				tidTrip = tidProg
+				tidTrip = pow(tidTrip, 1.0/(1+inRip*kRip))
+				#print "----------------inRip", inRip, "dNorm", dNorm, "breathsAr", breathsAr
+				#tidTrip *= 1+2*inRip
+				tidTrip = tidTrip * tripFrK # Already calculated, but add rip
+
+
+				tidTrips[-1] = tidTrip
+				xf = calcXf(warpUi, tidTrip, bbxTup)
 				xfs.append(xf)
 
 
@@ -1632,8 +1653,6 @@ def genSprites(warpUi, srcImg):
 
 				yByXRes = float(res[1])/res[0]
 
-				sz = (bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1])
-				cent = ((bbx[1][0]+bbx[0][0])/2, (bbx[1][1]+bbx[0][1])/2)
 				isBulb = 0
 				if sz[0] > 0 and sz[1] > 0:
 					szRel = (float(sz[0])/res[0], float(sz[1])/res[1])
@@ -1648,8 +1667,6 @@ def genSprites(warpUi, srcImg):
 						szRatio < 1 + bulbSquareTolerance and
 						szRatio < 1 - bulbSquareTolerance):
 							#bordTotal < 1: 
-						dToCent = ut.vDist(imgCent, cent)
-						dNorm = float(dToCent)/centToCnr
 						dSegment = math.floor((1-dNorm)/bulbDistPeriod)
 						fr = warpUi.parmDic("fr")
 						frBulb = fr + bulbFrPeriod*float(dSegment)/bulbDistSegments

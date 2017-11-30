@@ -6,6 +6,28 @@
 // Define a new exception object for our module.
 static PyObject *fragmodError;
 
+static PyObject* fragmod_calcInRip(PyObject* self, PyObject* args) {
+	int fr;
+	PyArrayObject *brFramesPtr=NULL;
+	int nBreaths;
+	float dNorm;
+	float kRip;
+    if (!PyArg_ParseTuple(args, "iOiff",
+		&fr, &brFramesPtr, &nBreaths,
+		&dNorm, &kRip)) return NULL;
+	
+	int brFrames[nBreaths];
+	
+	for (int i=0; i < nBreaths; i ++) {
+		brFrames[i] = *((int *)PyArray_GETPTR1(brFramesPtr, i));
+	}
+
+	float inRip = calcInRip(fr, brFrames, nBreaths, dNorm, kRip);
+	return Py_BuildValue("f", inRip);
+	//return Py_BuildValue("f", inRip);
+
+}
+
 static PyObject* fragmod_cspace(PyObject* self, PyObject* args) {
 	PyArrayObject *rPtr=NULL;
 	PyArrayObject *gPtr=NULL;
@@ -101,7 +123,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			int inhFrames[] = {1840, 2270, 2700, 3080};
 			int exhFrames[] = {2090, 2510, 2940, 3350};
 
-			float kRip = mixF(.1, 10, trip);
+			float kRip = mixF(.1, 1, trip);
 
 			int cShadedI[3];
 			int aovRip[3];
@@ -148,6 +170,7 @@ static PyMethodDef fragmod_methods[] = {
 	// PythonName,	 C-function name,	argument presentation,	description
 	{"cspaceImg",	fragmod_cspaceImg,	METH_VARARGS,	"Test ls 3d"},
 	{"cspace",	fragmod_cspace,	METH_VARARGS,	"Test ls 3d"},
+	{"calcInRip",	fragmod_calcInRip,	METH_VARARGS,	"Test ls 3d"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 

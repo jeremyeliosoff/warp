@@ -268,6 +268,12 @@ class warpUi():
 				whiteAr = np.array(white, dtype=np.float32)
 
 				fragmod.cspace(rAr, gAr, bAr, whiteAr)
+				#dud,breaths,dud = zip(*self.breathsNameFrTrip)
+				#breathsAr = np.array(breaths, dtype=np.intc)
+				#fr = self.parmDic("fr")
+				#test = fragmod.calcInRip(fr, breathsAr, len(breaths), 0, .5)
+				#print "\n"*10 + "JJJJJJJJJJJ test", test
+
 				hx = ut.rgb_to_hex(whiteAr)
 				#hx = ut.rgb_to_hex((.5, .5, .5))
 				butThumFrame = Frame(thisFrame)
@@ -340,9 +346,9 @@ class warpUi():
 
 
 
-		print "\n\n_makeParmUi(): parmDic"
-		for k,v in self.parmDic.parmDic.items():
-			print "_makeParmUi(): \t", k, v["val"]
+		#print "\n\n_makeParmUi(): parmDic"
+		#for k,v in self.parmDic.parmDic.items():
+		#	print "_makeParmUi(): \t", k, v["val"]
 		#print "\n\n_makeParmUi(): parmLs:", self.parmDic.parmLs
 		self.nbParm.select(2)
 		return row
@@ -570,12 +576,12 @@ class warpUi():
 		thisFr,dud = self.getPrevBr(thisFr)
 		self.setFrAndUpdate(thisFr)
 
-	def getNextBr(self, fr):
+	def getNextBr(self, fr, incl=False):
 		nextBrFr = fr
 		nextTripVal = self.breathsNameFrTrip[-1][2]
 		for br in self.breathsNameFrTrip:
 			brFr = br[1]
-			if brFr > nextBrFr:
+			if brFr > nextBrFr or (incl and brFr == nextBrFr):
 				nextBrFr = brFr
 				nextTripVal = br[2]
 				break

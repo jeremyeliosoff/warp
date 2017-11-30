@@ -5344,7 +5344,10 @@ Fix throbbing bg near beginning
 
 
 MAKE RIPPLE WORK!  "Peel away" layers, new clr glowing beneath
-	Check parm: moveRippleSpeed
+	#Dish -- not directly related# Check parm: moveRippleSpeed
+	#Dish# promote calcInRip to fragmod, use it to offset trip used for calcXf
+	#Yes and no - fucking seg-fault# stagger per layer, randomize per tid
+	for inh and/or exh?
 
 Bulbs come on way too fast -- slow fade, and mult by trip
 

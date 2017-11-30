@@ -199,9 +199,9 @@ float calcInRip(
 	int nBreaths, float dNorm, float kRip) {
 	int pvInhFr, nxInhFr, pvExhFr, nxExhFr;
 	float inhProgForRipple = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
-	float ripSpeed = 15;
+	float ripSpeed = 7;
 	float ripTime = 1.0/ripSpeed;
-	float ripEdge = .003;
+	float ripEdge = .04;
 	float ofs = ripTime*dNorm;
 	float edge = ofs + ripEdge * (1-ripTime);
 	float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
@@ -235,7 +235,7 @@ void getCspacePvNxInOut (
 	
 	float inRip = calcInRip(fr, inhFrames, nBreaths, dNorm, kRip);
 
-	//inRip = 0;
+	//inRip = 0
 	//int frWOfs = fr + ripFfw * inRip - ((float)inFfw) * dNorm;
 	float mixSampsIn[3]; float mixSampsOut[3];
 
@@ -290,7 +290,7 @@ void getCspacePvNxInOut (
 	cShadedI[1] = (int) MIN(255.0f, cShadedF[1]*255.0);
 	cShadedI[2] = (int) MIN(255.0f, cShadedF[2]*255.0);
 	
-	aovRip[0] = (((float)cShadedI[2])/255.0)*100 + 155 * inRip;
-	aovRip[1] = (((float)cShadedI[2])/255.0)*100 + 155 * (1-inRip);
+	aovRip[0] = (int) ((((float)cShadedI[2])/255.0)*100 + 155 * inRip);
+	aovRip[1] = (int) ((((float)cShadedI[2])/255.0)*100 + 155 * (1-inRip));
 	aovRip[2] = cShadedI[2];
 }
