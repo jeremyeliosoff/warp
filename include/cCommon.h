@@ -216,6 +216,7 @@ void getCspacePvNxInOut (
 	float* cInOutVals,  // __GLOBAL
 	int* inhFrames,  // __GLOBAL
 	int* exhFrames,  // __GLOBAL
+	int* brFrames,  // __GLOBAL
 	int nBreaths,
 	float dNorm,
 	float kRip,
@@ -233,7 +234,15 @@ void getCspacePvNxInOut (
 	//float inRip = smoothpulse(ofs, edge, edge, 1-ripTime, inhProgForRipple);
 	//inRip *= kRip;
 	
-	float inRip = calcInRip(fr, inhFrames, nBreaths, dNorm, kRip);
+	//float inRip = calcInRip(fr, inhFrames, nBreaths, dNorm, kRip);
+
+
+	//int brFrames[8]; // Must hardwire for opencl!
+	//for (int i=0; i<nBreaths; i++) {
+	//	brFrames[i*2] = inhFrames[i];
+	//	brFrames[i*2+1] = exhFrames[i];
+	//}
+	float inRip = calcInRip(fr, brFrames, nBreaths*2, dNorm, kRip);
 
 	//inRip = 0
 	//int frWOfs = fr + ripFfw * inRip - ((float)inFfw) * dNorm;

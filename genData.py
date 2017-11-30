@@ -1439,9 +1439,14 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 	dud,inhFrames = zip(*warpUi.inhParms)
 	dud,exhFrames = zip(*warpUi.exhParms)
+	brFrames = []
+	for i in range(len(inhFrames)):
+		brFrames.append(inhFrames[i])
+		brFrames.append(exhFrames[i])
 
 	inhFrames_buf = makeBufferInput(warpUi, inhFrames, dtype=np.intc)
 	exhFrames_buf = makeBufferInput(warpUi, exhFrames, dtype=np.intc)
+	brFrames_buf = makeBufferInput(warpUi, brFrames, dtype=np.intc)
 
 	# Outputs
 	#shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
@@ -1498,6 +1503,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(frWOfs),
 			inhFrames_buf,
 			exhFrames_buf,
+			brFrames_buf,
 			cInOutVals_buf,
 			srcImgAr_buf,
 			tidImgAr_buf,
@@ -1678,8 +1684,6 @@ def genSprites(warpUi, srcImg):
 
 			else:
 				xfs.append((0.0,0.0)) # To keep tidPos synched.
-			# isBulb = 1 # TEMP
-			if isBulb > 0: isBulb = 1
 			isBulbs.append(isBulb)
 
 		shadedNamesAndImgs = shadeImg(warpUi, lev, srcImg, tidImg,

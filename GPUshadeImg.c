@@ -183,7 +183,7 @@ void filterImg  (int x, int y, int xres, int yres,
 				if (bordNxNyPxPy[3] == 1) alpha *= yOfs;
 
 				for (i=0; i<3; i++) {
-					ret[i] += srcClrSamp[i]*(wx*wy);// *alpha;  TODO: implement alpha
+					ret[i] += srcClrSamp[i]*(wx*wy)*1.2;// *alpha;  TODO: implement alpha
 				}
 
 				//ret[0] = 255*xOfs; ret[1] = 255*yOfs; ret[2] = 50;
@@ -231,6 +231,7 @@ __kernel void krShadeImg(
 
 			__global int* inhFrames,
 			__global int* exhFrames,
+			__global int* brFrames,
 			__global float* cInOutVals,
 			__global int* srcImg,
 			__global int* tidImg,
@@ -396,6 +397,7 @@ __kernel void krShadeImg(
 		cInOutVals,
 		inhFrames,
 		exhFrames,
+		brFrames,
 		nBreaths,
 		dNorm,
 		kRip,
@@ -428,6 +430,7 @@ __kernel void krShadeImg(
 		cInOutVals,
 		inhFrames,
 		exhFrames,
+		brFrames,
 		nBreaths,
 		dNorm,
 		kRip,
@@ -443,6 +446,7 @@ __kernel void krShadeImg(
 		cInOutVals,
 		inhFrames,
 		exhFrames,
+		brFrames,
 		nBreaths,
 		dNorm,
 		kRip,

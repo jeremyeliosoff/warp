@@ -122,6 +122,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			// TEMP
 			int inhFrames[] = {1840, 2270, 2700, 3080};
 			int exhFrames[] = {2090, 2510, 2940, 3350};
+			int brFrames[] = {1840, 2090, 2270, 2510, 2700, 2940, 3080, 3350};
 
 			float kRip = mixF(.1, 1, trip);
 
@@ -135,6 +136,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 				cInOutVals,
 				inhFrames,
 				exhFrames,
+				brFrames,
 				nBreaths,
 				dNorm,
 				kRip,
@@ -147,7 +149,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			//cShadedI[0] = 255;//cAvg[0];
 			//cShadedI[1] = 0;//cAvg[1];
 			//cShadedI[2] = 255;//cAvg[2];
-			float kIntens = 1+5*trip;
+			float kIntens = 1.2+4.8*trip;
 			//float kIntens = 1;//-.8*trip;
 			float kVign = MAX(0, 1-dNorm*trip);
 			for (int j=0; j<3; j++) {
