@@ -9,7 +9,7 @@ audioDir = "/home/jeremy/dev/warp/audio"
 concatRawWithSilencePath = audioDir + "/concatRawWithSilence.txt"
 silent53sPath= audioDir + "/silent53s.wav"
 with open(concatRawWithSilencePath, 'w') as f:
-	f.write("""file 'silent1p6s.wav'
+	f.write("""file 'titleSilence.wav'
 file 'rawAudio_startSec2_fade55_75.wav'
 file 'silent53s.wav'""")
 	
@@ -21,7 +21,7 @@ os.system(cmd)
 # Prepend latest music with silence.
 concatSilenceWithMusicPath = audioDir + "/concatSilenceWithMusic.txt"
 with open(concatSilenceWithMusicPath, 'w') as f:
-	f.write("""file 'silent1p6s.wav'
+	f.write("""file 'titleSilence.wav'
 file 'silent53s.wav'
 file 'music.wav'""")
 	

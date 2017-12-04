@@ -12,18 +12,20 @@ print info
 
 resS = info.split()[2].split("x")
 res = (int(resS[0]), int(resS[1]))
-newRes = (res[0]-1, res[1]-1)
+newRes = (res[0]-1, res[1])
 print "res",  res
 
 thisSubdir = cwd.split("/")[-1]
 print "thisSubdir:", thisSubdir
 
 if thisSubdir == "retime":
-	cmdPrefix = "convert -crop " + newRes[0] + "x" + newRes[1] + "+0+0 +repage "
+	cmdPrefix = "convert -crop " + str(newRes[0]) + "x" + str(newRes[1]) + "+0+0 +repage "
 else:
-	cmdPrefix = "convert -crop " + newRes[0] + "x" + newRes[1] + "+1+1 +repage "
+	# preWarp = shave left + shave top
+	cmdPrefix = "convert -crop " + str(newRes[0]) + "x" + str(newRes[1]) + "+1+0 +repage "
 
-cropDirPath = parentDir + "/crop"
+cropDirPath = cwd + "/crop"
+
 
 if not os.path.isdir(cropDirPath):
 	print "making cropDirPath:", cropDirPath

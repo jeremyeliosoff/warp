@@ -53,7 +53,6 @@ else:
 	print "n frames:", fr
 
 	if "-n" in sys.argv: # -n means only add sound
-		pngs = glob.glob(parentDir + "/" + subdir + "/*png")
 		print "\nSkipping avi generation, just adding sound...\n"
 	else: # concat preexisting avis
 		cmd="ffmpeg -f concat -i concatLs.txt -c copy " + aviNoSoundPath

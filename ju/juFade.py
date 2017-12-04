@@ -34,9 +34,13 @@ if not os.path.exists("fade"):
 	os.makedirs("fade")
 
 for i in range(totalDur):
-	k = 1-smoothpulse(prePad, fadeDur, totalDur-fadeDur-postPad, totalDur-postPad, i)
+	k = 1-smoothpulse(prePad, prePad+fadeDur, totalDur-fadeDur-postPad, totalDur-postPad, i)
 	k = str(int(100*k))
-	cmd = "convert " + image +  " -brightness-contrast -" + str(k) + ",-" + str(k) + " fade/" + basename + (".%05d.png" % i)
+	imgToUse = image
+	if "SEQ" in image:
+		imgToUse = image.replace("SEQ", ".%05d.png" % i)
+		print "imgToUse", imgToUse
+	cmd = "convert " + imgToUse +  " -brightness-contrast -" + str(k) + ",-" + str(k) + " fade/" + basename + (".%05d.png" % i)
 	print "executing:", cmd
 	os.system(cmd)
 
