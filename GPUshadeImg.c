@@ -273,8 +273,8 @@ __kernel void krShadeImg(
 	//	bordTotal = getBorders(edgeThick, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
 	//	bordTotalBulb = getBorders(edgeThick*2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy); }
 
-	bordTotal = getBorders(1, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	bordTotalBulb = getBorders(2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	bordTotal = getBorders(2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+	bordTotalBulb = getBorders(4, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
 	
 	//if (isBulb > .5)
 		//bordTotal += bordTotalBulb * isBulb;
@@ -347,6 +347,8 @@ __kernel void krShadeImg(
 
 	// Get trippedClr = srcClr * tidClr * brightening
 	int trippedClr[3];
+	int grey[] = {100, 100, 100};
+	mix3I(tidClr, grey, .5, tidClr);
 	mult3_255(srcClr, tidClr, trippedClr);
  
 	float intensMult = bordTotal > 0 ? 3 : 2;// + isBulb * 2;

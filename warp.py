@@ -296,6 +296,7 @@ class warpUi():
 				#pImg.resize((50, 30))
 				#pImg = self.images["source"]["pImg"].zoom(sc,sc)
 				brFr = self.parmDic(parmNameFr)
+				brFr = min(3200, brFr)
 				leafSpl[-2] = "%05d" % brFr
 				leafThisBr = ".".join(leafSpl)
 				pathSpl[-1] = leafThisBr
@@ -589,6 +590,7 @@ class warpUi():
 
 	def shiftRightCmd(self):
 		thisFr, dud = self.getNextBr(self.parmDic("fr"))
+		thisFr = min(3200, thisFr)
 		self.setFrAndUpdate(thisFr)
 
 	def animButCmd(self):
@@ -1308,11 +1310,12 @@ class warpUi():
 
 
 	def setFillMode(self):
-		self.fillMode = "overwrite"
-		if self.parmDic("frIncRen") == 0:
-			self.fillMode = "fill"
-		elif self.parmDic("frIncRen") < 0:
-			self.fillMode = "onlyBg"
+		#self.fillMode = "overwrite"
+		# if self.parmDic("frIncRen") == 0: TEMP no overwrite for final render!
+		# 	self.fillMode = "fill"
+		# elif self.parmDic("frIncRen") < 0:
+		# 	self.fillMode = "onlyBg"
+		self.fillMode = "fill"
 
 	def getRenderedAovNames(self):
 		# Debug images.

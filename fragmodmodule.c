@@ -120,9 +120,9 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			}
 
 			// TEMP
-			int inhFrames[] = {1840, 2270, 2700, 3080};
-			int exhFrames[] = {2090, 2510, 2940, 3350};
-			int brFrames[] = {1840, 2090, 2270, 2510, 2700, 2940, 3080, 3350};
+			int inhFrames[] = {1840, 2270, 2720, 3100};
+			int exhFrames[] = {2090, 2510, 2960, 3250};
+			int brFrames[] = {1840, 2090, 2270, 2510, 2720, 2960, 3100, 3250};
 
 			float kRip = mixF(.1, 1, trip);
 

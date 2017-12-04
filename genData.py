@@ -1542,7 +1542,7 @@ def getTripFrK(warpUi):
 		nxFr,nxVal = warpUi.getNextBr(fr,incl=True)
 		pvFr,pvVal = warpUi.getPrevBr(fr)
 
-		sm = ut.smoothstep(pvFr, nxFr, fr)
+		sm = ut.smoothstep(pvFr, nxFr, fr + 110)  # Hack to get ~x2350 looking right
 		sm *= sm*sm # Should make a more exlosive ramp up to breath.
 		tripFrK = ut.mix(pvVal, nxVal, sm)
 		print "\n\n_getTripFrK(): fr", fr, "pvFr", pvFr, "nxFr", nxFr
@@ -1649,7 +1649,7 @@ def genSprites(warpUi, srcImg):
 
 				# Bulb
 				bulbSzMin = .01# .01
-				bulbSzMax = .08# .1
+				bulbSzMax = .06# .1
 				bulbFrPeriod = 20
 				bulbDistPeriod = .25
 				bulbDistSegments = 3
@@ -1774,6 +1774,7 @@ def calcXf(warpUi, tidProg, bbxTup):
 	fr = warpUi.parmDic("fr")
 	moveRippleOfs = .2
 	frOfs = fr - (dFromCent-moveRippleOfs) * warpUi.parmDic("moveRippleSpeed")
+	frOfs += 55 # Hack that seems to work?
 	moveKProg = getMoveKProg(warpUi, frOfs)
 
 	k = warpUi.parmDic("moveK")*tidProg*moveKBig*(warpUi.parmDic("moveKofs")+moveKProg)
@@ -1793,6 +1794,13 @@ def renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev):
 					#canvas.set_at((jt[0] + xfInt[0], jt[1] + xfInt[1]), (255, 0, 0))
 	return None
 
+
+
+def getFadeout(fr):
+	return 1 - ut.smoothstep(3135, 3230, fr)
+
+
+
 def renSprites(warpUi, srcImg, res, fr):
 	print "\n_renSprites(): BEGIN, fr", fr
 
@@ -1810,6 +1818,7 @@ def renSprites(warpUi, srcImg, res, fr):
 	trip = generalTripToClrTrip(trip)
 
 	# Render background behind layers.
+	#print "\n"*5, "0000000000000000000 cInOutVals", cInOutVals
 	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
 		res[0], res[1], fr, warpUi.parmDic("radiateTime"), 2, trip)
 
@@ -1823,7 +1832,11 @@ def renSprites(warpUi, srcImg, res, fr):
 	canvases = []
 	for outputNum in range(nOutputs):
 		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if outputNum > 0:
+		if outputNum == 0:
+			fadeOutFl = getFadeout(fr)
+			fadeOut = int(255.0*fadeOutFl*fadeOutFl)
+			nextCanvas.fill((fadeOut, fadeOut, fadeOut), None, pygame.BLEND_MULT)
+		else:
 			nextCanvas.fill((0, 0, 0))
 		#else:
 		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!
@@ -1867,8 +1880,9 @@ def renSprites(warpUi, srcImg, res, fr):
 					#surfAlpha = 1 # TEMP!!!!
 
 					fadeStartThisLev = warpUi.parmDic("fadeOutStart") + warpUi.parmDic("fadeOutDelPerLev") * lev
+					globFadeOut = getFadeout(fr)
 					fadeOut = 1-ut.smoothstep(fadeStartThisLev, fadeStartThisLev + warpUi.parmDic("fadeOutDur"), fr)
-					surfAlpha *= fadeOut
+					surfAlpha *= fadeOut * globFadeOut
 
 					# Lower levels become more opaque as trip progresses.
 					levRel = float(lev)/(nLevels-1)
@@ -1923,8 +1937,6 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 		warpUi.spritesLoadedFr = fr
 	else:
 		print "_genAndRenSprites(): spritesThisFr exist for this frame, reusing."
-	#moveKProg = getMoveKProg(warpUi)
-	#renSprites(warpUi, res, fr, moveKProg)
 	renSprites(warpUi, srcImg, res, fr)
 
 
