@@ -4,7 +4,7 @@ import os, glob, subprocess, sys
 newLeafName = None
 
 if not (len(sys.argv) == 3 or len(sys.argv) == 4):
-	print "\nUSAGE: juCroptoratio.py xRatio yRatio [newLeafName]"
+	print "\nUSAGE: juCroptoratio.py xRatio yRatio [newLeafName]\n"
 	sys.exit()
 else:
 	xRat = sys.argv[1]

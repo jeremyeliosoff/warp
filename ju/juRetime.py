@@ -35,6 +35,10 @@ fpsGrps = (
 (2700, 2940, 15), 
 (3080, 3350, 10))
 
+# 
+# (2270, 2510, 19.5), 
+# (2700, 2940, 14), 
+# (3080, 3350, 9)
 
 frOut = 0
 
@@ -78,17 +82,18 @@ for arg in sys.argv[1:]:
 cwd = os.getcwd()
 cwdSplit = cwd.split("/")
 
-seq = cwdSplit[6]
-ver = cwdSplit[7]
-
 
 baseIn = "ren.ALL"
-baseOut = seq + "_" + ver
 
 if len(baseInOut) > 0:
 	baseIn = baseInOut[0]
 if len(baseInOut) == 2:
 	baseOut = baseInOut[1]
+else:
+	seq = cwdSplit[6]
+	ver = cwdSplit[7]
+
+	baseOut = seq + "_" + ver
 
 
 formatIn = baseIn + ".%05d.png"
@@ -166,6 +171,4 @@ if makeMov:
 			" -codec copy -shortest " + aviWSoundPath
 		print "\nExecuting:", cmd, "...\n"
 		os.system(cmd)
-
-
 
