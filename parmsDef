@@ -143,6 +143,14 @@ type int
 val 600
 
 
+centX
+type float
+val .3
+
+centY
+type float
+val .3
+
 fadeOutStart
 type int
 val 3160

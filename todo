@@ -1,3 +1,13 @@
+MORTGAGE "LAUNDRY LIST"
+Grocery list from M-A
+Reply with docs
+He returns with pre-authorization w/in 24 hr
+With pre-authorization certificate, I shop around
+Once you have an "accepted offer", these are sent to M-A:
+	Offer accepted, listing, seller's authorization
+
+
+
 ================
 == MON NOV 27 ==
 ================
@@ -5367,6 +5377,25 @@ Connect bulb to opacity:
 
 
 ================
-== TUE NOV 28 ==
+== FRI DEC 29 ==
 ================
+
+CRASH CAUSERS - possibly only when I'm doing other stuff at the same time:
+krShadeImg (genData.py)
+
+***********************************
+* DECIGIFYING AND GRAPIFYING WARP *
+***********************************
+
+OVERVIEW
+As we lick our wounds following RVCQ's justified rejection, we turn our sights to the surprisingly sympathetic Demoscene's Synchrony event of Jan 19-20.  Specifically... the subway "from NY to MTL"?  (Although the grapplers are inticing -- maybe later.)
+
+TODO:
+Move center of clr fade from .5,.5 to parms centX,centY
+Compare with pre-travel train vid
+Make it stop fading in + out -- something about opacity.
+
+
+
+
 
