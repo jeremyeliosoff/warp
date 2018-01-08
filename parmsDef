@@ -134,6 +134,10 @@ isoLev
 type str
 val -1
 
+clrFrOfs
+type int
+val 0
+
 edgeThick
 type int
 val 1

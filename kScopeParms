@@ -1,0 +1,51 @@
+fr
+value 2140
+
+image0
+value sub_comingHR_vig
+
+version0
+value v001toFr2300
+
+txB0
+value 0.47
+
+txE0
+value 0.47
+
+tyB0
+value 0.39
+
+tyE0
+value 0.39
+
+scB0
+value 0.25
+
+scE0
+value 0.6
+
+image1
+value sub_comingHR_vig
+
+version1
+value v001toFr2300
+
+txB1
+value 0.6
+
+txE1
+value 0.6
+
+tyB1
+value 0.3
+
+tyE1
+value 0.3
+
+scB1
+value 0.6
+
+scE1
+value 0.25
+

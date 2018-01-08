@@ -369,6 +369,9 @@ def multV(a, b):
 def vNeg(a):
 	return multVSc(a, -1)
 
+def fit(a, omn, omx, nmn, nmx):
+	return nmn + (nmx-nmn)*float(a-omn)/(omx-omn)
+
 def mix(a, b, m):
 	return a*(1-m) + b*m
 

@@ -1,0 +1,67 @@
+fr
+type int
+value 1800
+
+image0
+type string
+value sub_coming_vig
+
+version0
+type string
+value v002wFade
+
+txB0
+type float
+value .47
+
+txE0
+type float
+value .47
+
+tyB0
+type float
+value .39
+
+tyE0
+type float
+value .39
+
+scB0
+type float
+value .5
+
+scE0
+type float
+value .5
+
+image1
+type string
+value sub_coming_vig
+
+version1
+type string
+value v002wFade
+
+txB1
+type float
+value .47
+
+txE1
+type float
+value .47
+
+tyB1
+type float
+value .39
+
+tyE1
+type float
+value .39
+
+scB1
+type float
+value .5
+
+scE1
+type float
+value .5

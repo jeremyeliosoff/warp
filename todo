@@ -1,3 +1,66 @@
+================
+== MON JAN 08 ==
+================
+EMAIL:
+	Demoscene
+	Peggy
+	Anatoly
+	Maja (text message)
+
+Figure out next steps for financing
+
+
+
+---------------------
+845
+
+
+Clark house: 275k
+	25% down = 68 750
+	35 yr mortgage  = 837/mo
+	Plus expenses = 1249/mo
+
+
+Write about music - ideas:
+	Does music have objective quality?
+	The collapse of the music industry
+	Originality
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+THESIS
+The professional performer and author of music is obsolete; music is now mainly a leisure pursuit.
+
+OUTLINE
+I used to want to be a rock star
+
+
+
+When I was 13 in 1989, I wanted to be a Rock Star.  This was hardly an original ambition; it was pretty much the default dream of all my friends, and we were familiar with the standard trajectory to the top of the charts, gleaned from countless guitar magazines and cheap fan books: teach yourself guitar or drums; form a band with some school friends; gig tirelessly in your hometown, with occasional local tours; get discovered by a label; record a debut album on a modest budget; have the first in a string of hit singles, steadily climbing the charts; acheive worldwide fame, fortune, fawning groupies, etc.  To us, this wasn't simply a path to luxury and adoration, it was the most worthy contribution one could make to humanity.  Because we truly loved music, and to us, "music" meant something that was authored and recorded within the past 30 years and played on the radio.  At the time, we had no idea how anomalous that moment was in the history of popular music - how much it had changed in the preceding decades, and how much it was going to change in the decades to come.
+
+Perhaps the most consequential aspect of music that I took for granted in 1989 but that was virtually non-existent a century earlier was the fact that it was recorded.  The rows of casset tapes that filled my local HMV music store, lovingly(?) enclosed in plastic cases, basically constituted the entire cannon of popular music to me.  My life's goal was to create a recording worthy of being stocked among that exclusive pantheon of pop gods.
+
+There were rules to being an authentic pop musicians, and transgressions that my teenaged classmates and I were all-too eager to observe in those bands that we deemed unworthy.  Two of the most heinous sins an artist could commit were being unorginal, and selling out.  The true musical artist was expected to be driven by some loftier goal than wealth or fame (even though we, the wannabees, hypocriticallly craved both), and was also expected to have some distinctive inner artistic message, inspired by some ineffable, divine muse, and utterly original.  The role of the genuine Rock Star was to make a unique contribution to the catalog of pop, and to do it purely for the love of music.
+
+
+
+
+
+
+From tavern to stadium and back
+
+Music is at least as old as culture itself.  Its origins are debated but generally have some association with language, spirituality, and the rhythms of nature and the body.  As with all activities that we generally view as "art", music has evolved from a communal practice inseparable from ritual and daily life, to a specialized discipline practiced by trained experts for mass consumption.
+
+Compared to other ancient forms of expression, music has had a particular intricate relationship with technology.  A painter applying acrylic to canvas is not so difffent from a paleolithic human used to scratch pigment into the rocks of Lasceaux.  Homer used essentially the same methods to compose the Odyssey and the Illiad as a modern blogger uses to write their weekly screed; the laptop certainly makes the writing process more convenient, but the conveyance of discreet words from author to audience is much the same, the only real difference being that those words are now passed from server to server instead of from bard to bard.
+
+Music, on the other hand, is so intimately tied to the progress of civilization that it has been described as a technology in itself [cite].  This is most evident when we consider hardware, ie. instruments.  Chopin would not have been able to create his distinctive and highly influential Romantic compositions were it not for the dynamic range and controlled sustain afforded by the then-new piano-forte, and Jimi Hendrix could not have crafted his blistering sound that became essential to rock music if the electric guitar hadn't been invented a few decades earlier.  There has also been a more ephemeral technology at play throughout western music history, which is the twelve-tone music system to which all western tonal instruments are calibrated.  These twelve tones can be compared to words of a system whose complexity rivals that of a natural language.  Without this cultural institution, transmitted and refined from generation to generation, Thomas Tallis couldn't have arranged 40 voices into the dazzlingly complex 10 minute tapestry that is Spem in Allum, even though the only hardware involved was human bodies.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MUSIC %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+
+
 MORTGAGE "LAUNDRY LIST"
 Grocery list from M-A
 Reply with docs
@@ -5393,9 +5456,57 @@ As we lick our wounds following RVCQ's justified rejection, we turn our sights t
 TODO:
 Move center of clr fade from .5,.5 to parms centX,centY
 Compare with pre-travel train vid
-Make it stop fading in + out -- something about opacity.
+#DISH higher nLevels# Make it stop fading in + out -- something about opacity.
+Vignette src images from cent to edges
 
 
 
 
 
+
+_renBg():processing image /home/jeremy/dev/warp/seq/sub_coming/sub_coming.02531.jpg ....
+
+================
+== TUE JAN 02 ==
+================
+
+#D# Make juVignetteRound.py
+#D# Apply to sub_coming; render
+#D# Make juKscope.py to combine these images.
+
+================
+== WED JAN 03 ==
+================
+
+Add fields for:
+	srcSeq
+	srcVer
+	destVer
+	txStart
+	tyEnd
+
+Buttons
+	renSeq
+
+
+
+================
+== MON JAN 08 ==
+================
+
+have proper ren/kscope/v*** render output system, plus clk (last kscope) alias
+scale input images to standard size
+display images in (another) standard size optimized for screen
+get "chrysanthemum" system started... not quite sure how this will work w different clip durations:
+	4----
+	2   --
+	6    ------
+	4        ----
+
+Sketch of final clip sequence:
+	Narr
+	Marr
+	Npassengers
+	Mpassengers
+	Ndep
+	Mdep
