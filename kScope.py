@@ -223,16 +223,16 @@ class kWin():
 				f.write("value " + str(parmVal) + "\n\n")
 			
 
-	def menuImgChooser(self, selection, num):
-		print "_menuImgChooser(): self.imgChooserVar.get()", self.imgChooserVar.get(), "selection", selection, "num", num
+	def menuImgChooser(self, selection, numStr):
+		print "_menuImgChooser(): self.imgChooserVar.get()", self.imgChooserVar.get(), "selection", selection, "numStr", numStr
 		versDir = renDir + "/" + selection
 		vers = os.listdir(versDir)
 		vers.sort()
 		verLatest = vers[-1]
 		print "_menuImgChooser(): verLatest=", verLatest
 		self.verChooserVar.set(verLatest)
-		self.strValToParmDic("image" + num, selection)
-		self.strValToParmDic("version" + num, verLatest)
+		self.strValToParmDic("image" + numStr, selection)
+		self.strValToParmDic("version" + numStr, verLatest)
 		self.updateImages()
 
 	def menuVerChooser(self, selection):
@@ -243,6 +243,28 @@ class kWin():
 		#self.strValToParmDic("renVer", selection)
 		self.saveUIToParmsAndFile("renVer", self.renDirVar)
 		self.updateImages()
+
+	def makeParmLabelEntry(self, parmName, row):
+		parmVal = self.parmDic[parmName]["val"]
+		label = Label(self.frameCtls, width=10, text=parmName)
+		label.grid(row=row)
+
+		entry = Entry(self.frameCtls, width=10)
+		entry.insert(0, str(parmVal))
+		entry.grid(row=row, column=1)
+
+		var = StringVar()
+		var.trace("w", lambda name, index, mode, sv=var,
+			pn=parmName: self.saveUIToParmsAndFile(pn, sv))
+
+		entry.configure(textvariable=var)
+		entry.insert(0, str(parmVal))
+
+		self.parmDic[parmName]["ui"] = {
+			"label": label,
+			"entry": entry,
+			"var": var,
+			}
 
 
 	def __init__(self):
@@ -270,61 +292,54 @@ class kWin():
 		# Controls
 		row = 0
 
-		for parmName in self.parmLs:
-			if parmName in ["renVer"]:
-				continue
-			elif parmName[:-1] in ["image", "version"]:
-				imgNum = parmName[-1]
-				# TODO: Incorporate this into parmDic[parmName]["ui"]
-				if parmName[:-1] == "image":
-					sourceSequences = os.listdir(ut.renDir)
-					sourceSequences.sort()
-					self.imgChooserVar = StringVar(self.frameCtls)
-					self.imgChooserVar.set(self.parmVal("image" + imgNum))
-					self.imgChooser = OptionMenu(self.frameCtls, self.imgChooserVar, *sourceSequences,
-						command=lambda selection, num=imgNum : self.menuImgChooser(selection, num))
-					label = Label(self.frameCtls, text="image" + imgNum)
-					label.grid(row=row, column=0)
-					self.imgChooser.grid(row=row, column=1)
-					row += 1
+		nClips = 2
+		BEParms = ["tx", "ty", "sc"]
 
+		self.renderedClips = os.listdir(ut.renDir)
+		self.renderedClips.sort()
+
+		self.makeParmLabelEntry("fr", row)
+		row += 1
+
+		for clipNum in range(nClips):
+
+			# Menus
+			for menuParm in ["image", "version"]:
+				imgParmName = menuParm + str(clipNum)
+				label = Label(self.frameCtls, text=imgParmName)
+				label.grid(row=row)
+
+				clipChooserVal = self.parmVal(imgParmName)
+				clipChooserVar = StringVar(self.frameCtls)
+				clipChooserVar.set(clipChooserVal)
+			
+				if menuParm == "image":
+					selections = self.renderedClips
 				else:
-					sourceSequences = os.listdir(ut.renDir + "/" + self.parmVal("image0"))
-					sourceSequences.sort()
-					self.verChooserVar = StringVar(self.frameCtls)
-					self.verChooserVar.set(self.parmVal("version" + imgNum))
-					self.verChooser = OptionMenu(self.frameCtls, self.verChooserVar, *sourceSequences, command=self.menuVerChooser)
-					label = Label(self.frameCtls, text="version" + imgNum)
-					label.grid(row=row, column=0)
-					self.verChooser.grid(row=row, column=1)
+					selections = os.listdir(ut.renDir + "/" + self.parmVal("image0"))
+					selections.sort()
+				clipChooser = OptionMenu(self.frameCtls, clipChooserVar, *selections,
+							command=lambda selection, numStr=str(clipNum) : self.menuImgChooser(selection, numStr))
+				clipChooser.grid(row=row, column=1)
+				
+				row +=1
+
+				self.parmDic[imgParmName]["ui"] = {
+					"label": label,
+					"var": clipChooserVar,
+					}
+
+			# Parms like txB0, txE0, tyB0....
+			for BEParm in BEParms:
+				for BE in "BE":
+					parmName = BEParm + BE + str(clipNum)
+					self.makeParmLabelEntry(parmName, row)
 					row += 1
-				continue
-			parmVal = self.parmDic[parmName]["val"]
-			label = Label(self.frameCtls, width=10, text=parmName)
-			label.grid(row=row)
 
-			entry = Entry(self.frameCtls, width=10)
-			entry.insert(0, str(parmVal))
-			entry.grid(row=row, column=1)
-
-			var = StringVar()
-			var.trace("w", lambda name, index, mode, sv=var,
-				pn=parmName: self.saveUIToParmsAndFile(pn, sv))
-
-			entry.configure(textvariable=var)
-			entry.insert(0, str(parmVal))
-
-			self.parmDic[parmName]["ui"] = {
-				"label": label,
-				"entry": entry,
-				"var": var,
-				}
-			row += 1
-		
 
 		self.renDirVar = StringVar()
 		self.renDirVar.set(self.parmVal("renVer"))
-		self.renDirVar.trace("w", lambda name, index, mode, sv=var,
+		self.renDirVar.trace("w", lambda name, index, mode, sv=self.renDirVar,
 			pn="renVerOut": self.saveUIToParmsAndFile(pn, sv))
 
 
