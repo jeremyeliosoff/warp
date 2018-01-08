@@ -5494,14 +5494,16 @@ Buttons
 == MON JAN 08 ==
 ================
 
-have proper ren/kscope/v*** render output system, plus clk (last kscope) alias
+#Dish# have proper ren/kscope/v*** render output system, plus clk (last kscope) alias
+#D# display images in (another) standard size optimized for screen
+Rejig controls so each inSeq has thumbnail
 scale input images to standard size
-display images in (another) standard size optimized for screen
 get "chrysanthemum" system started... not quite sure how this will work w different clip durations:
 	4----
 	2   --
 	6    ------
 	4        ----
+Hotkeys to nudge parms: up/down->adjust; add alt->adjust and render; add shift->bigger interval
 
 Sketch of final clip sequence:
 	Narr

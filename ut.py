@@ -503,6 +503,8 @@ def main():
 	if verType == "data":
 		verDir = dataDir + "/"
 		#seqs = glob.glob(dataDir + "/" + pref + "*")
+	elif verType == "kscope":
+		verDir = renDir + "/kScope"
 	else:
 		verDir = renDir + "/"
 	dirs = glob.glob(verDir + pref + "*")

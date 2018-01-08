@@ -8,36 +8,74 @@ from PIL import ImageTk, Image
 
 warpDir = "/home/jeremy/dev/warp"
 renDir = warpDir + "/ren"
+renDirKscope = renDir + "/kScope"
 parmFile = warpDir + "/kScopeParms"
 parmDefFile = warpDir + "/kScopeParmsDef"
+errorImgPath = ut.imgDir + "/controls/error.png"
+displayHt = 480
 
 
 class kWin():
+
 	# Hotkeys
 	def frChange(self, inc):
 		fr = ut.clamp(self.parmVal("fr") + inc, self.frStart, self.frEnd)
-		print "_rightCmd(): fr =", fr
+		print "_frChange(): fr =", fr
 		self.strValToParmDic("fr", fr)
 		var = self.parmDic["fr"]["ui"]["var"]
 		var.set(str(fr))
 		self.saveUIToParmsAndFile("fr", var)
 		self.updateImages()
+
+	def ctlReturnCmd(self):
+		focused = self.frameMaster.focus_get()
+		print "_returnCmd(): focused:", focused
+		#print "_returnCmd(): self.verUI[ren][sfx]:", self.verUI["ren"]["sfx"]
+		if focused == self.nextRenVerEntry:
+			print "_returnCmd(): \tIT'S NEXTVER!!!!!!!!"
+			#self.butVNew("ren")
+			vers = ut.getVersions(renDirKscope)
+			nextVerInt = int(vers[0][1:4]) + 1
+			nextVerSfx = self.nextRenVerEntry.get()
+			nextVer = ("v%03d" % nextVerInt) + nextVerSfx
+			nextVerPath = renDirKscope + "/" + nextVer
+			print "\n_ctlReturnCmd(): making", nextVerPath
+			ut.mkDirSafe(nextVerPath)
+		else:
+			print "NOTHIN!!!"
 		
 
+	# Other
 	def parmVal(self, parmName):
 		return self.parmDic[parmName]["val"]
+	
+	def scaleToDisplayHt(self, img):
+		res = img.size
+		ratio = float(displayHt)/res[1]
+		return img.resize((int(res[0]*ratio), int(res[1]*ratio)))
+
 
 	def updateImages(self):
 		print "_updateImages(): BEGIN"
 		ff = "%05d" % self.parmVal("fr")
 		self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
 			self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
-		self.inPhoto = PhotoImage(file=self.inImgPath);
+		loadedImg = Image.open(self.inImgPath)
+		#res = loadedImg.size
+		loadedImg = self.scaleToDisplayHt(loadedImg)
+		self.inPhoto = ImageTk.PhotoImage(loadedImg)
 		self.inImgBut.configure(image=self.inPhoto)
 		self.outImgPath = warpDir + "/ren/testImg/testImg." + ff + ".png"
+		renVer = self.parmVal("renVer")
+		self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
 		if os.path.exists(self.outImgPath):
-			self.outPhoto = PhotoImage(file=self.outImgPath);
-			self.outImgBut.configure(image=self.outPhoto)
+			loadedImg = Image.open(self.outImgPath)
+		else:
+			loadedImg = Image.open(errorImgPath)
+		loadedImg = self.scaleToDisplayHt(loadedImg)
+		self.outPhoto = ImageTk.PhotoImage(loadedImg)
+		#self.outPhoto.resize(100,100)
+		self.outImgBut.configure(image=self.outPhoto)
 		print "_updateImages(): set self.inImgPath =", self.inImgPath
 		print "_updateImages(): set self.outImgPath =", self.outImgPath
 
@@ -200,6 +238,13 @@ class kWin():
 	def menuVerChooser(self, selection):
 		print "_menuImgChooser(): self.verChooserVar.get()", self.verChooserVar.get(), "selection", selection
 
+	def menuRenVerChooser(self, selection):
+		print "_menuRenImgChooser(): self.renDirVar.get()", self.renDirVar.get(), "selection", selection
+		#self.strValToParmDic("renVer", selection)
+		self.saveUIToParmsAndFile("renVer", self.renDirVar)
+		self.updateImages()
+
+
 	def __init__(self):
 		#frStill = 2137
 		#for fr in range(frStill, frStill+1):
@@ -224,34 +269,13 @@ class kWin():
 
 		# Controls
 		row = 0
-		#for parmName,parmAtts in self.parmDic.items():
-
-		# Src Images	
-		#for i in range(2):
-		#	sourceSequences = os.listdir(ut.renDir)
-		#	sourceSequences.sort()
-		#	self.imgChooserVar = StringVar(self.frameCtls)
-		#	self.imgChooserVar.set(self.parmVal("image" + str(i)))
-		#	self.imgChooser = OptionMenu(self.frameCtls, self.imgChooserVar, *sourceSequences,
-		#		command=lambda selection, num=i : self.menuImgChooser(selection, num))
-		#	label = Label(self.frameCtls, text="image" + str(i))
-		#	label.grid(row=row, column=0)
-		#	self.imgChooser.grid(row=row, column=1)
-		#	row += 1
-
-		#	sourceSequences = os.listdir(ut.renDir + "/" + self.parmVal("image0"))
-		#	sourceSequences.sort()
-		#	self.verChooserVar = StringVar(self.frameCtls)
-		#	self.verChooserVar.set(self.parmVal("version" + str(i)))
-		#	self.verChooser = OptionMenu(self.frameCtls, self.verChooserVar, *sourceSequences, command=self.menuVerChooser)
-		#	label = Label(self.frameCtls, text="version" + str(i))
-		#	label.grid(row=row, column=0)
-		#	self.verChooser.grid(row=row, column=1)
-		#	row += 1
 
 		for parmName in self.parmLs:
-			if parmName[:-1] in ["image", "version"]:
+			if parmName in ["renVer"]:
+				continue
+			elif parmName[:-1] in ["image", "version"]:
 				imgNum = parmName[-1]
+				# TODO: Incorporate this into parmDic[parmName]["ui"]
 				if parmName[:-1] == "image":
 					sourceSequences = os.listdir(ut.renDir)
 					sourceSequences.sort()
@@ -296,24 +320,33 @@ class kWin():
 				"var": var,
 				}
 			row += 1
+		
+
+		self.renDirVar = StringVar()
+		self.renDirVar.set(self.parmVal("renVer"))
+		self.renDirVar.trace("w", lambda name, index, mode, sv=var,
+			pn="renVerOut": self.saveUIToParmsAndFile(pn, sv))
+
+
+		renVersions = os.listdir(ut.renDir + "/kScope")
+		self.renDirVerChooser = OptionMenu(self.frameCtls, self.renDirVar, *renVersions, command=self.menuRenVerChooser)
+		self.renDirVerChooser.grid(row=row)
+
+		self.nextRenVerEntry = Entry(self.frameCtls, width=10)
+		self.nextRenVerEntry.grid(row=row, column=1)
+		row += 1
 
 		# Images
-		ff = "%05d" % self.parmVal("fr")
-		self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
-			self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
-		self.outImgPath = warpDir + "/ren/testImg/testImg." + ff + ".png"
-		self.inPhoto = PhotoImage(file=self.inImgPath);
-		self.inImgBut = Button(self.frameImgs, image=self.inPhoto)
+		self.inImgBut = Button(self.frameImgs)
 		self.inImgBut.grid(row=0)
 		self.outImgBut = Button(self.frameImgs)
-		if os.path.exists(self.outImgPath):
-			self.outPhoto = PhotoImage(file=self.outImgPath);
-			self.outImgBut.configure(image=self.outPhoto)
+		self.updateImages()
 		self.outImgBut.grid(row=1)
 		
 		# Key bindings
 		self.root.bind('<Alt-Return>', lambda e: self.processImg())
-		self.root.bind('<Control-Return>', lambda e: self.processImgSeq())
+		self.root.bind('<Control-Alt-Return>', lambda e: self.processImgSeq())
+		self.root.bind('<Control-Return>', lambda e: self.ctlReturnCmd())
 		self.root.bind('<Right>', lambda e: self.frChange(1))
 		self.root.bind('<Left>', lambda e: self.frChange(-1))
 		self.root.bind('<Shift-Right>', lambda e: self.frChange(10))

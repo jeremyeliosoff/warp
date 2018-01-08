@@ -65,3 +65,7 @@ value .5
 scE1
 type float
 value .5
+
+renVer
+type string
+value v000
