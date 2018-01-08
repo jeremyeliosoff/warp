@@ -49,9 +49,9 @@ class kWin():
 	def parmVal(self, parmName):
 		return self.parmDic[parmName]["val"]
 	
-	def scaleToDisplayHt(self, img):
+	def scaleToHt(self, img, ht):
 		res = img.size
-		ratio = float(displayHt)/res[1]
+		ratio = float(ht)/res[1]
 		return img.resize((int(res[0]*ratio), int(res[1]*ratio)))
 
 
@@ -61,8 +61,7 @@ class kWin():
 		self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
 			self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
 		loadedImg = Image.open(self.inImgPath)
-		#res = loadedImg.size
-		loadedImg = self.scaleToDisplayHt(loadedImg)
+		loadedImg = self.scaleToHt(loadedImg, displayHt)
 		self.inPhoto = ImageTk.PhotoImage(loadedImg)
 		self.inImgBut.configure(image=self.inPhoto)
 		self.outImgPath = warpDir + "/ren/testImg/testImg." + ff + ".png"
@@ -72,7 +71,7 @@ class kWin():
 			loadedImg = Image.open(self.outImgPath)
 		else:
 			loadedImg = Image.open(errorImgPath)
-		loadedImg = self.scaleToDisplayHt(loadedImg)
+		loadedImg = self.scaleToHt(loadedImg, displayHt)
 		self.outPhoto = ImageTk.PhotoImage(loadedImg)
 		#self.outPhoto.resize(100,100)
 		self.outImgBut.configure(image=self.outPhoto)
@@ -85,10 +84,23 @@ class kWin():
 			print "Rendering", self.outImgPath
 			self.processImg()
 
-	def loadImgNum(self, num):
-		ff = "%05d" % self.parmVal("fr")
-		imgPath = warpDir + "/ren/" + self.parmVal("image" + str(num)) + "/" + \
-			self.parmVal("version" + str(num)) + "/ren/ALL/ren.ALL." + ff + ".png"
+
+	def getImgNumDir(self, num):
+		return warpDir + "/ren/" + self.parmVal("image" + str(num)) + "/" + \
+			self.parmVal("version" + str(num)) + "/ren/ALL/"
+
+
+	def getImgNumPath(self, num, fr):
+		if fr == None:
+			ff = "%05d" % self.parmVal("fr")
+		else:
+			ff = "%05d" % fr
+
+		return self.getImgNumDir(num) + "ren.ALL." + ff + ".png"
+
+
+	def loadImgNum(self, num, fr=None):
+		imgPath = self.getImgNumPath(num, fr)
 		return pygame.image.load(imgPath)
 		
 	def processImg(self):
@@ -223,17 +235,47 @@ class kWin():
 				f.write("value " + str(parmVal) + "\n\n")
 			
 
-	def menuImgChooser(self, selection, numStr):
-		print "_menuImgChooser(): self.imgChooserVar.get()", self.imgChooserVar.get(), "selection", selection, "numStr", numStr
-		versDir = renDir + "/" + selection
-		vers = os.listdir(versDir)
-		vers.sort()
-		verLatest = vers[-1]
-		print "_menuImgChooser(): verLatest=", verLatest
-		self.verChooserVar.set(verLatest)
-		self.strValToParmDic("image" + numStr, selection)
-		self.strValToParmDic("version" + numStr, verLatest)
-		self.updateImages()
+	def refreshThumb(self, clipNum):
+		imgDir = self.getImgNumDir(clipNum)
+		renImgs = os.listdir(imgDir)
+		print "renImgs:", renImgs
+		if renImgs == []:
+			imgPath = errorImgPath
+		else:
+			# Get ren fr mid-way thru seq.
+			renImgs.sort()
+			midImg = renImgs[len(renImgs)/2]
+
+			#imgPath = self.getImgNumPath(clipNum, fr=2000)
+			imgPath = imgDir + "/" + midImg
+		print "\n----------- imgPath", imgPath
+		loadedImg = Image.open(imgPath)
+		loadedImg = self.scaleToHt(loadedImg, 150)
+
+		photo = ImageTk.PhotoImage(loadedImg)
+
+		print "\n\n******* self.thumbs:", self.thumbs, "clipNum", clipNum
+		self.thumbs[clipNum]["button"].configure(image=photo)
+		self.thumbs[clipNum]["photo"] = photo
+
+
+	def menuImgChooser(self, selection, imgParmName, numStr):
+		#print "_menuImgChooser(): self.imgChooserVar.get()", self.imgChooserVar.get(), "selection", selection, "numStr", numStr
+		print "_menuImgChooser(): imgParmName", imgParmName, "selection", selection, "numStr", numStr
+		self.strValToParmDic(imgParmName, selection)
+		imgNum = imgParmName[-1]
+		#im = self.loadImgNum(imgNum)
+		self.refreshThumb(int(imgNum))
+
+		#versDir = renDir + "/" + selection
+		#vers = os.listdir(versDir)
+		#vers.sort()
+		#verLatest = vers[-1]
+		#print "_menuImgChooser(): verLatest=", verLatest
+		#self.verChooserVar.set(verLatest)
+		#self.strValToParmDic("image" + numStr, selection)
+		#self.strValToParmDic("version" + numStr, verLatest)
+		#self.updateImages()
 
 	def menuVerChooser(self, selection):
 		print "_menuImgChooser(): self.verChooserVar.get()", self.verChooserVar.get(), "selection", selection
@@ -244,12 +286,12 @@ class kWin():
 		self.saveUIToParmsAndFile("renVer", self.renDirVar)
 		self.updateImages()
 
-	def makeParmLabelEntry(self, parmName, row):
+	def makeParmLabelEntry(self, parmName, frame, row):
 		parmVal = self.parmDic[parmName]["val"]
-		label = Label(self.frameCtls, width=10, text=parmName)
+		label = Label(frame, width=10, text=parmName)
 		label.grid(row=row)
 
-		entry = Entry(self.frameCtls, width=10)
+		entry = Entry(frame, width=10)
 		entry.insert(0, str(parmVal))
 		entry.grid(row=row, column=1)
 
@@ -280,7 +322,10 @@ class kWin():
 		self.frameMaster.grid()
 
 		self.frameCtls = Frame(self.frameMaster)
-		self.frameCtls.grid(row=0,column=0)
+		self.frameCtls.grid()
+
+		self.frameCtlsPreClip = Frame(self.frameCtls)
+		self.frameCtlsPreClip.grid()
 
 		self.frameImgs = Frame(self.frameMaster)
 		self.frameImgs.grid(row=0,column=1)
@@ -290,6 +335,7 @@ class kWin():
 		self.loadParms(False)
 
 		# Controls
+		self.thumbs = {}
 		row = 0
 
 		nClips = 2
@@ -298,19 +344,40 @@ class kWin():
 		self.renderedClips = os.listdir(ut.renDir)
 		self.renderedClips.sort()
 
-		self.makeParmLabelEntry("fr", row)
+		self.makeParmLabelEntry("fr", self.frameCtlsPreClip, row)
 		row += 1
 
-		for clipNum in range(nClips):
+		self.renDirVar = StringVar()
+		self.renDirVar.set(self.parmVal("renVer"))
+		self.renDirVar.trace("w", lambda name, index, mode, sv=self.renDirVar,
+			pn="renVerOut": self.saveUIToParmsAndFile(pn, sv))
 
+
+		renVersions = os.listdir(ut.renDir + "/kScope")
+		self.renDirVerChooser = OptionMenu(self.frameCtlsPreClip, self.renDirVar, *renVersions, command=self.menuRenVerChooser)
+		self.renDirVerChooser.grid(row=row)
+
+		self.nextRenVerEntry = Entry(self.frameCtlsPreClip, width=10)
+		self.nextRenVerEntry.grid(row=row, column=1)
+		row += 1
+
+
+		for clipNum in range(nClips):
+			frameThisClipParmsAndThumb = Frame(self.frameCtls)
+			frameThisClipParmsAndThumb.grid(row=row)
+
+			frameThisClipParms = Frame(frameThisClipParmsAndThumb)
+			frameThisClipParms.grid()
+
+			thisClipRow = 0
 			# Menus
 			for menuParm in ["image", "version"]:
 				imgParmName = menuParm + str(clipNum)
-				label = Label(self.frameCtls, text=imgParmName)
-				label.grid(row=row)
+				label = Label(frameThisClipParms, text=imgParmName)
+				label.grid(row=thisClipRow)
 
 				clipChooserVal = self.parmVal(imgParmName)
-				clipChooserVar = StringVar(self.frameCtls)
+				clipChooserVar = StringVar(frameThisClipParms)
 				clipChooserVar.set(clipChooserVal)
 			
 				if menuParm == "image":
@@ -318,11 +385,11 @@ class kWin():
 				else:
 					selections = os.listdir(ut.renDir + "/" + self.parmVal("image0"))
 					selections.sort()
-				clipChooser = OptionMenu(self.frameCtls, clipChooserVar, *selections,
-							command=lambda selection, numStr=str(clipNum) : self.menuImgChooser(selection, numStr))
-				clipChooser.grid(row=row, column=1)
+				clipChooser = OptionMenu(frameThisClipParms, clipChooserVar, *selections,
+							command=lambda selection=imgParmName, imgParmName=imgParmName, numStr=str(clipNum) : self.menuImgChooser(selection, imgParmName, numStr))
+				clipChooser.grid(row=thisClipRow, column=1)
 				
-				row +=1
+				thisClipRow +=1
 
 				self.parmDic[imgParmName]["ui"] = {
 					"label": label,
@@ -333,23 +400,34 @@ class kWin():
 			for BEParm in BEParms:
 				for BE in "BE":
 					parmName = BEParm + BE + str(clipNum)
-					self.makeParmLabelEntry(parmName, row)
-					row += 1
+					self.makeParmLabelEntry(parmName, frameThisClipParms, thisClipRow)
+					thisClipRow += 1
 
+			# Thumbnail
 
-		self.renDirVar = StringVar()
-		self.renDirVar.set(self.parmVal("renVer"))
-		self.renDirVar.trace("w", lambda name, index, mode, sv=self.renDirVar,
-			pn="renVerOut": self.saveUIToParmsAndFile(pn, sv))
+			imgDir = self.getImgNumDir(clipNum)
+			renImgs = os.listdir(imgDir)
+			#print "renImgs:", renImgs
+			if renImgs == []:
+				imgPath = errorImgPath
+			else:
+				# Get ren fr mid-way thru seq.
+				renImgs.sort()
+				midImg = renImgs[len(renImgs)/2]
 
+				#imgPath = self.getImgNumPath(clipNum, fr=2000)
+				imgPath = imgDir + "/" + midImg
+			print "\n----------- imgPath", imgPath
+			loadedImg = Image.open(imgPath)
+			loadedImg = self.scaleToHt(loadedImg, 150)
 
-		renVersions = os.listdir(ut.renDir + "/kScope")
-		self.renDirVerChooser = OptionMenu(self.frameCtls, self.renDirVar, *renVersions, command=self.menuRenVerChooser)
-		self.renDirVerChooser.grid(row=row)
+			photo = ImageTk.PhotoImage(loadedImg)
+			button = Button(frameThisClipParmsAndThumb, image=photo)
+			button.grid(row=0,column=1)
 
-		self.nextRenVerEntry = Entry(self.frameCtls, width=10)
-		self.nextRenVerEntry.grid(row=row, column=1)
-		row += 1
+			self.thumbs[int(clipNum)] = {"photo":photo, "button":button}
+
+			row += 1
 
 		# Images
 		self.inImgBut = Button(self.frameImgs)
