@@ -14,6 +14,18 @@ parmDefFile = warpDir + "/kScopeParmsDef"
 errorImgPath = ut.imgDir + "/controls/error.png"
 displayHt = 480
 
+clipDic = {
+	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
+	"newArrBUQ_GOODHR_vig":{"range":(600,1275)},
+	"sub_comingHR_vig":{"range":(1750,2300)},
+	"sub_goingHR_vig":{"range":(1,1245)},
+	"sub_goingHR_vig_cp":{"range":(1750,2300)},
+}
+
+for clip,dic in clipDic.items():
+	rg = dic["range"]
+	dic["len"] = rg[1]-rg[0]+1
+	
 
 class kWin():
 

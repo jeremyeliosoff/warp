@@ -66,6 +66,70 @@ scE1
 type float
 value .5
 
+image2
+type string
+value sub_coming_vig
+
+version2
+type string
+value v002wFade
+
+txB2
+type float
+value .47
+
+txE2
+type float
+value .47
+
+tyB2
+type float
+value .39
+
+tyE2
+type float
+value .39
+
+scB2
+type float
+value .5
+
+scE2
+type float
+value .5
+
+image3
+type string
+value sub_coming_vig
+
+version3
+type string
+value v002wFade
+
+txB3
+type float
+value .47
+
+txE3
+type float
+value .47
+
+tyB3
+type float
+value .39
+
+tyE3
+type float
+value .39
+
+scB3
+type float
+value .5
+
+scE3
+type float
+value .5
+
 renVer
 type string
 value v000

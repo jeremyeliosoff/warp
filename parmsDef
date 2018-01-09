@@ -5,7 +5,7 @@
 
 fr
 type int
-val 8
+val 1200
 
 fps
 hidden True
@@ -35,7 +35,7 @@ val 1
 image
 hidden True
 type str
-val testSeq
+val newArrBUQ_GOOD_vig
 
 dbImg1
 hidden True
