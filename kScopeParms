@@ -1,5 +1,5 @@
 fr
-value 2140
+value 91
 
 image0
 value sub_comingHR_vig
@@ -49,6 +49,54 @@ value 0.6
 scE1
 value 0.25
 
+image2
+value sub_goingHR_vig
+
+version2
+value v000
+
+txB2
+value 0.47
+
+txE2
+value 0.47
+
+tyB2
+value 0.39
+
+tyE2
+value 0.39
+
+scB2
+value 0.5
+
+scE2
+value 0.5
+
+image3
+value sub_comingHR_vig
+
+version3
+value v001toFr2300
+
+txB3
+value 0.47
+
+txE3
+value 0.47
+
+tyB3
+value 0.39
+
+tyE3
+value 0.39
+
+scB3
+value 0.5
+
+scE3
+value 0.5
+
 renVer
-value v002again
+value v004wSubComingPpl
 

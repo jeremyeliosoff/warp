@@ -12,7 +12,7 @@ renDirKscope = renDir + "/kScope"
 parmFile = warpDir + "/kScopeParms"
 parmDefFile = warpDir + "/kScopeParmsDef"
 errorImgPath = ut.imgDir + "/controls/error.png"
-displayHt = 480
+displayHt = 200
 
 clipDic = {
 	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
@@ -28,19 +28,75 @@ for clip,dic in clipDic.items():
 	
 
 class kWin():
+	def makeClipSeq(self):
+		self.clipSeq = []
+		for clipNum in range(self.nClips):
+			self.clipSeq.append(self.parmVal("image" + str(clipNum)))
+		print "\n\n_makeClipSeq(): self.clipSeq=", self.clipSeq
+
+	def makeClipFrOfs(self):
+		self.clipSeqOfs = []
+		for clipNum in range(len(self.clipSeq)):
+			clip = self.clipSeq[clipNum]
+			rg = clipDic[clip]["range"]
+			ln = clipDic[clip]["len"]
+			offset = rg[0]
+			if clipNum == 0:
+				total = ln
+			else:
+				# This is a bit tricky: 
+				if ln < prevLn:
+					total += ln/2
+				else:
+					total += ln - prevLn/2
+				offset += -(total - ln)
+			self.clipSeqOfs.append(offset)
+			prevLn = ln
+			print "\n\n_makeClipFrOfs(): clipNum=", clipNum, ", clip=", clip, ", total=", total, ", offset=", offset
+		self.frRange = total
+	
+	def getActiveClipNums(self):
+		activeClipNums = []
+		fr = self.parmVal("fr")
+		for clipNum in range(self.nClips):
+			ofs = self.clipSeqOfs[clipNum]
+			frWOfs = fr+ofs
+			clip = self.clipSeq[clipNum]
+			print "clipNum=", clipNum, ", clip=", clip, ", ofs", ofs, ", fr=", fr, ", frWOfs=", frWOfs
+			rg = clipDic[clip]["range"]
+			if frWOfs >= rg[0] and frWOfs <= rg[1]:
+				activeClipNums.append(clipNum)
+		return activeClipNums
+
+	def getClipFr(self, clipNum):
+		fr = self.parmVal("fr")
+		ofs = self.clipSeqOfs[clipNum]
+		return fr + ofs
 
 	# Hotkeys
 	def frChange(self, inc):
-		fr = ut.clamp(self.parmVal("fr") + inc, self.frStart, self.frEnd)
+		fr = ut.clamp(self.parmVal("fr") + inc, 0, self.frRange)
+		#fr = self.parmVal("fr") + inc
 		print "_frChange(): fr =", fr
 		self.strValToParmDic("fr", fr)
 		var = self.parmDic["fr"]["ui"]["var"]
 		var.set(str(fr))
 		self.saveUIToParmsAndFile("fr", var)
 		self.updateImages()
+		activeClipNums = self.getActiveClipNums()
+		print "_frChange(): self.clipSeq:"
+		for clipNum in range(len(self.clipSeq)):
+			clip = self.clipSeq[clipNum]
+			print "\t", clipNum, ":", clip, "range", clipDic[clip]["range"], "len", clipDic[clip]["len"]
+		print "_frChange(): activeClipNums:"
+		for clipNum in activeClipNums:
+			ofs = self.clipSeqOfs[clipNum]
+			frWOfs = fr + ofs
+			print "\t", clipNum, ":", self.clipSeq[clipNum], "ofs", ofs, "frWOfs=", frWOfs
+		print "_frChange(): END\n"
 
 	def ctlReturnCmd(self):
-		focused = self.frameMaster.focus_get()
+		focused = self.frameClips.focus_get()
 		print "_returnCmd(): focused:", focused
 		#print "_returnCmd(): self.verUI[ren][sfx]:", self.verUI["ren"]["sfx"]
 		if focused == self.nextRenVerEntry:
@@ -66,32 +122,36 @@ class kWin():
 		ratio = float(ht)/res[1]
 		return img.resize((int(res[0]*ratio), int(res[1]*ratio)))
 
+	def safeLoadImg(self, imgPath):
+		if os.path.exists(imgPath):
+			loadedImg = Image.open(imgPath)
+		else:
+			loadedImg = Image.open(errorImgPath)
+		return loadedImg
 
 	def updateImages(self):
 		print "_updateImages(): BEGIN"
 		ff = "%05d" % self.parmVal("fr")
 		self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
 			self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
-		loadedImg = Image.open(self.inImgPath)
-		loadedImg = self.scaleToHt(loadedImg, displayHt)
-		self.inPhoto = ImageTk.PhotoImage(loadedImg)
-		self.inImgBut.configure(image=self.inPhoto)
 		self.outImgPath = warpDir + "/ren/testImg/testImg." + ff + ".png"
 		renVer = self.parmVal("renVer")
 		self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
-		if os.path.exists(self.outImgPath):
-			loadedImg = Image.open(self.outImgPath)
-		else:
-			loadedImg = Image.open(errorImgPath)
-		loadedImg = self.scaleToHt(loadedImg, displayHt)
-		self.outPhoto = ImageTk.PhotoImage(loadedImg)
+		loadedImg = self.safeLoadImg(self.outImgPath)
+		loadedImgMain = self.scaleToHt(loadedImg, displayHt*1.5)
+		self.outPhoto = ImageTk.PhotoImage(loadedImgMain)
 		#self.outPhoto.resize(100,100)
 		self.outImgBut.configure(image=self.outPhoto)
+		loadedImgClipTmp = self.scaleToHt(loadedImg, displayHt*.55)
+		self.clipPhotoTmp = ImageTk.PhotoImage(loadedImgClipTmp)
+		for i in range(self.nClips):
+			self.outImgButs[i].configure(image=self.clipPhotoTmp)
 		print "_updateImages(): set self.inImgPath =", self.inImgPath
 		print "_updateImages(): set self.outImgPath =", self.outImgPath
 
 	def processImgSeq(self):
-		for fr in range(self.frStart, self.frEnd):
+		#for fr in range(self.frStart, self.frEnd):
+		for fr in range(self.frRange):
 			self.strValToParmDic("fr", fr)
 			print "Rendering", self.outImgPath
 			self.processImg()
@@ -117,7 +177,13 @@ class kWin():
 		
 	def processImg(self):
 		self.updateImages()
-		im = pygame.image.load(self.inImgPath)
+
+		# Use first img from first clip as template
+		imgDir = self.getImgNumDir(0)
+		renImgs = os.listdir(imgDir)
+		renImgs.sort()
+
+		im = pygame.image.load(imgDir + "/" + renImgs[10])
 		sz = im.get_size()
 		#im = Image.open(self.inImgPath)
 		imAr = pygame.surfarray.pixels3d(im)
@@ -133,18 +199,24 @@ class kWin():
 
 		nRots = 4
 		fr = self.parmVal("fr")
-		prog = ut.fit(fr, self.frStart, self.frEnd, 0, 1)
 
-		for imgNum in range(2):
-			sc = ut.mix(self.parmVal("scB" + str(imgNum)), self.parmVal("scE" + str(imgNum)), prog)
-			tx = ut.mix(self.parmVal("txB" + str(imgNum)), self.parmVal("txE" + str(imgNum)), prog)
-			ty = ut.mix(self.parmVal("tyB" + str(imgNum)), self.parmVal("tyE" + str(imgNum)), prog)
+		activeClipNums = self.getActiveClipNums()
+
+		for clipNum in activeClipNums:
+			clipFr = self.getClipFr(clipNum)
+			clip = self.clipSeq[clipNum]
+			rg = clipDic[clip]["range"]
+			prog = ut.fit(clipFr, rg[0], rg[1], 0, 1)
+			sc = ut.mix(self.parmVal("scB" + str(clipNum)), self.parmVal("scE" + str(clipNum)), prog)
+			tx = ut.mix(self.parmVal("txB" + str(clipNum)), self.parmVal("txE" + str(clipNum)), prog)
+			ty = ut.mix(self.parmVal("tyB" + str(clipNum)), self.parmVal("tyE" + str(clipNum)), prog)
 			print "_processImg(): prog=", ("%05.4f" % prog), "sc=", sc, "tx=", tx, "ty=", ty
-			im = self.loadImgNum(imgNum)
+			im = self.loadImgNum(clipNum, clipFr)
 			sz = im.get_size()
 			for i in range(nRots):
 				imMod = imBlank.copy()
 				imCp = im.copy()
+				print "\n\n\n***** sc", sc, "prog", prog, "rg", rg
 				imCp = pygame.transform.scale(imCp, (int(sz[0]*sc), int(sz[1]*sc)))
 
 				txAbs = tx * sz[0]
@@ -167,7 +239,7 @@ class kWin():
 						imMod.blit(thisImCp, (txInt, tyInt), (0, 0, sz[0], sz[1]), pygame.BLEND_ADD)
 
 				imCpSzOld = imMod.get_size()
-				imMod = pygame.transform.rotate(imMod, (i+(.5*(imgNum % 2)) + .002*fr)*360.0/nRots)
+				imMod = pygame.transform.rotate(imMod, (i+(.5*(clipNum % 2)) + .002*fr)*360.0/nRots)
 				#imMod = pygame.transform.rotate(imMod, i*45)
 				imCpSzNew = imMod.get_size()
 				xStart = imCpSzOld[0] - imCpSzNew[0]
@@ -194,10 +266,10 @@ class kWin():
 		with open(filePath, "r") as f:
 			for lnRaw in f.readlines() + ["DUD"]: #DUD to process last parm
 				ln = lnRaw.strip()
-				print "_loadParms(): ln =", ln
+				#print "_loadParms(): ln =", ln
 				words = ln.split()
-				print "_loadParms(): words =", words
-				print "_loadParms(): len(words) =", len(words)
+				#print "_loadParms(): words =", words
+				#print "_loadParms(): len(words) =", len(words)
 				nWords = len(words)
 				if nWords == 1:
 					if curParm: # Not None, which would mean this is first parm (no cur parm)
@@ -231,7 +303,7 @@ class kWin():
 			if typ == "int":
 				self.parmDic[parmName]["val"] = int(val)
 			elif typ == "float":
-				print "---------- val", val
+				#print "---------- val", val
 				self.parmDic[parmName]["val"] = float(val)
 			else:
 				self.parmDic[parmName]["val"] = val
@@ -250,7 +322,7 @@ class kWin():
 	def refreshThumb(self, clipNum):
 		imgDir = self.getImgNumDir(clipNum)
 		renImgs = os.listdir(imgDir)
-		print "renImgs:", renImgs
+		#print "renImgs:", renImgs
 		if renImgs == []:
 			imgPath = errorImgPath
 		else:
@@ -260,24 +332,25 @@ class kWin():
 
 			#imgPath = self.getImgNumPath(clipNum, fr=2000)
 			imgPath = imgDir + "/" + midImg
-		print "\n----------- imgPath", imgPath
+		#print "\n----------- imgPath", imgPath
 		loadedImg = Image.open(imgPath)
-		loadedImg = self.scaleToHt(loadedImg, 150)
+		loadedImg = self.scaleToHt(loadedImg, displayHt/3)
 
 		photo = ImageTk.PhotoImage(loadedImg)
 
 		print "\n\n******* self.thumbs:", self.thumbs, "clipNum", clipNum
-		self.thumbs[clipNum]["button"].configure(image=photo)
-		self.thumbs[clipNum]["photo"] = photo
+		for i in range(3):
+			self.thumbs[clipNum]["buttons"][i].configure(image=photo)
+			self.thumbs[clipNum]["photos"][i] = photo
 
 
 	def menuImgChooser(self, selection, imgParmName, numStr):
 		#print "_menuImgChooser(): self.imgChooserVar.get()", self.imgChooserVar.get(), "selection", selection, "numStr", numStr
 		print "_menuImgChooser(): imgParmName", imgParmName, "selection", selection, "numStr", numStr
 		self.strValToParmDic(imgParmName, selection)
-		imgNum = imgParmName[-1]
-		#im = self.loadImgNum(imgNum)
-		self.refreshThumb(int(imgNum))
+		clipNum = imgParmName[-1]
+		#im = self.loadImgNum(clipNum)
+		self.refreshThumb(int(clipNum))
 
 		#versDir = renDir + "/" + selection
 		#vers = os.listdir(versDir)
@@ -322,25 +395,49 @@ class kWin():
 
 
 	def __init__(self):
-		#frStill = 2137
-		#for fr in range(frStill, frStill+1):
-		self.frStart = 1753
-		self.frEnd = 2300
+# CONROL THUMBNAIL LAYOUT goes a little like this:
+		comment = """
+contols0a	thumbs0a(0,1)	thumbAt0midpoint	thumbs1a(0,1)	contols1a
+contols0b	thumbs0a(2,3)	thumbAt1midpoint	thumbs1a(2,3)	contols1b
+
+contols2a	thumbs2a(0,1)	thumbAt2midpoint	thumbs3a(0,1)	contols3a
+contols2b	thumbs2a(2,3)	thumbAt3midpoint	thumbs3b(2,3)	contols3a
+
+contols4a	thumbs4a(0,1)	thumbAt4midpoint	thumbs5a(0,1)	contols5a
+contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
+"""
 
 		self.root = Tk()
 		self.root.bind('<Escape>', lambda e: self.root.destroy())
 
 		self.frameMaster = Frame(self.root)
 		self.frameMaster.grid()
+		self.frameClips = Frame(self.frameMaster)
+		self.frameClips.grid(row=0, column=0)
 
-		self.frameCtls = Frame(self.frameMaster)
-		self.frameCtls.grid()
+		self.frameClipL = Frame(self.frameClips, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
+		self.frameClipL.grid()
 
-		self.frameCtlsPreClip = Frame(self.frameCtls)
-		self.frameCtlsPreClip.grid()
+		self.frameClipM = Frame(self.frameClips, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
+		self.frameClipM.grid(row=0, column=1)
 
-		self.frameImgs = Frame(self.frameMaster)
-		self.frameImgs.grid(row=0,column=1)
+		self.frameClipR = Frame(self.frameClips, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
+		self.frameClipR.grid(row=0, column=2)
+
+
+
+		self.frameR = Frame(self.frameMaster)
+		self.frameR.grid(row=0, column=1)
+
+		self.frameCtls = Frame(self.frameR)
+		self.frameCtls.grid(row=1, column=0)
+
+
+		#self.frameCtlsPreClip = Frame(self.frameR)
+		#self.frameCtlsPreClip.grid()
+
+		self.frameImgs = Frame(self.frameClips)
+		#self.frameImgs.grid(row=0,column=1)
 
 		# Load parms
 		self.loadParms(True)
@@ -350,13 +447,14 @@ class kWin():
 		self.thumbs = {}
 		row = 0
 
-		nClips = 2
+		self.nClips = 4
+		self.makeClipSeq()
 		BEParms = ["tx", "ty", "sc"]
 
 		self.renderedClips = os.listdir(ut.renDir)
 		self.renderedClips.sort()
 
-		self.makeParmLabelEntry("fr", self.frameCtlsPreClip, row)
+		self.makeParmLabelEntry("fr", self.frameCtls, row)
 		row += 1
 
 		self.renDirVar = StringVar()
@@ -366,20 +464,28 @@ class kWin():
 
 
 		renVersions = os.listdir(ut.renDir + "/kScope")
-		self.renDirVerChooser = OptionMenu(self.frameCtlsPreClip, self.renDirVar, *renVersions, command=self.menuRenVerChooser)
+		self.renDirVerChooser = OptionMenu(self.frameCtls, self.renDirVar, *renVersions, command=self.menuRenVerChooser)
 		self.renDirVerChooser.grid(row=row)
 
-		self.nextRenVerEntry = Entry(self.frameCtlsPreClip, width=10)
+		self.nextRenVerEntry = Entry(self.frameCtls, width=10)
 		self.nextRenVerEntry.grid(row=row, column=1)
 		row += 1
 
+		rowLR = [0, 0]
 
-		for clipNum in range(nClips):
-			frameThisClipParmsAndThumb = Frame(self.frameCtls)
-			frameThisClipParmsAndThumb.grid(row=row)
+
+		for clipNum in range(self.nClips):
+			isOdd = clipNum % 2
+			if isOdd == 0:
+				frameThisClipParmsAndThumb = Frame(self.frameClipL, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
+				print "\n"*10, "YAAAAAAA", "\n"*10
+			else:
+				frameThisClipParmsAndThumb = Frame(self.frameClipR, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
+				print "\n"*3, "NNNNNNNo, clipNum", clipNum, "\n"*3
+			frameThisClipParmsAndThumb.grid(row=rowLR[isOdd])
 
 			frameThisClipParms = Frame(frameThisClipParmsAndThumb)
-			frameThisClipParms.grid()
+			frameThisClipParms.grid(column=isOdd)
 
 			thisClipRow = 0
 			# Menus
@@ -429,24 +535,36 @@ class kWin():
 
 				#imgPath = self.getImgNumPath(clipNum, fr=2000)
 				imgPath = imgDir + "/" + midImg
-			print "\n----------- imgPath", imgPath
+			#print "\n----------- imgPath", imgPath
 			loadedImg = Image.open(imgPath)
-			loadedImg = self.scaleToHt(loadedImg, 150)
+			loadedImg = self.scaleToHt(loadedImg, 70)
 
-			photo = ImageTk.PhotoImage(loadedImg)
-			button = Button(frameThisClipParmsAndThumb, image=photo)
-			button.grid(row=0,column=1)
+			buttons = []
+			photos = []
+			frameButtons = Frame(frameThisClipParmsAndThumb)
+			frameButtons.grid(row=0, column=(1-isOdd))
+			for i in range(3):
+				photo = ImageTk.PhotoImage(loadedImg)
+				button = Button(frameButtons, image=photo)
+				#button.grid(row=i,column=isOdd)
+				button.grid()
+				buttons.append(button)
+				photos.append(photo)
 
-			self.thumbs[int(clipNum)] = {"photo":photo, "button":button}
+			self.thumbs[int(clipNum)] = {"photos":photos, "buttons":buttons}
 
-			row += 1
+			rowLR[isOdd] += 1
 
 		# Images
-		self.inImgBut = Button(self.frameImgs)
-		self.inImgBut.grid(row=0)
-		self.outImgBut = Button(self.frameImgs)
+		self.outImgBut = Button(self.frameR)
+		self.outImgBut.grid(row=0, column=0)
+		#self.outImgBut = Button(self.frameImgs)
+		self.outImgButs = []
+		for clipNum in range(self.nClips):
+			button = Button(self.frameClipM)
+			button.grid(row=clipNum)
+			self.outImgButs.append(button)
 		self.updateImages()
-		self.outImgBut.grid(row=1)
 		
 		# Key bindings
 		self.root.bind('<Alt-Return>', lambda e: self.processImg())
@@ -458,6 +576,14 @@ class kWin():
 		self.root.bind('<Shift-Left>', lambda e: self.frChange(-10))
 		self.root.bind('<Control-Right>', lambda e: self.frChange(100000))
 		self.root.bind('<Control-Left>', lambda e: self.frChange(-100000))
+
+		self.makeClipFrOfs()
+		
+		print "\n"*5
+		for clipNum in range(self.nClips):
+			fr = self.parmVal("fr")
+			ofs = self.clipSeqOfs[clipNum]
+			print "clipNum=", clipNum, ", seq=", self.clipSeq[clipNum], ", ofs", ofs, ", fr=", fr, ", fr+ofs=", fr+ofs
 
 		mainloop() 
 

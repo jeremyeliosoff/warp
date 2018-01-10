@@ -2,9 +2,9 @@
 == MON JAN 08 ==
 ================
 EMAIL:
-	Demoscene
-	Peggy
-	Anatoly
+#D#	Demoscene
+#D#	Peggy
+#D#	Anatoly
 	Maja (text message)
 
 Figure out next steps for financing
@@ -5496,14 +5496,12 @@ Buttons
 
 #Dish# have proper ren/kscope/v*** render output system, plus clk (last kscope) alias
 #D# display images in (another) standard size optimized for screen
-Rejig controls so each inSeq has thumbnail
-scale input images to standard size
-get "chrysanthemum" system started... not quite sure how this will work w different clip durations:
-	4----
-	2   --
-	6    ------
-	4        ----
-Hotkeys to nudge parms: up/down->adjust; add alt->adjust and render; add shift->bigger interval
+#Dish# Rejig controls so each inSeq has thumbnail
+#Dish# get "chrysanthemum" system started... not quite sure how this will work w different clip durations:
+#Dish# 	4----
+#Dish# 	2   --
+#Dish# 	6    ------
+#Dish# 	4        ----
 
 Sketch of final clip sequence:
 	Narr
@@ -5512,3 +5510,15 @@ Sketch of final clip sequence:
 	Mpassengers
 	Ndep
 	Mdep
+
+================
+== WED JAN 10 ==
+================
+
+Make clip menus trigger version menus 
+scale input images to standard size
+Hotkeys to nudge parms: up/down->adjust; add alt->adjust and render; add shift->bigger interval
+UI - maybe make thumnails for beginning, middle, end
+Maybe some kind of fr slider that somehow indicates where you are in timeline + where clips come in + out
+
+
