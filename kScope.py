@@ -103,14 +103,17 @@ class kWin():
 		#print "_returnCmd(): self.verUI[ren][sfx]:", self.verUI["ren"]["sfx"]
 		if focused == self.nextRenVerEntry:
 			print "_returnCmd(): \tIT'S NEXTVER!!!!!!!!"
-			#self.butVNew("ren")
+			# TODO: can we make this into a function and reuse to init renDirVerChooser?
 			vers = ut.getVersions(renDirKscope)
+			vers.sort()
+			vers.reverse()
 			nextVerInt = int(vers[0][1:4]) + 1
 			nextVerSfx = self.nextRenVerEntry.get()
 			nextVer = ("v%03d" % nextVerInt) + nextVerSfx
 			nextVerPath = renDirKscope + "/" + nextVer
 			print "\n_ctlReturnCmd(): making", nextVerPath
 			ut.mkDirSafe(nextVerPath)
+			self.setMenuItems(self.renDirVerChooser["menu"], self.renDirVar, vers, nextVer)
 		else:
 			print "NOTHIN!!!"
 		
@@ -203,7 +206,6 @@ class kWin():
 			ty = ut.mix(self.parmVal("tyB" + str(clipNum)), self.parmVal("tyE" + str(clipNum)), prog)
 			print "_processImg(): prog=", ("%05.4f" % prog), "sc=", sc, "tx=", tx, "ty=", ty
 			im = self.loadImgNum(clipNum, clipFr)
-			#sz = im.get_size()
 			res = self.res
 			#im = im.resize((int(res[0]), int(res[1])))
 			print "\nPRE------ im.get_size()", im.get_size()
@@ -342,6 +344,16 @@ class kWin():
 			self.thumbs[clipNum]["buttons"][i].configure(image=photo)
 			self.thumbs[clipNum]["photos"][i] = photo
 
+	
+	def setMenuItems(self, menu, var, items, val=None):
+		print "_setMenuItems(): items=", items
+		print "_setMenuItems(): val=", val
+		menu.delete(0, "end")
+		for s in items:
+			menu.add_command(label=s, command=lambda value=s: var.set(value))
+		if val:
+			var.set(val)
+
 	def refreshVersParm(self, numStr):
 		versParm = "version"  + numStr
 		imageParm = "image"  + numStr
@@ -353,11 +365,12 @@ class kWin():
 		self.strValToParmDic(versParm, versLast)
 		#print "-----vers:", vers
 		menu = self.parmDic[versParm]["ui"]["optionmenu"]["menu"]
-		menu.delete(0, "end")
-		for s in vers:
-			menu.add_command(label=s, command=lambda value=s: self.parmDic[versParm]["ui"]["var"].set(value))
+		self.setMenuItems(menu, self.parmDic[versParm]["ui"]["var"], vers, versLast)
+		#menu.delete(0, "end")
+		#for s in vers:
+		#	menu.add_command(label=s, command=lambda value=s: self.parmDic[versParm]["ui"]["var"].set(value))
 
-		self.parmDic[versParm]["ui"]["var"].set(versLast)
+		#self.parmDic[versParm]["ui"]["var"].set(versLast)
 
 
 	def menuImgChooser(self, selection, imgParmName, numStr):
@@ -479,6 +492,8 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 
 
 		renVersions = os.listdir(ut.renDir + "/kScope")
+		renVersions.sort()
+		renVersions.reverse()
 		self.renDirVerChooser = OptionMenu(self.frameCtls, self.renDirVar, *renVersions, command=self.menuRenVerChooser)
 		self.renDirVerChooser.grid(row=row)
 

@@ -5517,7 +5517,7 @@ Sketch of final clip sequence:
 
 #Dish# Make clip menus trigger version menus 
 #Dish# scale input images to standard size
-when make new output dir, update menu + select new
+#Dish# when make new output dir, update menu + select new
 Hotkeys to nudge parms: up/down->adjust; add alt->adjust and render; add shift->bigger interval
 frChange hotkeys only work when not focused on a field
 UI - maybe make thumnails for beginning, middle, end
