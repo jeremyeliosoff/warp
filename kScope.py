@@ -18,8 +18,10 @@ clipDic = {
 	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
 	"newArrBUQ_GOODHR_vig":{"range":(600,1275)},
 	"sub_comingHR_vig":{"range":(1750,2300)},
+	"sub_coming_vig":{"range":(1750,2300)},
 	"sub_goingHR_vig":{"range":(1,1245)},
 	"sub_goingHR_vig_cp":{"range":(1750,2300)},
+	"newDepMtRDarkHR_vig":{"range":(1,500)},
 }
 
 for clip,dic in clipDic.items():
@@ -183,18 +185,7 @@ class kWin():
 		renImgs = os.listdir(imgDir)
 		renImgs.sort()
 
-		im = pygame.image.load(imgDir + "/" + renImgs[10])
-		sz = im.get_size()
-		#im = Image.open(self.inImgPath)
-		imAr = pygame.surfarray.pixels3d(im)
-		#print "imArF", imArF
-		#print "im", im
-		imArF = imAr.astype(np.float32)
-
-		#imOutF = imArF.astype('float')
-		imArOutF = np.zeros(imArF.shape, dtype=np.float)
-		imOut = im.copy()
-		imOut.fill(0)
+		imOut = pygame.Surface(self.res, 24)
 		imBlank = imOut.copy()
 
 		nRots = 4
@@ -212,15 +203,21 @@ class kWin():
 			ty = ut.mix(self.parmVal("tyB" + str(clipNum)), self.parmVal("tyE" + str(clipNum)), prog)
 			print "_processImg(): prog=", ("%05.4f" % prog), "sc=", sc, "tx=", tx, "ty=", ty
 			im = self.loadImgNum(clipNum, clipFr)
-			sz = im.get_size()
+			#sz = im.get_size()
+			res = self.res
+			#im = im.resize((int(res[0]), int(res[1])))
+			print "\nPRE------ im.get_size()", im.get_size()
+			im = pygame.transform.scale(im, (res[0], res[1]))
+			print "\nPOS------ im.get_size()", im.get_size()
+			#self.res
 			for i in range(nRots):
 				imMod = imBlank.copy()
 				imCp = im.copy()
-				print "\n\n\n***** sc", sc, "prog", prog, "rg", rg
-				imCp = pygame.transform.scale(imCp, (int(sz[0]*sc), int(sz[1]*sc)))
+				#print "\n\n\n***** sc", sc, "prog", prog, "rg", rg
+				imCp = pygame.transform.scale(imCp, (int(res[0]*sc), int(res[1]*sc)))
 
-				txAbs = tx * sz[0]
-				tyAbs = ty * sz[1]
+				txAbs = tx * res[0]
+				tyAbs = ty * res[1]
 				txRem = txAbs % 1
 				tyRem = tyAbs % 1
 				#print "\n----tx", tx
@@ -236,7 +233,7 @@ class kWin():
 						#print "----------k", k
 
 						thisImCp.fill((255*k, 255*k, 255*k), None, pygame.BLEND_MULT)
-						imMod.blit(thisImCp, (txInt, tyInt), (0, 0, sz[0], sz[1]), pygame.BLEND_ADD)
+						imMod.blit(thisImCp, (txInt, tyInt), (0, 0, res[0], res[1]), pygame.BLEND_ADD)
 
 				imCpSzOld = imMod.get_size()
 				imMod = pygame.transform.rotate(imMod, (i+(.5*(clipNum % 2)) + .002*fr)*360.0/nRots)
@@ -244,7 +241,7 @@ class kWin():
 				imCpSzNew = imMod.get_size()
 				xStart = imCpSzOld[0] - imCpSzNew[0]
 				yStart = imCpSzOld[1] - imCpSzNew[1]
-				imOut.blit(imMod, (0, 0), (-xStart/2, -yStart/2, sz[0], sz[1]), pygame.BLEND_ADD)
+				imOut.blit(imMod, (0, 0), (-xStart/2, -yStart/2, res[0], res[1]), pygame.BLEND_ADD)
 
 		print "_processImg(): saving", self.outImgPath, "..."
 		pygame.image.save(imOut, self.outImgPath)
@@ -299,6 +296,7 @@ class kWin():
 
 	def strValToParmDic(self, parmName, val):
 		if parmName in self.parmDic.keys():
+			print "_strValToParmDic(): parmName=", parmName, ", val=", val
 			typ = self.parmDic[parmName]["type"]
 			if typ == "int":
 				self.parmDic[parmName]["val"] = int(val)
@@ -308,10 +306,11 @@ class kWin():
 			else:
 				self.parmDic[parmName]["val"] = val
 				
-	def saveUIToParmsAndFile(self, pn, sv):
-		val = sv.get()
-		self.strValToParmDic(pn, val)
-		print "_saveUIToParmsAndFile(): pn", pn, "sv", sv, "val", val
+	def saveUIToParmsAndFile(self, pn=None, sv=None):
+		print "_saveUIToParmsAndFile(): pn", pn, "sv", sv
+		if not pn == None:
+			val = sv.get()
+			self.strValToParmDic(pn, val)
 		with open(parmFile, "w") as f:
 			for parmName in self.parmLs:
 				parmVal = self.parmDic[parmName]["val"]
@@ -333,34 +332,48 @@ class kWin():
 			#imgPath = self.getImgNumPath(clipNum, fr=2000)
 			imgPath = imgDir + "/" + midImg
 		#print "\n----------- imgPath", imgPath
-		loadedImg = Image.open(imgPath)
+		loadedImg = self.safeLoadImg(imgPath)
 		loadedImg = self.scaleToHt(loadedImg, displayHt/3)
 
 		photo = ImageTk.PhotoImage(loadedImg)
 
-		print "\n\n******* self.thumbs:", self.thumbs, "clipNum", clipNum
+		#print "\n\n******* self.thumbs:", self.thumbs, "clipNum", clipNum
 		for i in range(3):
 			self.thumbs[clipNum]["buttons"][i].configure(image=photo)
 			self.thumbs[clipNum]["photos"][i] = photo
+
+	def refreshVersParm(self, numStr):
+		versParm = "version"  + numStr
+		imageParm = "image"  + numStr
+		imageVal = self.parmVal(imageParm)
+		#print "\n*****Is image, versParm=", versParm
+		vers = os.listdir(ut.renDir + "/" + imageVal)
+		vers.sort()
+		versLast = vers[-1]
+		self.strValToParmDic(versParm, versLast)
+		#print "-----vers:", vers
+		menu = self.parmDic[versParm]["ui"]["optionmenu"]["menu"]
+		menu.delete(0, "end")
+		for s in vers:
+			menu.add_command(label=s, command=lambda value=s: self.parmDic[versParm]["ui"]["var"].set(value))
+
+		self.parmDic[versParm]["ui"]["var"].set(versLast)
 
 
 	def menuImgChooser(self, selection, imgParmName, numStr):
 		#print "_menuImgChooser(): self.imgChooserVar.get()", self.imgChooserVar.get(), "selection", selection, "numStr", numStr
 		print "_menuImgChooser(): imgParmName", imgParmName, "selection", selection, "numStr", numStr
 		self.strValToParmDic(imgParmName, selection)
+
+		if imgParmName[:5] == "image":
+			self.refreshVersParm(numStr)
+
+
+
 		clipNum = imgParmName[-1]
 		#im = self.loadImgNum(clipNum)
 		self.refreshThumb(int(clipNum))
-
-		#versDir = renDir + "/" + selection
-		#vers = os.listdir(versDir)
-		#vers.sort()
-		#verLatest = vers[-1]
-		#print "_menuImgChooser(): verLatest=", verLatest
-		#self.verChooserVar.set(verLatest)
-		#self.strValToParmDic("image" + numStr, selection)
-		#self.strValToParmDic("version" + numStr, verLatest)
-		#self.updateImages()
+		self.saveUIToParmsAndFile()
 
 	def menuVerChooser(self, selection):
 		print "_menuImgChooser(): self.verChooserVar.get()", self.verChooserVar.get(), "selection", selection
@@ -406,6 +419,8 @@ contols2b	thumbs2a(2,3)	thumbAt3midpoint	thumbs3b(2,3)	contols3a
 contols4a	thumbs4a(0,1)	thumbAt4midpoint	thumbs5a(0,1)	contols5a
 contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 """
+
+		self.res = (960, 540)
 
 		self.root = Tk()
 		self.root.bind('<Escape>', lambda e: self.root.destroy())
@@ -475,6 +490,7 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 
 
 		for clipNum in range(self.nClips):
+			clipNumStr = str(clipNum)
 			isOdd = clipNum % 2
 			if isOdd == 0:
 				frameThisClipParmsAndThumb = Frame(self.frameClipL, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
@@ -488,9 +504,10 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 			frameThisClipParms.grid(column=isOdd)
 
 			thisClipRow = 0
+
 			# Menus
 			for menuParm in ["image", "version"]:
-				imgParmName = menuParm + str(clipNum)
+				imgParmName = menuParm + clipNumStr
 				label = Label(frameThisClipParms, text=imgParmName)
 				label.grid(row=thisClipRow)
 
@@ -498,26 +515,26 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 				clipChooserVar = StringVar(frameThisClipParms)
 				clipChooserVar.set(clipChooserVal)
 			
-				if menuParm == "image":
-					selections = self.renderedClips
-				else:
-					selections = os.listdir(ut.renDir + "/" + self.parmVal("image0"))
-					selections.sort()
+				selections = self.renderedClips # To be replaced if this is "version"
 				clipChooser = OptionMenu(frameThisClipParms, clipChooserVar, *selections,
-							command=lambda selection=imgParmName, imgParmName=imgParmName, numStr=str(clipNum) : self.menuImgChooser(selection, imgParmName, numStr))
+							command=lambda selection=imgParmName, imgParmName=imgParmName, numStr=clipNumStr : self.menuImgChooser(selection, imgParmName, numStr))
 				clipChooser.grid(row=thisClipRow, column=1)
 				
 				thisClipRow +=1
 
 				self.parmDic[imgParmName]["ui"] = {
 					"label": label,
+					"optionmenu": clipChooser,
 					"var": clipChooserVar,
 					}
+
+				if menuParm == "version":
+					self.refreshVersParm(clipNumStr)
 
 			# Parms like txB0, txE0, tyB0....
 			for BEParm in BEParms:
 				for BE in "BE":
-					parmName = BEParm + BE + str(clipNum)
+					parmName = BEParm + BE + clipNumStr
 					self.makeParmLabelEntry(parmName, frameThisClipParms, thisClipRow)
 					thisClipRow += 1
 
@@ -536,7 +553,7 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 				#imgPath = self.getImgNumPath(clipNum, fr=2000)
 				imgPath = imgDir + "/" + midImg
 			#print "\n----------- imgPath", imgPath
-			loadedImg = Image.open(imgPath)
+			loadedImg = self.safeLoadImg(imgPath)
 			loadedImg = self.scaleToHt(loadedImg, 70)
 
 			buttons = []

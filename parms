@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 446
+val 3987
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
 
 image
-val newDepMtRDarkHR_vig
+val sub_comingPplHR_vig
 
 dbImg1
 val bg_ctest
@@ -40,10 +40,10 @@ renVer
 val v000
 
 frStart
-val 1
+val 3900
 
 frEnd
-val 500
+val 4399
 
 doGen
 val 1
