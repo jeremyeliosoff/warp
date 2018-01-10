@@ -77,6 +77,8 @@ class kWin():
 
 	# Hotkeys
 	def frChange(self, inc):
+		focused = self.frameMaster.focus_get()
+		print "\n --------- focused", focused, "\n"
 		fr = ut.clamp(self.parmVal("fr") + inc, 0, self.frRange)
 		#fr = self.parmVal("fr") + inc
 		print "_frChange(): fr =", fr
