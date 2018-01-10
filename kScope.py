@@ -138,7 +138,7 @@ class kWin():
 		renVer = self.parmVal("renVer")
 		self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
 		loadedImg = self.safeLoadImg(self.outImgPath)
-		loadedImgMain = self.scaleToHt(loadedImg, displayHt*1.5)
+		loadedImgMain = self.scaleToHt(loadedImg, displayHt*2)
 		self.outPhoto = ImageTk.PhotoImage(loadedImgMain)
 		#self.outPhoto.resize(100,100)
 		self.outImgBut.configure(image=self.outPhoto)
