@@ -76,28 +76,55 @@ class kWin():
 		return fr + ofs
 
 	# Hotkeys
+	def hkEsc(self):
+		focused = self.frameMaster.focus_get()
+		if focused == self.frameMaster:
+			self.root.destroy()
+		else:
+			self.frameMaster.focus_set()
+
+		
+		self.root.bind('<Escape>', lambda e: self.root.destroy())
+
+
+	def valNudge(self, inc, doRen=False):
+		focused = self.frameMaster.focus_get()
+		parmName = self.entryDic[focused]
+		print "_valNudge(): parmName=", parmName, "inc=", inc, "doRen=", doRen
+		curVal = self.parmVal(parmName)
+		#self.strValToParmDic(parmName, curVal + inc)
+		self.parmDic[parmName]["ui"]["var"].set(curVal + inc)
+		
+		if doRen:
+			self.processImg()
+
+
 	def frChange(self, inc):
 		focused = self.frameMaster.focus_get()
 		print "\n --------- focused", focused, "\n"
-		fr = ut.clamp(self.parmVal("fr") + inc, 0, self.frRange)
-		#fr = self.parmVal("fr") + inc
-		print "_frChange(): fr =", fr
-		self.strValToParmDic("fr", fr)
-		var = self.parmDic["fr"]["ui"]["var"]
-		var.set(str(fr))
-		self.saveUIToParmsAndFile("fr", var)
-		self.updateImages()
-		activeClipNums = self.getActiveClipNums()
-		print "_frChange(): self.clipSeq:"
-		for clipNum in range(len(self.clipSeq)):
-			clip = self.clipSeq[clipNum]
-			print "\t", clipNum, ":", clip, "range", clipDic[clip]["range"], "len", clipDic[clip]["len"]
-		print "_frChange(): activeClipNums:"
-		for clipNum in activeClipNums:
-			ofs = self.clipSeqOfs[clipNum]
-			frWOfs = fr + ofs
-			print "\t", clipNum, ":", self.clipSeq[clipNum], "ofs", ofs, "frWOfs=", frWOfs
-		print "_frChange(): END\n"
+		print "self.entryDic.keys()", self.entryDic.keys()
+		if focused in self.entryDic.keys():
+			print "_frChange(): not changing, focus on an entry."
+		else:
+			fr = ut.clamp(self.parmVal("fr") + inc, 0, self.frRange)
+			#fr = self.parmVal("fr") + inc
+			print "_frChange(): fr =", fr
+			self.strValToParmDic("fr", fr)
+			var = self.parmDic["fr"]["ui"]["var"]
+			var.set(str(fr))
+			self.saveUIToParmsAndFile("fr", var)
+			self.updateImages()
+			activeClipNums = self.getActiveClipNums()
+			print "_frChange(): self.clipSeq:"
+			for clipNum in range(len(self.clipSeq)):
+				clip = self.clipSeq[clipNum]
+				print "\t", clipNum, ":", clip, "range", clipDic[clip]["range"], "len", clipDic[clip]["len"]
+			print "_frChange(): activeClipNums:"
+			for clipNum in activeClipNums:
+				ofs = self.clipSeqOfs[clipNum]
+				frWOfs = fr + ofs
+				print "\t", clipNum, ":", self.clipSeq[clipNum], "ofs", ofs, "frWOfs=", frWOfs
+			print "_frChange(): END\n"
 
 	def ctlReturnCmd(self):
 		focused = self.frameClips.focus_get()
@@ -325,26 +352,24 @@ class kWin():
 	def refreshThumb(self, clipNum):
 		imgDir = self.getImgNumDir(clipNum)
 		renImgs = os.listdir(imgDir)
-		#print "renImgs:", renImgs
-		if renImgs == []:
-			imgPath = errorImgPath
-		else:
-			# Get ren fr mid-way thru seq.
-			renImgs.sort()
-			midImg = renImgs[len(renImgs)/2]
+		# Get ren fr mid-way thru seq.
+		renImgs.sort()
+		#thumbImgs = [renImgs[len(renImgs)/4], renImgs[len(renImgs)/2], renImgs[(3*len(renImgs))/4]]
 
-			#imgPath = self.getImgNumPath(clipNum, fr=2000)
-			imgPath = imgDir + "/" + midImg
-		#print "\n----------- imgPath", imgPath
-		loadedImg = self.safeLoadImg(imgPath)
-		loadedImg = self.scaleToHt(loadedImg, displayHt/3)
-
-		photo = ImageTk.PhotoImage(loadedImg)
-
-		#print "\n\n******* self.thumbs:", self.thumbs, "clipNum", clipNum
+		self.thumbs[clipNum]["photos"] = []
 		for i in range(3):
+			# Render 25%, 50%, 75% thru seq
+			if renImgs == []:
+				imgPath = errorImgPath
+			else:
+				thumbImg = renImgs[((1+i)*len(renImgs))/4]
+				imgPath = imgDir + "/" + thumbImg
+			loadedImg = self.safeLoadImg(imgPath)
+			loadedImg = self.scaleToHt(loadedImg, displayHt/3)
+
+			photo = ImageTk.PhotoImage(loadedImg)
+			self.thumbs[clipNum]["photos"].append(photo)
 			self.thumbs[clipNum]["buttons"][i].configure(image=photo)
-			self.thumbs[clipNum]["photos"][i] = photo
 
 	
 	def setMenuItems(self, menu, var, items, val=None):
@@ -421,6 +446,8 @@ class kWin():
 			"var": var,
 			}
 
+		self.entryDic[entry] = parmName
+
 
 	def __init__(self):
 # CONROL THUMBNAIL LAYOUT goes a little like this:
@@ -436,9 +463,11 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 """
 
 		self.res = (960, 540)
+		self.entryDic = {}
 
 		self.root = Tk()
-		self.root.bind('<Escape>', lambda e: self.root.destroy())
+		#self.root.bind('<Escape>', lambda e: self.root.destroy())
+		self.root.bind('<Escape>', lambda e: self.hkEsc())
 
 		self.frameMaster = Frame(self.root)
 		self.frameMaster.grid()
@@ -500,6 +529,8 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 		self.renDirVerChooser.grid(row=row)
 
 		self.nextRenVerEntry = Entry(self.frameCtls, width=10)
+		#self.entries.append(self.nextRenVerEntry)
+		self.entryDic[self.nextRenVerEntry] = "renVerOut"
 		self.nextRenVerEntry.grid(row=row, column=1)
 		row += 1
 
@@ -557,35 +588,16 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 
 			# Thumbnail
 
-			imgDir = self.getImgNumDir(clipNum)
-			renImgs = os.listdir(imgDir)
-			#print "renImgs:", renImgs
-			if renImgs == []:
-				imgPath = errorImgPath
-			else:
-				# Get ren fr mid-way thru seq.
-				renImgs.sort()
-				midImg = renImgs[len(renImgs)/2]
-
-				#imgPath = self.getImgNumPath(clipNum, fr=2000)
-				imgPath = imgDir + "/" + midImg
-			#print "\n----------- imgPath", imgPath
-			loadedImg = self.safeLoadImg(imgPath)
-			loadedImg = self.scaleToHt(loadedImg, 70)
-
 			buttons = []
-			photos = []
 			frameButtons = Frame(frameThisClipParmsAndThumb)
 			frameButtons.grid(row=0, column=(1-isOdd))
 			for i in range(3):
-				photo = ImageTk.PhotoImage(loadedImg)
-				button = Button(frameButtons, image=photo)
-				#button.grid(row=i,column=isOdd)
+				button = Button(frameButtons)
 				button.grid()
 				buttons.append(button)
-				photos.append(photo)
+			self.thumbs[int(clipNum)] = {"buttons":buttons}
 
-			self.thumbs[int(clipNum)] = {"photos":photos, "buttons":buttons}
+			self.refreshThumb(int(clipNum))
 
 			rowLR[isOdd] += 1
 
@@ -610,6 +622,15 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 		self.root.bind('<Shift-Left>', lambda e: self.frChange(-10))
 		self.root.bind('<Control-Right>', lambda e: self.frChange(100000))
 		self.root.bind('<Control-Left>', lambda e: self.frChange(-100000))
+		self.root.bind('<Up>', lambda e: self.valNudge(.01))
+		self.root.bind('<Down>', lambda e: self.valNudge(-.01))
+		self.root.bind('<Shift-Up>', lambda e: self.valNudge(.1))
+		self.root.bind('<Shift-Down>', lambda e: self.valNudge(-.1))
+		self.root.bind('<Alt-Up>', lambda e: self.valNudge(.01, True))
+		self.root.bind('<Alt-Down>', lambda e: self.valNudge(-.01, True))
+		self.root.bind('<Alt-Shift-Up>', lambda e: self.valNudge(.1, True))
+		self.root.bind('<Alt-Shift-Down>', lambda e: self.valNudge(-.1, True))
+
 
 		self.makeClipFrOfs()
 		
