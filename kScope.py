@@ -113,7 +113,7 @@ class kWin():
 			var = self.parmDic["fr"]["ui"]["var"]
 			var.set(str(fr))
 			self.saveUIToParmsAndFile("fr", var)
-			self.updateImages()
+			self.updateOutImg()
 			activeClipNums = self.getActiveClipNums()
 			print "_frChange(): self.clipSeq:"
 			for clipNum in range(len(self.clipSeq)):
@@ -163,23 +163,61 @@ class kWin():
 			loadedImg = Image.open(errorImgPath)
 		return loadedImg
 
-	def updateImages(self):
-		print "_updateImages(): BEGIN"
-		ff = "%05d" % self.parmVal("fr")
+	def getOutImgPath(self, fr):
+		ff = "%05d" % fr
 		self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
 			self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
-		self.outImgPath = warpDir + "/ren/testImg/testImg." + ff + ".png"
 		renVer = self.parmVal("renVer")
-		self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
+		#self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
+		#return self.safeLoadImg(self.outImgPath)
+		return renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
+	
+	def updateOutImg(self):
+		print "_updateImages(): BEGIN"
+		fr = self.parmVal("fr")
+		#ff = "%05d" % fr
+		#self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
+		#	self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
+		#self.outImgPath = warpDir + "/ren/testImg/testImg." + ff + ".png"
+		#renVer = self.parmVal("renVer")
+		#self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
+		#loadedImg = self.safeLoadImg(self.outImgPath)
+		self.outImgPath = self.getOutImgPath(fr)
 		loadedImg = self.safeLoadImg(self.outImgPath)
 		loadedImgMain = self.scaleToHt(loadedImg, displayHt*2)
 		self.outPhoto = ImageTk.PhotoImage(loadedImgMain)
 		#self.outPhoto.resize(100,100)
 		self.outImgBut.configure(image=self.outPhoto)
-		loadedImgClipTmp = self.scaleToHt(loadedImg, displayHt*.55)
-		self.clipPhotoTmp = ImageTk.PhotoImage(loadedImgClipTmp)
-		for i in range(self.nClips):
-			self.outImgButs[i].configure(image=self.clipPhotoTmp)
+
+	def updateClipImgs(self):
+		self.clipPhotosTmp = []
+		for clipNum in range(self.nClips):
+
+			# Get ren mid fr
+			#imgDir = self.getImgNumDir(clipNum)
+			#renImgs = os.listdir(imgDir)
+			#renImgs.sort()
+			clip = self.clipSeq[clipNum]
+			rg = clipDic[clip]["range"]
+			mid = (rg[0] + rg[1])/2
+			ofs = self.clipSeqOfs[clipNum]
+			loadedImg = self.safeLoadImg(self.getOutImgPath(mid-ofs))
+
+			#print "_updateImages(): BEGIN"
+			#ff = "%05d" % self.parmVal("fr")
+			#self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
+			#	self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
+			#self.outImgPath = warpDir + "/ren/testImg/testImg." + ff + ".png"
+			#renVer = self.parmVal("renVer")
+			#self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
+			#loadedImg = self.safeLoadImg(imgPath)
+			loadedImgMain = self.scaleToHt(loadedImg, displayHt*2)
+			self.outPhoto = ImageTk.PhotoImage(loadedImgMain)
+			#self.outPhoto.resize(100,100)
+			self.outImgBut.configure(image=self.outPhoto)
+			loadedImgClipTmp = self.scaleToHt(loadedImg, displayHt*.55)
+			self.clipPhotosTmp.append(ImageTk.PhotoImage(loadedImgClipTmp))
+			self.outImgButs[clipNum].configure(image=self.clipPhotosTmp[clipNum])
 		print "_updateImages(): set self.inImgPath =", self.inImgPath
 		print "_updateImages(): set self.outImgPath =", self.outImgPath
 
@@ -210,12 +248,7 @@ class kWin():
 		return pygame.image.load(imgPath)
 		
 	def processImg(self):
-		self.updateImages()
-
-		# Use first img from first clip as template
-		imgDir = self.getImgNumDir(0)
-		renImgs = os.listdir(imgDir)
-		renImgs.sort()
+		self.updateOutImg()
 
 		imOut = pygame.Surface(self.res, 24)
 		imBlank = imOut.copy()
@@ -276,7 +309,8 @@ class kWin():
 
 		print "_processImg(): saving", self.outImgPath, "..."
 		pygame.image.save(imOut, self.outImgPath)
-		self.updateImages()
+		self.updateOutImg()
+		self.updateClipImgs()
 		#im1.save(self.outImgPath)
 
 	def loadParms(self, defaults):
@@ -350,11 +384,10 @@ class kWin():
 			
 
 	def refreshThumb(self, clipNum):
+		# Get ren fr at start, mid, end
 		imgDir = self.getImgNumDir(clipNum)
 		renImgs = os.listdir(imgDir)
-		# Get ren fr mid-way thru seq.
 		renImgs.sort()
-		#thumbImgs = [renImgs[len(renImgs)/4], renImgs[len(renImgs)/2], renImgs[(3*len(renImgs))/4]]
 
 		self.thumbs[clipNum]["photos"] = []
 		for i in range(3):
@@ -362,7 +395,8 @@ class kWin():
 			if renImgs == []:
 				imgPath = errorImgPath
 			else:
-				thumbImg = renImgs[((1+i)*len(renImgs))/4]
+				#thumbImg = renImgs[((1+i)*len(renImgs))/4]
+				thumbImg = renImgs[int([.2,.5,.8][i]*len(renImgs))]
 				imgPath = imgDir + "/" + thumbImg
 			loadedImg = self.safeLoadImg(imgPath)
 			loadedImg = self.scaleToHt(loadedImg, displayHt/3)
@@ -422,7 +456,7 @@ class kWin():
 		print "_menuRenImgChooser(): self.renDirVar.get()", self.renDirVar.get(), "selection", selection
 		#self.strValToParmDic("renVer", selection)
 		self.saveUIToParmsAndFile("renVer", self.renDirVar)
-		self.updateImages()
+		self.updateClipImgs()
 
 	def makeParmLabelEntry(self, parmName, frame, row):
 		parmVal = self.parmDic[parmName]["val"]
@@ -502,12 +536,16 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 		self.loadParms(True)
 		self.loadParms(False)
 
+
+		# Set up clips
+		self.nClips = 4
+		self.makeClipSeq()
+		self.makeClipFrOfs()
+		
 		# Controls
 		self.thumbs = {}
 		row = 0
 
-		self.nClips = 4
-		self.makeClipSeq()
 		BEParms = ["tx", "ty", "sc"]
 
 		self.renderedClips = os.listdir(ut.renDir)
@@ -610,7 +648,8 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 			button = Button(self.frameClipM)
 			button.grid(row=clipNum)
 			self.outImgButs.append(button)
-		self.updateImages()
+		self.updateOutImg()
+		self.updateClipImgs()
 		
 		# Key bindings
 		self.root.bind('<Alt-Return>', lambda e: self.processImg())
@@ -632,8 +671,6 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 		self.root.bind('<Alt-Shift-Down>', lambda e: self.valNudge(-.1, True))
 
 
-		self.makeClipFrOfs()
-		
 		print "\n"*5
 		for clipNum in range(self.nClips):
 			fr = self.parmVal("fr")
