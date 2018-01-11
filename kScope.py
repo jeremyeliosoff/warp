@@ -15,8 +15,8 @@ errorImgPath = ut.imgDir + "/controls/error.png"
 displayHt = 200
 
 clipDic = {
-	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
-	"newArrBUQ_GOODHR_vig":{"range":(600,1275)},
+	"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
+	#"newArrBUQ_GOODHR_vig":{"range":(600,1275)},
 	"sub_comingHR_vig":{"range":(1750,2300)},
 	"sub_coming_vig":{"range":(1750,2300)},
 	"sub_goingHR_vig":{"range":(1,1245)},
@@ -165,8 +165,6 @@ class kWin():
 
 	def getOutImgPath(self, fr):
 		ff = "%05d" % fr
-		self.inImgPath = warpDir + "/ren/" + self.parmVal("image0") + "/" + \
-			self.parmVal("version0") + "/ren/ALL/ren.ALL." + ff + ".png"
 		renVer = self.parmVal("renVer")
 		#self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
 		#return self.safeLoadImg(self.outImgPath)
@@ -201,6 +199,9 @@ class kWin():
 			rg = clipDic[clip]["range"]
 			mid = (rg[0] + rg[1])/2
 			ofs = self.clipSeqOfs[clipNum]
+			outFr = mid-ofs
+			print "\n\n---------_updateClipImgs(): clip", clip, ": rg=", rg, "loading outFr", outFr, "corresponding to clip mid", mid
+			print
 			loadedImg = self.safeLoadImg(self.getOutImgPath(mid-ofs))
 
 			#print "_updateImages(): BEGIN"
@@ -212,13 +213,12 @@ class kWin():
 			#self.outImgPath = renDirKscope + "/" + renVer + "/" + renVer + "." + ff + ".png"
 			#loadedImg = self.safeLoadImg(imgPath)
 			loadedImgMain = self.scaleToHt(loadedImg, displayHt*2)
-			self.outPhoto = ImageTk.PhotoImage(loadedImgMain)
+			#self.outPhoto = ImageTk.PhotoImage(loadedImgMain)
 			#self.outPhoto.resize(100,100)
-			self.outImgBut.configure(image=self.outPhoto)
+			#self.outImgBut.configure(image=self.outPhoto)
 			loadedImgClipTmp = self.scaleToHt(loadedImg, displayHt*.55)
 			self.clipPhotosTmp.append(ImageTk.PhotoImage(loadedImgClipTmp))
 			self.outImgButs[clipNum].configure(image=self.clipPhotosTmp[clipNum])
-		print "_updateImages(): set self.inImgPath =", self.inImgPath
 		print "_updateImages(): set self.outImgPath =", self.outImgPath
 
 	def processImgSeq(self):
@@ -397,6 +397,7 @@ class kWin():
 			else:
 				#thumbImg = renImgs[((1+i)*len(renImgs))/4]
 				thumbImg = renImgs[int([.2,.5,.8][i]*len(renImgs))]
+				print "\n_refreshThumb(): clip=", self.clipSeq[clipNum], "thumbImg=", thumbImg
 				imgPath = imgDir + "/" + thumbImg
 			loadedImg = self.safeLoadImg(imgPath)
 			loadedImg = self.scaleToHt(loadedImg, displayHt/3)
@@ -580,10 +581,8 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 			isOdd = clipNum % 2
 			if isOdd == 0:
 				frameThisClipParmsAndThumb = Frame(self.frameClipL, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
-				print "\n"*10, "YAAAAAAA", "\n"*10
 			else:
 				frameThisClipParmsAndThumb = Frame(self.frameClipR, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
-				print "\n"*3, "NNNNNNNo, clipNum", clipNum, "\n"*3
 			frameThisClipParmsAndThumb.grid(row=rowLR[isOdd])
 
 			frameThisClipParms = Frame(frameThisClipParmsAndThumb)

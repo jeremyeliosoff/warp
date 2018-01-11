@@ -5520,7 +5520,7 @@ Sketch of final clip sequence:
 #Dish# when make new output dir, update menu + select new
 #D# frChange hotkeys only work when not focused on a field
 #D# Hotkeys to nudge parms: up/down->adjust; add alt->adjust and render; add shift->bigger interval
-UI - maybe make thumnails for beginning, middle, end
+#Dish# UI - maybe make thumnails for beginning, middle, end
 Maybe some kind of fr slider that somehow indicates where you are in timeline + where clips come in + out
 
 
