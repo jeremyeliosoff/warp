@@ -5521,6 +5521,31 @@ Sketch of final clip sequence:
 #D# frChange hotkeys only work when not focused on a field
 #D# Hotkeys to nudge parms: up/down->adjust; add alt->adjust and render; add shift->bigger interval
 #Dish# UI - maybe make thumnails for beginning, middle, end
+
+
+================
+== THU JAN 11 ==
+================
+
+Display info perclip, eg: "srcRange:3900-4399 (500fr), outRange: 1238-1737"
+Use "range" in dic to set FML thumbs
+One escape should close when entry is not focused
 Maybe some kind of fr slider that somehow indicates where you are in timeline + where clips come in + out
 
 
+LAJOIE HOME QUESTIONS
+Laundry hookup?
+Roof access?
+How many balconies?
+Storage?
+
+
+D10.1 b) HEAT SYSTEM repairs
+D11 There have been pests/vermin/"insectes et animaux nuisibles"?
+D12 No building inspection?
+
+Other brokers
+New mortgage rules
+you have to qulalify for the 5 year postit rate (the rate they put off)
+
+ffmpeg -i newArrBUQ_GOOD.MTS -acodec libmp3lame -metadata TITLE="Name of Song" test.mp3

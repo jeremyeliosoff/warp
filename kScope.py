@@ -15,8 +15,8 @@ errorImgPath = ut.imgDir + "/controls/error.png"
 displayHt = 200
 
 clipDic = {
-	"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
-	#"newArrBUQ_GOODHR_vig":{"range":(600,1275)},
+	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
+	"newArrBUQ_GOODHR_vig":{"range":(500,1000)},
 	"sub_comingHR_vig":{"range":(1750,2300)},
 	"sub_coming_vig":{"range":(1750,2300)},
 	"sub_goingHR_vig":{"range":(1,1245)},
@@ -143,6 +143,7 @@ class kWin():
 			print "\n_ctlReturnCmd(): making", nextVerPath
 			ut.mkDirSafe(nextVerPath)
 			self.setMenuItems(self.renDirVerChooser["menu"], self.renDirVar, vers, nextVer)
+			self.saveUIToParmsAndFile("renVer", self.renDirVar)
 		else:
 			print "NOTHIN!!!"
 		
@@ -457,7 +458,7 @@ class kWin():
 		print "_menuRenImgChooser(): self.renDirVar.get()", self.renDirVar.get(), "selection", selection
 		#self.strValToParmDic("renVer", selection)
 		self.saveUIToParmsAndFile("renVer", self.renDirVar)
-		self.updateClipImgs()
+		self.updateOutImg()
 
 	def makeParmLabelEntry(self, parmName, frame, row):
 		parmVal = self.parmDic[parmName]["val"]
