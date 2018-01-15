@@ -485,6 +485,14 @@ class kWin():
 		self.entryDic[entry] = parmName
 
 
+	def setLabelText(self, clipNum)
+		clip = self.clipSeq[clipNum]
+		rng = clipDic[clip]["range"]
+		ofs = self.clipSeqOfs[clipNum]
+		text="Clip %d, ranges: src: %d-%d, out: %d-%d" % ((clipNum, ) + rng + (rng[0] - ofs, rng[1] - ofs))
+		self.clipInfoLabels[clipNum].configure(text=text)
+
+
 	def __init__(self):
 # CONROL THUMBNAIL LAYOUT goes a little like this:
 		comment = """
@@ -540,7 +548,7 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 
 
 		# Set up clips
-		self.nClips = 4
+		self.nClips = 6
 		self.makeClipSeq()
 		self.makeClipFrOfs()
 		
@@ -576,7 +584,10 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 
 		rowLR = [0, 0]
 
+		self.clipInfoLabels = [None] * self.nClips
+		print "\n\n88888888888 self.clipInfoLabels", self.clipInfoLabels
 
+		# Controls per clip
 		for clipNum in range(self.nClips):
 			clipNumStr = str(clipNum)
 			isOdd = clipNum % 2
@@ -586,10 +597,29 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 				frameThisClipParmsAndThumb = Frame(self.frameClipR, highlightcolor="red", highlightthickness=1,highlightbackground="green",bd=1)
 			frameThisClipParmsAndThumb.grid(row=rowLR[isOdd])
 
-			frameThisClipParms = Frame(frameThisClipParmsAndThumb)
-			frameThisClipParms.grid(column=isOdd)
+			frameThisClipInfoAndParms = Frame(frameThisClipParmsAndThumb)
+			frameThisClipInfoAndParms.grid(column=isOdd)
+
+			# Info
+
+			#clip = self.clipSeq[clipNum]
+			#rng = clipDic[clip]["range"]
+			#ofs = self.clipSeqOfs[clipNum]
+
+			#label = Label(frameThisClipInfoAndParms,
+			#	text=("Clip %d, ranges: src: %d-%d, out: %d-%d" % ((clipNum, ) + rng + (rng[0] - ofs, rng[1] - ofs))))
+			label = Label(frameThisClipInfoAndParms)
+			label.grid()
+			self.clipInfoLabels[clipNum] = label
+			self.setLabelText(clipNum)
+
+
+			frameThisClipParms = Frame(frameThisClipInfoAndParms)
+			frameThisClipParms.grid(row=1, column=0)
 
 			thisClipRow = 0
+
+
 
 			# Menus
 			for menuParm in ["image", "version"]:

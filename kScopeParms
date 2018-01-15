@@ -29,7 +29,7 @@ image1
 value newArrBUQ_GOODHR_vig
 
 version1
-value v000
+value v001range500to1000
 
 txB1
 value 0.6
@@ -95,6 +95,78 @@ scB3
 value 0.5
 
 scE3
+value 0.5
+
+image4
+value sub_comingHR_vig
+
+version4
+value v001toFr2300
+
+txB4
+value 0.47
+
+txE4
+value 0.47
+
+tyB4
+value 0.39
+
+tyE4
+value 0.39
+
+scB4
+value 0.5
+
+scE4
+value 0.5
+
+image5
+value sub_comingHR_vig
+
+version5
+value v001toFr2300
+
+txB5
+value 0.47
+
+txE5
+value 0.47
+
+tyB5
+value 0.39
+
+tyE5
+value 0.39
+
+scB5
+value 0.5
+
+scE5
+value 0.5
+
+image5
+value sub_comingHR_vig
+
+version5
+value v001toFr2300
+
+txB5
+value 0.47
+
+txE5
+value 0.47
+
+tyB5
+value 0.39
+
+tyE5
+value 0.39
+
+scB5
+value 0.5
+
+scE5
 value 0.5
 
 renVer

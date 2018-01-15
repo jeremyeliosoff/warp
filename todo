@@ -1,3 +1,20 @@
+LAJOIE HOME QUESTIONS
+Laundry hookup?
+Roof access?
+How many balconies?
+Storage?
+
+
+D10.1 b) HEAT SYSTEM repairs
+D11 There have been pests/vermin/"insectes et animaux nuisibles"?
+D12 No building inspection?
+
+Other brokers
+New mortgage rules
+you have to qulalify for the 5 year postit rate (the rate they put off)
+
+ffmpeg -i newArrBUQ_GOOD.MTS -acodec libmp3lame -metadata TITLE="Name of Song" test.mp3
+
 ================
 == MON JAN 08 ==
 ================
@@ -5527,25 +5544,19 @@ Sketch of final clip sequence:
 == THU JAN 11 ==
 ================
 
-Display info perclip, eg: "srcRange:3900-4399 (500fr), outRange: 1238-1737"
 Use "range" in dic to set FML thumbs
 One escape should close when entry is not focused
 Maybe some kind of fr slider that somehow indicates where you are in timeline + where clips come in + out
 
 
-LAJOIE HOME QUESTIONS
-Laundry hookup?
-Roof access?
-How many balconies?
-Storage?
 
 
-D10.1 b) HEAT SYSTEM repairs
-D11 There have been pests/vermin/"insectes et animaux nuisibles"?
-D12 No building inspection?
+================
+== MON JAN 15 ==
+================
+Make 6 clips
+Display info perclip, eg: "srcRange:3900-4399 (500fr), outRange: 1238-1737"
+Display info of whole seq - maybe just nFrames?
+Maybe layout parms more efficiently, txB[ ] \ntxE[ ], have tx [ ][ ]
 
-Other brokers
-New mortgage rules
-you have to qulalify for the 5 year postit rate (the rate they put off)
 
-ffmpeg -i newArrBUQ_GOOD.MTS -acodec libmp3lame -metadata TITLE="Name of Song" test.mp3
