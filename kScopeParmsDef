@@ -2,6 +2,10 @@ fr
 type int
 value 1800
 
+res
+type string
+value 1920x1080
+
 image0
 type string
 value sub_comingHR_vig

@@ -1,3 +1,7 @@
+
+
+
+
 LAJOIE HOME QUESTIONS
 Laundry hookup?
 Roof access?
@@ -5554,9 +5558,12 @@ Maybe some kind of fr slider that somehow indicates where you are in timeline + 
 ================
 == MON JAN 15 ==
 ================
-Make 6 clips
-Display info perclip, eg: "srcRange:3900-4399 (500fr), outRange: 1238-1737"
+#D# Make 6 clips
+#D# Display info perclip, eg: "srcRange:3900-4399 (500fr), outRange: 1238-1737"
 Display info of whole seq - maybe just nFrames?
 Maybe layout parms more efficiently, txB[ ] \ntxE[ ], have tx [ ][ ]
+Output res selector
+Save parms per out version
+When you click seq thumbnail, they're all updated (rendered)
 
 

@@ -17,12 +17,24 @@ displayHt = 200
 clipDic = {
 	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
 	"newArrBUQ_GOODHR_vig":{"range":(500,1000)},
+	"newArrBUQ_PplHR_vig":{"range":(1000,1500)},
 	"sub_comingHR_vig":{"range":(1750,2300)},
+	"sub_comingPplHR_vig":{"range":(3900,4399)},
 	"sub_coming_vig":{"range":(1750,2300)},
 	"sub_goingHR_vig":{"range":(1,1245)},
 	"sub_goingHR_vig_cp":{"range":(1750,2300)},
 	"newDepMtRDarkHR_vig":{"range":(1,500)},
 }
+
+resOptions = (
+	"480x270",
+	"960x540",
+	"1920x1080")
+
+#resOptions = (
+#	(480, 270),
+#	(960, 540),
+#	(1920, 1080))
 
 for clip,dic in clipDic.items():
 	rg = dic["range"]
@@ -101,8 +113,8 @@ class kWin():
 
 	def frChange(self, inc):
 		focused = self.frameMaster.focus_get()
-		print "\n --------- focused", focused, "\n"
-		print "self.entryDic.keys()", self.entryDic.keys()
+		#print "\n --------- focused", focused, "\n"
+		#print "self.entryDic.keys()", self.entryDic.keys()
 		if focused in self.entryDic.keys():
 			print "_frChange(): not changing, focus on an entry."
 		else:
@@ -118,12 +130,12 @@ class kWin():
 			print "_frChange(): self.clipSeq:"
 			for clipNum in range(len(self.clipSeq)):
 				clip = self.clipSeq[clipNum]
-				print "\t", clipNum, ":", clip, "range", clipDic[clip]["range"], "len", clipDic[clip]["len"]
+				#print "\t", clipNum, ":", clip, "range", clipDic[clip]["range"], "len", clipDic[clip]["len"]
 			print "_frChange(): activeClipNums:"
 			for clipNum in activeClipNums:
 				ofs = self.clipSeqOfs[clipNum]
 				frWOfs = fr + ofs
-				print "\t", clipNum, ":", self.clipSeq[clipNum], "ofs", ofs, "frWOfs=", frWOfs
+				#print "\t", clipNum, ":", self.clipSeq[clipNum], "ofs", ofs, "frWOfs=", frWOfs
 			print "_frChange(): END\n"
 
 	def ctlReturnCmd(self):
@@ -201,7 +213,7 @@ class kWin():
 			mid = (rg[0] + rg[1])/2
 			ofs = self.clipSeqOfs[clipNum]
 			outFr = mid-ofs
-			print "\n\n---------_updateClipImgs(): clip", clip, ": rg=", rg, "loading outFr", outFr, "corresponding to clip mid", mid
+			#print "\n\n---------_updateClipImgs(): clip", clip, ": rg=", rg, "loading outFr", outFr, "corresponding to clip mid", mid
 			print
 			loadedImg = self.safeLoadImg(self.getOutImgPath(mid-ofs))
 
@@ -226,7 +238,7 @@ class kWin():
 		#for fr in range(self.frStart, self.frEnd):
 		for fr in range(self.frRange):
 			self.strValToParmDic("fr", fr)
-			print "Rendering", self.outImgPath
+			print "_processImgSeq(): Rendering", self.outImgPath
 			self.processImg()
 
 
@@ -271,9 +283,9 @@ class kWin():
 			im = self.loadImgNum(clipNum, clipFr)
 			res = self.res
 			#im = im.resize((int(res[0]), int(res[1])))
-			print "\nPRE------ im.get_size()", im.get_size()
+			#print "\nPRE------ im.get_size()", im.get_size()
 			im = pygame.transform.scale(im, (res[0], res[1]))
-			print "\nPOS------ im.get_size()", im.get_size()
+			#print "\nPOS------ im.get_size()", im.get_size()
 			#self.res
 			for i in range(nRots):
 				imMod = imBlank.copy()
@@ -450,6 +462,7 @@ class kWin():
 		#im = self.loadImgNum(clipNum)
 		self.refreshThumb(int(clipNum))
 		self.saveUIToParmsAndFile()
+		self.setLabelText(int(clipNum))
 
 	def menuVerChooser(self, selection):
 		print "_menuImgChooser(): self.verChooserVar.get()", self.verChooserVar.get(), "selection", selection
@@ -459,6 +472,14 @@ class kWin():
 		#self.strValToParmDic("renVer", selection)
 		self.saveUIToParmsAndFile("renVer", self.renDirVar)
 		self.updateOutImg()
+
+	def menuResChooser(self, selection):
+		print "_menuResChooser(): self.resVar.get()", self.resVar.get(), "selection", selection
+		#self.strValToParmDic("renVer", selection)
+		self.saveUIToParmsAndFile("res", self.resVar)
+		self.setRes()
+		self.updateOutImg()
+
 
 	def makeParmLabelEntry(self, parmName, frame, row):
 		parmVal = self.parmDic[parmName]["val"]
@@ -485,13 +506,19 @@ class kWin():
 		self.entryDic[entry] = parmName
 
 
-	def setLabelText(self, clipNum)
+	def setLabelText(self, clipNum):
+		print "_setLabelText(): clipNum=", clipNum
 		clip = self.clipSeq[clipNum]
 		rng = clipDic[clip]["range"]
 		ofs = self.clipSeqOfs[clipNum]
-		text="Clip %d, ranges: src: %d-%d, out: %d-%d" % ((clipNum, ) + rng + (rng[0] - ofs, rng[1] - ofs))
+		text="C %d, %d fr, src: %d-%d, out: %d-%d" % ((clipNum, rng[1]-rng[0]) + rng + (rng[0] - ofs, rng[1] - ofs))
 		self.clipInfoLabels[clipNum].configure(text=text)
 
+	def setRes(self):
+		resStr = self.parmVal("res")
+		resStrLs = resStr.split("x")
+		print "\n\n resStr", resStr, "resStrLs", resStrLs
+		self.res = (int(resStrLs[0]), int(resStrLs[1]))
 
 	def __init__(self):
 # CONROL THUMBNAIL LAYOUT goes a little like this:
@@ -506,7 +533,6 @@ contols4a	thumbs4a(0,1)	thumbAt4midpoint	thumbs5a(0,1)	contols5a
 contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 """
 
-		self.res = (960, 540)
 		self.entryDic = {}
 
 		self.root = Tk()
@@ -546,6 +572,10 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 		self.loadParms(True)
 		self.loadParms(False)
 
+		#self.res = (960, 540)
+		#self.res = resOptions[self.parmVal("res")]
+		self.setRes()
+
 
 		# Set up clips
 		self.nClips = 6
@@ -560,6 +590,13 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 
 		self.renderedClips = os.listdir(ut.renDir)
 		self.renderedClips.sort()
+
+		self.resVar = StringVar()
+		self.resVar.set(self.parmVal("res"))
+		#options = ["a", "bb"]
+		self.resChooser = OptionMenu(self.frameCtls, self.resVar, *resOptions, command=self.menuResChooser)
+		self.resChooser.grid(row=row, column=0)
+		row += 1
 
 		self.makeParmLabelEntry("fr", self.frameCtls, row)
 		row += 1

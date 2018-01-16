@@ -1,5 +1,8 @@
 fr
-value 398
+value 2417
+
+res
+value 480x270
 
 image0
 value sub_comingHR_vig
@@ -50,7 +53,7 @@ scE1
 value 0.25
 
 image2
-value sub_goingHR_vig
+value sub_comingPplHR_vig
 
 version2
 value v000
@@ -74,10 +77,10 @@ scE2
 value 0.5
 
 image3
-value newDepMtRDarkHR_vig
+value newArrBUQ_PplHR_vig
 
 version3
-value v001moveKN1
+value v000
 
 txB3
 value 0.57
@@ -98,10 +101,10 @@ scE3
 value 0.5
 
 image4
-value sub_comingHR_vig
+value sub_goingHR_vig
 
 version4
-value v001toFr2300
+value v000
 
 txB4
 value 0.47
@@ -122,16 +125,16 @@ scE4
 value 0.5
 
 image5
-value sub_comingHR_vig
+value newDepMtRDarkHR_vig
 
 version5
-value v001toFr2300
+value v001moveKN1
 
 txB5
-value 0.47
+value 0.0
 
 txE5
-value 0.47
+value 0.1
 
 tyB5
 value 0.39
@@ -140,22 +143,22 @@ tyE5
 value 0.39
 
 scB5
-value 0.5
+value 0.7
 
 scE5
-value 0.5
+value 0.3
 
 image5
-value sub_comingHR_vig
+value newDepMtRDarkHR_vig
 
 version5
-value v001toFr2300
+value v001moveKN1
 
 txB5
-value 0.47
+value 0.0
 
 txE5
-value 0.47
+value 0.1
 
 tyB5
 value 0.39
@@ -164,11 +167,11 @@ tyE5
 value 0.39
 
 scB5
-value 0.5
+value 0.7
 
 scE5
-value 0.5
+value 0.3
 
 renVer
-value v007testMenu
+value v010test
 
