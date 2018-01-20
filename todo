@@ -1,3 +1,85 @@
+DAD'S BROKER
+contract
+description
+accepted offer
+
+
+benoit.mackey@td.com
+
+
+35%
+5 yr fixed 3.34
+5 yr variable 2.85
+3 yr variable 2.75
+2 yr fixed 2.94
+3 yr fixed 3.14
+4 yr fixed 3.24
+3.45 = prime
+
+Pascal Landry
+
+
+GLOSSARY OF HORRIBLE FINANCIAL TAX TERMS
+
+
+T1 (Canada): Also called T1, General Income Tax Form or Income Tax and Benefit Return, the T1 tax form is what individual Canadians use to complete their personal income tax return. It has five sections:
+
+T4 (Canada): If you are a salaried employee, the T4 tax slip is used by your employer to indicate what you have been paid before deductions, as well as your CPP, QPP, EI contributions as well as other amounts deducted from your pay cheque during the tax year.
+
+Notice of Assessment: It is commonly called a Notice of Assessment. The CRA sends it to you every year after they have received your federal income tax return. Revenu Québec also sends a notice of assessment for Québec income tax.
+
+
+
+================
+== WED JAN 17 ==
+================
+HIGH REAL ESTATE DRAMA
+Send forms to Bouchra
+
+
+UNANSWERED QUESTIONS:
+Has Lajoie seller #2 signed?
+Hutchison: How much light is blocked by the high-rises?
+
+
+======================================
+DOCUMENTS TO PROVIDE TO BOUCHRA: A=attached to email, S=sent
+=====================================
+--Required income verification documents for you:
+
+#A# Current contract
+#S# A copy of the first Four Pages of the most recent filed 2 years’ T1 General Income Tax Returns, - 2015
+A copy of the first Four Pages of the most recent filed 2 years’ T1 General Income Tax Returns, - 2016
+#A# The associated Federal or Quebec Notices of Assessment (NOA’s) 2 years’ - 2015
+#A# The associated Federal or Quebec Notices of Assessment (NOA’s) 2 years’ - 2016
+
+ 
+
+--Required income verification documents for your father:
+
+Most recent Pay Stub dated within the last 45 days or Most recent T4 or Employment Letter
+A copy of the first Four Pages of the most recent filed 2 years’ T1 General Income Tax Returns,
+The associated Federal or Quebec Notices of Assessment (NOA’s) 2 years’
+
+ 
+
+--Additional Documents :
+
+Copy of accepted Offer of Purchase and Sale Agreement, including all schedules and appendices.
+#---> send example to clarify# Copy of MLS listing of the property being purchased.
+Confirmation of Down Payment
+#---> I don't have one!# Lawyer's name, address, postal code, telephone and fax numbers
+Your father ID’s
+Home address / Work address
+Phone # / Email
+
+-------------------------------------------------------
+
+
+MONTHLY EXPENSES
+155 - condo fees
+393 - tax
+28 - heat
 
 
 
@@ -5565,5 +5647,29 @@ Maybe layout parms more efficiently, txB[ ] \ntxE[ ], have tx [ ][ ]
 Output res selector
 Save parms per out version
 When you click seq thumbnail, they're all updated (rendered)
+
+
+
+
+NICE MOVIE!  IDEAS...
+C0 fade slower (start ealier)
+C1 fade slower + later (in mix)
+C2 fade slower
+C3 ditto?
+C4 is cool but wants something added - i guess just fade in C5 longer + earlier
+
+
+
+================
+== THU JAN 18 ==
+================
+
+PROGRESS FOR LONGER FADES: R = rendered, D = data, V = vig, N = none
+sub_comingHR:rng:1650-2325		- R
+newArrBUQ_GOODHR:rng:425-1050	- R to 954
+sub_comingPpl:rng:3800-4400		- V
+newArrBUQ_Ppl:rng:925-1550		- R
+sub_going:rng:1750-2300			- N -- bottom prio?
+newDepMtRDark:rng:1-750			- R
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 #from tkColorChooser import askcolor              
-import os, ut, copy, math, pygame
+import os, ut, copy, math, pygame, shutil
 from Tkinter import *
 import numpy as np
 from PIL import ImageTk, Image
@@ -16,11 +16,11 @@ displayHt = 200
 
 clipDic = {
 	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
-	"newArrBUQ_GOODHR_vig":{"range":(500,1000)},
-	"newArrBUQ_PplHR_vig":{"range":(1000,1500)},
 	"sub_comingHR_vig":{"range":(1750,2300)},
-	"sub_comingPplHR_vig":{"range":(3900,4399)},
 	"sub_coming_vig":{"range":(1750,2300)},
+	"newArrBUQ_GOODHR_vig":{"range":(500,1000)},
+	"sub_comingPplHR_vig":{"range":(3900,4399)},
+	"newArrBUQ_PplHR_vig":{"range":(1000,1500)},
 	"sub_goingHR_vig":{"range":(1,1245)},
 	"sub_goingHR_vig_cp":{"range":(1750,2300)},
 	"newDepMtRDarkHR_vig":{"range":(1,500)},
@@ -111,6 +111,17 @@ class kWin():
 			self.processImg()
 
 
+	def setClipHighlight(self):
+		print "_setClipHighlight(): BEGIN"
+		fr = self.parmVal("fr")
+		for clipNum in range(self.nClips):
+			seqRng = self.clipRngAndSeqRng(clipNum)[1]
+			if fr >= seqRng[0] and fr <= seqRng[1]:
+				self.outImgButs[clipNum].configure(highlightbackground="red")
+			else:
+				self.outImgButs[clipNum].configure(highlightbackground="black")
+
+
 	def frChange(self, inc):
 		focused = self.frameMaster.focus_get()
 		#print "\n --------- focused", focused, "\n"
@@ -137,6 +148,7 @@ class kWin():
 				frWOfs = fr + ofs
 				#print "\t", clipNum, ":", self.clipSeq[clipNum], "ofs", ofs, "frWOfs=", frWOfs
 			print "_frChange(): END\n"
+		self.setClipHighlight()
 
 	def ctlReturnCmd(self):
 		focused = self.frameClips.focus_get()
@@ -234,9 +246,11 @@ class kWin():
 			self.outImgButs[clipNum].configure(image=self.clipPhotosTmp[clipNum])
 		print "_updateImages(): set self.outImgPath =", self.outImgPath
 
-	def processImgSeq(self):
+	def processImgSeq(self, rng=None):
 		#for fr in range(self.frStart, self.frEnd):
-		for fr in range(self.frRange):
+		print "_processImgSeq(): BEGIN, rng=", rng
+		rngToUse = rng if rng else (0, self.frRange)
+		for fr in range(rngToUse[0], rngToUse[1]):
 			self.strValToParmDic("fr", fr)
 			print "_processImgSeq(): Rendering", self.outImgPath
 			self.processImg()
@@ -394,6 +408,9 @@ class kWin():
 				parmVal = self.parmDic[parmName]["val"]
 				f.write(parmName + "\n")
 				f.write("value " + str(parmVal) + "\n\n")
+
+		renPathParms = renDirKscope + "/" + self.parmVal("renVer") + "/kScopeParms"
+		shutil.copyfile(parmFile, renPathParms)
 			
 
 	def refreshThumb(self, clipNum):
@@ -505,13 +522,17 @@ class kWin():
 
 		self.entryDic[entry] = parmName
 
+	def clipRngAndSeqRng(self, clipNum):
+		clip = self.clipSeq[clipNum]
+		clipRng = clipDic[clip]["range"]
+		ofs = self.clipSeqOfs[clipNum]
+		return clipRng, (clipRng[0] - ofs, clipRng[1] - ofs)
+		
 
 	def setLabelText(self, clipNum):
 		print "_setLabelText(): clipNum=", clipNum
-		clip = self.clipSeq[clipNum]
-		rng = clipDic[clip]["range"]
-		ofs = self.clipSeqOfs[clipNum]
-		text="C %d, %d fr, src: %d-%d, out: %d-%d" % ((clipNum, rng[1]-rng[0]) + rng + (rng[0] - ofs, rng[1] - ofs))
+		clipRng, seqRng = self.clipRngAndSeqRng(clipNum)
+		text="C %d, %d fr, src: %d-%d, out: %d-%d" % ((clipNum, clipRng[1]-clipRng[0]) + clipRng + seqRng)
 		self.clipInfoLabels[clipNum].configure(text=text)
 
 	def setRes(self):
@@ -519,6 +540,12 @@ class kWin():
 		resStrLs = resStr.split("x")
 		print "\n\n resStr", resStr, "resStrLs", resStrLs
 		self.res = (int(resStrLs[0]), int(resStrLs[1]))
+
+	def btnClip(self, clipNum):
+		seqRng = self.clipRngAndSeqRng(clipNum)[1]
+		print "_btnClip(): clipNum=", clipNum, "seqRng", seqRng
+		self.processImgSeq(seqRng)
+		
 
 	def __init__(self):
 # CONROL THUMBNAIL LAYOUT goes a little like this:
@@ -709,12 +736,12 @@ contols4b	thumbs4a(2,3)	thumbAt5midpoint	thumbs5b(2,3)	contols5a
 		# Images
 		self.outImgBut = Button(self.frameR)
 		self.outImgBut.grid(row=0, column=0)
-		#self.outImgBut = Button(self.frameImgs)
 		self.outImgButs = []
 		for clipNum in range(self.nClips):
-			button = Button(self.frameClipM)
+			button = Button(self.frameClipM, command=lambda args=clipNum : self.btnClip(args), highlightcolor="green", highlightthickness=3,bd=0)
 			button.grid(row=clipNum)
 			self.outImgButs.append(button)
+		self.setClipHighlight()
 		self.updateOutImg()
 		self.updateClipImgs()
 		

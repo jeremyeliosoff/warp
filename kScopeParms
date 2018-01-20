@@ -1,14 +1,14 @@
 fr
-value 2417
+value 120
 
 res
-value 480x270
+value 1920x1080
 
 image0
 value sub_comingHR_vig
 
 version0
-value v001toFr2300
+value v002longerFade
 
 txB0
 value 0.47
@@ -32,7 +32,7 @@ image1
 value newArrBUQ_GOODHR_vig
 
 version1
-value v001range500to1000
+value v002longerFade
 
 txB1
 value 0.6
@@ -56,13 +56,13 @@ image2
 value sub_comingPplHR_vig
 
 version2
-value v000
+value v002redoFromBroken
 
 txB2
 value 0.47
 
 txE2
-value 0.47
+value 0.43
 
 tyB2
 value 0.39
@@ -80,7 +80,7 @@ image3
 value newArrBUQ_PplHR_vig
 
 version3
-value v000
+value v001longerFade
 
 txB3
 value 0.57
@@ -107,10 +107,10 @@ version4
 value v000
 
 txB4
-value 0.47
+value 0.48
 
 txE4
-value 0.47
+value 0.52
 
 tyB4
 value 0.39
@@ -128,13 +128,13 @@ image5
 value newDepMtRDarkHR_vig
 
 version5
-value v001moveKN1
+value v002longerFade
 
 txB5
 value 0.0
 
 txE5
-value 0.1
+value 0.2
 
 tyB5
 value 0.39
@@ -152,13 +152,13 @@ image5
 value newDepMtRDarkHR_vig
 
 version5
-value v001moveKN1
+value v002longerFade
 
 txB5
 value 0.0
 
 txE5
-value 0.1
+value 0.2
 
 tyB5
 value 0.39
@@ -173,5 +173,5 @@ scE5
 value 0.3
 
 renVer
-value v010test
+value v012FR
 

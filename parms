@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1500
+val 4399
 
 fps
 val 52
@@ -22,7 +22,7 @@ doRenCv
 val 1
 
 image
-val newArrBUQ_PplHR_vig
+val sub_comingPplHR_vig
 
 dbImg1
 val bg_ctest
@@ -37,13 +37,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v000
+val v002redoFromBroken
 
 frStart
-val 1000
+val 3800
 
 frEnd
-val 1500
+val 4399
 
 doGen
 val 1
@@ -86,7 +86,7 @@ val 1
 ---REN---
 
 dataVer
-val v000
+val v003redoFromBroken
 
 tripAlwaysOn
 val 1
@@ -107,7 +107,7 @@ centX
 val .25
 
 centY
-val .6
+val .5
 
 fadeOutStart
 val 5000

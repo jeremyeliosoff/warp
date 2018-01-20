@@ -726,7 +726,9 @@ class warpUi():
 	def getSourceImgPath(self):
 		imageTitle = self.parmDic("image")
 		fr = self.parmDic("fr")
-		seqImages = os.listdir(ut.seqDir + "/" + imageTitle)
+		seqPath = ut.seqDir + "/" + imageTitle
+		print "seqPath=",seqPath
+		seqImages = os.listdir(seqPath)
 		seqImages.sort()
 		mx = -100
 		mn = 10000000
@@ -1124,6 +1126,8 @@ class warpUi():
 	def loadImgAndSetRes(self, path, setRes=False, big=False):
 		#ut.printFrameStack()
 		print "_loadImgAndSetRes(): Attempting to load", path, "...",
+		if setRes:
+			self.res = (100, 100)
 		if os.path.exists(path):
 			loadedImg = Image.open(path)
 			res = loadedImg.size
