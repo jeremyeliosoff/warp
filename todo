@@ -5667,9 +5667,9 @@ C4 is cool but wants something added - i guess just fade in C5 longer + earlier
 PROGRESS FOR LONGER FADES: R = rendered, D = data, V = vig, N = none
 sub_comingHR:rng:1650-2325		- R
 newArrBUQ_GOODHR:rng:425-1050	- R to 954
-sub_comingPpl:rng:3800-4400		- V
+sub_comingPpl:rng:3800-4400		- R
 newArrBUQ_Ppl:rng:925-1550		- R
 sub_going:rng:1750-2300			- N -- bottom prio?
 newDepMtRDark:rng:1-750			- R
 
-
+:

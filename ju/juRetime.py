@@ -29,11 +29,12 @@ def smoothstep(edge0in, edge1in, xin):
 #for pngPath in pngPaths:
 
 fpsGrps = (
-(1, 10, 30), 
-(1840, 2090, 25), 
-(2270, 2510, 20), 
-(2700, 2940, 15), 
-(3080, 3350, 10))
+(1, 100000, 15), 
+#(1840, 2090, 25), 
+#(2270, 2510, 20), 
+#(2700, 2940, 15), 
+#(3080, 3350, 10)
+)
 
 # 
 # (2270, 2510, 19.5), 
@@ -44,12 +45,14 @@ frOut = 0
 
 frange = 50
 
-frStart = 1600
-frEnd = 3400
+#frStart = 1600
+#frEnd = 3400
+frStart = 0
+frEnd = 2921
 #frStart = 3300 # TEMP
 #frEnd = 3370 # TEMP
-fpsStart = 30
-fpsEnd = 5
+fpsStart = 15
+fpsEnd = 15
 
 #for i in range(frange):
 
@@ -115,7 +118,7 @@ while frSrc < frEnd:
 	fpsNext = fpsGrp[2]
 	#print "fpsPrev", fpsPrev, "fpsNext", fpsNext, "prog", prog
 	fps = mix(fpsPrev, fpsNext, prog)
-	incr = float(fps)/fpsStart
+	incr = .5 # float(fps)/fpsStart
 
 	frSrc += incr
 	frA, mixB = divmod(frSrc, 1)

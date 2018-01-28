@@ -16,14 +16,14 @@ displayHt = 200
 
 clipDic = {
 	#"newArrBUQ_GOODHR_vig":{"range":(600,2500)},
-	"sub_comingHR_vig":{"range":(1750,2300)},
-	"sub_coming_vig":{"range":(1750,2300)},
-	"newArrBUQ_GOODHR_vig":{"range":(500,1000)},
-	"sub_comingPplHR_vig":{"range":(3900,4399)},
-	"newArrBUQ_PplHR_vig":{"range":(1000,1500)},
+	"sub_comingHR_vig":{"range":(1650,2325)},
+	#"sub_coming_vig":{"range":(1750,2300)},
+	"newArrBUQ_GOODHR_vig":{"range":(425,1050)},
+	"sub_comingPplHR_vig":{"range":(3800,4399)},
+	"newArrBUQ_PplHR_vig":{"range":(925,1550)},
 	"sub_goingHR_vig":{"range":(1,1245)},
-	"sub_goingHR_vig_cp":{"range":(1750,2300)},
-	"newDepMtRDarkHR_vig":{"range":(1,500)},
+	#"sub_goingHR_vig_cp":{"range":(1750,2300)},
+	"newDepMtRDarkHR_vig":{"range":(1,750)},
 }
 
 resOptions = (
