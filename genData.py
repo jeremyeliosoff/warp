@@ -1643,7 +1643,7 @@ def genSprites(warpUi, srcImg):
 				inRip = fragmod.calcInRip(fr, breathsAr, len(breathsAr), dNorm, 1)
 				kRip = 3
 				tidTrip = tidProg
-				tidTrip = pow(tidTrip, 1.0/(1+inRip*kRip))
+				tidTrip = pow(tidTrip, max(0, 1.0/(1+inRip*kRip)))
 				#print "----------------inRip", inRip, "dNorm", dNorm, "breathsAr", breathsAr
 				#tidTrip *= 1+2*inRip
 				tidTrip = tidTrip * tripFrK # Already calculated, but add rip

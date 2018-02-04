@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1050
+val 1
 
 fps
 val 52
@@ -19,10 +19,10 @@ anim
 val 0
 
 doRenCv
-val 1
+val 0
 
 image
-val newArrBUQ_GOODHR_vig
+val op_grapplingSilhouettes_GOOD
 
 dbImg1
 val bg_ctest
@@ -37,13 +37,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v002longerFade
+val v003nLev10
 
 frStart
-val 425
+val 5
 
 frEnd
-val 1050
+val 945
 
 doGen
 val 1
@@ -63,7 +63,7 @@ nLevels
 val 10
 
 frPerCycle
-val 90
+val 60
 
 gamma
 val .5
@@ -86,7 +86,7 @@ val 1
 ---REN---
 
 dataVer
-val v002longerFade
+val v004
 
 tripAlwaysOn
 val 1

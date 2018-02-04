@@ -574,10 +574,13 @@ class warpUi():
 				break
 		return prevFr, prevTripVal
 
+	#def shiftLeftCmd(self):
+	#	thisFr = self.parmDic("fr")
+	#	thisFr,dud = self.getPrevBr(thisFr)
+	#	self.setFrAndUpdate(thisFr)
+
 	def shiftLeftCmd(self):
-		thisFr = self.parmDic("fr")
-		thisFr,dud = self.getPrevBr(thisFr)
-		self.setFrAndUpdate(thisFr)
+		self.setFrAndUpdate(max(self.parmDic("frStart"), self.parmDic("fr") - 10))
 
 	def getNextBr(self, fr, incl=False):
 		nextBrFr = fr
@@ -590,10 +593,13 @@ class warpUi():
 				break
 		return nextBrFr, nextTripVal
 
+	#def shiftRightCmd(self):
+	#	thisFr, dud = self.getNextBr(self.parmDic("fr"))
+	#	thisFr = min(3200, thisFr)
+	#	self.setFrAndUpdate(thisFr)
+
 	def shiftRightCmd(self):
-		thisFr, dud = self.getNextBr(self.parmDic("fr"))
-		thisFr = min(3200, thisFr)
-		self.setFrAndUpdate(thisFr)
+		self.setFrAndUpdate(min(self.parmDic("frEnd"), self.parmDic("fr") + 10))
 
 	def animButCmd(self):
 		if self.parmDic("anim") == 0:
