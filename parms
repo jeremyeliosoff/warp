@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 1
+val 0
 
 fps
 val 52
@@ -19,10 +19,10 @@ anim
 val 0
 
 doRenCv
-val 0
+val 1
 
 image
-val op_grapplingSilhouettes_GOOD
+val testTiny
 
 dbImg1
 val bg_ctest
@@ -37,13 +37,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v003nLev10
+val v002
 
 frStart
-val 5
+val 0
 
 frEnd
-val 945
+val 0
 
 doGen
 val 1
@@ -52,7 +52,7 @@ doRen
 val 1
 
 frIncRen
-val 0
+val 1
 
 
 
@@ -60,7 +60,7 @@ val 0
 ---GEN---
 
 nLevels
-val 10
+val 3
 
 frPerCycle
 val 60
@@ -86,7 +86,7 @@ val 1
 ---REN---
 
 dataVer
-val v004
+val v002
 
 tripAlwaysOn
 val 1
@@ -119,7 +119,7 @@ fadeOutDelPerLev
 val 8
 
 moveK
-val 1
+val 0
 
 moveKofs
 val .25

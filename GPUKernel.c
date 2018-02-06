@@ -119,15 +119,15 @@ int neighboursToConns (int* nbrs, int* cons) {
 	//(1, 1,\
 	// 1, 1):[]
 	 }
-int clrAvg(uchar* clr)
+int clrAvg(int* clr)
 {
 	return (clr[0] + clr[1] + clr[2])/3;
 }
 
 
 void getClr(int x, int y, int xres, int npix,
-  __global uchar* imgArray,
-  uchar* ret)
+  __global int* imgArray,
+  int* ret)
 {
 	int i = y * xres * npix + x * npix;
 	ret[0] = imgArray[i];
@@ -136,8 +136,8 @@ void getClr(int x, int y, int xres, int npix,
 }
 
 void setArrayCell(int x, int y, int xres, int npix,
-  uchar* val,
-  __global uchar* ret)
+  int* val,
+  __global int* ret)
 {
 	int i = y * xres * npix + x * npix;
 	ret[i] = val[0];
@@ -155,24 +155,24 @@ void setArrayCellInt(int x, int y, int levOfs, int xres, int npix,
 
 
 int getClrAvg(int x, int y, int xres, int npix,
-  __global uchar* imgArray)
+  __global int* imgArray)
 {
-	uchar clr[3];
+	int clr[3];
 	getClr(x, y, xres, npix,imgArray, clr);
 	return clrAvg(clr);
 }
 
 void cpClr(int x, int y, int xres, int npix,
-  __global uchar* imgArray,
-  __global uchar* ret)
+  __global int* imgArray,
+  __global int* ret)
 {
 	int i = y * xres * npix + x * npix;
-	uchar clr[3];
-	uchar avg = getClrAvg(x, y, xres, npix, imgArray);
-	uchar retClr[] = {avg, avg, avg};
+	int clr[3];
+	int avg = getClrAvg(x, y, xres, npix, imgArray);
+	int retClr[] = {avg, avg, avg};
 
 	setArrayCell(x, y, xres, npix, retClr, ret);
-	//uchar avg = clrAvg(clr);
+	//int avg = clrAvg(clr);
 	//ret[i] = avg;
 	//ret[i+1] = avg;
 	//ret[i+2] = avg;
@@ -181,8 +181,9 @@ void cpClr(int x, int y, int xres, int npix,
 __kernel void initJtC(
 			int testNLevs,
 			int lev,
-			__global uchar* imgArray,
-			__global uchar* levThreshArray,
+			__global int* imgArray,
+			__global int* levThreshArray,
+			//__global int* dbGrid,
 			__global int* nconsOut)
 {
 	int x = get_global_id(1);
@@ -193,7 +194,7 @@ __kernel void initJtC(
 	int npix = 3;
 
 	//int lev;
-	uchar levThreshInt;
+	int levThreshInt;
 
 	levThreshInt = levThreshArray[lev];	
 
@@ -206,7 +207,7 @@ __kernel void initJtC(
 		for (i = 0; i < 4; i++) {
 			int xx = x + i/2;
 			int yy = y + i%%2;
-			uchar avg = getClrAvg(xx, yy, xres, npix, imgArray);
+			int avg = getClrAvg(xx, yy, xres, npix, imgArray);
 			int val = avg > levThreshInt ? 1 : 0;
 			nbrs[i] = val;
 			tot += val;
@@ -219,7 +220,12 @@ __kernel void initJtC(
 		}
 		//setArrayCell(x, y, xres, 1, tot, nconsOut);
 		setArrayCellInt(x, y, levOfs, xres, 1, ncons, nconsOut);
+		ncons = 8;
+		//setArrayCellInt(x, y, levOfs, xres, 1, 8, nconsOut);
 	} else { // We should just make nconsOut res smaller, but doesn't work.
+		//setArrayCellInt(x, y, levOfs, xres, 1, 6, nconsOut);
 		setArrayCellInt(x, y, levOfs, xres, 1, 0, nconsOut);
 	}
+	//setArrayCellInt(x, y, levOfs, xres, 1, 7, dbGrid);
+	//if (x < 10 && y < 20) setArrayCellInt(x, y, levOfs, xres, 1, 5, nconsOut);
 }

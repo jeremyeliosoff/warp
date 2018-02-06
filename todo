@@ -5672,4 +5672,19 @@ newArrBUQ_Ppl:rng:925-1550		- R
 sub_going:rng:1750-2300			- N -- bottom prio?
 newDepMtRDark:rng:1-750			- R
 
-:
+
+================
+== SAT FEB 03 ==
+================
+
+Email/msg:
+	Signe
+	Ricarda
+	Jen
+	Marika
+
+Call:
+	Mum/Dad
+	
+python /home/jeremy/install/google-cloud-sdk/platform/google_appengine/appcfg.py -A temperature-tutorial-4952 update app.yaml
+dark-depth-194320 

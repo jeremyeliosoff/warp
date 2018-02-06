@@ -1,10 +1,44 @@
 #include <Python.h>
 #include "numpy/arrayobject.h"
 #include "cCommon.h"
+#include "initJtGrid.h"
 
 
 // Define a new exception object for our module.
 static PyObject *fragmodError;
+
+static PyObject* fragmod_initJtGrid(PyObject* self, PyObject* args) {
+	int xres;
+	int yres;
+	int lev;
+	PyArrayObject *imgArrayPtr=NULL;
+	PyArrayObject *levThreshArrayPtr=NULL;
+	PyArrayObject *nconsOutPtr=NULL;
+	int nBreaths;
+	float dNorm;
+	float kRip;
+    if (!PyArg_ParseTuple(args, "iiiOOO",
+		&xres, &yres, &lev,
+		&imgArrayPtr, &levThreshArrayPtr, &nconsOutPtr)) return NULL;
+
+	int *imgArrayPtrI = ((int *)PyArray_GETPTR1(imgArrayPtr,0));
+	int *levThreshArrayPtrI = ((int *)PyArray_GETPTR1(levThreshArrayPtr,0));
+	int *nconsOutPtrI = ((int *)PyArray_GETPTR1(nconsOutPtr,0));
+	
+	printf("\n\n\n\n PRE initJtCgrid\n\n");
+	initJtCgrid(
+		xres,
+		yres,
+		lev,
+		imgArrayPtrI,
+		levThreshArrayPtrI,
+		nconsOutPtrI);
+	printf("\n\n\n\n POST initJtCgrid\n\n");
+
+	double foo = 8;
+	return Py_BuildValue("f", foo);
+
+}
 
 static PyObject* fragmod_calcInRip(PyObject* self, PyObject* args) {
 	int fr;
@@ -173,6 +207,7 @@ static PyMethodDef fragmod_methods[] = {
 	{"cspaceImg",	fragmod_cspaceImg,	METH_VARARGS,	"Test ls 3d"},
 	{"cspace",	fragmod_cspace,	METH_VARARGS,	"Test ls 3d"},
 	{"calcInRip",	fragmod_calcInRip,	METH_VARARGS,	"Test ls 3d"},
+	{"initJtGrid",	fragmod_initJtGrid,	METH_VARARGS,	"Init Jt Grid"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 

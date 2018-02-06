@@ -774,7 +774,13 @@ class warpUi():
 
 
 		print "_updateCurImg(): self.parmDic(image)", self.parmDic("image")
-		self.images["source"]["path"] = self.getSourceImgPath()
+		path = self.getSourceImgPath()
+		self.images["source"]["path"] = path
+
+		if os.path.exists(path):
+			loadedImgSz = Image.open(path).size
+			self.res = (loadedImgSz[0]-1, loadedImgSz[1]-1)
+
 		print "_updateCurImg(): self.images[source][path]:", self.images["source"]["path"]
 		dud, renImgPath = self.getRenDirAndImgPath("ren", "ALL")
 		self.images["ren"]["path"] = renImgPath
@@ -874,7 +880,7 @@ class warpUi():
 		menu.delete(0, "end")
 		for s in vers:
 			menu.add_command(label=s, command=lambda value=s: self.verUI[verType]["menuVar"].set(value))
-
+	
 	def menuImgChooser(self, selection):
 		print "\n_menuImgChooser(): pre _getImg"
 		print "_menuImgChooser(): self.seqDataDir", self.seqDataDir
@@ -1135,11 +1141,14 @@ class warpUi():
 		if setRes:
 			self.res = (100, 100)
 		if os.path.exists(path):
+			print "_loadImgAndSetRes(): Exists!  Loading..."
 			loadedImg = Image.open(path)
 			res = loadedImg.size
 			if setRes:
 				self.res = (res[0]-1, res[1]-1)
-			maxResMult = .38 if big else .28
+				print "\n\n\n\n VVVVVVVVVVVVVVVVVVV _loadImgAndSetRes(): Set res to", self.res
+			#maxResMult = .38 if big else .28 #IMAGE SIZE
+			maxResMult = .21
 			maxXres = int(maxResMult*self.root.winfo_screenwidth())
 			maxYres = int(maxResMult*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:
@@ -1322,12 +1331,12 @@ class warpUi():
 
 
 	def setFillMode(self):
-		#self.fillMode = "overwrite"
-		# if self.parmDic("frIncRen") == 0: TEMP no overwrite for final render!
-		# 	self.fillMode = "fill"
-		# elif self.parmDic("frIncRen") < 0:
-		# 	self.fillMode = "onlyBg"
-		self.fillMode = "fill"
+		self.fillMode = "overwrite"
+		if self.parmDic("frIncRen") == 0:
+			self.fillMode = "fill"
+		elif self.parmDic("frIncRen") < 0:
+			self.fillMode = "onlyBg"
+		# self.fillMode = "fill" TEMP
 
 	def getRenderedAovNames(self):
 		# Debug images.

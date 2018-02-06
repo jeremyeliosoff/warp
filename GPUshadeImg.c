@@ -289,7 +289,8 @@ __kernel void krShadeImg(
 	int srcClr[3];
 	float xfx = xfs[tidPos*2];
 	float xfy = xfs[tidPos*2+1];
-	filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
+	//filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
+	getImageCell(x, y, xres, yres+1, srcImg, srcClrSamp);
 
 	// Get tid.
 	int tid = tids[tidPos];
@@ -499,6 +500,9 @@ __kernel void krShadeImg(
 	//} else {
 		//assignIS (255, 0, 0, cShadedI);
 	//}
+
+	assignIV(srcClr, cShadedI);
+	//assignIV(tidClr, cShadedI);
 
 	setArrayCell(x, y, xres, yres+1, cShadedI, shadedImg);
 	setArrayCell(x, y, xres, yres+1, cAovRip, aovRipImg);

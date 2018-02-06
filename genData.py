@@ -261,8 +261,68 @@ def initJtGrid(img, warpUi):
 	ut.timerStart(warpUi, "initJtGridXYLoop")
 
 	jtGrid = [[{} for y in range(res[1]-1)] for x in range(res[0]-1)] 
-	tryGPU = True
-	if tryGPU:
+	jtCalcMode = "plugin"
+	if jtCalcMode == "plugin":
+		print "XXXXXXXXXXXXxxx AAAAAAA"
+		#fragmod.initJtGrid(xres, yres, lev, imgArray, levThreshArray, nconsOut)
+		xres,yres = res
+		imgArray = np.array(list(pygame.surfarray.array3d(img)), dtype=np.intc)
+		# print "YYYYYY imgArray", imgArray
+		# print "YYYYYY type", type(imgArray[0][0][0])
+
+		levThreshRemap = []
+		levThreshInt = []
+		for lev in range(nLevels):
+			thisLevThreshRemap, thisLevThreshInt = \
+				getLevThresh(warpUi, lev, nLevels)
+			levThreshRemap.append(thisLevThreshRemap)
+			tholds[lev] = thisLevThreshRemap
+			# TODO -> tholds[lev] = thisLevThreshRemap
+			levThreshInt.append(thisLevThreshInt)
+
+		print "_initJtGrid(): levThreshInt:", levThreshInt
+		print "_initJtGrid(): levThreshRemap:", levThreshRemap
+		levThreshArray = np.array(levThreshInt, dtype=np.intc)
+
+		jtCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
+		jtCons.fill(0)
+
+		for lev in range(nLevels):
+			nconsOut = np.empty((res[0], res[1]), dtype=np.intc)
+			nconsOut.fill(0)
+			print "XXXXXXXXXXXXxxx pre"
+			dd = dir(fragmod)
+			print "dd", dd
+			dud = 0
+			dud = fragmod.initJtGrid(xres, yres, lev, imgArray, levThreshArray, nconsOut)
+			print "XXXXXXXXXXXXxxx post"
+			#print "dud", dud
+			#print "ya"
+			#print "imgArray", imgArray
+			#print "nconsOut", nconsOut
+			print "levThreshArray", levThreshArray
+			jtCons[lev] = nconsOut
+
+		for lev in range(nLevels):
+			levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
+			for x in range(res[0]-1):
+				for y in range(res[1]-1):
+					jtConsKey = jtCons[lev][x][y]
+					#jtConsKey = jtConsThisLev[x][y]
+					#print "HHHHHH jtConsKey", jtConsKey
+					# TEMP: below should never be!!
+					if jtConsKey >= len(decodeCons) or jtConsKey < 0:
+						jtConsKey = 0
+					gpuCons = decodeCons[jtConsKey]
+					if len(gpuCons) > 0:
+						jtLs = []
+						for gpuCon in gpuCons:
+							jtLs.append(joint((x,y), levThreshRemap, gpuCon))
+						jtGrid[x][y][lev] = jtLs
+
+		# Mark clean after GPU ops.
+		ut.indicateProjDirtyAs(warpUi, False, "initJtGridGPU_inProgress")
+	elif jtCalcMode == "gpu":
 		# Mark dirty before GPU ops in case of crash.
 		ut.indicateProjDirtyAs(warpUi, True, "initJtGridGPU_inProgress")
 
@@ -278,7 +338,7 @@ def initJtGrid(img, warpUi):
 
 		print "_initJtGrid(): levThreshInt:", levThreshInt
 		print "_initJtGrid(): levThreshRemap:", levThreshRemap
-		levThreshArray = np.array(levThreshInt, dtype=np.uint8)
+		levThreshArray = np.array(levThreshInt, dtype=np.intc)
 		levThreshArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
 		
@@ -287,7 +347,7 @@ def initJtGrid(img, warpUi):
 			imgArray = np.array(list(pygame.surfarray.array3d(img)))
 		except:
 			print "OOPS: pygame.surfarray.array3d(img) caused error, setting imgArray to 0.\n\n"
-			imgArray = np.zeros(res + (3,), dtype=np.uint8)
+			imgArray = np.zeros(res + (3,), dtype=np.intc)
 		imgArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
 		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
 		
@@ -297,6 +357,10 @@ def initJtGrid(img, warpUi):
 		jtConsThisLev = np.empty((res[0], res[1]), dtype=np.intc)
 		jtConsThisLev.fill(0)
 		jtConsThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY, jtConsThisLev.nbytes)
+
+		dbGrid = np.empty((res[0], res[1]), dtype=np.intc)
+		dbGrid.fill(0)
+		dbGrid_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY, dbGrid.nbytes)
 		
 		
 		kernelPath = ut.projDir + "/GPUKernel.c"
@@ -314,12 +378,39 @@ def initJtGrid(img, warpUi):
 					np.int32(lev),
 					imgArray_buf,
 					levThreshArray_buf,
+					#dbGrid_buf,
 					jtConsThisLev_buf)
 			launch.wait()
 
 
 			cl.enqueue_read_buffer(warpUi.queue, jtConsThisLev_buf, jtConsThisLev).wait()
+			#cl.enqueue_read_buffer(warpUi.queue, dbGrid_buf, dbGrid).wait()
 			jtCons[lev] = jtConsThisLev
+
+			if lev >= 0:
+				print "\n\n\nyyyyyyKKKKKKK jtConsThisLev:"
+				for row in range(len(jtConsThisLev[0])):
+					s = ""
+					for clm in range(min(66, len(jtConsThisLev))):
+						v = jtConsThisLev[clm][row]
+						if v == 0:
+							s += ".."
+						else:
+							s += "%02d" % v
+						s += " "
+					print s
+
+				print "\n" * 3, "-"*50, "\n" * 3
+				for row in range(len(dbGrid[0])):
+					s = ""
+					for clm in range(min(66, len(dbGrid))):
+						v = dbGrid[clm][row]
+						if v == 0:
+							s += ".."
+						else:
+							s += "%02d" % v
+						s += " "
+					print s
 
 		# This sez I should release - help mem leak?
 		# https://stackoverflow.com/questions/44197206/how-to-release-gpu-memory-use-same-buffer-for-different-array-in-pyopencl
@@ -335,6 +426,9 @@ def initJtGrid(img, warpUi):
 					jtConsKey = jtCons[lev][x][y]
 					#jtConsKey = jtConsThisLev[x][y]
 					#print "HHHHHH jtConsKey", jtConsKey
+					# TEMP: below should never be!!
+					if jtConsKey >= len(decodeCons) or jtConsKey < 0:
+						jtConsKey = 0
 					gpuCons = decodeCons[jtConsKey]
 					if len(gpuCons) > 0:
 						jtLs = []
@@ -345,7 +439,7 @@ def initJtGrid(img, warpUi):
 		# Mark clean after GPU ops.
 		ut.indicateProjDirtyAs(warpUi, False, "initJtGridGPU_inProgress")
 
-	else:
+	else: # jtCalcMode == "slow"
 		for x in range(res[0]-1):
 			if (x+1) % (res[0]/10) == 0:
 				print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
@@ -386,6 +480,16 @@ def initJtGrid(img, warpUi):
 	ut.mkDirSafe(renSeqDir)
 
 	ut.timerStop(warpUi, "initJtGridXYLoop")
+	#print "\n\n\nyyyyyyyyJJJJJJJJ jtGrid:"
+	#for row in range(len(jtGrid[0])):
+	#	s = ""
+	#	for clm in range(len(jtGrid)):
+	#		dic = jtGrid[clm][row]
+	#		if dic == {}:
+	#			s += "."
+	#		else:
+	#			s += str(dic.keys()[0])
+	#	print s
 
 	return jtGrid, tholds
 
@@ -427,20 +531,21 @@ def drawBbx(warpUi, bbx, dbName, lev, nLevels, clr):
 	
 # From neighboursToConns:
 decodeCons = ((),
-	(((0, 1), (1, 0)),),
-	(((-1, 0), (0, 1)),),
-	(((-1, 0), (1, 0)),),
-	(((1, 0), (0, -1)),),
-	(((0, 1), (0, -1)),),
-	(((-1, 0), (0, 1)), ((1, 0), (0, -1)),),
-	(((-1, 0), (0, -1)),),
-	(((0, -1), (-1, 0)),),
-	(((0, 1), (1, 0)), ((0, -1), (-1, 0)),),
-	(((0, -1), (0, 1)),),
-	(((0, -1), (1, 0)),),
-	(((1, 0), (-1, 0)),),
-	(((0, 1), (-1, 0)),),
-	(((1, 0), (0, 1)),),
+	((( 0,  1), ( 1,  0)),),	# 1
+	((( 1,  0), ( 0, -1)),),	# 2
+	#((( 1,  0), (-1,  0)),),	# 3
+	((( 0,  1), ( 0, -1)),),	# 3
+	(((-1,  0), ( 0,  1)),),	# 4
+	(((-1,  0), ( 1,  0)),),	# 5
+	(((-1,  0), ( 0,  1)), ((1, 0), (0, -1)),),	# 6
+	(((-1,  0), ( 0, -1)),),	# 7
+	((( 0, -1), (-1,  0)),),	# 8
+	((( 0,  1), ( 1,  0)), ((0, -1), (-1, 0)),),	# 9
+	((( 1,  0), (-1,  0)),),	# 10
+	((( 0,  1), (-1,  0)),),	# 11
+	((( 0, -1), ( 0,  1)),),	# 12
+	((( 0, -1), ( 1,  0)),),	# 13
+	((( 1,  0), ( 0,  1)),),	# 14
 	())
 
 
@@ -585,7 +690,9 @@ def growCurves(warpUi, jtGrid, frameDir):
 
 			# GPUtrans _jtGrid (effectively) becomes jtCons - maybe list, not dic
 			ut.timerStart(warpUi, "growC_curves")
+			#print "\niii x=", x, "y=", y
 			for lev,jts in jtGrid[x][y].items():
+				#print "hhh lev", lev, "jts", jts
 				for jt in jts:
 					# GPUtrans: I think this can become "if cvGrid[x][y][lev] == None"
 					if jt.cv == None:
@@ -594,10 +701,19 @@ def growCurves(warpUi, jtGrid, frameDir):
 						nCurves += 1
 						xx = x + jt.cons[1][0]
 						yy = y + jt.cons[1][1]
+						#print "ggggggggggg jtGrid[", xx, "][", yy, "][", lev, "]=", jtGrid[xx][yy][lev]
+						#print "ggggggggggg lev=", lev, "jtGrid[", xx, "][", yy, "]=", jtGrid[xx][yy]
 						for jtt in jtGrid[xx][yy][lev]:
 							# GPUtrans: [1][0] may become [2], etc.
+							#print "jtt.cons", jtt.cons
+							#print "jt.cons", jt.cons
+							#print "jtt.cons[0][0]", jtt.cons[0][0],  "-jtt.cons[1][0]", -jtt.cons[1][0]
+							#print "jtt.cons[0][1]", jtt.cons[0][1], "-jtt.cons[1][1]", -jtt.cons[1][1]
+							#print jtt.cons[0][0] == -jt.cons[1][0] 
+							#print jtt.cons[0][1] == -jt.cons[1][1]
 							if jtt.cons[0][0] == -jt.cons[1][0] and jtt.cons[0][1] == -jt.cons[1][1]:
-									thisJt = jtt
+								#print "YES"
+								thisJt = jtt
 						nJoints = 0
 						xTot = 0
 						yTot = 0
@@ -610,13 +726,14 @@ def growCurves(warpUi, jtGrid, frameDir):
 							nJoints += 1
 							setAovXy(warpUi, "cid", lev, nLevels, xx, yy, cvClr)
 							thisJt.cv = jt.cv
+							#print "adding xx", xx, "yy", yy
 							jt.cv.add(thisJt)
 							xx += thisJt.cons[1][0]
 							yy += thisJt.cons[1][1]
 
 							for jtt in jtGrid[xx][yy][lev]:
 								if jtt.cons[0][0] == -thisJt.cons[1][0] and  jtt.cons[0][1] == -thisJt.cons[1][1]:
-										thisJt = jtt
+									thisJt = jtt
 						jt.cv.nJoints = nJoints
 						#jt.cv.avgXy = (float(xx)/nJoints, float(xx)/nJoints)
 						curves[lev] = curves[lev][:] + [jt.cv]
@@ -671,6 +788,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 						(not math.floor(warpUi.getOfsWLev(lev)) ==
 							math.floor(warpUi.getOfsWLev(lev, fr-1)))) : # NOTE:  this is apparently NOT the same as "if warpUi.inSurfGridPrev:"
 						# There is a surfGrid file for the previous frame.
+						#print "nnnnnnn lev", lev, "x,y", x, y
 						inSurfPrev = warpUi.inSurfGridPrev[lev][x][y]
 						if inSurfPrev == None:
 							# There are NO surfs at this level at this pxl in the previous frame.
@@ -1000,7 +1118,7 @@ def growCurves(warpUi, jtGrid, frameDir):
 			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
 			levDir,imgPath = warpUi.getDebugDirAndImg("sidPost", levStr)
 			ut.mkDirSafe(levDir)
-			print "_growCurves(): saving", imgPath
+			print "\n\n\n IIIIIIIIIIIIIIIIIIIIII_growCurves(): saving", imgPath
 			sidPostImgs[lev].save(imgPath)
 
 
@@ -1250,6 +1368,11 @@ def makeSpriteDic(warpUi, lev, shadedNamesAndImgs, tidImg, tids,
 				pygame.surfarray.pixels3d(cropFromSrcImg)[:,:]
 			spriteNamesAndImgs.append((srcName, spriteImg))
 
+			fr = warpUi.parmDic("fr")
+			res = warpUi.res
+			path = "/tmp/genSprite.fr%05d.lev%03d.tid%05d.bbx%03d.%03d_%03d.%03d.png" % (fr, lev, tid,
+					bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1]) 
+			#renOneSprite(res, spriteImg, bbx, path)
 
 		return {"spriteNamesAndImgs":spriteNamesAndImgs, "bbx":bbx, "tid":tid,
 			"tidProg":tidProg, "isBulb":isBulb, "tidTrip":tidTrip, "xf":xf}
@@ -1588,8 +1711,9 @@ def genSprites(warpUi, srcImg):
 
 		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
 		tidImg = pygame.surfarray.make_surface(tidClrGrid)
-		#path = "test/img/tidImg.lev%03d.%05d.png" % (lev, fr)
-		#pygame.image.save(tidImg, path)
+		fr = warpUi.parmDic("fr")
+		path = "/tmp/tidImg.lev%03d.%05d.png" % (lev, fr)
+		pygame.image.save(tidImg, path)
 
 
 		bbxs = []
@@ -1703,6 +1827,10 @@ def genSprites(warpUi, srcImg):
 			if spriteDic:
 				spritesThisLev.append(spriteDic)
 
+		#tidImg = pygame.surfarray.make_surface(tidClrGrid)
+		#fr = warpUi.parmDic("fr")
+		#path = "/tmp/tidImg.lev%03d.%05d.png" % (lev, fr)
+		#pygame.image.save(tidImg, path)
 
 		spritesThisFr.append(spritesThisLev)
 	return spritesThisFr
@@ -1835,6 +1963,14 @@ def getFadeout(fr):
 	return 1 # - ut.smoothstep(3135, 3230, fr) NO FADE OUT YET
 
 
+def renOneSprite(res, sprite, bbx, path):
+	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
+	canvas.fill((0, 0, 0))
+	bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+	#if lev > 0:  #TODO make this kosher!!!
+	canvas.blit(sprite, (bbxTup[0], bbxTup[1]))
+	pygame.image.save(canvas, path)
+
 
 def renSprites(warpUi, srcImg, res, fr):
 	print "\n_renSprites(): BEGIN, fr", fr
@@ -1892,6 +2028,7 @@ def renSprites(warpUi, srcImg, res, fr):
 			xf = spriteDic["xf"]
 			tid = spriteDic["tid"]
 			bbx = spriteDic["bbx"]
+			#print "\n nnnnnnnnnnn bbx", bbx
 			isBulb = spriteDic["isBulb"]
 
 			# Start aov stuff.
@@ -1914,7 +2051,6 @@ def renSprites(warpUi, srcImg, res, fr):
 					levProg = warpUi.getOfsWLev(lev) % 1.0
 					surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
 					surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
-					#surfAlpha = 1 # TEMP!!!!
 
 					fadeStartThisLev = warpUi.parmDic("fadeOutStart") + warpUi.parmDic("fadeOutDelPerLev") * lev
 					globFadeOut = getFadeout(fr)
@@ -1926,9 +2062,13 @@ def renSprites(warpUi, srcImg, res, fr):
 					bottomMaxAlpha = .5
 					surfAlpha *= ut.mix(trip*bottomMaxAlpha, 1, levRel)
 					surfAlpha = min(1, (1+3*isBulb)*surfAlpha)
+					surfAlpha = 1 # TEMP!!!!
 
 					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
+
+				#path = "/tmp/sprite.fr%05d.lev%03d.tid%05d.png" % (fr, lev, tid) 
+				#renOneSprite(res, spriteImg, bbx, path)
 
 				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
 				#if lev > 0:  #TODO make this kosher!!!
@@ -2091,6 +2231,10 @@ def inSurfGridToTidGrid(warpUi):
 				if inSurfGrid == None or inSurfGrid[lev] == None:
 					tidPosGridThisLev[xx][yy] = -1
 				else:
+					# print "\n\n\nUUUUUUUUUU xx", xx, "yy", yy, "lev", lev, "res", res
+					# print "UUUUUUUUUU len(inSurfGrid)", len(inSurfGrid)
+					# print "UUUUUUUUUU len(inSurfGrid[0])", len(inSurfGrid[0])
+					# print "UUUUUUUUUU len(inSurfGrid[0][0])", len(inSurfGrid[0][0])
 					sid = inSurfGrid[lev][xx][yy]
 					if sid == None:
 						tidPosGridThisLev[xx][yy] = -1
