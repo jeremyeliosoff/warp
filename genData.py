@@ -400,7 +400,7 @@ def initJtGrid(img, warpUi):
 						s += " "
 					print s
 
-				print "\n" * 3, "-"*50, "\n" * 3
+				#print "\n" * 3, "-"*50, "\n" * 3
 				for row in range(len(dbGrid[0])):
 					s = ""
 					for clm in range(min(66, len(dbGrid))):
@@ -1587,71 +1587,113 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 	kRip = ut.mix(.1, 1, tripFrK);
 
-	kernelPath = ut.projDir + "/GPUshadeImg.c"
-	kernel = ""
-	jIncludeToken = "//JINCLUDE"
-	globalToken = "__GLOBAL"
-	with open(kernelPath) as f:
-		for ln in f.readlines():
-			if ln[:len(jIncludeToken)] == jIncludeToken:
-				includePath = ut.projDir + "/" + ln.strip().split(" ")[1]
-				with open(includePath) as incl:
-					for lnIncl in incl.readlines():
-						# Prepend specially commented __GLOBAL parms with __global.
-						if lnIncl.strip()[-len(globalToken):] == globalToken:
-							lnIncl = "__global " + lnIncl
-						kernel += lnIncl
-			else:
-				kernel += ln
+	gpuShade = False
 	
-	
-	ofs = warpUi.getOfsWLev(lev) % 1.0
-	nLevels = warpUi.parmDic("nLevels")
-	levPct = (lev+ofs)/nLevels #int((warpUi.getOfsWLev(lev)*100.0)%100)
+	if gpuShade:
+		kernelPath = ut.projDir + "/GPUshadeImg.c"
+		kernel = ""
+		jIncludeToken = "//JINCLUDE"
+		globalToken = "__GLOBAL"
+		with open(kernelPath) as f:
+			for ln in f.readlines():
+				if ln[:len(jIncludeToken)] == jIncludeToken:
+					includePath = ut.projDir + "/" + ln.strip().split(" ")[1]
+					with open(includePath) as incl:
+						for lnIncl in incl.readlines():
+							# Prepend specially commented __GLOBAL parms with __global.
+							if lnIncl.strip()[-len(globalToken):] == globalToken:
+								lnIncl = "__global " + lnIncl
+							kernel += lnIncl
+				else:
+					kernel += ln
+		
+		
+		ofs = warpUi.getOfsWLev(lev) % 1.0
+		nLevels = warpUi.parmDic("nLevels")
+		levPct = (lev+ofs)/nLevels #int((warpUi.getOfsWLev(lev)*100.0)%100)
 
-	frOfsPerLev = 1
-	frLevOfs = (nLevels - 1 - lev) * frOfsPerLev
-	frWOfs = warpUi.parmDic("fr") + frLevOfs + warpUi.parmDic("clrFrOfs")
-	#print "\n"*10, "frWOfs", frWOfs, "\n"*10
-	bld = cl.Program(warpUi.cntxt, kernel).build()
-	print "_shadeImg(): lev", lev, "levPct", levPct # THIS CAUSES CRASHES
-	launch = bld.krShadeImg(
-			warpUi.queue,
-			warpUi.res,
-			None,
-			np.int32(warpUi.res[0]),
-			np.int32(warpUi.res[1]),
-			np.int32(lev),
-			np.float32(levPct),
-			np.float32(tripFrK),
-			np.float32(warpUi.parmDic("clrKBig")),
-			np.float32(kRip),
-			np.float32(warpUi.parmDic("centX")),
-			np.float32(warpUi.parmDic("centY")),
-			np.float32(warpUi.parmDic("radiateTime")),
-			np.int32(warpUi.parmDic("edgeThick")),
-			np.int32(frWOfs),
-			inhFrames_buf,
-			exhFrames_buf,
-			brFrames_buf,
-			cInOutVals_buf,
-			srcImgAr_buf,
-			tidImgAr_buf,
-			tidPosGridThisLev_buf,
-			tids_buf,
-			bbxs_buf,
-			xfs_buf,
-			isBulbs_buf,
-			tidTrips_buf,
-			aovRipImg_buf,
-			alphaBoostImg_buf,
-			shadedImg_buf)
-	launch.wait()
-	
+		frOfsPerLev = 1
+		frLevOfs = (nLevels - 1 - lev) * frOfsPerLev
+		frWOfs = warpUi.parmDic("fr") + frLevOfs + warpUi.parmDic("clrFrOfs")
+		#print "\n"*10, "frWOfs", frWOfs, "\n"*10
+		bld = cl.Program(warpUi.cntxt, kernel).build()
+		print "_shadeImg(): lev", lev, "levPct", levPct # THIS CAUSES CRASHES
+		launch = bld.krShadeImg(
+				warpUi.queue,
+				warpUi.res,
+				None,
+				np.int32(warpUi.res[0]),
+				np.int32(warpUi.res[1]),
+				np.int32(lev),
+				np.float32(levPct),
+				np.float32(tripFrK),
+				np.float32(warpUi.parmDic("clrKBig")),
+				np.float32(kRip),
+				np.float32(warpUi.parmDic("centX")),
+				np.float32(warpUi.parmDic("centY")),
+				np.float32(warpUi.parmDic("radiateTime")),
+				np.int32(warpUi.parmDic("edgeThick")),
+				np.int32(frWOfs),
+				inhFrames_buf,
+				exhFrames_buf,
+				brFrames_buf,
+				cInOutVals_buf,
+				srcImgAr_buf,
+				tidImgAr_buf,
+				tidPosGridThisLev_buf,
+				tids_buf,
+				bbxs_buf,
+				xfs_buf,
+				isBulbs_buf,
+				tidTrips_buf,
+				aovRipImg_buf,
+				alphaBoostImg_buf,
+				shadedImg_buf)
+		launch.wait()
+		
 
-	cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
-	cl.enqueue_read_buffer(warpUi.queue, aovRipImg_buf, aovRipImg).wait()
-	cl.enqueue_read_buffer(warpUi.queue, alphaBoostImg_buf, alphaBoostImg).wait()
+		cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
+		cl.enqueue_read_buffer(warpUi.queue, aovRipImg_buf, aovRipImg).wait()
+		cl.enqueue_read_buffer(warpUi.queue, alphaBoostImg_buf, alphaBoostImg).wait()
+
+	else:
+		ofs = warpUi.getOfsWLev(lev) % 1.0
+		nLevels = warpUi.parmDic("nLevels")
+		levPct = (lev+ofs)/nLevels #int((warpUi.getOfsWLev(lev)*100.0)%100)
+		frOfsPerLev = 1
+		frLevOfs = (nLevels - 1 - lev) * frOfsPerLev
+		frWOfs = warpUi.parmDic("fr") + frLevOfs + warpUi.parmDic("clrFrOfs")
+		#print "\n"*10, "kkkkkkkkkkk bbxs", bbxs
+		test = np.array([33,44,55], dtype=np.intc)
+		dud = fragmod.shadeImgGrid(
+				np.int32(warpUi.res[0]),
+				np.int32(warpUi.res[1]),
+				np.int32(lev),
+				np.float32(levPct),
+				np.float32(tripFrK),
+				np.float32(warpUi.parmDic("clrKBig")),
+				np.float32(kRip),
+				np.float32(warpUi.parmDic("centX")),
+				np.float32(warpUi.parmDic("centY")),
+				np.float32(warpUi.parmDic("radiateTime")),
+				np.int32(warpUi.parmDic("edgeThick")),
+				np.int32(frWOfs),
+				np.array(inhFrames, dtype=np.intc),
+				np.array(exhFrames, dtype=np.intc),
+				np.array(brFrames, dtype=np.intc),
+				np.array(warpUi.cInOutVals, dtype=np.float32),
+				np.array(srcImgAr, dtype=np.intc),
+				np.array(tidImgLs, dtype=np.intc),
+				np.array(tidPosGridThisLev, dtype=np.intc),
+				np.array(tids, dtype=np.intc),
+				np.array(bbxs, dtype=np.intc),
+				np.array(xfs, dtype=np.float32),
+				np.array(isBulbs, dtype=np.float32),
+				np.array(tidTrips, dtype=np.intc),
+				aovRipImg,
+				alphaBoostImg,
+				shadedImg)
+
 	#print "\n-------------shadedImg[10][10]:", shadedImg[10][10], "\n"
 		
 	#return pygame.surfarray.make_surface(shadedImg)
@@ -1736,7 +1778,7 @@ def genSprites(warpUi, srcImg):
 			random.seed(tid)
 			progDur = ut.mix(progDurMin, progDurMax, random.random())
 			progStart = (1.0 - progDur) * random.random()
-			tidProg = ut.smoothstep(progStart, progStart + progDur, levProg)
+			tidProg = ut.smoothlaunch(progStart, progStart + progDur, levProg)
 			
 			fr = warpUi.parmDic("fr")
 			dud,breaths,dud = zip(*warpUi.breathsNameFrTrip)
@@ -2062,7 +2104,7 @@ def renSprites(warpUi, srcImg, res, fr):
 					bottomMaxAlpha = .5
 					surfAlpha *= ut.mix(trip*bottomMaxAlpha, 1, levRel)
 					surfAlpha = min(1, (1+3*isBulb)*surfAlpha)
-					surfAlpha = 1 # TEMP!!!!
+					#surfAlpha = 1 # TEMP!!!!
 
 					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
 						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)

@@ -1147,8 +1147,8 @@ class warpUi():
 			if setRes:
 				self.res = (res[0]-1, res[1]-1)
 				print "\n\n\n\n VVVVVVVVVVVVVVVVVVV _loadImgAndSetRes(): Set res to", self.res
-			#maxResMult = .38 if big else .28 #IMAGE SIZE
-			maxResMult = .21
+			maxResMult = .38 if big else .28 #IMAGE SIZE
+			#maxResMult = .21
 			maxXres = int(maxResMult*self.root.winfo_screenwidth())
 			maxYres = int(maxResMult*self.root.winfo_screenheight())
 			if res[0] > maxXres or self.displayNaturalRes == 0:

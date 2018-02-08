@@ -1,11 +1,134 @@
 #include <Python.h>
 #include "numpy/arrayobject.h"
 #include "cCommon.h"
-#include "initJtGrid.h"
+#include "initJtGrid.h" // <-- needed?
+#include "shadeImgGrid.h" // <-- needed?
 
 
 // Define a new exception object for our module.
 static PyObject *fragmodError;
+
+static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
+	// Const
+	int xres;
+	int yres;
+
+	// Per-obj varying attrs
+	int lev;
+	float levPct;
+	float tripGlobF;
+
+	// Parms
+	float clrKBig;
+	float kRip;
+	float centX;
+	float centY;
+	int radiateTime;
+	int edgeThick;
+	int fr;
+
+
+	PyArrayObject *inhFrames=NULL;
+	PyArrayObject *exhFrames=NULL;
+	PyArrayObject *brFrames=NULL;
+	PyArrayObject *cInOutVals=NULL;
+	PyArrayObject *srcImg=NULL;
+	PyArrayObject *tidImg=NULL;
+	PyArrayObject *tidPosGridThisLev=NULL;
+	PyArrayObject *tids=NULL;
+	PyArrayObject *bbxs=NULL;
+	PyArrayObject *xfs=NULL;
+	PyArrayObject *isBulbs=NULL;
+	PyArrayObject *tidTrips=NULL;
+	PyArrayObject *aovRipImg=NULL;
+	PyArrayObject *alphaBoost=NULL;
+	PyArrayObject *shadedImg=NULL;
+
+    if (!PyArg_ParseTuple(args, "iiiiiiiiiiiiOOOOOOOOOOOOOOO",
+		&xres,
+		&yres,
+		&lev,
+		&levPct,
+		&tripGlobF,
+		&clrKBig,
+		&kRip,
+		&centX,
+		&centY,
+		&radiateTime,
+		&edgeThick,
+		&fr,
+		&inhFrames,
+		&exhFrames,
+		&brFrames,
+		&cInOutVals,
+		&srcImg,
+		&tidImg,
+		&tidPosGridThisLev,
+		&tids,
+		&bbxs,
+		&xfs,
+		&isBulbs,
+		&tidTrips,
+		&aovRipImg,
+		&alphaBoost,
+		&shadedImg 
+		)) return NULL;
+
+
+
+		int *inhFramesPtr = ((int *)PyArray_GETPTR1(inhFrames,0));
+		int *exhFramesPtr = ((int *)PyArray_GETPTR1(exhFrames,0));
+		int *brFramesPtr = ((int *)PyArray_GETPTR1(brFrames,0));
+		float *cInOutValsPtr = ((float *)PyArray_GETPTR1(cInOutVals,0));
+		int *srcImgPtr = ((int *)PyArray_GETPTR1(srcImg,0));
+		int *tidImgPtr = ((int *)PyArray_GETPTR1(tidImg,0));
+		int *tidPosGridThisLevPtr = ((int *)PyArray_GETPTR1(tidPosGridThisLev,0));
+		int *tidsPtr = ((int *)PyArray_GETPTR1(tids,0));
+		int *bbxsPtr = ((int *)PyArray_GETPTR1(bbxs,0));
+		float *xfsPtr = ((float *)PyArray_GETPTR1(xfs,0));
+		float *isBulbsPtr = ((float *)PyArray_GETPTR1(isBulbs,0));
+		int *tidTripsPtr = ((int *)PyArray_GETPTR1(tidTrips,0));
+		int *aovRipImgPtr = ((int *)PyArray_GETPTR1(aovRipImg,0));
+		int *alphaBoostPtr = ((int *)PyArray_GETPTR1(alphaBoost,0));
+		int *shadedImgPtr = ((int *)PyArray_GETPTR1(shadedImg,0));
+	
+	printf("\nfragmod_shadeImgGrid(): PRE shadeImgGrid");
+
+	shadeImgGrid(
+		// Const
+		xres,
+		yres,
+		lev,
+		levPct,
+		tripGlobF,
+		clrKBig,
+		kRip,
+		centX,
+		centY,
+		radiateTime,
+		edgeThick,
+		fr,
+		inhFramesPtr,
+		exhFramesPtr,
+		brFramesPtr,
+		cInOutValsPtr,
+		srcImgPtr,
+		tidImgPtr,
+		tidPosGridThisLevPtr,
+		tidsPtr,
+		bbxsPtr,
+		xfsPtr,
+		isBulbsPtr,
+		tidTripsPtr,
+		aovRipImgPtr,
+		alphaBoostPtr,
+		shadedImgPtr);
+	printf("\nfragmod_shadeImgGrid(): POST shadeImgGrid\n\n");
+
+	double foo = 8;
+	return Py_BuildValue("f", foo);
+
+}
 
 static PyObject* fragmod_initJtGrid(PyObject* self, PyObject* args) {
 	int xres;
@@ -25,7 +148,7 @@ static PyObject* fragmod_initJtGrid(PyObject* self, PyObject* args) {
 	int *levThreshArrayPtrI = ((int *)PyArray_GETPTR1(levThreshArrayPtr,0));
 	int *nconsOutPtrI = ((int *)PyArray_GETPTR1(nconsOutPtr,0));
 	
-	printf("\n\n\n\n PRE initJtCgrid\n\n");
+	printf("\nPRE initJtCgrid");
 	initJtCgrid(
 		xres,
 		yres,
@@ -33,7 +156,7 @@ static PyObject* fragmod_initJtGrid(PyObject* self, PyObject* args) {
 		imgArrayPtrI,
 		levThreshArrayPtrI,
 		nconsOutPtrI);
-	printf("\n\n\n\n POST initJtCgrid\n\n");
+	printf("\nPOST initJtCgrid");
 
 	double foo = 8;
 	return Py_BuildValue("f", foo);
@@ -165,6 +288,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 			int nBreaths = 4;
 			getCspacePvNxInOut (
 				fr,
+				x, // For debug.
 				radiateTime,
 				cAvg, //outClrF, 
 				cInOutVals,
@@ -208,6 +332,7 @@ static PyMethodDef fragmod_methods[] = {
 	{"cspace",	fragmod_cspace,	METH_VARARGS,	"Test ls 3d"},
 	{"calcInRip",	fragmod_calcInRip,	METH_VARARGS,	"Test ls 3d"},
 	{"initJtGrid",	fragmod_initJtGrid,	METH_VARARGS,	"Init Jt Grid"},
+	{"shadeImgGrid",	fragmod_shadeImgGrid,	METH_VARARGS,	"Shade Img Grid"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 

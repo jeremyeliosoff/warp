@@ -399,6 +399,9 @@ def smoothstep(edge0in, edge1in, xin):
 		ret = x*x*(3 - 2*x);
 	return ret
 
+def smoothlaunch(edge0, edge1,  x):
+	return min(1.0,2.0*smoothstep(edge0, edge0+(edge1-edge0)*2, x))
+
 def smoothpulse(in0, in1, out0, out1, x):
 	return smoothstep(in0, in1, x) - smoothstep(out0, out1, x)
 

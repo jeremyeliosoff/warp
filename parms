@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 0
+val 731
 
 fps
 val 52
@@ -22,10 +22,10 @@ doRenCv
 val 1
 
 image
-val testTiny
+val up_fromBridgeSouthCentered3minHR_vig
 
 dbImg1
-val bg_ctest
+val sidPost
 
 lev_dbImg1
 val ALL
@@ -37,13 +37,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v002
+val v000
 
 frStart
-val 0
+val 700
 
 frEnd
-val 0
+val 731
 
 doGen
 val 1
@@ -52,7 +52,7 @@ doRen
 val 1
 
 frIncRen
-val 1
+val 0
 
 
 
@@ -60,16 +60,16 @@ val 1
 ---GEN---
 
 nLevels
-val 3
+val 6
 
 frPerCycle
-val 60
+val 90
 
 gamma
-val .5
+val .25
 
 minThresh
-val 0
+val .3
 
 maxThresh
 val 1
@@ -86,7 +86,7 @@ val 1
 ---REN---
 
 dataVer
-val v002
+val v000
 
 tripAlwaysOn
 val 1
@@ -95,7 +95,7 @@ isoLev
 val -1
 
 clrFrOfs
-val 1800
+val 2000
 
 edgeThick
 val 1
@@ -104,10 +104,10 @@ radiateTime
 val 100
 
 centX
-val .25
+val .5
 
 centY
-val .6
+val .2
 
 fadeOutStart
 val 5000
@@ -119,7 +119,7 @@ fadeOutDelPerLev
 val 8
 
 moveK
-val 0
+val 1
 
 moveKofs
 val .25

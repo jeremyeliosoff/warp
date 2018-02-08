@@ -211,6 +211,7 @@ float calcInRip(
 
 void getCspacePvNxInOut (
 	int fr,
+	int x,
 	int radiateTime,// = 600;
 	float* outClrF, 
 	float* cInOutVals,  // __GLOBAL
@@ -224,6 +225,7 @@ void getCspacePvNxInOut (
 	int* cShadedI
 
 ) {
+
 	int pvInhFr, nxInhFr, pvExhFr, nxExhFr;
 	//float inhProgForRipple = getBreathFramesAndProg (fr, inhFrames, nBreaths, &pvInhFr, &nxInhFr);
 	//float ripSpeed = 15;
@@ -269,6 +271,27 @@ void getCspacePvNxInOut (
 
 		float pvCIn[3]; float pvCOut[3]; float nxCIn[3]; float nxCOut[3];
 
+		float red[3] = {.5, .5, 0};
+		float green[3] = {0, 1, 0};
+		float blue[3] = {0, 0, 1};
+
+		assignFV(blue, &pvCInRGB[0]);
+		assignFV(red, &pvCInRGB[3]);
+		assignFV(green, &pvCInRGB[6]);
+
+
+		//assignFV(green, &pvCOutRGB[0]);
+		//assignFV(blue, &pvCOutRGB[3]);
+		//assignFV(red, &pvCOutRGB[6]);
+
+		assignFV(green, &nxCInRGB[0]);
+		assignFV(blue, &nxCInRGB[3]);
+		assignFV(red, &nxCInRGB[6]);
+
+		assignFV(red, &nxCOutRGB[0]);
+		assignFV(green, &nxCOutRGB[3]);
+		assignFV(blue, &nxCOutRGB[6]);
+	
 		csFunc(&pvCInRGB[0], &pvCInRGB[3], &pvCInRGB[6], outClrF, pvCIn);
 		csFunc(&pvCOutRGB[0], &pvCOutRGB[3], &pvCOutRGB[6], outClrF, pvCOut);
 

@@ -48,6 +48,7 @@ seqs = sys.argv[1:]
 
 seqDic = {
  "up_fromBridgeSouthCentered3min":{"rng":"1-500", "cent":(.5, .2), "fade":(150, 150)},
+ "up_fromBridgeSouthCentered3minHR":{"rng":"700-1200", "cent":(.5, .2), "fade":(150, 150)},
  "sub_comingHR":{"rng":"1650-2325", "cent":(.25, .3), "fade":(300, 250)},
  "newArrBUQ_GOODHR":{"rng":"425-1050", "cent":(.22, .48), "fade":(200, 200)},
  "sub_comingPpl":{"rng":"3800-4400", "cent":(.25, .5), "fade":(250, 150)},
