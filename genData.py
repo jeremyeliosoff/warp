@@ -98,7 +98,6 @@ class curve:
 class joint:
 	xy = None
 	level = None
-	texClr = None
 	cons = None
 	nx = None
 	pv = None
@@ -290,14 +289,7 @@ def initJtGrid(img, warpUi):
 		for lev in range(nLevels):
 			nconsOut = np.empty((res[0], res[1]), dtype=np.intc)
 			nconsOut.fill(0)
-			print "XXXXXXXXXXXXxxx pre"
-			dd = dir(fragmod)
-			print "dd", dd
-			dud = 0
 			dud = fragmod.initJtGrid(xres, yres, lev, imgArray, levThreshArray, nconsOut)
-			print "XXXXXXXXXXXXxxx post"
-			#print "dud", dud
-			#print "ya"
 			#print "imgArray", imgArray
 			#print "nconsOut", nconsOut
 			print "levThreshArray", levThreshArray
@@ -308,8 +300,6 @@ def initJtGrid(img, warpUi):
 			for x in range(res[0]-1):
 				for y in range(res[1]-1):
 					jtConsKey = jtCons[lev][x][y]
-					#jtConsKey = jtConsThisLev[x][y]
-					#print "HHHHHH jtConsKey", jtConsKey
 					# TEMP: below should never be!!
 					if jtConsKey >= len(decodeCons) or jtConsKey < 0:
 						jtConsKey = 0
@@ -322,157 +312,6 @@ def initJtGrid(img, warpUi):
 
 		# Mark clean after GPU ops.
 		ut.indicateProjDirtyAs(warpUi, False, "initJtGridGPU_inProgress")
-	elif jtCalcMode == "gpu":
-		# Mark dirty before GPU ops in case of crash.
-		ut.indicateProjDirtyAs(warpUi, True, "initJtGridGPU_inProgress")
-
-		levThreshRemap = []
-		levThreshInt = []
-		for lev in range(nLevels):
-			thisLevThreshRemap, thisLevThreshInt = \
-				getLevThresh(warpUi, lev, nLevels)
-			levThreshRemap.append(thisLevThreshRemap)
-			tholds[lev] = thisLevThreshRemap
-			# TODO -> tholds[lev] = thisLevThreshRemap
-			levThreshInt.append(thisLevThreshInt)
-
-		print "_initJtGrid(): levThreshInt:", levThreshInt
-		print "_initJtGrid(): levThreshRemap:", levThreshRemap
-		levThreshArray = np.array(levThreshInt, dtype=np.intc)
-		levThreshArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=levThreshArray)
-		
-		try:
-			# This appears to break on black frames, dunno cleaner way around it.
-			imgArray = np.array(list(pygame.surfarray.array3d(img)))
-		except:
-			print "OOPS: pygame.surfarray.array3d(img) caused error, setting imgArray to 0.\n\n"
-			imgArray = np.zeros(res + (3,), dtype=np.intc)
-		imgArray_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.READ_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=imgArray)
-		
-		jtCons = np.empty((nLevels, res[0], res[1]), dtype=np.intc)
-		jtCons.fill(0)
-
-		jtConsThisLev = np.empty((res[0], res[1]), dtype=np.intc)
-		jtConsThisLev.fill(0)
-		jtConsThisLev_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY, jtConsThisLev.nbytes)
-
-		dbGrid = np.empty((res[0], res[1]), dtype=np.intc)
-		dbGrid.fill(0)
-		dbGrid_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY, dbGrid.nbytes)
-		
-		
-		kernelPath = ut.projDir + "/GPUKernel.c"
-		with open(kernelPath) as f:
-			kernel = "".join(f.readlines()) % (res[1], res[0])
-		#int index = rowid * ncols * npix + colid * npix;
-		# build the Kernel
-		for lev in range(nLevels):
-			bld = cl.Program(warpUi.cntxt, kernel).build()
-			launch = bld.initJtC(
-					warpUi.queue,
-					imgArray.shape,
-					None,
-					np.int32(warpUi.parmDic("nLevels")),
-					np.int32(lev),
-					imgArray_buf,
-					levThreshArray_buf,
-					#dbGrid_buf,
-					jtConsThisLev_buf)
-			launch.wait()
-
-
-			cl.enqueue_read_buffer(warpUi.queue, jtConsThisLev_buf, jtConsThisLev).wait()
-			#cl.enqueue_read_buffer(warpUi.queue, dbGrid_buf, dbGrid).wait()
-			jtCons[lev] = jtConsThisLev
-
-			if lev >= 0:
-				print "\n\n\nyyyyyyKKKKKKK jtConsThisLev:"
-				for row in range(len(jtConsThisLev[0])):
-					s = ""
-					for clm in range(min(66, len(jtConsThisLev))):
-						v = jtConsThisLev[clm][row]
-						if v == 0:
-							s += ".."
-						else:
-							s += "%02d" % v
-						s += " "
-					print s
-
-				#print "\n" * 3, "-"*50, "\n" * 3
-				for row in range(len(dbGrid[0])):
-					s = ""
-					for clm in range(min(66, len(dbGrid))):
-						v = dbGrid[clm][row]
-						if v == 0:
-							s += ".."
-						else:
-							s += "%02d" % v
-						s += " "
-					print s
-
-		# This sez I should release - help mem leak?
-		# https://stackoverflow.com/questions/44197206/how-to-release-gpu-memory-use-same-buffer-for-different-array-in-pyopencl
-		levThreshArray_buf.release()
-		imgArray_buf.release()
-
-
-	
-		for lev in range(nLevels):
-			levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
-			for x in range(res[0]-1):
-				for y in range(res[1]-1):
-					jtConsKey = jtCons[lev][x][y]
-					#jtConsKey = jtConsThisLev[x][y]
-					#print "HHHHHH jtConsKey", jtConsKey
-					# TEMP: below should never be!!
-					if jtConsKey >= len(decodeCons) or jtConsKey < 0:
-						jtConsKey = 0
-					gpuCons = decodeCons[jtConsKey]
-					if len(gpuCons) > 0:
-						jtLs = []
-						for gpuCon in gpuCons:
-							jtLs.append(joint((x,y), levThreshRemap, gpuCon))
-						jtGrid[x][y][lev] = jtLs
-
-		# Mark clean after GPU ops.
-		ut.indicateProjDirtyAs(warpUi, False, "initJtGridGPU_inProgress")
-
-	else: # jtCalcMode == "slow"
-		for x in range(res[0]-1):
-			if (x+1) % (res[0]/10) == 0:
-				print "_initJtGrid(): %d%%" % (((x+1) * 100)/res[0])
-			for y in range(res[1]-1):
-				# TODO: I 'spect you should do lev loop first, then x,y so you can do all per-lev calcs once.
-				# get neighbours.
-				nbrs = []
-				for yy in range(y, y+2):
-					for xx in range(x, x+2):
-						nbrs.append(int(avgLs(img.get_at((xx,yy))[:-1])))
-
-				for lev in range(nLevels):
-					levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
-					tholds[lev] = levThreshRemap
-
-					isHigher = []
-					tot = 0
-					for nbr in nbrs:
-						higher = 1 if nbr > levThreshInt else 0
-						tot += higher
-						isHigher.append(higher)
-					# Only add joint if different.
-					if tot > 0 and tot < 4:
-						cons = neighboursToConns[tuple(isHigher)]
-						texClr = img.get_at((x,y))
-						if len(cons) > 1:
-							# TODO: I think all these levThresh's, should be levThreshRemap's
-							jtGrid[x][y][lev] =  [joint((x,y), levThreshRemap, cons[0]),
-												   joint((x,y), levThreshRemap, cons[1])]
-							nJoints += 2
-						else:
-							jtGrid[x][y][lev] = [joint((x,y), levThreshRemap, cons[0])]
-							nJoints += 1
 	# Write stats
 
 	renPath = warpUi.images["ren"]["path"]
@@ -1410,7 +1249,15 @@ def imgToCspace(warpUi, srcImg, srcImgPath, frIn=None, inOutBoth=2):
 	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
 	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
-	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
+
+	dud,inhFrames = zip(*warpUi.inhParms)
+	dud,exhFrames = zip(*warpUi.exhParms)
+	brFrames = []
+	for i in range(len(inhFrames)):
+		brFrames.append(inhFrames[i])
+		brFrames.append(exhFrames[i])
+	
+	ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr, np.array(brFrames, dtype=np.intc),
 		res[0], res[1], fr, warpUi.parmDic("radiateTime"), inOutBoth, 1)
 
 	csImg = pygame.surfarray.make_surface(csImgAr) 
@@ -1418,7 +1265,7 @@ def imgToCspace(warpUi, srcImg, srcImgPath, frIn=None, inOutBoth=2):
 
 	return csImg, aovRipImg
 	
-def renBg(warpUi):
+def renBg(warpUi): # NOTE: This is not currently used!!
 	print "\n_renClrTest(): BEGIN\n"
 	#tripFrK = getTripFrK(warpUi)
 	#print "\nJJJJJJJJJJJ getTripFrK->", tripFrK
@@ -1665,6 +1512,8 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		frWOfs = warpUi.parmDic("fr") + frLevOfs + warpUi.parmDic("clrFrOfs")
 		#print "\n"*10, "kkkkkkkkkkk bbxs", bbxs
 		test = np.array([33,44,55], dtype=np.intc)
+		#print "\nHHHHHH tids", tids
+		#print "\n\n\ntidPosGridThisLev\n", tidPosGridThisLev
 		dud = fragmod.shadeImgGrid(
 				np.int32(warpUi.res[0]),
 				np.int32(warpUi.res[1]),
@@ -1675,6 +1524,9 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 				np.float32(kRip),
 				np.float32(warpUi.parmDic("centX")),
 				np.float32(warpUi.parmDic("centY")),
+				np.float32(warpUi.parmDic("satClr")),
+				np.float32(warpUi.parmDic("multClr")),
+				np.float32(warpUi.parmDic("solidClr")),
 				np.float32(warpUi.parmDic("radiateTime")),
 				np.int32(warpUi.parmDic("edgeThick")),
 				np.int32(frWOfs),

@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 731
+val 325
 
 fps
 val 52
@@ -16,13 +16,13 @@ ofs
 val 0.6
 
 anim
-val 0
+val 1
 
 doRenCv
 val 1
 
 image
-val up_fromBridgeSouthCentered3minHR_vig
+val up_fromBridgeSouthCentered3min_vig
 
 dbImg1
 val sidPost
@@ -37,13 +37,13 @@ lev_dbImg2
 val ALL
 
 renVer
-val v000
+val v017redo
 
 frStart
-val 700
+val 5
 
 frEnd
-val 731
+val 500
 
 doGen
 val 1
@@ -86,7 +86,7 @@ val 1
 ---REN---
 
 dataVer
-val v000
+val v014redo
 
 tripAlwaysOn
 val 1
@@ -95,13 +95,22 @@ isoLev
 val -1
 
 clrFrOfs
-val 2000
+val 0
 
 edgeThick
 val 1
 
 radiateTime
 val 100
+
+satClr
+val .8
+
+multClr
+val .5
+
+solidClr
+val .5
 
 centX
 val .5
@@ -154,76 +163,76 @@ val n
 ---CLR---
 
 cIn0R
-val 0.8156862745098039,0.0,0.2823529411764706
+val 1,0,0
 
 cIn0G
-val 0.21176470588235294,0.6941176470588235,0.0
+val 0,1,0
 
 cIn0B
-val 0.49411764705882355,0.0,0.47058823529411764
+val 0,0,1
 
 cOut0R
-val 0.7529411764705882,0.0,0.21176470588235294
-
-cOut0G
-val 0.0,0.7529411764705882,0.2823529411764706
-
-cOut0B
 val 0.0,0.0,1.0
 
+cOut0G
+val 1.0,0.0,0.0
+
+cOut0B
+val 0.0,1.0,0.0
+
 cIn1R
-val 0.611764705882353,0.0,0.4549019607843137
+val 0.0,1.0,0.0
 
 cIn1G
-val 0.0,0.5490196078431373,0.3058823529411765
+val 0.0,0.0,1.0
 
 cIn1B
-val 0.0,0.6745098039215687,0.4196078431372549
+val 1.0,0.0,0.0
 
 cOut1R
-val 0.6509803921568628,0.5803921568627451,0.3568627450980392
+val 1.0,0.0,0.0
 
 cOut1G
-val 0.0,0.5176470588235295,1.0
+val 0.0,1.0,0.0
 
 cOut1B
-val 0.0,0.7137254901960784,0.32941176470588235
+val 0.0,0.0,1.0
 
 cIn2R
-val 0.7568627450980392,0.8588235294117647,0.23137254901960785
+val 0.0,0.0,1.0
 
 cIn2G
-val 1.0,0.09803921568627451,0.4392156862745098
+val 1.0,0.0,0.0
 
 cIn2B
-val 0.9098039215686274,0.23137254901960785,0.0
+val 0.0,1.0,0.0
 
 cOut2R
-val 0.6588235294117647,0.6,0.0
+val 0.0,1.0,0.0
 
 cOut2G
-val 0.0,0.4627450980392157,0.611764705882353
+val 0.0,0.0,1.0
 
 cOut2B
-val 0.0,0.5333333333333333,0.49411764705882355
+val 1.0,0.0,0.0
 
 cIn3R
-val 0.0,0.4392156862745098,0.7019607843137254
+val 1,0,0
 
 cIn3G
-val 0.3254901960784314,0.8392156862745098,0.44313725490196076
+val 0,1,0
 
 cIn3B
-val 0.5882352941176471,0.0,0.2980392156862745
+val 0,0,1
 
 cOut3R
-val 0.0,0.14901960784313725,0.5058823529411764
+val 1,0,0
 
 cOut3G
-val 0.12549019607843137,0.24313725490196078,0.5803921568627451
+val 0,1,0
 
 cOut3B
-val 0.7450980392156863,0.5764705882352941,0.2
+val 0,0,1
 
 tripFrStart
 val 1605
@@ -238,37 +247,37 @@ tripKMid
 val .4
 
 inh0
-val 1840
+val 5
 
 inh0trip
 val 0
 
 exh0
-val 2090
+val 5
 
 exh0trip
 val 0.1
 
 inh1
-val 2270
+val 250
 
 inh1trip
 val 0.3
 
 exh1
-val 2510
+val 250
 
 exh1trip
 val 0.5
 
 inh2
-val 2700
+val 500
 
 inh2trip
 val .7
 
 exh2
-val 2940
+val 500
 
 exh2trip
 val .8

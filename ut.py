@@ -80,6 +80,7 @@ class parmDic:
 							#...else init dictionary with just stage attr
 							thisParmDic = {"stage":thisStage}
 					else:
+						print "stripped", stripped
 						k,v = stripped.split()
 						# Force animation off when loaded (should normally already be so)
 						if thisParmName == "anim" and k == "val":

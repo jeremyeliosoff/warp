@@ -23,6 +23,9 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	float kRip;
 	float centX;
 	float centY;
+	float satClr;
+	float multClr;
+	float solidClr;
 	int radiateTime;
 	int edgeThick;
 	int fr;
@@ -44,7 +47,8 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	PyArrayObject *alphaBoost=NULL;
 	PyArrayObject *shadedImg=NULL;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiiiiiiOOOOOOOOOOOOOOO",
+	// TODO: Many i's should be f's!
+    if (!PyArg_ParseTuple(args, "iiifffffffffiiiOOOOOOOOOOOOOOO",
 		&xres,
 		&yres,
 		&lev,
@@ -54,6 +58,9 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		&kRip,
 		&centX,
 		&centY,
+		&satClr,
+		&multClr,
+		&solidClr,
 		&radiateTime,
 		&edgeThick,
 		&fr,
@@ -105,6 +112,9 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		kRip,
 		centX,
 		centY,
+		satClr,
+		multClr,
+		solidClr,
 		radiateTime,
 		edgeThick,
 		fr,
@@ -227,6 +237,7 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 	PyArrayObject *in=NULL;
 	PyArrayObject *out=NULL;
 	PyArrayObject *aovRipPtr=NULL;
+	PyArrayObject *brFramesPtr=NULL;
 	int xr;
 	int yr;
 	int fr;
@@ -235,11 +246,19 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 	float trip;
 
     //if (!PyArg_ParseTuple(args, "OOii", &in, &out, &xr, &yr)) return NULL;
-    if (!PyArg_ParseTuple(args, "OOOOiiiiif",
+    if (!PyArg_ParseTuple(args, "OOOOOiiiiif",
 			&cInOutValsPtr,
 			&in, &out,
 			&aovRipPtr,
+			&brFramesPtr,
 			&xr, &yr, &fr, &radiateTime, &inOutBoth, &trip)) return NULL;
+
+	printf ("\n\n BBBBBBBBBBBBBefore");
+	int nBreaths = 4;
+	int brFrames[nBreaths*2];
+	for (int i=0; i < nBreaths*2; i++) {
+		brFrames[i] = *((int *)PyArray_GETPTR1(brFramesPtr, i));
+	}
 	// 4 breaths * 2 inOuts * 3 rgbs * 3 comps per rgb
 	float cInOutVals[24*3];
 	for (int i=0; i < 24*3; i++) {
@@ -276,16 +295,20 @@ static PyObject* fragmod_cspaceImg(PyObject* self, PyObject* args) {
 				cAvg[j] = (lumLift + tot[j])/count;
 			}
 
-			// TEMP
-			int inhFrames[] = {1840, 2270, 2720, 3100};
-			int exhFrames[] = {2090, 2510, 2960, 3250};
-			int brFrames[] = {1840, 2090, 2270, 2510, 2720, 2960, 3100, 3250};
+			int inhFrames[nBreaths];
+			int exhFrames[nBreaths];
+
+			for (int i=0; i<nBreaths; i++) {
+				inhFrames[i] = brFrames[i*2];
+				exhFrames[i] = brFrames[i*2+1];
+			}
+
+
 
 			float kRip = mixF(.1, 1, trip);
 
 			int cShadedI[3];
 			int aovRip[3];
-			int nBreaths = 4;
 			getCspacePvNxInOut (
 				fr,
 				x, // For debug.

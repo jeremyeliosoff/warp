@@ -275,22 +275,22 @@ void getCspacePvNxInOut (
 		float green[3] = {0, 1, 0};
 		float blue[3] = {0, 0, 1};
 
-		assignFV(blue, &pvCInRGB[0]);
-		assignFV(red, &pvCInRGB[3]);
-		assignFV(green, &pvCInRGB[6]);
+		//assignFV(blue, &pvCInRGB[0]);
+		//assignFV(red, &pvCInRGB[3]);
+		//assignFV(green, &pvCInRGB[6]);
 
 
-		//assignFV(green, &pvCOutRGB[0]);
-		//assignFV(blue, &pvCOutRGB[3]);
-		//assignFV(red, &pvCOutRGB[6]);
+		////assignFV(green, &pvCOutRGB[0]);
+		////assignFV(blue, &pvCOutRGB[3]);
+		////assignFV(red, &pvCOutRGB[6]);
 
-		assignFV(green, &nxCInRGB[0]);
-		assignFV(blue, &nxCInRGB[3]);
-		assignFV(red, &nxCInRGB[6]);
+		//assignFV(green, &nxCInRGB[0]);
+		//assignFV(blue, &nxCInRGB[3]);
+		//assignFV(red, &nxCInRGB[6]);
 
-		assignFV(red, &nxCOutRGB[0]);
-		assignFV(green, &nxCOutRGB[3]);
-		assignFV(blue, &nxCOutRGB[6]);
+		//assignFV(red, &nxCOutRGB[0]);
+		//assignFV(green, &nxCOutRGB[3]);
+		//assignFV(blue, &nxCOutRGB[6]);
 	
 		csFunc(&pvCInRGB[0], &pvCInRGB[3], &pvCInRGB[6], outClrF, pvCIn);
 		csFunc(&pvCOutRGB[0], &pvCOutRGB[3], &pvCOutRGB[6], outClrF, pvCOut);

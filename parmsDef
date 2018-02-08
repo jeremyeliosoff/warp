@@ -147,6 +147,19 @@ type int
 val 600
 
 
+satClr
+type float
+val .7
+
+multClr
+type float
+val .5
+
+solidClr
+type float
+val .2
+
+
 centX
 type float
 val .3
