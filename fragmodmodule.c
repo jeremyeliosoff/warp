@@ -3,10 +3,12 @@
 #include "cCommon.h"
 #include "initJtGrid.h" // <-- needed?
 #include "shadeImgGrid.h" // <-- needed?
+#include "setTidPosGrid.h" // <-- needed?
 
 
 // Define a new exception object for our module.
 static PyObject *fragmodError;
+
 
 static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	// Const
@@ -15,6 +17,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 
 	// Per-obj varying attrs
 	int lev;
+	float levProg;
 	float levPct;
 	float tripGlobF;
 
@@ -46,12 +49,14 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	PyArrayObject *aovRipImg=NULL;
 	PyArrayObject *alphaBoost=NULL;
 	PyArrayObject *shadedImg=NULL;
+	PyArrayObject *shadedImgXf=NULL;
 
 	// TODO: Many i's should be f's!
-    if (!PyArg_ParseTuple(args, "iiifffffffffiiiOOOOOOOOOOOOOOO",
+    if (!PyArg_ParseTuple(args, "iiiffffffffffiiiOOOOOOOOOOOOOOOO",
 		&xres,
 		&yres,
 		&lev,
+		&levProg,
 		&levPct,
 		&tripGlobF,
 		&clrKBig,
@@ -78,8 +83,8 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		&tidTrips,
 		&aovRipImg,
 		&alphaBoost,
-		&shadedImg 
-		)) return NULL;
+		&shadedImg,
+		&shadedImgXf)) return NULL;
 
 
 
@@ -98,6 +103,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		int *aovRipImgPtr = ((int *)PyArray_GETPTR1(aovRipImg,0));
 		int *alphaBoostPtr = ((int *)PyArray_GETPTR1(alphaBoost,0));
 		int *shadedImgPtr = ((int *)PyArray_GETPTR1(shadedImg,0));
+		int *shadedImgXfPtr = ((int *)PyArray_GETPTR1(shadedImgXf,0));
 	
 	printf("\nfragmod_shadeImgGrid(): PRE shadeImgGrid");
 
@@ -106,6 +112,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		xres,
 		yres,
 		lev,
+		levProg,
 		levPct,
 		tripGlobF,
 		clrKBig,
@@ -132,12 +139,47 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		tidTripsPtr,
 		aovRipImgPtr,
 		alphaBoostPtr,
-		shadedImgPtr);
+		shadedImgPtr,
+		shadedImgXfPtr);
 	printf("\nfragmod_shadeImgGrid(): POST shadeImgGrid\n\n");
 
 	double foo = 8;
 	return Py_BuildValue("f", foo);
 
+}
+
+static PyObject* fragmod_setTidPosGrid(PyObject* self, PyObject* args) {
+	int xres;
+	int yres;
+	int nSids;
+	PyArrayObject *sidsSortedPtr=NULL;
+	PyArrayObject *posSortedPtr=NULL;
+	PyArrayObject *inSurfGridPtr=NULL;
+	PyArrayObject *tidPosGridPtr=NULL;
+
+    if (!PyArg_ParseTuple(args, "iiiOOOO",
+		&xres, &yres, &nSids,
+		&sidsSortedPtr, &posSortedPtr, &inSurfGridPtr, &tidPosGridPtr)) return NULL;
+
+	int *sidsSortedPtrI = ((int *)PyArray_GETPTR1(sidsSortedPtr,0));
+	int *posSortedPtrI = ((int *)PyArray_GETPTR1(posSortedPtr,0));
+	int *inSurfGridPtrI = ((int *)PyArray_GETPTR1(inSurfGridPtr,0));
+	int *tidPosGridPtrI = ((int *)PyArray_GETPTR1(tidPosGridPtr,0));
+	
+	printf("\nPRE setTidPosGrid");
+	setTidPosGrid(
+		xres,
+		yres,
+		nSids,
+		sidsSortedPtrI,
+		posSortedPtrI,
+		inSurfGridPtrI,
+		tidPosGridPtrI
+		);
+	printf("\nPOST setTidPosGrid");
+
+	double foo = 8;
+	return Py_BuildValue("f", foo);
 }
 
 static PyObject* fragmod_initJtGrid(PyObject* self, PyObject* args) {
@@ -356,6 +398,7 @@ static PyMethodDef fragmod_methods[] = {
 	{"calcInRip",	fragmod_calcInRip,	METH_VARARGS,	"Test ls 3d"},
 	{"initJtGrid",	fragmod_initJtGrid,	METH_VARARGS,	"Init Jt Grid"},
 	{"shadeImgGrid",	fragmod_shadeImgGrid,	METH_VARARGS,	"Shade Img Grid"},
+	{"setTidPosGrid",	fragmod_setTidPosGrid,	METH_VARARGS,	"Set tid pos grid"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 

@@ -271,9 +271,9 @@ void getCspacePvNxInOut (
 
 		float pvCIn[3]; float pvCOut[3]; float nxCIn[3]; float nxCOut[3];
 
-		float red[3] = {.5, .5, 0};
-		float green[3] = {0, 1, 0};
-		float blue[3] = {0, 0, 1};
+		//float red[3] = {.5, .5, 0};
+		//float green[3] = {0, 1, 0};
+		//float blue[3] = {0, 0, 1};
 
 		//assignFV(blue, &pvCInRGB[0]);
 		//assignFV(red, &pvCInRGB[3]);

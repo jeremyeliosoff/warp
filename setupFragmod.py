@@ -3,8 +3,9 @@ from distutils.core import setup, Extension
 module1 = Extension('fragmod',
 	include_dirs = ['/usr/local/include', '/home/jeremy/dev/warp/include'],
 	depends = ['/home/jeremy/dev/warp/include/cCommon.h',
-		'/home/jeremy/dev/warp/include/initJtGrid.h'
-		'/home/jeremy/dev/warp/include/shadeImgGrid.h'
+		'/home/jeremy/dev/warp/include/initJtGrid.h',
+		'/home/jeremy/dev/warp/include/shadeImgGrid.h',
+		'/home/jeremy/dev/warp/include/setTidPosGrid.h'
 		],
 	libraries = ['pthread'],
 	sources = ['fragmodmodule.c'])
