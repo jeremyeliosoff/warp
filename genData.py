@@ -278,6 +278,7 @@ def initJtGrid(img, warpUi):
 			tholds[lev] = thisLevThreshRemap
 			# TODO -> tholds[lev] = thisLevThreshRemap
 			levThreshInt.append(thisLevThreshInt)
+			print "POST _getLevThresh()"
 
 		print "_initJtGrid(): levThreshInt:", levThreshInt
 		print "_initJtGrid(): levThreshRemap:", levThreshRemap
@@ -295,6 +296,7 @@ def initJtGrid(img, warpUi):
 			print "levThreshArray", levThreshArray
 			jtCons[lev] = nconsOut
 
+		# TODO Make this into a C function
 		for lev in range(nLevels):
 			levThreshRemap, levThreshInt = getLevThresh(warpUi, lev, nLevels)
 			for x in range(res[0]-1):
@@ -670,7 +672,6 @@ def growCurves(warpUi, jtGrid, frameDir):
 	# Draw the curve joint to joint - I think this is just for debug.
 
 	ut.timerStart(warpUi, "growC_aovs")
-	curveId = 0
 	sidToCvs = [{} for i in range(nLevels)]
 	sidToSurf = [{} for i in range(nLevels)]
 	cidToCurve = [{} for i in range(nLevels)]
@@ -1583,7 +1584,8 @@ def genSprites(warpUi, srcImg):
 				yByXRes = float(res[1])/res[0]
 
 				isBulb = 0
-				if sz[0] > 0 and sz[1] > 0:
+				enableBulb = False
+				if enableBulb and sz[0] > 0 and sz[1] > 0:
 					szRel = (float(sz[0])/res[0], float(sz[1])/res[1])
 					szRatio = szRel[0]/szRel[1]
 					#print "\n XXXXXXXXXXXXXXXx bbx", bbx, "sz", sz, "szRel", szRel, "szRatio", szRatio, "cent", cent
@@ -1758,135 +1760,6 @@ def renOneSprite(res, sprite, bbx, path):
 	pygame.image.save(canvas, path)
 
 
-def renSprites(warpUi, srcImg, res, fr):
-	print "\n_renSprites(): BEGIN, fr", fr
-
-	# Initialize canvas
-	srcImgPath = warpUi.images["source"]["path"]
-	srcImg = pygame.image.load(srcImgPath)
-	srcImgAr = imageToArray3d(srcImg, srcImgPath)
-	#srcImgAr = pygame.surfarray.pixels3d(srcImg)
-	csImgAr = np.zeros(srcImgAr.shape, dtype=np.intc)
-	aovRipAr = np.zeros(srcImgAr.shape, dtype=np.intc)
-
-	cInOutVals = np.array(warpUi.cInOutVals, dtype=np.float32)
-
-	trip = getTripFrK(warpUi)
-	trip = generalTripToClrTrip(trip)
-
-	# Render background behind layers.
-	#print "\n"*5, "0000000000000000000 cInOutVals", cInOutVals
-
-	# No bg for now...
-	# ret = fragmod.cspaceImg(cInOutVals, srcImgAr, csImgAr, aovRipAr,
-	# 	res[0], res[1], fr, warpUi.parmDic("radiateTime"), 2, trip)
-
-	
-	# Find first non empty level, count outputs.
-	nLevels = warpUi.parmDic("nLevels")
-
-	nOutputs = len(warpUi.spritesThisFr[warpUi.levsToRen[0]][0]['spriteNamesAndImgs'])
-
-
-	canvases = []
-	for outputNum in range(nOutputs):
-		nextCanvas = pygame.surfarray.make_surface(csImgAr)
-		if outputNum == 0:
-			fadeOutFl = getFadeout(fr)
-			fadeOut = int(255.0*fadeOutFl*fadeOutFl)
-			nextCanvas.fill((fadeOut, fadeOut, fadeOut), None, pygame.BLEND_MULT)
-		else:
-			nextCanvas.fill((0, 0, 0))
-		#else:
-		#	nextCanvas.fill((0, 255, 0)) # TEMP!!!
-		canvases.append(nextCanvas)
-
-	for lev in warpUi.levsToRen:
-		spritesThisLev = warpUi.spritesThisFr[lev]
-		print "_renSprites(): fr", fr, "lev", lev, "len(spritesThisLev)", len(spritesThisLev)
-		canvasLevs = []
-		for dud in range(nOutputs):
-			canvasLev = pygame.Surface(res, pygame.SRCALPHA, 32)
-			canvasLev.fill((0, 0, 0))
-			canvasLevs.append(canvasLev)
-
-		for spriteDic in spritesThisLev:
-			xf = spriteDic["xf"]
-			tid = spriteDic["tid"]
-			bbx = spriteDic["bbx"]
-			#print "\n nnnnnnnnnnn bbx", bbx
-			isBulb = spriteDic["isBulb"]
-
-			# Start aov stuff.
-			i = -1
-			names = []
-			for spriteNameAndImg in spriteDic["spriteNamesAndImgs"]:
-				i += 1
-				spriteName = spriteNameAndImg[0]
-				#print "spriteName", spriteName, "i", i
-				if not spriteName in names:
-					names.append(spriteName)
-				if not (spriteName == "ren" or ("aov_" + spriteName) in warpUi.aovNames):
-					continue
-				spriteImg = spriteNameAndImg[1].copy()
-				if i == 0: # Means this is "ren" canvas (not aov)
-					tidProg = .01*spriteDic["tidProg"] # tidProg is int in range (0,100)
-
-					sfFdIn = .2
-					sfFdOut = .3
-					levProg = warpUi.getOfsWLev(lev) % 1.0
-					surfAlpha = ut.smoothstep(0, sfFdIn, levProg)
-					surfAlpha *= 1.0-ut.smoothstep(1-sfFdOut, 1, tidProg)
-
-					fadeStartThisLev = warpUi.parmDic("fadeOutStart") + warpUi.parmDic("fadeOutDelPerLev") * lev
-					globFadeOut = getFadeout(fr)
-					fadeOut = 1-ut.smoothstep(fadeStartThisLev, fadeStartThisLev + warpUi.parmDic("fadeOutDur"), fr)
-					surfAlpha *= fadeOut * globFadeOut
-
-					# Lower levels become more opaque as trip progresses.
-					levRel = float(lev)/(nLevels-1)
-					bottomMaxAlpha = .5
-					surfAlpha *= ut.mix(trip*bottomMaxAlpha, 1, levRel)
-					surfAlpha = min(1, (1+3*isBulb)*surfAlpha)
-					#surfAlpha = 1 # TEMP!!!!
-
-					pygame.surfarray.pixels_alpha(spriteImg)[:,:] = \
-						mult255V(pygame.surfarray.pixels_alpha(spriteImg)[:,:], surfAlpha)
-
-				#path = "/tmp/sprite.fr%05d.lev%03d.tid%05d.png" % (fr, lev, tid) 
-				#renOneSprite(res, spriteImg, bbx, path)
-
-				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-				#if lev > 0:  #TODO make this kosher!!!
-				canvases[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-				canvasLevs[i].blit(spriteImg, (bbxTup[0]+xf[0], bbxTup[1]+xf[1]))
-
-			#print "\n\n\nVVVVVVVVVVVVVVVVVVVv warpUi.aovNames", warpUi.aovNames, "names", names
-		for i in range(nOutputs):
-			levStr = "ALL" if lev == nLevels else "lev%02d" % lev
-			name = warpUi.spritesThisFr[warpUi.levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
-			if name == "ren":
-				levDir,imgPath = warpUi.getRenDirAndImgPath(name, levStr)
-				ut.mkDirSafe(levDir)
-				pygame.image.save(canvasLevs[i], imgPath)
-			elif ("aov_" + name) in warpUi.aovNames:
-				print "\n\n\nxxxxx name", name
-				setAovFullImg(warpUi, name, canvasLevs[i], "lev%02d" % lev)
-
-	for i in range(nOutputs):
-		name = warpUi.spritesThisFr[warpUi.levsToRen[0]][0]["spriteNamesAndImgs"][i][0]
-		if name == "ren":
-			renPath = warpUi.images[name]["path"]
-			renSeqDir = "/".join(renPath.split("/")[:-1]) #TODO: Do this with os.path.
-			ut.mkDirSafe(renSeqDir)
-			pygame.image.save(canvases[0], renPath)
-			cmd = "convert " + renPath + " " + renPath
-			print "_renSprites(): for some reason this cmd seems necessary:\n\t", cmd
-			ut.exeCmd(cmd)
-		elif ("aov_" + name) in warpUi.aovNames:
-			setAovFullImg(warpUi, name, canvases[i], "ALL")
-
-
 
 def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
@@ -1900,7 +1773,6 @@ def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
 		warpUi.spritesLoadedFr = fr
 	else:
 		print "_genAndRenSprites(): spritesThisFr exist for this frame, reusing."
-	#renSprites(warpUi, srcImg, res, fr)
 
 
 
@@ -2010,71 +1882,79 @@ def inSurfGridToTidGrid(warpUi):
 			continue
 
 
-		#sidsPosSorted = sidToTidPos[lev].items()
-		#sidsPosSorted.sort()
+		setTidPosGridC = True
+		if setTidPosGridC:
+			print "_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev - WITH C", lev
+			sidsPosSorted = sidToTidPos[lev].items()
+			sidsPosSorted.sort()
 
-		#tidPosGridThisLevTest = np.zeros((res[0], res[1]), dtype=np.intc)
-		#tidPosGridThisLevTest.fill(-1)
+			tidPosGridThisLevTest = np.zeros((res[0], res[1]), dtype=np.intc)
+			tidPosGridThisLevTest.fill(-1)
+			#print "\n\n JJJJJJJJJJJJJ tidPosGridThisLevTest", tidPosGridThisLevTest
 
-		#if len(sidsPosSorted) > 0:
-		#	sidsSorted,posSortedBySid = zip(*sidsPosSorted)
-		#	#print "\n\n HHHHHH sidsPosSorted:"
-		#	#for ss in sidsPosSorted:
-		#	#	print ss
+			if len(sidsPosSorted) > 0:
+				sidsSorted,posSortedBySid = zip(*sidsPosSorted)
+				#print "\n\n IIIIIIIII posSortedBySid", posSortedBySid
+				#print "\n\n HHHHHH sidsPosSorted:"
+				#for ss in sidsPosSorted:
+				#	print ss
 
-		#	
-
-		#	if inSurfGrid and inSurfGrid[lev]:
-		#		print "inSurfGrid PRE", inSurfGrid[lev][10][10]
-		#		# Replace None with -1 - dunno why
-		#		# inSurfGridNoNone = inSurfGrid[lev][:] creates ref instead of copy
-		#		inSurfGridNoNone = np.zeros((len(inSurfGrid[0]), len(inSurfGrid[0][0])))
-		#		for xx in range(len(inSurfGridNoNone)):
-		#			for yy in range(len(inSurfGridNoNone[0])):
-		#				if inSurfGrid[lev][xx][yy] == None:
-		#					inSurfGridNoNone[xx][yy] = -1
-		#				else:
-		#					inSurfGridNoNone[xx][yy] = inSurfGrid[lev][xx][yy]
-
-		#		print "inSurfGrid POST", inSurfGrid[lev][10][10]
-		#		#tidPosGridThisLevTest = np.array([[[] for yy in range(res[1])] for xx in range(res[0])],
-		#		fragmod.setTidPosGrid(
-		#			res[0],
-		#			res[1],
-		#			len(sidsSorted),
-		#			np.array(sidsSorted, dtype=np.intc),
-		#			np.array(posSortedBySid, dtype=np.intc),
-		#			np.array(inSurfGridNoNone, dtype=np.intc),
-		#			tidPosGridThisLevTest)
-		#tidPosGridThisLev = np.asarray(tidPosGridThisLevTest)
 				
 
+				if inSurfGrid and inSurfGrid[lev]:
+					print "inSurfGrid PRE", inSurfGrid[lev][10][10]
+					# Replace None with -1 - dunno why
+					# inSurfGridNoNone = inSurfGrid[lev][:] creates ref instead of copy
+					inSurfGridNoNone = np.zeros((len(inSurfGrid[0]), len(inSurfGrid[0][0])))
+					for xx in range(len(inSurfGridNoNone)):
+						for yy in range(len(inSurfGridNoNone[0])):
+							if inSurfGrid[lev][xx][yy] == None:
+								inSurfGridNoNone[xx][yy] = -1
+							else:
+								inSurfGridNoNone[xx][yy] = inSurfGrid[lev][xx][yy]
 
-		print "_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev", lev
-		tidPosGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
-		sidSet = set(sidToTidPos[lev].keys())
-		for xx in range(res[0]):
-			for yy in range(res[1]):
-				if inSurfGrid == None or inSurfGrid[lev] == None:
-					tidPosGridThisLev[xx][yy] = -1
-				else:
-					# print "\n\n\nUUUUUUUUUU xx", xx, "yy", yy, "lev", lev, "res", res
-					# print "UUUUUUUUUU len(inSurfGrid)", len(inSurfGrid)
-					# print "UUUUUUUUUU len(inSurfGrid[0])", len(inSurfGrid[0])
-					# print "UUUUUUUUUU len(inSurfGrid[0][0])", len(inSurfGrid[0][0])
-					sid = inSurfGrid[lev][xx][yy]
-					if sid == None:
+					print "inSurfGrid POST", inSurfGrid[lev][10][10]
+					#tidPosGridThisLevTest = np.array([[[] for yy in range(res[1])] for xx in range(res[0])],
+					fragmod.setTidPosGrid(
+						res[0],
+						res[1],
+						len(sidsSorted),
+						np.array(sidsSorted, dtype=np.intc),
+						np.array(posSortedBySid, dtype=np.intc),
+						np.array(inSurfGridNoNone, dtype=np.intc),
+						tidPosGridThisLevTest)
+			tidPosGridThisLev = np.asarray(tidPosGridThisLevTest)
+					
+		else:
+			print "_inSurfGridToTidGrid(): Making tidPosGridThisLev for lev - NO C", lev
+			tidPosGridThisLev = [[[] for yy in range(res[1])] for xx in range(res[0])]
+			sidSet = set(sidToTidPos[lev].keys())
+			for xx in range(res[0]):
+				for yy in range(res[1]):
+					if inSurfGrid == None or inSurfGrid[lev] == None:
 						tidPosGridThisLev[xx][yy] = -1
-					elif sid in sidSet:
-						tidPosGridThisLev[xx][yy] = sidToTidPos[lev][sid]
-						maxTid = max(maxTid, tidPosGridThisLev[xx][yy])
 					else:
-						tidPosGridThisLev[xx][yy] = 0
+						# print "\n\n\nUUUUUUUUUU xx", xx, "yy", yy, "lev", lev, "res", res
+						# print "UUUUUUUUUU len(inSurfGrid)", len(inSurfGrid)
+						# print "UUUUUUUUUU len(inSurfGrid[0])", len(inSurfGrid[0])
+						# print "UUUUUUUUUU len(inSurfGrid[0][0])", len(inSurfGrid[0][0])
+						sid = inSurfGrid[lev][xx][yy]
+						if sid == None:
+							tidPosGridThisLev[xx][yy] = -1
+						elif sid in sidSet:
+							tidPosGridThisLev[xx][yy] = sidToTidPos[lev][sid]
+							maxTid = max(maxTid, tidPosGridThisLev[xx][yy])
+						else:
+							tidPosGridThisLev[xx][yy] = 0
 		#print "\n\nVVVVVVVVVV", tidPosGridThisLevTest[xx][yy], tidPosGridThisLev[xx][yy]
-		#for xx in range(len(tidPosGridThisLevTest)):
-		#	print
-		#	for yy in range(len(tidPosGridThisLevTest[0])):
-		#		print ("%d:%d" % (tidPosGridThisLevTest[xx][yy], tidPosGridThisLev[xx][yy])),
+		for xx in range(len(tidPosGridThisLevTest)):
+			#print
+			for yy in range(len(tidPosGridThisLevTest[0])):
+				# if not tidPosGridThisLevTest[xx][yy] == tidPosGridThisLev[xx][yy]:
+				# 	if not 0 == tidPosGridThisLevTest[xx][yy]:
+				# 		print ("%d:%d" % (tidPosGridThisLevTest[xx][yy], tidPosGridThisLev[xx][yy])),
+				if 0 == tidPosGridThisLev[xx][yy]:
+					print ("%d:%d" % (tidPosGridThisLevTest[xx][yy], tidPosGridThisLev[xx][yy])),
 		tidPosGrid.append(tidPosGridThisLev)
 	
 	return tidPosGrid

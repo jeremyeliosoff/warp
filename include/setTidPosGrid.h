@@ -70,7 +70,7 @@ void setTidPosGrid(
 			//printf("\n sid=%d", sid);
 			int sidPos = bruteForceSearch(sidsSorted, nSids, sid);
 			//printf("\n posSorted[0]=%d", posSorted[0]);
-			if (sidPos == 0)
+			if (sidPos == 0 || posSorted[sidPos] == 0)
 				setArrayCellShd2(x, y, xres, yres, -1, tidPosGrid);
 			else
 				setArrayCellShd2(x, y, xres, yres, posSorted[sidPos], tidPosGrid);

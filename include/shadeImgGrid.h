@@ -99,14 +99,21 @@ void setArrayCellShd(int x, int y, int xres, int yres,
 
 void compArrayCellShd(int x, int y, int xres, int yres,
   float alpha,
+  int over,
   int* val,
   int* ret)
 {
 	if (x >= 0 && x < xres && y >= 0 && y < yres) {
 		int i = (x * yres + y) * 3;
-		ret[i] = mixF(ret[i], val[0], alpha);
-		ret[i+1] = mixF(ret[i+1], val[1], alpha);
-		ret[i+2] = mixF(ret[i+2], val[2], alpha);
+		if (over == 1) {
+			ret[i] = mixF(ret[i], val[0], alpha);
+			ret[i+1] = mixF(ret[i+1], val[1], alpha);
+			ret[i+2] = mixF(ret[i+2], val[2], alpha);
+		} else { // TODO make this work, impliment alpha!!
+			ret[i] = mixF(ret[i], val[0], alpha);
+			ret[i+1] = mixF(ret[i+1], val[1], alpha);
+			ret[i+2] = mixF(ret[i+2], val[2], alpha);
+		}
 	}
 }
 
@@ -540,11 +547,14 @@ void krShadeImg(
 	float sfFdIn = .2;
 	float sfFdOut = .3;
 	float alpha = jSmoothstep(0, sfFdIn, levProg);
-	alpha *= 1.0-jSmoothstep(1-sfFdOut, 1, levProg); // TODO should be tidProg
+	float underThresh = .2; // Surfs whos len + wid > underThresh are comped under.
+	alpha *= 1.0-jSmoothstep(1-sfFdOut, 1, levProg); // TODO should be tidProg?
 
-	if (tidPos > 0 && xWxf >= 0 && yWxf >= 0 && xWxf < xres && yWxf < yres)
+	if (tidPos > 0 && xWxf >= 0 && yWxf >= 0 && xWxf < xres && yWxf < yres) {
 		//setArrayCellShd(xWxf, yWxf, xres, yres+1, cShadedI, shadedImgXf);
-		compArrayCellShd(xWxf, yWxf, xres, yres+1, alpha, cShadedI, shadedImgXf);
+		int over =  szRel[0] + szRel[1] < underThresh ? 1 : 0; // TODO make this work, impliment alpha!!
+		compArrayCellShd(xWxf, yWxf, xres, yres+1, alpha, over, cShadedI, shadedImgXf);
+	}
 	setArrayCellShd(x, y, xres, yres+1, cAovRip, aovRipImg);
 	/*
 	*/
@@ -586,13 +596,17 @@ void shadeImgGrid(
 {
 	int x, y;
 
+	int fromTop = 0;
+	int fromLeft = 0;
 	for (x = 0; x < xres; x++ ) {
 		//if (x % 100 == 0) printf("\n satClr=%f, multClr=%f, solidClr=%f", satClr, multClr, solidClr);
 		for (y = 0; y < yres; y++ ) {
+			int yToUse = fromTop == 1 ? y : yres - y -1;
+			int xToUse = fromLeft == 1 ? x : xres - x -1;
 			krShadeImg(
 				// Const
-				x,
-				y,
+				xToUse,
+				yToUse,
 				xres,
 				yres,
 

@@ -5710,3 +5710,21 @@ START to look at wtf Vincent's talking about
 
 CLEAN
 Another crack at the painting studio?
+
+================
+== SAT FEB 10 ==
+================
+
+WARP
+Clean up code (commit first)
+Promote parms, adding relevant functionality:
+	leftToRight
+	topToBottom
+	xThenY
+	style0x1y2rad
+Try noEdgeTids
+Do some other seqs:
+	div
+	waterfront
+	doubledecker
+	people, nyc or mt Roy
