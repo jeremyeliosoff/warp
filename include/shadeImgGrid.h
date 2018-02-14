@@ -252,6 +252,7 @@ void krShadeImg(
 			float satClr,
 			float multClr,
 			float solidClr,
+			int style0x1y2rad,
 			int radiateTime,
 			int edgeThick,
 			int fr,
@@ -343,13 +344,22 @@ void krShadeImg(
 	// Darken far from Center
 	int cx = centX*xres;	
 	int cy = centY*yres;	
-	float dFromCent = g_dist(x, y, cx, cy);
-	//float dNorm = dFromCent/cx;
-	float farCornerX = centX > .5 ? 0 : 1;
-	float farCornerY = centY > .5 ? 0 : 1;
-	float cornerToCent = g_dist(farCornerX, farCornerY, cx, cy);
-	float dNorm = dFromCent/cornerToCent;
-	dNorm = (float)jSmoothstep(0.0, 1.0, dNorm);
+	float dNorm;
+	//int style0x1y2rad = 1;
+	if (style0x1y2rad == 0) {
+		dNorm = ((float)abs(x-cx))/xres;
+		dNorm /= centX < .5 ? 1 - centX : centX;
+	} else if (style0x1y2rad == 1) {
+		dNorm = ((float)abs(y-cy))/yres;
+		dNorm /= centY < .5 ? 1 - centY : centY;
+	} else {
+		float farCornerX = centX > .5 ? 0 : 1;
+		float farCornerY = centY > .5 ? 0 : 1;
+		float cornerToCent = g_dist(farCornerX, farCornerY, cx, cy);
+		float dFromCent = g_dist(x, y, cx, cy);
+		dNorm = dFromCent/cornerToCent;
+	}
+	dNorm = (float)jSmoothstep(0.0, 1.0, dNorm); // Needed?
 	float vignK = 1-dNorm;
 	vignK = 1-(1-vignK)*(1-vignK);
 	float vignKmult = mixF(1, vignK, tripGlobF);
@@ -523,7 +533,6 @@ void krShadeImg(
 
 	//ALWAYS FULLY MIX cSpace dIlr, don't -> mix3I(srcClr, cShadedI, clrProg, cShadedI);
 
-	//int green[3] = {0, 255, 0};
 	//assignIV(green, cShadedI);
 	//if (bordTotal == 0) { // TEMP!
 
@@ -550,6 +559,28 @@ void krShadeImg(
 	float underThresh = .2; // Surfs whos len + wid > underThresh are comped under.
 	alpha *= 1.0-jSmoothstep(1-sfFdOut, 1, levProg); // TODO should be tidProg?
 
+
+
+	int red[3] = {255, 0, 0};
+	int green[3] = {0, 255, 0};
+	int blue[3] = {0, 0, 255};
+	int yellow[3] = {255, 255, 0};
+	int cyan[3] = {0, 255, 255};
+	int magenta[3] = {255, 0, 255};
+
+	/* DEBUG
+	int ind = tid % 7;
+
+	if (ind == 0) assignIV(red, cShadedI);
+	else if (ind == 1) assignIV(green, cShadedI); 
+	else if (ind == 1) assignIV(blue, cShadedI); 
+	else if (ind == 1) assignIV(yellow, cShadedI); 
+	else if (ind == 1) assignIV(cyan, cShadedI); 
+	else if (ind == 1) assignIV(magenta, cShadedI); 
+	else  assignIV(grey, cShadedI); 
+	*/
+
+	
 	if (tidPos > 0 && xWxf >= 0 && yWxf >= 0 && xWxf < xres && yWxf < yres) {
 		//setArrayCellShd(xWxf, yWxf, xres, yres+1, cShadedI, shadedImgXf);
 		int over =  szRel[0] + szRel[1] < underThresh ? 1 : 0; // TODO make this work, impliment alpha!!
@@ -574,6 +605,9 @@ void shadeImgGrid(
 			float satClr,
 			float multClr,
 			float solidClr,
+			int style0x1y2rad,
+			int leftToRight,
+			int topToBottom,
 			int radiateTime,
 			int edgeThick,
 			int fr,
@@ -601,8 +635,8 @@ void shadeImgGrid(
 	for (x = 0; x < xres; x++ ) {
 		//if (x % 100 == 0) printf("\n satClr=%f, multClr=%f, solidClr=%f", satClr, multClr, solidClr);
 		for (y = 0; y < yres; y++ ) {
-			int yToUse = fromTop == 1 ? y : yres - y -1;
-			int xToUse = fromLeft == 1 ? x : xres - x -1;
+			int yToUse = topToBottom == 1 ? y : yres - y -1;
+			int xToUse = leftToRight == 1 ? x : xres - x -1;
 			krShadeImg(
 				// Const
 				xToUse,
@@ -624,6 +658,7 @@ void shadeImgGrid(
 				satClr,
 				multClr,
 				solidClr,
+				style0x1y2rad,
 				radiateTime,
 				edgeThick,
 				fr,

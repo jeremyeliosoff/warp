@@ -5718,13 +5718,48 @@ Another crack at the painting studio?
 WARP
 Clean up code (commit first)
 Promote parms, adding relevant functionality:
-	leftToRight
-	topToBottom
+	#D# leftToRight
+	#D# topToBottom
+	#D# style0x1y2rad
 	xThenY
-	style0x1y2rad
 Try noEdgeTids
-Do some other seqs:
-	div
-	waterfront
-	doubledecker
-	people, nyc or mt Roy
+
+
+***SEQS TO DO: S=started***
+
+S div
+S grapple
+S underpass
+S waterfront
+S people, nyc or mt Roy
+S doubledecker
+
+
+
+STONED
+Render as separate levels with alpha (eventually we can just render per lev aovs (eg tid) and reconstruct/comp final image efficiently)
+Have a BG other than black!
+
+
+================
+== TUE FEB 13 ==
+================
+
+Find cheque from dad!
+
+WARP
+#Dish# Do double-decker
+Eventually: get loop/retime/scale/watermark system going
+
+CLEAN
+Hallway
+More work on Studio
+
+TOM THING
+Continue (make space?)
+
+GRANTS
+Spend 30 min researching
+
+TUTORIALS
+Spend 30 min

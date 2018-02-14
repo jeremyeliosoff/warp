@@ -1663,7 +1663,7 @@ class warpUi():
 		frameRenQueue = Frame(self.frameParmAndControls)
 		frameRenQueue.grid(row=row, sticky=S) # Not convinced sticky does anything here.
 
-		if False: # No queue for now...
+		if True: # No queue for now...
 			thisLabel = Label(frameRenQueue, text="RenQ", justify="left")
 			thisLabel.grid(row=row, column=0)
 

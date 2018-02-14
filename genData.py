@@ -1331,6 +1331,7 @@ def imageToArray3d(srcImg, srcImgPath):
 		srcImgAr = pygame.surfarray.pixels3d(srcImg)
 	return srcImgAr
 
+
 def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 		tids, bbxs, xfs, tidTrips, tripFrK, isBulbs, shadedImgXf):
 	tidImgLs = list(pygame.surfarray.array3d(tidImg))
@@ -1405,7 +1406,10 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.float32(warpUi.parmDic("satClr")),
 			np.float32(warpUi.parmDic("multClr")),
 			np.float32(warpUi.parmDic("solidClr")),
-			np.float32(warpUi.parmDic("radiateTime")),
+			np.int32(warpUi.parmDic("style0x1y2rad")),
+			np.int32(warpUi.parmDic("leftToRight")),
+			np.int32(warpUi.parmDic("topToBottom")),
+			np.int32(warpUi.parmDic("radiateTime")),
 			np.int32(warpUi.parmDic("edgeThick")),
 			np.int32(frWOfs),
 			np.array(inhFrames, dtype=np.intc),
@@ -1427,19 +1431,14 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 
 	#print "\n-------------shadedImg[10][10]:", shadedImg[10][10], "\n"
 		
-	shadedImgSrf = pygame.surfarray.make_surface(shadedImg)
+	#shadedImgSrf = pygame.surfarray.make_surface(shadedImg)
 	#pygame.image.save(shadedImgSrf, "/tmp/shadedImgSrf.%05d.png" % fr)
-	shadedImgXfSrf = pygame.surfarray.make_surface(shadedImgXf)
-	renImgPath = warpUi.images["ren"]["path"]
-	renSeqDir = "/".join(renImgPath.split("/")[:-1]) #TODO: Do this with os.path.
-	ut.mkDirSafe(renSeqDir)
-	pygame.image.save(shadedImgXfSrf, renImgPath)
 	#pygame.image.save(shadedImgXfSrf, "/tmp/shadedImgXfSrf.%05d.png" % fr)
 
 	#return pygame.surfarray.make_surface(shadedImg)
-	return [
-		("ren", pygame.surfarray.make_surface(shadedImg)), 
-		("rip", pygame.surfarray.make_surface(aovRipImg))]
+	#return [
+	#	("ren", pygame.surfarray.make_surface(shadedImg)), 
+	#	("rip", pygame.surfarray.make_surface(aovRipImg))]
 
 
 def getTripFrK(warpUi): 
@@ -1468,20 +1467,21 @@ def generalTripToClrTrip(trip):
 	return trip
 
 
-def genSprites(warpUi, srcImg): 
-	print "\n_genSprites(): BEGIN"
+def render(warpUi): 
+	srcImg = pygame.image.load(warpUi.images["source"]["path"])
+	res = srcImg.get_size()
+
+	print "\n_render(): BEGIN"
 	spritesThisFr = [] # TODO expunge this
 
 	tripFrK = getTripFrK(warpUi)
-	print "_genSprites(): tripFrK:", tripFrK
+	print "_render(): tripFrK:", tripFrK
 
 	tidPosGridThisLevA = warpUi.tidPosGrid[warpUi.levsToRen[0]]
 	shape3d = (len(tidPosGridThisLevA)+1, len(tidPosGridThisLevA[0])+1, 3)
 	shadedImgXf, dud = makeBufferOutput(warpUi, shape3d)
-	print ("\n\nSSSSSSSSS shape3d", shape3d)
 
 	for lev in range(warpUi.parmDic("nLevels")):
-		print "_genSprites(): AAA"
 		if not lev in warpUi.levsToRen:
 			spritesThisFr.append({})
 			continue
@@ -1496,7 +1496,7 @@ def genSprites(warpUi, srcImg):
 			spritesThisFr.append({})
 			continue
 		tids.sort()
-		print "_genSprites(): Generating sprites for lev", lev, "len(tids) =", len(tids)
+		print "_render(): Generating sprites for lev", lev, "len(tids) =", len(tids)
 
 		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
 		tidImg = pygame.surfarray.make_surface(tidClrGrid)
@@ -1518,7 +1518,7 @@ def genSprites(warpUi, srcImg):
 		imgCent = (res[0]/2, res[1]/2)
 		#centToCnr = math.sqrt(imgCent[0]*imgCent[0] + imgCent[1]*imgCent[1])
 		centToCnr = ut.vLen(imgCent)
-		print "_genSprites(): BBB"
+		#print "\n\n &&&&&&&&&&&&&&&&&&&&&&&&&&&&& LAST TID====", tids[len(tids)-1]
 		for tidPos,tid in enumerate(tids):
 
 			# Get tidProg.
@@ -1551,7 +1551,7 @@ def genSprites(warpUi, srcImg):
 				dToCent = ut.vDist(imgCent, cent)
 				dNorm = float(dToCent)/centToCnr
 
-				#print "_genSprites() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
+				#print "_render() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
 				#bbxs.append(bbx)
 				bbxTup = (bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1])
 				bbxs.append(bbxTup)
@@ -1611,17 +1611,22 @@ def genSprites(warpUi, srcImg):
 				xfs.append((0.0,0.0)) # To keep tidPos synched.
 			isBulbs.append(isBulb)
 
-		print "_genSprites(): CCC"
 
 
-		shadedNamesAndImgs = shadeImg(warpUi, lev, srcImg, tidImg,
+		shadeImg(warpUi, lev, srcImg, tidImg,
 			tidPosGridThisLev, tids, bbxs, xfs,
 				tidTrips, generalTripToClrTrip(tripFrK), isBulbs, shadedImgXf)
 
 		spritesThisFr.append([])
 
-	print "_genSprites(): END"
-	return spritesThisFr
+	shadedImgXfSrf = pygame.surfarray.make_surface(shadedImgXf)
+	renImgPath = warpUi.images["ren"]["path"]
+	renSeqDir = "/".join(renImgPath.split("/")[:-1]) #TODO: Do this with os.path.
+	ut.mkDirSafe(renSeqDir)
+	pygame.image.save(shadedImgXfSrf, renImgPath)
+
+
+	warpUi.spritesThisFr = spritesThisFr
 
 
 def getMoveKProg(warpUi, frOfs):
@@ -1675,34 +1680,6 @@ def getMoveKProg(warpUi, frOfs):
 	return moveKProg
 
 
-def calcXfCig(warpUi, tidProg, bbxTup):
-	res = warpUi.res
-
-	sz = (bbxTup[2] - bbxTup[0], bbxTup[3] - bbxTup[1]) 
-
-	rels = (float(sz[0])/res[0]) * (float(sz[1])/res[1])
-	
-	#if sz[0] > 10:
-	#	print "res", res, "sz", sz, "rels", rels
-	relsPostSmooth = ut.smoothstep(0, warpUi.parmDic("moveUseAsBiggest"), rels)
-	relsPostSmooth = pow(relsPostSmooth, warpUi.parmDic("moveBiggestPow"))
-	
-	moveKBig = ut.mix(1.0, warpUi.parmDic("moveKForBiggest"), relsPostSmooth)
-
-	tCent = ((bbxTup[0] + bbxTup[2])/2, (bbxTup[1] + bbxTup[3])/2) 
-	pCent = (res[0]/2, res[1]/2)
-	dFromCentXy = (tCent[0]-pCent[0], tCent[1]-pCent[1])
-	#dFromCent = math.sqrt(dFromCentXy[0]*dFromCentXy[0] + dFromCentXy[1]*dFromCentXy[1])
-	dFromCent = ut.vLen(dFromCentXy)/float(res[0]/2)
-	fr = warpUi.parmDic("fr")
-	moveRippleOfs = .2
-	frOfs = fr - (dFromCent-moveRippleOfs) * warpUi.parmDic("moveRippleSpeed")
-	frOfs += 55 # Hack that seems to work?
-	moveKProg = getMoveKProg(warpUi, frOfs)
-
-	k = warpUi.parmDic("moveK")*tidProg*moveKBig*(warpUi.parmDic("moveKofs")+moveKProg)
-	return (dFromCentXy[0]*k, dFromCentXy[1]*k)
-
 def calcXf(warpUi, tidProg, bbxTup):
 	res = warpUi.res
 
@@ -1722,58 +1699,28 @@ def calcXf(warpUi, tidProg, bbxTup):
 	centY = warpUi.parmDic("centY")
 	pCent = (centX*res[0], centY*res[1]/2)
 	dFromCentXy = (tCent[0]-pCent[0], tCent[1]-pCent[1])
+
 	#dFromCent = math.sqrt(dFromCentXy[0]*dFromCentXy[0] + dFromCentXy[1]*dFromCentXy[1])
 	dFromCent = ut.vLen(dFromCentXy)/float(res[0]/2)
 	fr = warpUi.parmDic("fr")
 	moveRippleOfs = .2
 	frOfs = fr - (dFromCent-moveRippleOfs) * warpUi.parmDic("moveRippleSpeed")
 	frOfs += 55 # Hack that seems to work?
-	k = warpUi.parmDic("moveK")*tidProg*moveKBig*(warpUi.parmDic("moveKofs")) # moveKProg not needed post-cig
-	return (dFromCentXy[0]*k, dFromCentXy[1]*k)
+	k = tidProg*moveKBig*warpUi.parmDic("moveK")*(warpUi.parmDic("moveKofs")) # moveKProg not needed post-cig
+	style0x1y2rad = warpUi.parmDic("style0x1y2rad")
+	if style0x1y2rad == 0:
+		xf = (dFromCentXy[0]*k, 0)
+	elif style0x1y2rad == 1:
+		xf = (0, dFromCentXy[1]*k)
+	else:
+		xf = (dFromCentXy[0]*k, dFromCentXy[1]*k)
+	return xf
 
-
-def renCv(warpUi, srcImg, lev, tid, xf, canvas, canvasLev):
-	#xfInt = (int(xf[0]), int(xf[1]))
-	vals = warpUi.tidToSids[lev][tid]
-	for sid in vals["sids"]:
-		if sid in warpUi.sidToCvDic[lev].keys():
-			cvs = warpUi.sidToCvDic[lev][sid]["cvs"]
-			for cv in cvs:
-				for jt in cv:
-					srcClr = srcImg.get_at(jt)[:-1]
-					canvas.set_at((jt[0] + int(xf[0]), jt[1] + int(xf[1])), srcClr)
-					#canvas.set_at((jt[0] + xfInt[0], jt[1] + xfInt[1]), (255, 0, 0))
-	return None
 
 
 
 def getFadeout(fr):
 	return 1 # - ut.smoothstep(3135, 3230, fr) NO FADE OUT YET
-
-
-def renOneSprite(res, sprite, bbx, path):
-	canvas = pygame.Surface(res, pygame.SRCALPHA, 32)
-	canvas.fill((0, 0, 0))
-	bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-	#if lev > 0:  #TODO make this kosher!!!
-	canvas.blit(sprite, (bbxTup[0], bbxTup[1]))
-	pygame.image.save(canvas, path)
-
-
-
-def genAndRenSprites(fr, warpUi):	# TODO: Is fr really needed?
-	srcImg = pygame.image.load(warpUi.images["source"]["path"])
-	res = srcImg.get_size()
-
-	# Only gen sprites if they don't exist or fr is different.
-	forceRegen = True
-	if forceRegen or warpUi.spritesThisFr == None or (not warpUi.spritesLoadedFr == fr):
-		print "_genAndRenSprites(): spritesThisFr don't exist or wrong fr; generating..."
-		warpUi.spritesThisFr = genSprites(warpUi, srcImg)
-		warpUi.spritesLoadedFr = fr
-	else:
-		print "_genAndRenSprites(): spritesThisFr exist for this frame, reusing."
-
 
 
 def renWrapper(warpUi):
@@ -1830,7 +1777,7 @@ def renWrapper(warpUi):
 			warpUi.dataLoadedForFr = fr
 			print "\n_renWrapper(): post _inSurfGridToTidGrid...\n\n"
 	#renTidGridGPU(warpUi)
-	genAndRenSprites(fr, warpUi)
+	render(warpUi)
 	print "_renWrapper(): END - time =", time.time() - renWrapperStartTime;
 
 

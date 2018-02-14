@@ -33,7 +33,6 @@ def dist(a, b):
 #rng = "1-1245"
 rng = "3900-4399" # sub_comingPpl
 frStart = 0
-fade = 125
 
 
 seqs = sys.argv[1:]
@@ -55,19 +54,26 @@ seqDic = {
  "newArrBUQ_Ppl":{"rng":"925-1550", "cent":(.22, .48), "fade":(200, 200)}, # ppl
  "sub_going":{"rng":"1750-2300", "cent":(.25, .5), "fade":(200, 200)},
  "newDepMtRDark":{"rng":"1-750", "cent":(.75, .3), "fade":(250, 250)},
+ "dd_turn":{"rng":"250-870", "cent":(.25, .5), "fade":(150, 150), "edgeHard":3},
  #"newArrBUQ_GOODHR":{"rng":"500-1000", "cent":(.22, .48)}, arr
 }
+
+edgeHard = 2
 
 for seq in seqs:
 	for seqRoot,vals in seqDic.items():
 		if seq[:len(seqRoot)] == seqRoot:
+			print "\nseqRoot:", seqRoot, "\n"
 			cent = vals["cent"]
 			rng = vals["rng"]
 			fade = vals["fade"]
+			if "edgeHard" in vals.keys():
+				edgeHard = vals["edgeHard"]
 	
 	print "seq:", seq
 	print "cent:", cent
 	print "rng:", rng
+	print "edgeHard:", edgeHard
 
 #for jpgDir,rng in rangeDic.items():
 	if seq[-1] == "/":
@@ -117,6 +123,9 @@ for seq in seqs:
 		cxAbs = cent[0] * sx
 		cyAbs = cent[1] * sy
 		cnrToCent = dist((0,0), (cent[0],cent[1]))
+		fadeIn = min(1, (float(fr)-float(mn))/fade[0])
+		fadeOut = min(1, (float(mx)-float(fr))/fade[1])
+		#print "fadeIn", fadeIn, "fadeOut", fadeOut, "mx", mx, "fr", fr, "fade", fade, "(float(mx)-float(fr))/fade[1]", (float(mx)-float(fr))/fade[1], "\n"
 		for x in range(sx):
 			for y in range(sy):
 				if x < cxAbs:
@@ -132,13 +141,12 @@ for seq in seqs:
 				k = max(0, 1-dist((0,0), (xRel,yRel)))
 
 				# Harden edge
-				edgeHard = 2
+				#edgeHard = 2
 				inv = 1-k
 				for i in range(edgeHard):
 					inv *= 1-k
 				k = 1-inv
-				k *= min(1, (float(fr)-float(mn))/fade[0])
-				k *= min(1, (float(mx)-float(fr))/fade[1])
+				k *= fadeIn * fadeOut
 
 				#if x < hsx:
 				#	kx = x/ hsx

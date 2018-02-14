@@ -180,6 +180,18 @@ fadeOutDelPerLev
 type int
 val 8
 
+style0x1y2rad
+type int
+val 2
+
+leftToRight
+type int
+val 1
+
+topToBottom
+type int
+val 1
+
 moveK
 type float
 val 0
