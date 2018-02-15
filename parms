@@ -4,7 +4,7 @@
 ---META---
 
 fr
-val 629
+val 660
 
 fps
 val 52
@@ -37,7 +37,7 @@ lev_dbImg2
 val ALL
 
 renVer
-val v011reRenderTest
+val v014readStash
 
 frStart
 val 250
@@ -86,7 +86,7 @@ val 1
 ---REN---
 
 dataVer
-val v009reRenderTest
+val v008full
 
 tripAlwaysOn
 val 1
@@ -95,7 +95,7 @@ isoLev
 val -1
 
 clrFrOfs
-val 2000
+val 0
 
 edgeThick
 val 1
@@ -113,10 +113,10 @@ solidClr
 val 0
 
 centX
-val .25
+val -1.2
 
 centY
-val .4
+val 0
 
 fadeOutStart
 val 5000
@@ -128,7 +128,7 @@ fadeOutDelPerLev
 val 8
 
 style0x1y2rad
-val 2
+val 0
 
 leftToRight
 val 1
@@ -137,7 +137,7 @@ topToBottom
 val 0
 
 moveK
-val 1.5
+val 1
 
 moveKofs
 val .25

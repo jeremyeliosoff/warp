@@ -248,7 +248,6 @@ void krShadeImg(
 			// Parms
 			float clrKBig,
 			float kRip,
-			float moveK,
 			float centX,
 			float centY,
 			float satClr,
@@ -648,6 +647,11 @@ void shadeImgGrid(
 			float clrKBig,
 			float kRip,
 			float moveK,
+			float moveUseAsBiggest,
+			float moveBiggestPow,
+			float moveKForBiggest,
+			float moveRippleSpeed,
+			float moveKofs,
 			float centX,
 			float centY,
 			float satClr,
@@ -692,13 +696,6 @@ void shadeImgGrid(
 			bbx[bbxInd] = bbxs[tidPos*4 + bbxInd];
 		}
 
-		float moveUseAsBiggest = 1;
-		float moveBiggestPow = .25;
-		float moveKForBiggest = 0;
-		float moveRippleSpeed = 300;
-		//float moveK = 1;
-		float moveKofs = .25;
-		int style0x1y2rad = 2;
 		//float tidProg = .5; // FIX
 		float tidProg = tidTrips[tidPos]/100.0;
 
@@ -746,7 +743,6 @@ void shadeImgGrid(
 				// Parms
 				clrKBig,
 				kRip,
-				moveK,
 				centX,
 				centY,
 				satClr,
@@ -755,6 +751,7 @@ void shadeImgGrid(
 				style0x1y2rad,
 				radiateTime,
 				edgeThick,
+
 				fr,
 
 

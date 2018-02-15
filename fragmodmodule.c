@@ -26,6 +26,11 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	float clrKBig;
 	float kRip;
 	float moveK;
+	float moveUseAsBiggest;
+	float moveBiggestPow;
+	float moveKForBiggest;
+	float moveRippleSpeed;
+	float moveKofs;
 	float centX;
 	float centY;
 	float satClr;
@@ -57,7 +62,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	PyArrayObject *shadedImgXf=NULL;
 
 	// TODO: Many i's should be f's!
-    if (!PyArg_ParseTuple(args, "iiiifffffffffffiiiiiiOOOOOOOOOOOOOOO",
+    if (!PyArg_ParseTuple(args, "iiiiffffffffffffffffiiiiiiOOOOOOOOOOOOOOO",
 		&xres,
 		&yres,
 		&lev,
@@ -68,6 +73,11 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		&clrKBig,
 		&kRip,
 		&moveK,
+		&moveUseAsBiggest,
+		&moveBiggestPow,
+		&moveKForBiggest,
+		&moveRippleSpeed,
+		&moveKofs,
 		&centX,
 		&centY,
 		&satClr,
@@ -129,6 +139,11 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		clrKBig,
 		kRip,
 		moveK,
+		moveUseAsBiggest,
+		moveBiggestPow,
+		moveKForBiggest,
+		moveRippleSpeed,
+		moveKofs,
 		centX,
 		centY,
 		satClr,

@@ -1309,6 +1309,11 @@ def shadeImg(warpUi, lev, srcImg, tidPosGridThisLev,
 			np.float32(warpUi.parmDic("clrKBig")),
 			np.float32(kRip),
 			np.float32(warpUi.parmDic("moveK")),
+			np.float32(warpUi.parmDic("moveUseAsBiggest")),
+			np.float32(warpUi.parmDic("moveBiggestPow")),
+			np.float32(warpUi.parmDic("moveKForBiggest")),
+			np.float32(warpUi.parmDic("moveRippleSpeed")),
+			np.float32(warpUi.parmDic("moveKofs")),
 			np.float32(warpUi.parmDic("centX")),
 			np.float32(warpUi.parmDic("centY")),
 			np.float32(warpUi.parmDic("satClr")),
@@ -1389,15 +1394,22 @@ def render(warpUi):
 	shape3d = (len(tidPosGridThisLevA)+1, len(tidPosGridThisLevA[0])+1, 3)
 	shadedImgXf, dud = makeBufferOutput(warpUi, shape3d)
 
+
+	fr, frameDir = warpUi.makeFramesDataDir()
 	for lev in range(warpUi.parmDic("nLevels")):
 		ut.timerStart(warpUi, "preshade")
 		ut.timerStart(warpUi, "preshade1")
 		if not lev in warpUi.levsToRen:
 			continue
 
-		fr = warpUi.parmDic("fr")
-		write = False
-		if write:
+		#for stashedBasename in ["isBulbs", "tidTrips", "bbx1d", "tids", "xfs", "tidPosGridThisLev"]:
+		#	stashedPath = frameDir + ("/lev%02d." % lev) + stashedBasename
+		#	if not os.path.exists(stashedPath):
+		#		print "\nUUUUUUUUNNNNNNNNNNNNNNN_render():", stashedPath, "DOES NOT EXIST!  Writing stashed data..."
+		#		warpUi.writeStash = True
+		#		break
+		print "\n\n\nJJJJJJJJJJJJJJJ _render(): warpUi.writeStash:", warpUi.writeStash
+		if warpUi.writeStash:
 			tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
 			tidToSidsThisLev = warpUi.tidToSids[lev]
 
@@ -1522,6 +1534,7 @@ def render(warpUi):
 
 
 				else:
+					print "\n\n UUUUUUUUUUUUUUUUUUUUUUUU _render(): Reading stashed data..."
 					xfs.append((0.0,0.0)) # To keep tidPos synched.
 				isBulbs.append(isBulb)
 
@@ -1531,24 +1544,36 @@ def render(warpUi):
 
 			
 			print "\n\npickleDumping....."
-			pickleDump("/tmp/fr%05d.lev%02d.isBulbs" % (fr, lev), isBulbs)
-			pickleDump("/tmp/fr%05d.lev%02d.tidTrips" % (fr, lev), tidTrips)
-			pickleDump("/tmp/fr%05d.lev%02d.bbx1d" % (fr, lev), bbx1d)
-			pickleDump("/tmp/fr%05d.lev%02d.tids" % (fr, lev), tids)
-			pickleDump("/tmp/fr%05d.lev%02d.xfs" % (fr, lev), xfs)
-			pickleDump("/tmp/fr%05d.lev%02d.tidPosGridThisLev" % (fr, lev), tidPosGridThisLev)
+			#pickleDump("/tmp/fr%05d.lev%02d.isBulbs" % (fr, lev), isBulbs)
+			#pickleDump("/tmp/fr%05d.lev%02d.tidTrips" % (fr, lev), tidTrips)
+			#pickleDump("/tmp/fr%05d.lev%02d.bbx1d" % (fr, lev), bbx1d)
+			#pickleDump("/tmp/fr%05d.lev%02d.tids" % (fr, lev), tids)
+			#pickleDump("/tmp/fr%05d.lev%02d.xfs" % (fr, lev), xfs)
+			#pickleDump("/tmp/fr%05d.lev%02d.tidPosGridThisLev" % (fr, lev), tidPosGridThisLev)
+			pickleDump(frameDir + ("/lev%02d.isBulbs" % lev), isBulbs)
+			pickleDump(frameDir + ("/lev%02d.tidTrips" % lev), tidTrips)
+			pickleDump(frameDir + ("/lev%02d.bbx1d" % lev), bbx1d)
+			pickleDump(frameDir + ("/lev%02d.tids" % lev), tids)
+			pickleDump(frameDir + ("/lev%02d.xfs" % lev), xfs)
+			pickleDump(frameDir + ("/lev%02d.tidPosGridThisLev" % lev), tidPosGridThisLev)
 			#pygame.image.save(tidImg, "/tmp/fr%05d.lev%02d.tidImg" % (fr, lev))
 			print "\n\nDone pickleDumping....."
 		else:
 
 			ut.timerStart(warpUi, "pickleLoad")
 			print "\n\npickleLoading....."
-			isBulbs = pickleLoad("/tmp/fr%05d.lev%02d.isBulbs" % (fr, lev))
-			tidTrips = pickleLoad("/tmp/fr%05d.lev%02d.tidTrips" % (fr, lev))
-			bbx1d = pickleLoad("/tmp/fr%05d.lev%02d.bbx1d" % (fr, lev))
-			tids = pickleLoad("/tmp/fr%05d.lev%02d.tids" % (fr, lev))
-			xfs = pickleLoad("/tmp/fr%05d.lev%02d.xfs" % (fr, lev))
-			tidPosGridThisLev = pickleLoad("/tmp/fr%05d.lev%02d.tidPosGridThisLev" % (fr, lev))
+			isBulbs = pickleLoad(frameDir + ("/lev%02d.isBulbs" % lev))
+			tidTrips = pickleLoad(frameDir + ("/lev%02d.tidTrips" % lev))
+			bbx1d = pickleLoad(frameDir + ("/lev%02d.bbx1d" % lev))
+			tids = pickleLoad(frameDir + ("/lev%02d.tids" % lev))
+			xfs = pickleLoad(frameDir + ("/lev%02d.xfs" % lev))
+			tidPosGridThisLev = pickleLoad(frameDir + ("/lev%02d.tidPosGridThisLev" % lev))
+			#isBulbs = pickleLoad("/tmp/fr%05d.lev%02d.isBulbs" % (fr, lev))
+			#tidTrips = pickleLoad("/tmp/fr%05d.lev%02d.tidTrips" % (fr, lev))
+			#bbx1d = pickleLoad("/tmp/fr%05d.lev%02d.bbx1d" % (fr, lev))
+			#tids = pickleLoad("/tmp/fr%05d.lev%02d.tids" % (fr, lev))
+			#xfs = pickleLoad("/tmp/fr%05d.lev%02d.xfs" % (fr, lev))
+			#tidPosGridThisLev = pickleLoad("/tmp/fr%05d.lev%02d.tidPosGridThisLev" % (fr, lev))
 			#pygame.image.save(tidImg, "/tmp/fr%05d.lev%02d.tidImg" % (fr, lev))
 			print "\n\nDone pickleLoading....."
 			print "\n PICKLE LOAD TIME",  ut.timerStop(warpUi, "pickleLoad")
@@ -1584,7 +1609,7 @@ def render(warpUi):
 	ut.mkDirSafe(renSeqDir)
 	pygame.image.save(shadedImgXfSrf, renImgPath)
 	renderTime = ut.timerStop(warpUi, "render")
-	print "\n\n VVVVVVVVVvvv write", write, "renderTime", renderTime
+	print "\n\n VVVVVVVVVvvv warpUi.writeStash", warpUi.writeStash, "renderTime", renderTime
 
 
 
@@ -1716,7 +1741,18 @@ def renWrapper(warpUi):
 			loadLatestTidToSids(warpUi)
 
 	forceGenTidPosGrid = True # TODO: Do you ever want this False?
-	if True or forceGenTidPosGrid == False and (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
+
+	warpUi.writeStash = False
+	for lev in warpUi.levsToRen:
+		for stashedBasename in ["isBulbs", "tidTrips", "bbx1d", "tids", "xfs", "tidPosGridThisLev"]:
+			stashedPath = frameDir + ("/lev%02d." % lev) + stashedBasename
+			if not os.path.exists(stashedPath):
+				print "\nUUUUUUUUNNNNNNNNNNNNNNN_render():", stashedPath, "DOES NOT EXIST!  Writing stashed data..."
+				warpUi.writeStash = True
+				break
+		if warpUi.writeStash == True:
+			break
+	if warpUi.writeStash == False or forceGenTidPosGrid == False and (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
 		print "_renWrapper(): tidPosGrid already loaded for fr " \
 			+ str(fr) + ", reusing."
 	else:
