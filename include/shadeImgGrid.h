@@ -240,6 +240,7 @@ void krShadeImg(
 
 			// Per-obj varying attrs
 			int lev,
+			int nTids,
 			float levProg,
 			float levPct,
 			float tripGlobF,
@@ -247,6 +248,7 @@ void krShadeImg(
 			// Parms
 			float clrKBig,
 			float kRip,
+			float moveK,
 			float centX,
 			float centY,
 			float satClr,
@@ -263,7 +265,7 @@ void krShadeImg(
 			int* brFrames,
 			float* cInOutVals,
 			int* srcImg,
-			int* tidImg,
+			//int* tidImg,
 			int* tidPosGridThisLev,
 			int* tids,
 			int* bbxs,
@@ -591,15 +593,61 @@ void krShadeImg(
 	*/
 }
 
+void calcXfC(
+	int fr,
+	int xres,
+	int yres,
+	float moveUseAsBiggest,
+	float moveBiggestPow,
+	float moveKForBiggest,
+	float centX,
+	float centY,
+	float moveRippleSpeed,
+	float moveK,
+	float moveKofs,
+	int style0x1y2rad,
+	int* bbx,
+	float tidProg,
+	float* xfx,
+	float* xfy
+) {
+	int szx = bbx[2] - bbx[0];
+	int szy = bbx[3] - bbx[1];
+	float szRel = ((float)szx)/((float)xres) * ((float)szy)/((float)yres);
+
+	float relsPostSmooth = jSmoothstep(0, moveUseAsBiggest, szRel);
+	relsPostSmooth = pow(relsPostSmooth, moveBiggestPow);// Is pow ok in C?
+	float moveKBig = mixF(1.0, moveKForBiggest, relsPostSmooth);
+
+	int tCentx = (bbx[0] + bbx[2])/2;
+	int tCenty = (bbx[1] + bbx[3])/2;
+
+	int dFromCentX = tCentx - centX*xres;
+	int dFromCentY = tCenty - centY*yres;
+
+	float k = tidProg*moveKBig*moveK*moveKofs; //moveKProg not needed post-cig
+
+	*xfx = dFromCentX*k;
+	*xfy = dFromCentY*k;
+	
+	if (style0x1y2rad == 0) {
+		*xfy = 0;
+	} else if (style0x1y2rad == 1) {
+		*xfx = 0;
+	}
+}
+
 void shadeImgGrid(
 			int xres,
 			int yres,
 			int lev,
+			int nTids,
 			float levProg,
 			float levPct,
 			float tripGlobF,
 			float clrKBig,
 			float kRip,
+			float moveK,
 			float centX,
 			float centY,
 			float satClr,
@@ -616,7 +664,7 @@ void shadeImgGrid(
 			int* brFrames,
 			float* cInOutVals,
 			int* srcImg,
-			int* tidImg,
+			//int* tidImg,
 			int* tidPosGridThisLev,
 			int* tids,
 			int* bbxs,
@@ -632,6 +680,50 @@ void shadeImgGrid(
 
 	int fromTop = 0;
 	int fromLeft = 0;
+
+	//int lenTest = 10;
+	float xfsCalc[nTids*2];
+
+	for (int tidPos = 0; tidPos < nTids; tidPos++ ) {
+		float xfx = 0;
+		float xfy = 0;
+		int bbx[4];
+		for (int bbxInd = 0; bbxInd < 4; bbxInd++) {
+			bbx[bbxInd] = bbxs[tidPos*4 + bbxInd];
+		}
+
+		float moveUseAsBiggest = 1;
+		float moveBiggestPow = .25;
+		float moveKForBiggest = 0;
+		float moveRippleSpeed = 300;
+		//float moveK = 1;
+		float moveKofs = .25;
+		int style0x1y2rad = 2;
+		//float tidProg = .5; // FIX
+		float tidProg = tidTrips[tidPos]/100.0;
+
+		calcXfC(
+			fr,
+			xres,
+			yres,
+			moveUseAsBiggest,
+			moveBiggestPow,
+			moveKForBiggest,
+			centX,
+			centY,
+			moveRippleSpeed,
+			moveK,
+			moveKofs,
+			style0x1y2rad,
+			bbx,
+			tidProg,
+			&xfx,
+			&xfy);
+		xfsCalc[tidPos*2] = xfx;
+		xfsCalc[tidPos*2+1] = xfy;
+	}
+
+
 	for (x = 0; x < xres; x++ ) {
 		//if (x % 100 == 0) printf("\n satClr=%f, multClr=%f, solidClr=%f", satClr, multClr, solidClr);
 		for (y = 0; y < yres; y++ ) {
@@ -646,6 +738,7 @@ void shadeImgGrid(
 
 				// attrs
 				lev,
+				nTids,
 				levProg,
 				levPct,
 				tripGlobF,
@@ -653,6 +746,7 @@ void shadeImgGrid(
 				// Parms
 				clrKBig,
 				kRip,
+				moveK,
 				centX,
 				centY,
 				satClr,
@@ -669,11 +763,12 @@ void shadeImgGrid(
 				brFrames,
 				cInOutVals,
 				srcImg,
-				tidImg,
+				//tidImg,
 				tidPosGridThisLev,
 				tids,
 				bbxs,
-				xfs,
+				//xfs,
+				xfsCalc,
 				isBulbs,
 				tidTrips,
 				aovRipImg,

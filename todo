@@ -5745,21 +5745,29 @@ Have a BG other than black!
 == TUE FEB 13 ==
 ================
 
-Find cheque from dad!
+#D# Find cheque from dad!
 
 WARP
 #Dish# Do double-decker
 Eventually: get loop/retime/scale/watermark system going
 
 CLEAN
-Hallway
+#D# Hallway
 More work on Studio
 
 TOM THING
 Continue (make space?)
 
-GRANTS
-Spend 30 min researching
+#D# GRANTS
+#Dish -- well, I applied to mtlearts# Spend 30 min researching
 
-TUTORIALS
-Spend 30 min
+#D# TUTORIALS
+#D# Spend 30 min
+
+================
+== WED FEB 14 ==
+================
+
+STASH REN DATA to re-render quickly, changing clr + xf
+	do calcXf in shading
+	write to data/..../frames dir (only if it doesn't exist)

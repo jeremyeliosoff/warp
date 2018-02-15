@@ -467,12 +467,12 @@ def writeTime(warpUi, label, time):
 			f.write(toWrite + "\n")
 
 def timerStart(warpUi, label):
-	if warpUi.writeTimerStats:
 		warpUi.timerStarts[label] = time.time()
 
 def timerStop(warpUi, label):
-	if warpUi.writeTimerStats:
-		writeTime(warpUi, label, time.time() - warpUi.timerStarts[label])
+	lapsed =  time.time() - warpUi.timerStarts[label]
+	writeTime(warpUi, label, lapsed)
+	return lapsed
 
 def recordMemUsage(path):
 	process = psutil.Process(os.getpid())

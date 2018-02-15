@@ -1241,85 +1241,6 @@ def renBg(warpUi): # NOTE: This is not currently used!!
 
 	print "\n_renBg(): END\n"
 
-def shadeBg(warpUi, srcImg):
-	kernel = """
-
-float mixI(uchar a, uchar b, float m) {
-	return m*b + (1.0-m)*a;
-}
-
-void mix3(uchar* a, uchar* b, float m, uchar* ret) {
-	int i;
-	for (i = 0; i < 3; i++) {
-		ret[i] = mixI(a[i], b[i], m);
-	}
-}
-
-float dist(float x0, float y0, float x1, float y1) {
-	float dx = x1-x0;
-	float dy = y1-y0;
-	return sqrt(dx*dx + dy*dy);
-}
-
-void setArrayCell(int x, int y, int xres, int yres,
-  uchar* val,
-  __global uchar* ret)
-{
-	if (x >= 0 && x < xres && y >= 0 && y < yres) {
-		int i = (x * yres + y) * 3;
-		ret[i] = val[0];
-		ret[i+1] = val[1];
-		ret[i+2] = val[2];
-	}
-}
-
-__kernel void krShadeBg(
-			int xres,
-			int yres,
-			__global uchar* shadedImg)
-{
-	unsigned int x = get_global_id(0);
-	unsigned int y = get_global_id(1);
-	uchar outClr[3];
-	outClr[0] = 255;
-	outClr[1] = 10;
-	outClr[2] = 200;
-
-	int cx = xres/2;	
-	int cy = yres/2;	
-	float dFromCent = dist(x, y, cx, cy);
-	float dNorm = min(1.0, dFromCent/cx);
-
-	uchar red[] = {200, 0, 0};
-	uchar black[] = {0, 0, 0};
-	mix3(red, black, dNorm, outClr);
-	setArrayCell(x, y, xres, yres+1, outClr, shadedImg);
-
-}
-
-"""
-	srcImgLs = list(pygame.surfarray.array3d(srcImg))
-	srcImgAr_buf = makeBufferInput(warpUi, srcImgLs)
-	# Outputs
-	shadedImg = np.zeros((len(srcImgLs), len(srcImgLs[0]), len(srcImgLs[0][0])), dtype=np.uint8)
-	shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
-		cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
-
-
-	bld = cl.Program(warpUi.cntxt, kernel).build()
-	launch = bld.krShadeBg(
-			warpUi.queue,
-			#srcImgAr.shape,
-			warpUi.res,
-			None,
-			np.int32(warpUi.res[0]),
-			np.int32(warpUi.res[1]),
-			shadedImg_buf)
-	launch.wait()
-	
-	cl.enqueue_read_buffer(warpUi.queue, shadedImg_buf, shadedImg).wait()
-		
-	return pygame.surfarray.make_surface(shadedImg)
 
 def imageToArray3d(srcImg, srcImgPath):
 	res = srcImg.get_size()
@@ -1332,29 +1253,15 @@ def imageToArray3d(srcImg, srcImgPath):
 	return srcImgAr
 
 
-def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
+def shadeImg(warpUi, lev, srcImg, tidPosGridThisLev,
 		tids, bbxs, xfs, tidTrips, tripFrK, isBulbs, shadedImgXf):
-	tidImgLs = list(pygame.surfarray.array3d(tidImg))
 
 	# Inputs
+	shape2d = (len(tidPosGridThisLev), len(tidPosGridThisLev[0]))
 		
 	srcImgPath = warpUi.images["source"]["path"]
 
 	srcImgAr = imageToArray3d(srcImg, srcImgPath)
-
-
-	srcImgAr_buf = makeBufferInput(warpUi, list(srcImgAr), dtype=np.intc)
-	tidImgAr_buf = makeBufferInput(warpUi, tidImgLs, dtype=np.intc)
-	tidPosGridThisLev_buf = makeBufferInput(warpUi, tidPosGridThisLev, dtype=np.intc)
-	bbxs_buf = makeBufferInput(warpUi, bbxs, dtype=np.intc)
-	tids_buf = makeBufferInput(warpUi, tids, dtype=np.intc)
-	isBulbs_buf = makeBufferInput(warpUi, isBulbs, dtype=np.float32)
-	tidTrips_buf = makeBufferInput(warpUi, tidTrips, dtype=np.intc)
-	xfs_buf = makeBufferInput(warpUi, xfs, dtype=np.float32)
-
-	cInOutVals_buf = makeBufferInput(warpUi, warpUi.cInOutVals, dtype=np.float32)
-	# print "\n\n\n\nHHHHHHHHHHHHHHHHHHHHHHHHH warpUi.cInOutVals", warpUi.cInOutVals
-	# print "\n"*10
 
 	dud,inhFrames = zip(*warpUi.inhParms)
 	dud,exhFrames = zip(*warpUi.exhParms)
@@ -1371,12 +1278,11 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 	#shadedImg = np.zeros((len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0])), dtype=np.intc)
 	#shadedImg_buf = cl.Buffer(warpUi.cntxt, cl.mem_flags.WRITE_ONLY |
 	#	cl.mem_flags.COPY_HOST_PTR,hostbuf=shadedImg)
-	shape3d = (len(tidImgLs), len(tidImgLs[0]), len(tidImgLs[0][0]))
-	shape2d = (len(tidImgLs), len(tidImgLs[0]))
-	shadedImg, shadedImg_buf = makeBufferOutput(warpUi, shape3d)
-	#shadedImgXf, dud = makeBufferOutput(warpUi, shape3d)
-	aovRipImg, aovRipImg_buf = makeBufferOutput(warpUi, shape3d)
-	alphaBoostImg, alphaBoostImg_buf = makeBufferOutput(warpUi, shape2d)
+	shape3d = shape2d + (3,)
+	#shape2d = tidImg.get_size()
+	shadedImg, dud = makeBufferOutput(warpUi, shape3d)
+	aovRipImg, dud = makeBufferOutput(warpUi, shape3d)
+	alphaBoostImg, dud = makeBufferOutput(warpUi, shape2d)
 
 	kRip = ut.mix(.1, 1, tripFrK);
 
@@ -1396,11 +1302,13 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.int32(warpUi.res[0]),
 			np.int32(warpUi.res[1]),
 			np.int32(lev),
+			np.int32(len(tids)),
 			np.float32(levProg),
 			np.float32(levPct),
 			np.float32(tripFrK),
 			np.float32(warpUi.parmDic("clrKBig")),
 			np.float32(kRip),
+			np.float32(warpUi.parmDic("moveK")),
 			np.float32(warpUi.parmDic("centX")),
 			np.float32(warpUi.parmDic("centY")),
 			np.float32(warpUi.parmDic("satClr")),
@@ -1417,7 +1325,7 @@ def shadeImg(warpUi, lev, srcImg, tidImg, tidPosGridThisLev,
 			np.array(brFrames, dtype=np.intc),
 			np.array(warpUi.cInOutVals, dtype=np.float32),
 			np.array(srcImgAr, dtype=np.intc),
-			np.array(tidImgLs, dtype=np.intc),
+			#np.array(tidImgLs, dtype=np.intc),
 			np.array(tidPosGridThisLev, dtype=np.intc),
 			np.array(tids, dtype=np.intc),
 			np.array(bbxs, dtype=np.intc),
@@ -1468,11 +1376,11 @@ def generalTripToClrTrip(trip):
 
 
 def render(warpUi): 
+	ut.timerStart(warpUi, "render")
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
 	res = srcImg.get_size()
 
 	print "\n_render(): BEGIN"
-	spritesThisFr = [] # TODO expunge this
 
 	tripFrK = getTripFrK(warpUi)
 	print "_render(): tripFrK:", tripFrK
@@ -1482,151 +1390,203 @@ def render(warpUi):
 	shadedImgXf, dud = makeBufferOutput(warpUi, shape3d)
 
 	for lev in range(warpUi.parmDic("nLevels")):
+		ut.timerStart(warpUi, "preshade")
+		ut.timerStart(warpUi, "preshade1")
 		if not lev in warpUi.levsToRen:
-			spritesThisFr.append({})
 			continue
-
-		tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
-		tidToSidsThisLev = warpUi.tidToSids[lev]
-
-		# Pad to fit img dimensions - no tid for last x or y.
-		tidPosGridThisLev = np.lib.pad(tidPosGridThisLev, ((1,0), (0,1)), "constant", constant_values=-1)
-		tids = tidToSidsThisLev.keys()
-		if tids == []:
-			spritesThisFr.append({})
-			continue
-		tids.sort()
-		print "_render(): Generating sprites for lev", lev, "len(tids) =", len(tids)
-
-		tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
-		tidImg = pygame.surfarray.make_surface(tidClrGrid)
-
-
 
 		fr = warpUi.parmDic("fr")
-		# path = "/tmp/tidImg.lev%03d.%05d.png" % (lev, fr)
-		# pygame.image.save(tidImg, path)
+		write = False
+		if write:
+			tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
+			tidToSidsThisLev = warpUi.tidToSids[lev]
+
+			# Pad to fit img dimensions - no tid for last x or y.
+			tidPosGridThisLev = np.lib.pad(tidPosGridThisLev, ((1,0), (0,1)), "constant", constant_values=-1)
+			tids = tidToSidsThisLev.keys()
+			if tids == []:
+				continue
+			tids.sort()
+			print "_render(): Generating sprites for lev", lev, "len(tids) =", len(tids)
+
+			tidClrGrid = converTidPosGridToTidClrGrid(tidPosGridThisLev, tids)
+			tidImg = pygame.surfarray.make_surface(tidClrGrid)
 
 
-		bbxs = []
-		cents = []
-		xfs = []
-		tidProgs = []
-		tidTrips = []
-		isBulbs = []
-		res = warpUi.res
-		imgCent = (res[0]/2, res[1]/2)
-		#centToCnr = math.sqrt(imgCent[0]*imgCent[0] + imgCent[1]*imgCent[1])
-		centToCnr = ut.vLen(imgCent)
-		#print "\n\n &&&&&&&&&&&&&&&&&&&&&&&&&&&&& LAST TID====", tids[len(tids)-1]
-		for tidPos,tid in enumerate(tids):
-
-			# Get tidProg.
-			levProg = warpUi.getOfsWLev(lev) % 1.0
-			progDurMin = .6
-			progDurMax = 1
-
-			random.seed(tid)
-			progDur = ut.mix(progDurMin, progDurMax, random.random())
-			progStart = (1.0 - progDur) * random.random()
-			tidProg = ut.smoothlaunch(progStart, progStart + progDur, levProg)
-			
-			fr = warpUi.parmDic("fr")
-			dud,breaths,dud = zip(*warpUi.breathsNameFrTrip)
-			inhFrames = breaths[0::2]
-			breathsAr = np.array(inhFrames, dtype=np.intc)
-
-			tidTrip = tidProg * tripFrK
-
-			tidProgs.append(int(tidProg*100))
-			tidTrips.append(int(tidTrip*100))
-
-			isBulb = 0
-
-			if "bbx" in tidToSidsThisLev[tid]:
-				bbx = tidToSidsThisLev[tid]["bbx"]
-				sz = (bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1])
-				cent = ((bbx[1][0]+bbx[0][0])/2, (bbx[1][1]+bbx[0][1])/2)
-
-				dToCent = ut.vDist(imgCent, cent)
-				dNorm = float(dToCent)/centToCnr
-
-				#print "_render() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
-				#bbxs.append(bbx)
-				bbxTup = (bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1])
-				bbxs.append(bbxTup)
-				bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
-
-				inRip = fragmod.calcInRip(fr, breathsAr, len(breathsAr), dNorm, 1)
-				kRip = 3
-				tidTrip = tidProg
-				tidTrip = pow(tidTrip, max(0, 1.0/(1+inRip*kRip)))
-				#print "----------------inRip", inRip, "dNorm", dNorm, "breathsAr", breathsAr
-				#tidTrip *= 1+2*inRip
-				tidTrip = tidTrip * tripFrK # Already calculated, but add rip
 
 
-				tidTrips[-1] = tidTrip
-				xf = calcXf(warpUi, tidTrip, bbxTup)
-				xfs.append(xf)
+			print "\n PRE-SHADE-111111111 TIME",  ut.timerStop(warpUi, "preshade1")
 
 
-				# Bulb
-				bulbSzMin = .01# .01
-				bulbSzMax = .06# .1
-				bulbFrPeriod = 20
-				bulbDistPeriod = .25
-				bulbDistSegments = 3
-				bulbFade = .2
-				bulbOnPct = .6
-				bulbSquareTolerance = .1
+			bbxs = []
+			xfs = []
+			tidProgs = []
+			tidTrips = []
+			isBulbs = []
+			res = warpUi.res
+			imgCent = (res[0]/2, res[1]/2)
+			#centToCnr = math.sqrt(imgCent[0]*imgCent[0] + imgCent[1]*imgCent[1])
+			centToCnr = ut.vLen(imgCent)
+			#print "\n\n &&&&&&&&&&&&&&&&&&&&&&&&&&&&& LAST TID====", tids[len(tids)-1]
+			print "_render(): pre tid loop..."
+			bbx1d = [-1] * len(tids) * 4
+			#print "EEEEEEEEEE len(bbx1d)", len(bbx1d), "tids", tids, "\n\n"
+			for tidPos,tid in enumerate(tids):
 
-				yByXRes = float(res[1])/res[0]
+				# Get tidProg.
+				levProg = warpUi.getOfsWLev(lev) % 1.0
+				progDurMin = .6
+				progDurMax = 1
+
+				random.seed(tid)
+				progDur = ut.mix(progDurMin, progDurMax, random.random())
+				progStart = (1.0 - progDur) * random.random()
+				tidProg = ut.smoothlaunch(progStart, progStart + progDur, levProg)
+				
+				fr = warpUi.parmDic("fr")
+				dud,breaths,dud = zip(*warpUi.breathsNameFrTrip)
+				inhFrames = breaths[0::2]
+				breathsAr = np.array(inhFrames, dtype=np.intc)
+
+				tidTrip = tidProg * tripFrK
+
+				tidProgs.append(int(tidProg*100))
+				tidTrips.append(int(tidTrip*100))
 
 				isBulb = 0
-				enableBulb = False
-				if enableBulb and sz[0] > 0 and sz[1] > 0:
-					szRel = (float(sz[0])/res[0], float(sz[1])/res[1])
-					szRatio = szRel[0]/szRel[1]
-					#print "\n XXXXXXXXXXXXXXXx bbx", bbx, "sz", sz, "szRel", szRel, "szRatio", szRatio, "cent", cent
+
+				if "bbx" in tidToSidsThisLev[tid]:
+					bbx = tidToSidsThisLev[tid]["bbx"]
+					sz = (bbx[1][0] - bbx[0][0], bbx[1][1] - bbx[0][1])
+					cent = ((bbx[1][0]+bbx[0][0])/2, (bbx[1][1]+bbx[0][1])/2)
+
+					dToCent = ut.vDist(imgCent, cent)
+					dNorm = float(dToCent)/centToCnr
+
+					#print "_render() tidPos:", tidPos, ";  tid:", tid, ";  bbx:", bbx
+					bbxTup = (bbx[0][0], bbx[0][1], bbx[1][0], bbx[1][1])
+					bbxs.append(bbxTup)
+					bbxTup = (bbx[0][0]+1, bbx[0][1]+1, bbx[1][0], bbx[1][1])
+					for j in range(4):
+						#print "tidPos*4", tidPos*4, "len(bbx1d)", len(bbx1d), "tids", tids, "\n\n"
+
+						bbx1d[tidPos*4 + j] = bbxTup[j] - (1 if j < 2 else 0)
+
+					inRip = fragmod.calcInRip(fr, breathsAr, len(breathsAr), dNorm, 1)
+					kRip = 3
+					tidTrip = tidProg
+					tidTrip = pow(tidTrip, max(0, 1.0/(1+inRip*kRip)))
+					#print "----------------inRip", inRip, "dNorm", dNorm, "breathsAr", breathsAr
+					#tidTrip *= 1+2*inRip
+					tidTrip = tidTrip * tripFrK # Already calculated, but add rip
 
 
-					if (szRel[0] > bulbSzMin*yByXRes and
-						szRel[0] < bulbSzMax*yByXRes and
-						szRel[1] > bulbSzMin and
-						szRel[1] < bulbSzMax and
-						szRatio < 1 + bulbSquareTolerance and
-						szRatio < 1 - bulbSquareTolerance):
-							#bordTotal < 1: 
-						dSegment = math.floor((1-dNorm)/bulbDistPeriod)
-						fr = warpUi.parmDic("fr")
-						frBulb = fr + bulbFrPeriod*float(dSegment)/bulbDistSegments
-
-						inPeriod = float(frBulb % bulbFrPeriod)/bulbFrPeriod
-						isBulb = ut.smoothpulse(0, bulbFade*bulbOnPct, bulbOnPct-bulbFade*bulbOnPct, bulbOnPct, inPeriod) * tripFrK
+					tidTrips[-1] = int(tidTrip*100) # TODO: Make float;
+					xf = calcXf(warpUi, tidTrip, bbxTup)
+					xfs.append(xf)
 
 
+					# Bulb
+					bulbSzMin = .01# .01
+					bulbSzMax = .06# .1
+					bulbFrPeriod = 20
+					bulbDistPeriod = .25
+					bulbDistSegments = 3
+					bulbFade = .2
+					bulbOnPct = .6
+					bulbSquareTolerance = .1
 
-			else:
-				xfs.append((0.0,0.0)) # To keep tidPos synched.
-			isBulbs.append(isBulb)
+					yByXRes = float(res[1])/res[0]
+
+					isBulb = 0
+					enableBulb = False
+					if enableBulb and sz[0] > 0 and sz[1] > 0:
+						szRel = (float(sz[0])/res[0], float(sz[1])/res[1])
+						szRatio = szRel[0]/szRel[1]
+						#print "\n XXXXXXXXXXXXXXXx bbx", bbx, "sz", sz, "szRel", szRel, "szRatio", szRatio, "cent", cent
+
+
+						if (szRel[0] > bulbSzMin*yByXRes and
+							szRel[0] < bulbSzMax*yByXRes and
+							szRel[1] > bulbSzMin and
+							szRel[1] < bulbSzMax and
+							szRatio < 1 + bulbSquareTolerance and
+							szRatio < 1 - bulbSquareTolerance):
+								#bordTotal < 1: 
+							dSegment = math.floor((1-dNorm)/bulbDistPeriod)
+							frBulb = fr + bulbFrPeriod*float(dSegment)/bulbDistSegments
+
+							inPeriod = float(frBulb % bulbFrPeriod)/bulbFrPeriod
+							isBulb = ut.smoothpulse(0, bulbFade*bulbOnPct, bulbOnPct-bulbFade*bulbOnPct, bulbOnPct, inPeriod) * tripFrK
 
 
 
-		shadeImg(warpUi, lev, srcImg, tidImg,
-			tidPosGridThisLev, tids, bbxs, xfs,
-				tidTrips, generalTripToClrTrip(tripFrK), isBulbs, shadedImgXf)
+				else:
+					xfs.append((0.0,0.0)) # To keep tidPos synched.
+				isBulbs.append(isBulb)
 
-		spritesThisFr.append([])
+
+			#for i in range(0, len(tids), 20):
+			#	print "i", i, "bbx1d[i*4:i*4+4]", bbx1d[i*4:i*4+4], "bbxs[i]", bbxs[i]
+
+			
+			print "\n\npickleDumping....."
+			pickleDump("/tmp/fr%05d.lev%02d.isBulbs" % (fr, lev), isBulbs)
+			pickleDump("/tmp/fr%05d.lev%02d.tidTrips" % (fr, lev), tidTrips)
+			pickleDump("/tmp/fr%05d.lev%02d.bbx1d" % (fr, lev), bbx1d)
+			pickleDump("/tmp/fr%05d.lev%02d.tids" % (fr, lev), tids)
+			pickleDump("/tmp/fr%05d.lev%02d.xfs" % (fr, lev), xfs)
+			pickleDump("/tmp/fr%05d.lev%02d.tidPosGridThisLev" % (fr, lev), tidPosGridThisLev)
+			#pygame.image.save(tidImg, "/tmp/fr%05d.lev%02d.tidImg" % (fr, lev))
+			print "\n\nDone pickleDumping....."
+		else:
+
+			ut.timerStart(warpUi, "pickleLoad")
+			print "\n\npickleLoading....."
+			isBulbs = pickleLoad("/tmp/fr%05d.lev%02d.isBulbs" % (fr, lev))
+			tidTrips = pickleLoad("/tmp/fr%05d.lev%02d.tidTrips" % (fr, lev))
+			bbx1d = pickleLoad("/tmp/fr%05d.lev%02d.bbx1d" % (fr, lev))
+			tids = pickleLoad("/tmp/fr%05d.lev%02d.tids" % (fr, lev))
+			xfs = pickleLoad("/tmp/fr%05d.lev%02d.xfs" % (fr, lev))
+			tidPosGridThisLev = pickleLoad("/tmp/fr%05d.lev%02d.tidPosGridThisLev" % (fr, lev))
+			#pygame.image.save(tidImg, "/tmp/fr%05d.lev%02d.tidImg" % (fr, lev))
+			print "\n\nDone pickleLoading....."
+			print "\n PICKLE LOAD TIME",  ut.timerStop(warpUi, "pickleLoad")
+
+			ut.timerStart(warpUi, "postpick")
+			bbxs = []
+			for i in range(0, len(tids)):
+				bbxs.append(tuple(bbx1d[i*4 : (i+1)*4]))
+				#print "i", i, "bbx1d[i*4:i*4+4]", bbx1d[i*4:i*4+4], "bbxs[i]", bbxs[i]
+			print "\n POST-PICKLE TIME",  ut.timerStop(warpUi, "postpick")
+		print "\n PRE-SHADE TIME",  ut.timerStop(warpUi, "preshade")
+
+		ut.timerStart(warpUi, "shade")
+
+		shadeImg(
+			warpUi,
+			lev,
+			srcImg,
+			tidPosGridThisLev,
+			tids, # STASH
+			bbxs, # STASH,
+			xfs, # STASH though this [sh|c]ould be calculated on the fly
+			tidTrips,
+			tripFrK,
+			isBulbs,
+			shadedImgXf)
+		print "\n SHADE TIME",  ut.timerStop(warpUi, "shade")
+
 
 	shadedImgXfSrf = pygame.surfarray.make_surface(shadedImgXf)
 	renImgPath = warpUi.images["ren"]["path"]
 	renSeqDir = "/".join(renImgPath.split("/")[:-1]) #TODO: Do this with os.path.
 	ut.mkDirSafe(renSeqDir)
 	pygame.image.save(shadedImgXfSrf, renImgPath)
+	renderTime = ut.timerStop(warpUi, "render")
+	print "\n\n VVVVVVVVVvvv write", write, "renderTime", renderTime
 
 
-	warpUi.spritesThisFr = spritesThisFr
 
 
 def getMoveKProg(warpUi, frOfs):
@@ -1756,7 +1716,7 @@ def renWrapper(warpUi):
 			loadLatestTidToSids(warpUi)
 
 	forceGenTidPosGrid = True # TODO: Do you ever want this False?
-	if forceGenTidPosGrid == False and (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
+	if True or forceGenTidPosGrid == False and (not warpUi.tidPosGrid == None) and warpUi.dataLoadedForFr == fr:
 		print "_renWrapper(): tidPosGrid already loaded for fr " \
 			+ str(fr) + ", reusing."
 	else:

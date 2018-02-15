@@ -17,6 +17,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 
 	// Per-obj varying attrs
 	int lev;
+	int nTids;
 	float levProg;
 	float levPct;
 	float tripGlobF;
@@ -24,6 +25,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	// Parms
 	float clrKBig;
 	float kRip;
+	float moveK;
 	float centX;
 	float centY;
 	float satClr;
@@ -42,7 +44,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	PyArrayObject *brFrames=NULL;
 	PyArrayObject *cInOutVals=NULL;
 	PyArrayObject *srcImg=NULL;
-	PyArrayObject *tidImg=NULL;
+	//PyArrayObject *tidImg=NULL;
 	PyArrayObject *tidPosGridThisLev=NULL;
 	PyArrayObject *tids=NULL;
 	PyArrayObject *bbxs=NULL;
@@ -55,15 +57,17 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	PyArrayObject *shadedImgXf=NULL;
 
 	// TODO: Many i's should be f's!
-    if (!PyArg_ParseTuple(args, "iiiffffffffffiiiiiiOOOOOOOOOOOOOOOO",
+    if (!PyArg_ParseTuple(args, "iiiifffffffffffiiiiiiOOOOOOOOOOOOOOO",
 		&xres,
 		&yres,
 		&lev,
+		&nTids,
 		&levProg,
 		&levPct,
 		&tripGlobF,
 		&clrKBig,
 		&kRip,
+		&moveK,
 		&centX,
 		&centY,
 		&satClr,
@@ -80,7 +84,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		&brFrames,
 		&cInOutVals,
 		&srcImg,
-		&tidImg,
+		//&tidImg,
 		&tidPosGridThisLev,
 		&tids,
 		&bbxs,
@@ -99,7 +103,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		int *brFramesPtr = ((int *)PyArray_GETPTR1(brFrames,0));
 		float *cInOutValsPtr = ((float *)PyArray_GETPTR1(cInOutVals,0));
 		int *srcImgPtr = ((int *)PyArray_GETPTR1(srcImg,0));
-		int *tidImgPtr = ((int *)PyArray_GETPTR1(tidImg,0));
+		//int *tidImgPtr = ((int *)PyArray_GETPTR1(tidImg,0));
 		int *tidPosGridThisLevPtr = ((int *)PyArray_GETPTR1(tidPosGridThisLev,0));
 		int *tidsPtr = ((int *)PyArray_GETPTR1(tids,0));
 		int *bbxsPtr = ((int *)PyArray_GETPTR1(bbxs,0));
@@ -118,11 +122,13 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		xres,
 		yres,
 		lev,
+		nTids,
 		levProg,
 		levPct,
 		tripGlobF,
 		clrKBig,
 		kRip,
+		moveK,
 		centX,
 		centY,
 		satClr,
@@ -139,7 +145,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		brFramesPtr,
 		cInOutValsPtr,
 		srcImgPtr,
-		tidImgPtr,
+		//tidImgPtr,
 		tidPosGridThisLevPtr,
 		tidsPtr,
 		bbxsPtr,
@@ -200,7 +206,6 @@ static PyObject* fragmod_initJtGrid(PyObject* self, PyObject* args) {
 	PyArrayObject *nconsOutPtr=NULL;
 	int nBreaths;
 	float dNorm;
-	float kRip;
     if (!PyArg_ParseTuple(args, "iiiOOO",
 		&xres, &yres, &lev,
 		&imgArrayPtr, &levThreshArrayPtr, &nconsOutPtr)) return NULL;
