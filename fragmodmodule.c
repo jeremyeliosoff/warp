@@ -41,6 +41,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	int topToBottom;
 	int radiateTime;
 	int edgeThick;
+	int bgMode;
 	int fr;
 
 
@@ -62,7 +63,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	PyArrayObject *shadedImgXf=NULL;
 
 	// TODO: Many i's should be f's!
-    if (!PyArg_ParseTuple(args, "iiiiffffffffffffffffiiiiiiOOOOOOOOOOOOOOO",
+    if (!PyArg_ParseTuple(args, "iiiiffffffffffffffffiiiiiiiOOOOOOOOOOOOOOO",
 		&xres,
 		&yres,
 		&lev,
@@ -88,6 +89,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		&topToBottom,
 		&radiateTime,
 		&edgeThick,
+		&bgMode,
 		&fr,
 		&inhFrames,
 		&exhFrames,
@@ -154,6 +156,7 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 		topToBottom,
 		radiateTime,
 		edgeThick,
+		bgMode,
 		fr,
 		inhFramesPtr,
 		exhFramesPtr,

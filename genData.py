@@ -1253,7 +1253,7 @@ def imageToArray3d(srcImg, srcImgPath):
 	return srcImgAr
 
 
-def shadeImg(warpUi, lev, srcImg, tidPosGridThisLev,
+def shadeImg(warpUi, bgMode, lev, srcImg, tidPosGridThisLev,
 		tids, bbxs, xfs, tidTrips, tripFrK, isBulbs, shadedImgXf):
 
 	# Inputs
@@ -1324,6 +1324,7 @@ def shadeImg(warpUi, lev, srcImg, tidPosGridThisLev,
 			np.int32(warpUi.parmDic("topToBottom")),
 			np.int32(warpUi.parmDic("radiateTime")),
 			np.int32(warpUi.parmDic("edgeThick")),
+			np.int32(bgMode),
 			np.int32(frWOfs),
 			np.array(inhFrames, dtype=np.intc),
 			np.array(exhFrames, dtype=np.intc),
@@ -1384,15 +1385,32 @@ def render(warpUi):
 	ut.timerStart(warpUi, "render")
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
 	res = srcImg.get_size()
+	tidPosGridZero = np.zeros((res[0], res[1]), dtype=np.intc)
 
 	print "\n_render(): BEGIN"
 
 	tripFrK = getTripFrK(warpUi)
 	print "_render(): tripFrK:", tripFrK
 
-	tidPosGridThisLevA = warpUi.tidPosGrid[warpUi.levsToRen[0]]
-	shape3d = (len(tidPosGridThisLevA)+1, len(tidPosGridThisLevA[0])+1, 3)
+	#tidPosGridThisLevA = warpUi.tidPosGrid[warpUi.levsToRen[0]]
+	#shape3d = (len(tidPosGridThisLevA)+1, len(tidPosGridThisLevA[0])+1, 3)
+	shape3d = res + (3,)
 	shadedImgXf, dud = makeBufferOutput(warpUi, shape3d)
+
+	if True:
+		shadeImg(
+			warpUi,
+			1, # bgMode,
+			0, # lev,
+			srcImg,
+			tidPosGridZero, # tidPosGridThisLev,
+			[], # tids, # STASH
+			[], # bbxs, # STASH,
+			[], # xfs, # STASH though this [sh|c]ould be calculated on the fly
+			[], # tidTrips,
+			0, # tripFrK,
+			[], #isBulbs,
+			shadedImgXf)
 
 
 	fr, frameDir = warpUi.makeFramesDataDir()
@@ -1588,8 +1606,10 @@ def render(warpUi):
 
 		ut.timerStart(warpUi, "shade")
 
+		bgMode = 0;
 		shadeImg(
 			warpUi,
+			bgMode,
 			lev,
 			srcImg,
 			tidPosGridThisLev,

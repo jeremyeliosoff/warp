@@ -256,6 +256,7 @@ void krShadeImg(
 			int style0x1y2rad,
 			int radiateTime,
 			int edgeThick,
+			int bgMode,
 			int fr,
 
 
@@ -272,75 +273,17 @@ void krShadeImg(
 			float* isBulbs,
 			int* tidTrips,
 			int* aovRipImg,
-			int* alphaBoost,
+			int* alphaBoost, // TODO remove this, not used!!
 			int* shadedImg,
 			int* shadedImgXf)
 {
 
-	int tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
 
-	int bordNxNyPxPy[4];
-	int bordTotal = 0;
-	int bordTotalBulb = 0;
-	float isBulb = isBulbs[tidPos];
-	
-	bordTotal = getBorders(1, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	bordTotalBulb = getBorders(2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
-	
-	//if (isBulb > .5)
-		//bordTotal += bordTotalBulb * isBulb;
-
-	int sz[2];
-	int sidCent[2];
-	getBbxInfo(tidPos, bbxs, sz, sidCent);
-
-	// Get src colour from image.
-	int srcClr[3];
-	float xfx = xfs[tidPos*2];
-	float xfy = xfs[tidPos*2+1];
-	//filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
-	getImageCell(x, y, xres+1, yres+1, srcImg, srcClr);
-
-	// Get tid.
-	int tid = tids[tidPos];
-	int tidClr[] = {0, 0, 0};
-	convertTidToClr(tid, tidClr);
-	int doPrint = tidPos > -1 ? 1 : 0;
-	doPrint =0;
-	if (doPrint == 1) {
-		printf("\n cInOutVals");
-		for (int i = 0; i<(4*3*3); i ++) {
-			printf("\n\t%f", cInOutVals[i]);
-		}
-	}
-	if (doPrint == 1) printf("\n tid=%i, srcClr=%i, %i, %i, tidClr=%i, %i, %i", tid, srcClr[0], srcClr[1], srcClr[2], tidClr[0], tidClr[1], tidClr[2]);
-	//if (x % 100 == 0 && y % 50 == 0) printf("\n tidPos=%i, tid=%i, tidClr=%i, %i, %i", tidPos, tid, tidClr[0], tidClr[1], tidClr[2]);
-	//if (tidPos > -1) printf("\n tidPos=%i, tid=%i, tidClr=%i, %i, %i", tidPos, tid, tidClr[0], tidClr[1], tidClr[2]);
-
-	
-	// Get clrProg.
-	//float tripGlobF = tripGlobPct*.01;
-	float tidTrip = ((float)tidTrips[tidPos])/100;
-	float clrProg = tripGlobF;//tidTrip;//smoothstep(0, .3, tidTrip);
-
-
-
-
-	// Darken lower level when tripping.
-	//float levPctF = levPct*.01;
-	float levPctK = 1.0-(1.0-levPct)*(1.0-levPct);
-	float levKmix = .2;
-	float kLevPct = mixF(1, levPctK, tripGlobF*levKmix);
-
-	float tripK = 2;
-	float tripKmult = mixF(1, tripK, tripGlobF);
-
-	// Darken bigger
-	float szRel[2] = {(float)sz[0]/xres, (float)sz[1]/yres};
-	float rels = szRel[0] * szRel[1];
-	float relsMod = rels*rels;
-	relsMod *= relsMod;
-	float bigKmult = mixF(1.0, clrKBig, MIN(1.0, relsMod));
+	int tidPos = -1;
+	int outClr[3];
+	float szRel[2] = {0, 0};
+	float xfx = 0;
+	float xfy = 0;
 
 	// Darken far from Center
 	int cx = centX*xres;	
@@ -361,51 +304,125 @@ void krShadeImg(
 		dNorm = dFromCent/cornerToCent;
 	}
 	dNorm = (float)jSmoothstep(0.0, 1.0, dNorm); // Needed?
-	float vignK = 1-dNorm;
-	vignK = 1-(1-vignK)*(1-vignK);
-	float vignKmult = mixF(1, vignK, tripGlobF);
-	vignKmult = mixF(vignKmult, 1, levPct);
+
+	float isBulb = 0;
+	int bordTotalBulb = 0;
+	int inBorderBulb = 0;
+	int inBorder = 0;
+
+	if (bgMode == 1) {
+		assignIS(50, 50, 50, outClr);
+	} else {
+		tidPos = getCellScalar(x, y, yres+1, tidPosGridThisLev);
+
+		int bordNxNyPxPy[4];
+		int bordTotal = 0;
+		isBulb = isBulbs[tidPos];
+		
+		bordTotal = getBorders(1, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+		bordTotalBulb = getBorders(2, x, y, xres, yres+1, tidPos, tidPosGridThisLev, bordNxNyPxPy);
+		
+		//if (isBulb > .5)
+			//bordTotal += bordTotalBulb * isBulb;
+
+		int sz[2];
+		int sidCent[2];
+		getBbxInfo(tidPos, bbxs, sz, sidCent);
+
+		// Get src colour from image.
+		int srcClr[3];
+		xfx = xfs[tidPos*2];
+		xfy = xfs[tidPos*2+1];
+		//filterImg(x, y, xres, yres, xfx, xfy, srcImg, bordNxNyPxPy, srcClr);
+		getImageCell(x, y, xres+1, yres+1, srcImg, srcClr);
+
+		// Get tid.
+		int tid = tids[tidPos];
+		int tidClr[] = {0, 0, 0};
+		convertTidToClr(tid, tidClr);
+		int doPrint = tidPos > -1 ? 1 : 0;
+		doPrint =0;
+		if (doPrint == 1) {
+			printf("\n cInOutVals");
+			for (int i = 0; i<(4*3*3); i ++) {
+				printf("\n\t%f", cInOutVals[i]);
+			}
+		}
+		if (doPrint == 1) printf("\n tid=%i, srcClr=%i, %i, %i, tidClr=%i, %i, %i", tid, srcClr[0], srcClr[1], srcClr[2], tidClr[0], tidClr[1], tidClr[2]);
+		//if (x % 100 == 0 && y % 50 == 0) printf("\n tidPos=%i, tid=%i, tidClr=%i, %i, %i", tidPos, tid, tidClr[0], tidClr[1], tidClr[2]);
+		//if (tidPos > -1) printf("\n tidPos=%i, tid=%i, tidClr=%i, %i, %i", tidPos, tid, tidClr[0], tidClr[1], tidClr[2]);
+
+		
+		// Get clrProg.
+		//float tripGlobF = tripGlobPct*.01;
+		float tidTrip = ((float)tidTrips[tidPos])/100;
+		float clrProg = tripGlobF;//tidTrip;//smoothstep(0, .3, tidTrip);
 
 
 
-	int inBorder = bordTotal > 0;
-	int inBorderBulb = bordTotalBulb > 0;
-	
-	// If this is a bulb, but your in the bulb border, turn off
-	// bulb here, and use bordTotalBulb as bordTotal.
-	if (inBorderBulb && isBulb > 0) {
-		isBulb = 0;
-		bordTotal = bordTotalBulb;
+
+		// Darken lower level when tripping.
+		//float levPctF = levPct*.01;
+		float levPctK = 1.0-(1.0-levPct)*(1.0-levPct);
+		float levKmix = .2;
+		float kLevPct = 1;//mixF(1, levPctK, tripGlobF*levKmix); THIS IS NOW DONE WITH ALPHA
+
+		float tripK = 2;
+		float tripKmult = mixF(1, tripK, tripGlobF);
+
+		// Darken bigger
+		szRel[0] = (float)sz[0]/xres;
+		szRel[1] = (float)sz[1]/yres;
+
+		float rels = szRel[0] * szRel[1];
+		float relsMod = rels*rels;
+		relsMod *= relsMod;
+		float bigKmult = mixF(1.0, clrKBig, MIN(1.0, relsMod));
+
+		float vignK = 1-dNorm;
+		vignK = 1-(1-vignK)*(1-vignK);
+		float vignKmult = mixF(1, vignK, tripGlobF);
+		vignKmult = 1;// mixF(vignKmult, 1, levPct); NOW DONE WITH ALPHA
+
+
+
+		inBorder = bordTotal > 0;
+		inBorderBulb = bordTotalBulb > 0;
+		
+		// If this is a bulb, but your in the bulb border, turn off
+		// bulb here, and use bordTotalBulb as bordTotal.
+		if (inBorderBulb && isBulb > 0) {
+			isBulb = 0;
+			bordTotal = bordTotalBulb;
+		}
+
+
+		// Get trippedClr = srcClr * tidClr * brightening
+		int multedClr[3], trippedClr[3];
+		int grey[] = {200, 200, 200};
+		//if (doPrint == 1) printf("\nPREtid=%i, tidClr=%i, %i, %i", tid, tidClr[0], tidClr[1], tidClr[2]);
+		mix3I(grey, tidClr, satClr, tidClr);
+		//if (doPrint == 1) printf("\nPOStid=%i, tidClr=%i, %i, %i", tid, tidClr[0], tidClr[1], tidClr[2]);
+		mult3_255(srcClr, tidClr, multedClr);
+
+		mix3I(srcClr, multedClr, multClr, trippedClr);
+		//mult3sc(tidClr, levPct, tidClr);  // Darken the blended clr by level.
+		//if (doPrint == 1) printf("\n srcClr=%i,%i,%i, trippedClr=%i, %i, %i", srcClr[0], srcClr[1], srcClr[2], trippedClr[0], trippedClr[1], trippedClr[2]);
+		//if (doPrint == 1) printf("\nlevPct=%f", levPct);
+		mix3I(trippedClr, tidClr, solidClr, trippedClr);
+		//if (doPrint == 1) printf("\n LATER tid=%i, trippedClr=%i, %i, %i\n", tid, trippedClr[0], trippedClr[1], trippedClr[2]);
+	 
+		//assignIV(srcClr, trippedClr); // TEMP
+		float intensMult = bordTotal > 0 ? 1 : .5;// + isBulb * 2;
+		mult3sc(trippedClr, intensMult, trippedClr);
+
+		//mix3I(srcClr, trippedClr, clrProg, outClr);
+		assignIV(trippedClr, outClr);
+
+
+		// Apply darkenings.
+		mult3sc(outClr, kLevPct*tripKmult*vignKmult*bigKmult, outClr);
 	}
-
-
-	// Get trippedClr = srcClr * tidClr * brightening
-	int multedClr[3], trippedClr[3];
-	int grey[] = {200, 200, 200};
-	//if (doPrint == 1) printf("\nPREtid=%i, tidClr=%i, %i, %i", tid, tidClr[0], tidClr[1], tidClr[2]);
-	mix3I(grey, tidClr, satClr, tidClr);
-	//if (doPrint == 1) printf("\nPOStid=%i, tidClr=%i, %i, %i", tid, tidClr[0], tidClr[1], tidClr[2]);
-	mult3_255(srcClr, tidClr, multedClr);
-
-	mix3I(srcClr, multedClr, multClr, trippedClr);
-	mult3sc(tidClr, levPct, tidClr);  // Darken the blended clr by level.
-	//if (doPrint == 1) printf("\n srcClr=%i,%i,%i, trippedClr=%i, %i, %i", srcClr[0], srcClr[1], srcClr[2], trippedClr[0], trippedClr[1], trippedClr[2]);
-	//if (doPrint == 1) printf("\nlevPct=%f", levPct);
-	mix3I(trippedClr, tidClr, solidClr, trippedClr);
-	//if (doPrint == 1) printf("\n LATER tid=%i, trippedClr=%i, %i, %i\n", tid, trippedClr[0], trippedClr[1], trippedClr[2]);
- 
-	//assignIV(srcClr, trippedClr); // TEMP
-	float intensMult = bordTotal > 0 ? 1 : .5;// + isBulb * 2;
-	mult3sc(trippedClr, intensMult, trippedClr);
-
-	int outClr[3];
-	//mix3I(srcClr, trippedClr, clrProg, outClr);
-	assignIV(trippedClr, outClr);
-
-
-	// Apply darkenings.
-	mult3sc(outClr, kLevPct*tripKmult*vignKmult*bigKmult, outClr);
-
 
 	int nBreaths = 4;
 	
@@ -415,8 +432,6 @@ void krShadeImg(
 	outClrF[2] = outClr[2];
 
 
-	float lum = ((float)(srcClr[0] + srcClr[1] + srcClr[2]))/(255*3);
-	float lumFromLevPct = MAX(0, lum - levPct);
 
 
 	//float sidFarFromCent = g_dist(sidCent[0], sidCent[1], cx, cy)/cornerToCent;
@@ -426,66 +441,12 @@ void krShadeImg(
 	//float brighterSooner = 0;
 	//float edgeSooner = 50;
 
-	//fr += isBulb * bulbAdd + hiLevSooner * lev + (1-sidFarFromCent) *
-	//	outerSooner + brighterSooner*lumFromLevPct + edgeSooner * bordTotal * tripGlobF;
 
 	float bulbClrIn[] = {255, 0, 0};
 
 
 	int cShadedI[3];
-	int cShadedIBulb[3];
 	int cAovRip[3];
-	getCspacePvNxInOut (
-		fr+bulbAdd,
-		x,
-		radiateTime,
-		//outClrF, 
-		bulbClrIn, 
-		cInOutVals,
-		inhFrames,
-		exhFrames,
-		brFrames,
-		nBreaths,
-		dNorm,
-		kRip,
-		cAovRip,
-		cShadedIBulb
-		);
-
-
-	float maxComp = 0;
-	float cShadedIBulbF[3];
-
-	for (int i = 0; i < 3; i++) {
-		cShadedIBulbF[i] = MAX(0, 1.0-((float)cShadedIBulb[i])/255.0);
-		maxComp = MAX(maxComp, cShadedIBulbF[i]);
-	}
-	for (int i = 0; i < 3; i++) {
-		cShadedIBulbF[i] = cShadedIBulbF[i]/maxComp;
-	}
-
-	for (int i = 0; i < 3; i++) {
-		cShadedIBulb[i] = (int)(cShadedIBulbF[i]*255.0f);
-	}
-
-
-	int borderAdd = 500;
-	int cShadedIEdge[3];
-	getCspacePvNxInOut (
-		fr + borderAdd,
-		x,
-		radiateTime,
-		outClrF, 
-		cInOutVals,
-		inhFrames,
-		exhFrames,
-		brFrames,
-		nBreaths,
-		dNorm,
-		kRip,
-		cAovRip,
-		cShadedIEdge
-		);
 
 
 	getCspacePvNxInOut (
@@ -509,11 +470,67 @@ void krShadeImg(
 	//float segClr[3] = {255, 225, 155};
 	//int bulbClr[3] = {0, 255, 0};
 	//int notBulbClr[3] = {255, 0, 0};
-	mix3I(cShadedI, cShadedIBulb, isBulb, cShadedI);
-	int withBorderBulb[3]; int withBorderNoBulb[3];
-	mix3I(cShadedI, cShadedIEdge, inBorderBulb*tripGlobF, withBorderBulb);
-	mix3I(cShadedI, cShadedIEdge, inBorder*tripGlobF, withBorderNoBulb);
-	mix3I(withBorderNoBulb, withBorderBulb, isBulb, cShadedI);
+
+	if (bgMode == 0) {
+		// BULB
+		int cShadedIBulb[3];
+		getCspacePvNxInOut (
+			fr+bulbAdd,
+			x,
+			radiateTime,
+			//outClrF, 
+			bulbClrIn, 
+			cInOutVals,
+			inhFrames,
+			exhFrames,
+			brFrames,
+			nBreaths,
+			dNorm,
+			kRip,
+			cAovRip,
+			cShadedIBulb
+			);
+
+
+		float maxComp = 0;
+		float cShadedIBulbF[3];
+
+		for (int i = 0; i < 3; i++) {
+			cShadedIBulbF[i] = MAX(0, 1.0-((float)cShadedIBulb[i])/255.0);
+			maxComp = MAX(maxComp, cShadedIBulbF[i]);
+		}
+		for (int i = 0; i < 3; i++) {
+			cShadedIBulbF[i] = cShadedIBulbF[i]/maxComp;
+		}
+
+		for (int i = 0; i < 3; i++) {
+			cShadedIBulb[i] = (int)(cShadedIBulbF[i]*255.0f);
+		}
+
+		mix3I(cShadedI, cShadedIBulb, isBulb, cShadedI);
+		int borderAdd = 500;
+		int cShadedIEdge[3];
+		getCspacePvNxInOut (
+			fr + borderAdd,
+			x,
+			radiateTime,
+			outClrF, 
+			cInOutVals,
+			inhFrames,
+			exhFrames,
+			brFrames,
+			nBreaths,
+			dNorm,
+			kRip,
+			cAovRip,
+			cShadedIEdge
+			);
+
+		int withBorderBulb[3]; int withBorderNoBulb[3];
+		mix3I(cShadedI, cShadedIEdge, inBorderBulb*tripGlobF, withBorderBulb);
+		mix3I(cShadedI, cShadedIEdge, inBorder*tripGlobF, withBorderNoBulb);
+		mix3I(withBorderNoBulb, withBorderBulb, isBulb, cShadedI);
+	}
 	//assignIV(srcClr, cShadedI);
 	//mix3I(notBulbClr, bulbClr, isBulb, cShadedI);
 		//mix3I(notBulbClr, bulbClr, isBulb, cShadedI);
@@ -552,16 +569,22 @@ void krShadeImg(
 	//assignIS(xc, yc, 200, cShadedI);
 
 	setArrayCellShd(x, y, xres, yres+1, cShadedI, shadedImg);
-	int xWxf = x + xfx;
-	int yWxf = y + xfy;
-	float sfFdIn = .2;
-	float sfFdOut = .3;
-	float alpha = jSmoothstep(0, sfFdIn, levProg);
-	float underThresh = .2; // Surfs whos len + wid > underThresh are comped under.
-	alpha *= 1.0-jSmoothstep(1-sfFdOut, 1, levProg); // TODO should be tidProg?
+	int xWxf = x;
+	int yWxf = y;
+	float alpha = 1;
+	if (bgMode == 0) {	
+		float sfFdIn = .2;
+		float sfFdOut = .3;
+		alpha = jSmoothstep(0, sfFdIn, levProg);
+		alpha *= 1.0-jSmoothstep(1-sfFdOut, 1, levProg); // TODO should be tidProg?
+		alpha *= levPct;
+		xWxf += xfx;
+		yWxf += xfy;
+	}
 
 
 
+	/* DEBUG
 	int red[3] = {255, 0, 0};
 	int green[3] = {0, 255, 0};
 	int blue[3] = {0, 0, 255};
@@ -569,7 +592,6 @@ void krShadeImg(
 	int cyan[3] = {0, 255, 255};
 	int magenta[3] = {255, 0, 255};
 
-	/* DEBUG
 	int ind = tid % 7;
 
 	if (ind == 0) assignIV(red, cShadedI);
@@ -581,9 +603,11 @@ void krShadeImg(
 	else  assignIV(grey, cShadedI); 
 	*/
 
+
 	
-	if (tidPos > 0 && xWxf >= 0 && yWxf >= 0 && xWxf < xres && yWxf < yres) {
+	if (bgMode == 1 || tidPos > 0 && xWxf >= 0 && yWxf >= 0 && xWxf < xres && yWxf < yres) {
 		//setArrayCellShd(xWxf, yWxf, xres, yres+1, cShadedI, shadedImgXf);
+		float underThresh = .2; // Surfs whos len + wid > underThresh are comped under.
 		int over =  szRel[0] + szRel[1] < underThresh ? 1 : 0; // TODO make this work, impliment alpha!!
 		compArrayCellShd(xWxf, yWxf, xres, yres+1, alpha, over, cShadedI, shadedImgXf);
 	}
@@ -662,6 +686,7 @@ void shadeImgGrid(
 			int topToBottom,
 			int radiateTime,
 			int edgeThick,
+			int bgMode,
 			int fr,
 			int* inhFrames,
 			int* exhFrames,
@@ -677,7 +702,7 @@ void shadeImgGrid(
 			int* tidTrips,
 			int* aovRipImg,
 			int* alphaBoost,
-			int* shadedImg,
+			int* shadedImg, // TODO remove this
 			int* shadedImgXf)
 {
 	int x, y;
@@ -752,6 +777,7 @@ void shadeImgGrid(
 				radiateTime,
 				edgeThick,
 
+				bgMode,
 				fr,
 
 
