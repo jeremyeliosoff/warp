@@ -5,7 +5,8 @@ module1 = Extension('fragmod',
 	depends = ['/home/jeremy/dev/warp/include/cCommon.h',
 		'/home/jeremy/dev/warp/include/initJtGrid.h',
 		'/home/jeremy/dev/warp/include/shadeImgGrid.h',
-		'/home/jeremy/dev/warp/include/setTidPosGrid.h'
+		'/home/jeremy/dev/warp/include/setTidPosGrid.h',
+		'/home/jeremy/dev/warp/include/arrayIntToClr.h'
 		],
 	libraries = ['pthread'],
 	sources = ['fragmodmodule.c'])

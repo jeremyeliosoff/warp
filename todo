@@ -5768,6 +5768,32 @@ Continue (make space?)
 == WED FEB 14 ==
 ================
 
-STASH REN DATA to re-render quickly, changing clr + xf
-	do calcXf in shading
-	write to data/..../frames dir (only if it doesn't exist)
+#Dish# STASH REN DATA to re-render quickly, changing clr + xf
+#Dish# 	do calcXf in shading
+#Dish# 	write to data/..../frames dir (only if it doesn't exist)
+
+
+================
+== FRI FEB 16 ==
+================
+
+EMAIL
+Peter
+Yes person
+
+
+WARP - Just do enough to clean up memory:
+#D# Read tidPosGridClr back in python
+Test that image can be rendered with only tidPosGridClr, not tidPosGridThisLev
+Make c functions to read + write tidPosGridClr
+Stop writing + delete tidPosGridThisLev
+Try to render seq with new setup: tidPosGridClr instead of tidPosGridThisLev, only lev%02d.* files
+
+TUTORIALS
+Finish gvim
+AOV renderman
+
+TOM VID
+
+PLATE - test out
+

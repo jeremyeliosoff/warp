@@ -1,9 +1,10 @@
 #include <Python.h>
 #include "numpy/arrayobject.h"
 #include "cCommon.h"
-#include "initJtGrid.h" // <-- needed?
-#include "shadeImgGrid.h" // <-- needed?
-#include "setTidPosGrid.h" // <-- needed?
+#include "initJtGrid.h"
+#include "shadeImgGrid.h"
+#include "setTidPosGrid.h"
+#include "arrayIntToClr.h"
 
 
 // Define a new exception object for our module.
@@ -180,6 +181,57 @@ static PyObject* fragmod_shadeImgGrid(PyObject* self, PyObject* args) {
 	return Py_BuildValue("f", foo);
 
 }
+
+static PyObject* fragmod_arrayIntToClr(PyObject* self, PyObject* args) {
+	int xres;
+	int yres;
+	PyArrayObject *ints=NULL;
+	PyArrayObject *clrs=NULL;
+
+    if (!PyArg_ParseTuple(args, "iiOO",
+		&xres, &yres, &ints, &clrs)) return NULL;
+
+	int *intsPtr = ((int *)PyArray_GETPTR1(ints,0));
+	int *clrsPtr = ((int *)PyArray_GETPTR1(clrs,0));
+	
+	printf("\n fragmod PRE arrayIntToClr");
+	arrayIntToClr(
+		xres,
+		yres,
+		intsPtr,
+		clrsPtr
+		);
+	printf("\n fragmod POST arrayIntToClr");
+
+	double foo = 8;
+	return Py_BuildValue("f", foo);
+}
+
+static PyObject* fragmod_arrayClrToInt(PyObject* self, PyObject* args) {
+	int xres;
+	int yres;
+	PyArrayObject *clrs=NULL;
+	PyArrayObject *ints=NULL;
+
+    if (!PyArg_ParseTuple(args, "iiOO",
+		&xres, &yres, &clrs, &ints)) return NULL;
+
+	int *clrsPtr = ((int *)PyArray_GETPTR1(clrs,0));
+	int *intsPtr = ((int *)PyArray_GETPTR1(ints,0));
+	
+	printf("\n fragmod PRE arrayClrToInt");
+	arrayClrToInt(
+		xres,
+		yres,
+		clrsPtr,
+		intsPtr
+		);
+	printf("\n fragmod POST arrayClrToInt");
+
+	double foo = 8;
+	return Py_BuildValue("f", foo);
+}
+
 
 static PyObject* fragmod_setTidPosGrid(PyObject* self, PyObject* args) {
 	int xres;
@@ -431,6 +483,8 @@ static PyMethodDef fragmod_methods[] = {
 	{"initJtGrid",	fragmod_initJtGrid,	METH_VARARGS,	"Init Jt Grid"},
 	{"shadeImgGrid",	fragmod_shadeImgGrid,	METH_VARARGS,	"Shade Img Grid"},
 	{"setTidPosGrid",	fragmod_setTidPosGrid,	METH_VARARGS,	"Set tid pos grid"},
+	{"arrayIntToClr",	fragmod_arrayIntToClr,	METH_VARARGS,	"Int array to clr array"},
+	{"arrayClrToInt",	fragmod_arrayClrToInt,	METH_VARARGS,	"Clr array to int array"},
 	{NULL, NULL, 0, NULL} /* Sentinel */
 };
 

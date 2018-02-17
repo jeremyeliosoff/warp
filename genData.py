@@ -1381,6 +1381,7 @@ def generalTripToClrTrip(trip):
 	return trip
 
 
+
 def render(warpUi): 
 	ut.timerStart(warpUi, "render")
 	srcImg = pygame.image.load(warpUi.images["source"]["path"])
@@ -1428,7 +1429,7 @@ def render(warpUi):
 		#		break
 		print "\n\n\nJJJJJJJJJJJJJJJ _render(): warpUi.writeStash:", warpUi.writeStash
 		if warpUi.writeStash:
-			tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev])
+			tidPosGridThisLev = np.array(warpUi.tidPosGrid[lev], dtype=np.intc)
 			tidToSidsThisLev = warpUi.tidToSids[lev]
 
 			# Pad to fit img dimensions - no tid for last x or y.
@@ -1574,9 +1575,62 @@ def render(warpUi):
 			pickleDump(frameDir + ("/lev%02d.tids" % lev), tids)
 			pickleDump(frameDir + ("/lev%02d.xfs" % lev), xfs)
 			pickleDump(frameDir + ("/lev%02d.tidPosGridThisLev" % lev), tidPosGridThisLev)
+
+			tidPosGridClr = np.zeros(tidPosGridThisLev.shape + (3,), dtype=np.intc)
+
+
+			xr = tidPosGridThisLev.shape[0]
+			yr = tidPosGridThisLev.shape[1]
+			fragmod.arrayIntToClr(
+				xr,
+				yr,
+				tidPosGridThisLev,
+				tidPosGridClr)
+
+			tidPosGridClr = tidPosGridClr.astype(np.uint8)
+
+			tidPosGridThisLevImg = Image.fromarray(np.swapaxes(tidPosGridClr, 0, 1), 'RGB')
+			#tidPosGridThisLevImg = Image.fromarray(tidPosGridClr, 'RGB')
+			tidPosGridThisLevImg.save(frameDir + ("/lev%02d.tidPosGridClr.png" % lev))
+
 			#pygame.image.save(tidImg, "/tmp/fr%05d.lev%02d.tidImg" % (fr, lev))
 			print "\n\nDone pickleDumping....."
 		else:
+			loadTidPosGridClr = True # TEMP
+			if loadTidPosGridClr:
+				tidPosGridThisLevImg = Image.open(frameDir + "/lev%02d.tidPosGridClr.png" % lev)
+
+				# Reorient the image correctly.
+				tidPosGridThisLevImg = tidPosGridThisLevImg.transpose(Image.FLIP_LEFT_RIGHT)
+				tidPosGridThisLevImg = tidPosGridThisLevImg.rotate(90, expand=True)
+				sz = tidPosGridThisLevImg.size
+				tidPosGridThisLevImg = tidPosGridThisLevImg.crop((1, 1, sz[0], sz[1]))
+				tidPosGridClr = np.asarray(tidPosGridThisLevImg, dtype=np.intc)
+				tidPosGridThisLevLoad = np.zeros(tidPosGridClr.shape[:2], dtype=np.intc)
+				tidPosGridClrTEST = np.zeros(tidPosGridClr.shape, dtype=np.intc)
+				#if True:
+				#	print "\n\nHHHHHHHHH doing loop..."
+				#	for xx in range(len(tidPosGridThisLevLoad)):
+				#		for yy in range(len(tidPosGridThisLevLoad[0])):
+				#			tidPosGridThisLevLoad[xx][yy] = -1 if tidPosGridClr[xx][yy][2] == 200 else tidPosGridClr[xx][yy][0] + tidPosGridClr[xx][yy][1]*256
+				#	print "HHHHHHHHH done loop..."
+				if True:
+					tidPosGridThisLevLoadC = np.zeros(tidPosGridClr.shape[:2], dtype=np.intc)
+					#tidPosGridThisLevLoadC = np.swapaxes(tidPosGridThisLevLoadC, 0, 1)
+					xr = tidPosGridThisLevLoadC.shape[0]
+					yr = tidPosGridThisLevLoadC.shape[1]
+
+					#print "tidPosGridClr[3]", tidPosGridClr[3]
+					#print "tidPosGridClr[3][4]", tidPosGridClr[3][4]
+					#tidPosGridThisLevLoadC = np.swapaxes(tidPosGridThisLevLoadC, 0, 1)
+					tidPosGridThisLevLoadC = tidPosGridThisLevLoadC
+					fragmod.arrayClrToInt(
+						xr,
+						yr,
+						tidPosGridClr,
+						tidPosGridThisLevLoadC)
+
+
 
 			ut.timerStart(warpUi, "pickleLoad")
 			print "\n\npickleLoading....."
@@ -1585,7 +1639,19 @@ def render(warpUi):
 			bbx1d = pickleLoad(frameDir + ("/lev%02d.bbx1d" % lev))
 			tids = pickleLoad(frameDir + ("/lev%02d.tids" % lev))
 			xfs = pickleLoad(frameDir + ("/lev%02d.xfs" % lev))
-			tidPosGridThisLev = pickleLoad(frameDir + ("/lev%02d.tidPosGridThisLev" % lev))
+			#tidPosGridThisLev = pickleLoad(frameDir + ("/lev%02d.tidPosGridThisLev" % lev))
+			#tidPosGridThisLev = np.swapaxes(tidPosGridThisLevLoadC, 0, 1)
+			tidPosGridThisLev = tidPosGridThisLevLoadC
+
+			#for xx in range(0, len(tidPosGridThisLev), 10):
+			#	for yy in range(0, len(tidPosGridThisLev[0]), 10):
+			#		if not tidPosGridThisLev[xx][yy] == tidPosGridThisLevLoad[xx][yy]:
+			#			print "\nxx", xx, "yy", yy, "tidPosGridThisLev[xx][yy]    :",  tidPosGridThisLev[xx][yy]
+			#			print "xx", xx, "yy", yy, "tidPosGridThisLevLoad[xx][yy]:", tidPosGridThisLevLoad[xx][yy]
+			#		else:
+			#			print "ok"
+
+
 			#isBulbs = pickleLoad("/tmp/fr%05d.lev%02d.isBulbs" % (fr, lev))
 			#tidTrips = pickleLoad("/tmp/fr%05d.lev%02d.tidTrips" % (fr, lev))
 			#bbx1d = pickleLoad("/tmp/fr%05d.lev%02d.bbx1d" % (fr, lev))
